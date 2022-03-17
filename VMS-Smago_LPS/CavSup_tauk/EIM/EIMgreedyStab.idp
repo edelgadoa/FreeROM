@@ -1,0 +1,48 @@
+
+real [int,int] BMi(i,i);
+BMi=BM(0:i-1,0:i-1);
+
+real[int] Errs(hm+1);
+for (int eim=0;eim<=hm;eim++){
+	VhP0 taum,Ig;
+	//VhP1dc dxu1,dyu1,dxu2,dyu2;
+	nu=1./vReim(eim);
+
+		VhP2 uaux;
+		uaux[]=IPh*u1[eim][];
+		dxu1[]=DXun*uaux[];
+		dyu1[]=DYun*uaux[];
+		
+		uaux[]=IPh*u2[eim][];
+		dxu2[]=DXun*uaux[];
+		dyu2[]=DYun*uaux[];
+		
+		U1=u1[eim];
+		U2=u2[eim];
+		
+		real[int] tK=tauK(0,VhP0);
+		real[int] tKT=tauKT(0,VhP0);
+		tKcod[]=sqrt(tK);
+		tKTcod[]=sqrt(tKT);
+		taum=((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) 
+				+ (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+	
+	real [int] xii(i),sigmai(i);
+	for (int j=0;j<i;j++){
+		xii(j)=taum[](Tmax(j));
+	}
+	matrix Bm;
+	Bm=BMi;
+	set(Bm,solver=sparsesolver);
+	sigmai=Bm^-1*xii;
+	for (int j=0;j<i;j++){
+		Ig[]+=sigmai(j)*WL[j][];
+	}
+	VhP1dc linf=abs(taum-Ig);
+	Errs(eim)=linf[].max/taum[].max;
+	ErrMax(i-1)=Errs.max;
+	REim(i)=vReimh(Errs.imax);
+	Rei(i)=Errs.imax;
+
+}

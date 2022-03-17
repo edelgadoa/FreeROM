@@ -1,0 +1,233 @@
+load "UMFPACK64"
+
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+real dt=1;
+real epspen=1e-8;
+
+///////////////////////////////////
+//COMIENZA EL ARCHIVO ORIGINAL
+//////////////////////////////////
+int nIterations=2000;
+real epsError = 1.e-10;
+real nu=1./Re;
+
+
+
+VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,Gr;
+VhP0 tKcod,tKTcod,tau,mk;
+
+//Calculo la medida de los elementos |K|^(1/2)
+varf med(unused,v)=int2d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk);
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+////Matriz fija 
+
+varf vNS([uu1,uu2,pp],[v1,v2,q])=
+						int2d(Th)((1./dt)*(uu1*v1+uu2*v2)-div(v1,v2)*pp+div(uu1,uu2)*q)
+						+int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2))
+						+int2d(Th)((UgradV(uu1,uu2,G1,G2)+UgradV(G1,G2,uu1,uu2))'*[v1,v2])
+						+int2d(Th)(epspen*pp*q)
+						//Segundo miembro
+						-int2d(Th)(UgradV(G1,G2,G1,G2)'*[v1,v2]) 
+						-int2d(Th)(nu*GradGrad(G1,G2,v1,v2))
+						+on(1,2,3,4, uu1=0., uu2=0.); 
+
+//							
+matrix AvNS;
+
+AvNS=vNS(Vh3P2,Vh3P2);
+
+real[int] bNSf=vNS(0,Vh3P2);
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+real mediap;
+real cpu0=clock();
+
+for (int ii=1; ii<=nIterations && (iterrelative1 > epsError) ; ii++) {
+
+//////////////////////////	
+//Matriz de Smagorinsky
+/////////////////////////
+
+	
+VhP2 u1prev,u2prev;
+u1prev=u1;
+u2prev=u2;
+
+VhP2 utmp1,utmp2;
+utmp1=u1+G1;
+utmp2=u2+G2;
+
+VhP2 udcAux;
+udcAux[]=IPh*utmp1[];
+u1dcX[]=DXun*udcAux[];
+u1dcY[]=DYun*udcAux[];
+
+udcAux[]=IPh*utmp2[];
+u2dcX[]=DXun*udcAux[];
+u2dcY[]=DYun*udcAux[];
+
+
+Gr=moddc(u1dcX,u1dcY,u2dcX,u2dcY);
+
+//COEF. ESTAB. CODINA
+varf tauK(unused,v)=int2d(Th)((utmp1^2+utmp2^2)*v);
+varf tauKT(unused,v)=int2d(Th)(((u1dcX)^2+(u1dcY)^2+(u2dcX)^2+(u2dcY)^2)*v);
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+tKcod[]=sqrt(tK);
+tKTcod[]=sqrt(tKT);
+tau=((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	varf vNSb([uu1,uu2,pp],[v1,v2,q])=
+						int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+						//Segundo miembro
+						+int2d(Th)((1./dt)*(u1*v1+u2*v2))
+						;
+						
+	matrix AvNSb=vNSb(Vh3P2,Vh3P2);
+
+///////////////////////////////////
+//Matriz SMAGORINSKY filtrada
+///////////////////////////////////	
+Vh3P1dc [G1f,G2f,Gpf];
+VhP2 Gaux;
+Vh3P2 [GG1,GG2,GGp]=[G1,G2,Gaux]; //Para definir el levantamiento filtrado
+
+
+	varf Smago([uu1,uu2,pun],[v1,v2,qun])=int2d(Th)((CS*hTriangle)^2*Gr*(uu1*v1+uu2*v2));
+	varf Smagob([uu1,uu2,pun],[v1,v2,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*(G1f*v1+G2f*v2));
+
+	
+	matrix M=Smago(Vh3P1dc,Vh3P1dc);
+
+	
+	matrix Sma;
+	matrix DXX,DYY;
+	real[int] bSx(Vh3P2.ndof),bSy(Vh3P2.ndof);
+	{
+		matrix Maux; 
+		//COMPONENTE X
+		Maux=DX3*IPh3;
+		DXX=(Maux')*M;
+		DXX=DXX*Maux;
+		G1f[]=Maux*GG1[]; //seg miembro x
+		real[int] bS=Smagob(0,Vh3P1dc);
+		bSx=(Maux')*bS;
+		//COMPONENTE Y
+		Maux=DY3*IPh3;
+		DYY=(Maux')*M;
+		DYY=DYY*Maux;
+		G1f[]=Maux*GG1[]; //seg miembro y
+		bS=Smagob(0,Vh3P1dc);
+		bSy=(Maux')*bS;
+	}
+	
+	Sma=DXX+DYY;
+
+
+/////////////////////////////
+//MATRIZ ESTAB. PRES.
+/////////////////////////////
+
+varf termPres(pp,q)=int2d(Th)(tau*pp*q);
+
+
+matrix TermP=termPres(VhP1dc,VhP1dc);
+
+matrix Spres;
+
+matrix DDxx;
+{
+DDxx=TermP*DDx; 
+DDxx=DDx'*DDxx;
+}
+
+matrix DDyy;
+{
+DDyy=TermP*DDy; 
+DDyy=DDy'*DDyy;
+}
+
+Spres=DDxx+DDyy;
+
+
+/////////////////////////////
+//MATRIZ FINAL
+////////////////////////////
+	
+	matrix Afinal;
+
+	Afinal=AvNSb+AvNS;
+	Afinal=Afinal+Spres;
+    Afinal=Afinal+Sma;
+	
+	real [int] bNS=vNSb(0,Vh3P2);
+	bNS=bNS+bSx;
+	bNS=bNS+bSy;
+	bNS=bNS+bNSf;
+	
+	
+	set(Afinal,solver=UMFPACK);
+	u1[]=Afinal^-1*bNS;
+	
+	VhP2 uuu1,uuu2;
+	uuu1=u1+G1;
+	uuu2=u2+G2;
+
+	
+	//Calculo de errores
+    VhP2 eu1,eu2;
+	eu1=u1-u1prev;
+	eu2=u2-u2prev;
+	
+	//Inicio calculo normas errores
+	itercontrol1 = sqrt(int2d(Th)([eu1,eu2]'*[eu1,eu2])+int2d(Th)(GradGrad(eu1,eu2,eu1,eu2)));  		    	 
+    real itertmp1 = sqrt(int2d(Th)([u1,u2]'*[u1,u2])+int2d(Th)(GradGrad(u1,u2,u1,u2))); 
+	
+	iterrelative1 = itercontrol1/itertmp1;	
+	
+
+} 
+
+cpu0=-cpu0+clock();
+cout<<"Tiempo FE:"<<cpu0<<endl;
+
+
+//gradU=sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2);
+
+VhP2 U1,U2;
+U1=u1+G1;
+U2=u2+G2;
+
+plot([U1,U2],cmm="Velocidades para Re= "+Re,value=1);
+//plot(p,cmm="Presion para Re= "+Re);
+

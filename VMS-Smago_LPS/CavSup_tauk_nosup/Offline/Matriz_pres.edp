@@ -1,0 +1,27 @@
+int nbases=30;
+int N=16;
+
+int taubases,i,j;
+
+
+ifstream MatrixP("PresEntera.txt");
+MatrixP>>taubases;
+
+real[int,int][int] MPres(taubases);
+
+for (int is=0;is<taubases;is++){
+	MatrixP>>i;
+	MatrixP>>j;
+	real[int,int] auxS(2*nbases,2*nbases),aux2(2*N,2*N);
+	for(int ik=0;ik<i;ik++){
+		for(int jk=0;jk<j;jk++){
+			MatrixP>>auxS(ik,jk);
+		}
+	}
+	aux2=auxS(nbases-N:nbases+N-1,nbases-N:nbases+N-1);
+	MPres[is]=aux2(0:2*N-1,0:2*N-1);
+}
+
+ofstream fmpres("MatrixSPres.txt");
+fmpres.precision(20);
+fmpres<<MPres<<endl;

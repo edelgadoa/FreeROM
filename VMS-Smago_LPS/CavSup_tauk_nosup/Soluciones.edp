@@ -1,0 +1,150 @@
+load "iovtk"
+macro grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt(dx(u1)^2+dy(u1)^2+dx(u2)^2+dy(u2)^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+
+int[int] fforder=[1,1,1]; // 0 save a cell value, 1 save point value
+
+// Creo la malla
+int Nf=50;
+mesh Th=square(Nf,Nf,flags=0);
+
+
+fespace Vh3P2(Th,[P2,P2,P2]);
+fespace Vh3P1(Th,[P1,P1,P1]);
+fespace Vh3P1dc(Th,[P1dc,P1dc,P1dc]); 
+fespace VhP0(Th,P0); 
+fespace VhP1dc(Th,P1dc);
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+
+matrix IPh,IPh3,IPhdc;
+{
+		matrix IdP2,Id3P2,IdP1dc;
+		{
+			VhP2 faux2=1.;
+			VhP1dc faux1=1.;
+			IdP2 = faux2[];
+			IdP1dc = faux1[];
+			Id3P2=[[IdP2,0,0],[0,IdP2,0],[0,0,IdP2]];
+		}
+		
+		matrix PIg = interpolate(VhP1,VhP1dc); 
+		matrix IPg = interpolate(VhP1dc,VhP1); 
+		matrix IPPIg = IPg*PIg;
+		IPhdc = IdP1dc + (-1.)*IPPIg;
+		
+		matrix PI=interpolate(VhP1,VhP2);
+		matrix IP=interpolate(VhP2,VhP1);
+		matrix IPPI=IP*PI;
+		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2, una componente de vel
+		
+		matrix PI3=interpolate(Vh3P1,Vh3P2);
+		matrix IP3=interpolate(Vh3P2,Vh3P1);
+		matrix IPPI3=IP3*PI3;
+		IPh3=Id3P2+(-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2; dos vel + pres (sin filtrar la p)
+}	
+matrix DX3,DY3; //P2->P1dc en las 3 componentes (Se usa en la matriz Smago)
+{
+	matrix Du1,Du2,Dp;
+	int[int] c0=[0,-1,-1];
+	int[int] c1=[-1,1,-1];
+	int[int] c2=[-1,-1,2];
+	
+	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
+	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
+	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=1);
+	DX3=Du1+Du2+Dp;
+	
+	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=2);
+	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=2);
+	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=2);
+	DY3=Du1+Du2+Dp;
+	
+}
+
+int[int] cs2=[2];
+matrix Dxp = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+matrix Dyp = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+
+matrix DDx = IPhdc*Dxp;
+matrix DDy = IPhdc*Dyp;
+
+matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+
+real Remin=1000;
+real Remax=5100;
+
+
+int ni=82; 
+
+VhP2[int] Bv1(ni+1),Bv2(ni+1),Bp(ni+1);
+
+real[int] vRe(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRe(i)=Remin+i*(Remax-Remin)/(ni);
+}
+
+
+cout<<vRe<<endl;
+
+
+////////////////////////////////////////////////////////////////////////////
+//La solucion al pb de Stokes como levantamiento de frontera
+
+VhP2 u1sto,u2sto,v1sto,v2sto;
+VhP1 psto,qsto;
+solve stokes([u1sto,u2sto,psto],[v1sto,v2sto,qsto])=
+		 int2d(Th)((1./50)*GradGrad(u1sto,u2sto,v1sto,v2sto))
+		-int2d(Th)(psto*div(v1sto,v2sto))+int2d(Th)(qsto*(div(u1sto,u2sto)))
+		+int2d(Th)(1e-8*psto*qsto)
+		+on(3, u1sto=1, u2sto=0)+on(1,2,4, u1sto=0,u2sto=0);
+
+//VhP2 G1=u1sto;
+//VhP2 G2=u2sto;
+
+func G=1*(y>=1);
+VhP2 G1=G;
+VhP2 G2=0;
+
+
+//plot([G1,G2]);
+//plot(psto);
+
+cout<<"med pres Stokes:"<<int2d(Th)(psto)<<endl;
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+Vh3P2 [u1,u2,p];
+VhP1dc u1dcX,u1dcY,u2dcX,u2dcY;
+
+ofstream Basesv1("LPSv1Cav.txt",append);
+Basesv1<<ni+1<<endl;
+
+ofstream Basesv2("LPSv2Cav.txt",append);
+Basesv2<<ni+1<<endl;
+
+ofstream Basesp("LPSpCav.txt",append);
+Basesp<<ni+1<<endl;
+
+for (int i=0;i<=ni;i++){
+	real Re=vRe(i);
+	cout<<"----Re="<<Re<<"----"<<endl;
+	include "LPS.idp";
+	Bv1[i]=u1;
+	Bv2[i]=u2;
+	Bp[i]=p;
+	
+	Basesv1<<Bv1[i][]<<endl;
+	Basesv2<<Bv2[i][]<<endl;
+	Basesp<<Bp[i][]<<endl;
+	cout<<"Media pres:"<<int2d(Th)(p)<<endl;
+}

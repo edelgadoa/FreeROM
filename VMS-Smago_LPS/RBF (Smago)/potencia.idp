@@ -1,0 +1,61 @@
+{
+	Re=vReI(I);
+	nu=1./Re;
+	include "Smago.idp"; //Resuelvo el pb de EF
+	VhP2 UU1,UU2;
+	//UU1=u1-G1;
+	//UU2=u2-G2;
+	varf da([uu1,uu2,pp],[v1,v2,q])=int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2)) 
+					+int2d(Th)(div(uu1,uu2)*q)-int2d(Th)(div(v1,v2)*pp) 
+					+int2d(Th)(UgradV(G1,G2,uu1,uu2)'*[v1,v2])
+					+int2d(Th)(UgradV(uu1,uu2,G1,G2)'*[v1,v2])
+					
+					+int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+					+int2d(Th)(UgradV(uu1,uu2,u1,u2)'*[v1,v2])
+					
+					+int2d(Th)((CS*hTriangle)^2*mod(u1,u2)*GradGrad(uu1,uu2,v1,v2))
+					+int2d(Th)(((CS*hTriangle)^2/mod(u1,u2))
+								*GradGrad(u1,u2,uu1,uu2)*GradGrad(u1,u2,v1,v2))
+					+int2d(Th)(epspen*pp*q)
+					//+on(1, uu1=inlet,uu2=0)
+					+on(1,2,3,4, uu1=0,uu2=0)
+					;
+								
+	matrix F=da(Vh3P2,Vh3P2);
+	matrix Ft=F';
+	set(F,solver=UMFPACK);
+	set(Ft,solver=UMFPACK);
+    real epsl=1e-6; //Test de parada para el metodo de la potencia.
+	real[int] uk(Vh3P2.ndof),uk1(Vh3P2.ndof);
+	VhP2 MODu=sqrt(u1^2+u2^2);
+	plot(MODu);
+	uk1=sqrt(u1^2+u2^2);
+	real errl=10;
+	real lambdak,lambdak1=1;
+	for (int il=0;il<10000;il++){
+		if (errl<epsl){
+			break;
+		}
+		else{
+			uk=uk1/uk1.l2;
+			real [int] w1(Vh3P2.ndof),w2(Vh3P2.ndof),w3(Vh3P2.ndof),
+					   w4(Vh3P2.ndof),w5(Vh3P2.ndof);
+			
+			//X-norm:
+			w1=X*uk;
+			w2=Ft^-1*w1;
+			w3=X*w2;
+			uk1=F^-1*w3;
+			lambdak=lambdak1;
+			real[int] phik1(Vh3P2.ndof),phik(Vh3P2.ndof);
+			phik1=uk1;
+			phik=uk;
+			lambdak1=phik1.sum/phik.sum;
+			errl=abs(lambdak-lambdak1)/abs(lambdak);
+
+		}
+	}
+	real lambdamin=1/lambdak1;
+	betaI(I)=sqrt(lambdamin);
+	cout<<"-----"<<Re<<"------"<<lambdamin<<endl;
+}

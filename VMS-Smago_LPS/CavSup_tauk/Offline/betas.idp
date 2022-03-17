@@ -1,0 +1,56 @@
+func real fbeta(real[int] &gamma,real[int] &muj, real &mu)
+{   
+	//en teoria gamma.n=2+muj.n!!
+	int nj=muj.n; 
+	real val=gamma(nj+1);
+	val+=gamma(nj)*mu;
+	for (int i=0;i<nj;i++){
+		val+=gamma(i)*(mu-muj(i))^2*log(abs(mu-muj(i))+1);
+	}
+	return val;
+}	
+
+func real derbeta(real[int] &gamma, real [int] &muj, real &mu)
+{
+	int nj=muj.n;
+	real val=gamma(nj); //omega1
+	for (int i=0;i<nj;i++){
+		val+=gamma(i)*(2*(mu-muj(i))*log(abs(mu-muj(i))+1)+abs(mu-muj(i))*(mu-muj(i))/(abs(mu-muj(i))+1));
+	}
+	return val;
+}
+
+func real der2beta(real[int] &gamma, real [int] &muj, real &mu)
+{
+	int nj=muj.n;
+	real val;
+	for (int i=0;i<nj;i++){
+	val+=gamma(i)*(2*log(abs(mu-muj(i))+1)+4*abs(mu-muj(i))/(abs(mu-muj(i))+1)-(mu-muj(i))^2/(abs(mu-muj(i))+1)^2);
+	}
+	return val;
+}
+
+func real gneg(real &s){
+	real val;
+	if (s>0) val=1;
+	else val=exp(-s);
+	return val;
+}
+
+func real hadapt(real[int] &muj, real mu){
+	real[int] dist(muj.n);
+	for (int i=0; i<muj.n; i++){
+		dist(i)=abs(mu-muj(i));
+	}
+	return dist.min;
+}
+
+func real normT(matrix &T,real[int] &u)
+{
+real[int] v=T*u;
+real[int] vv=u.*v;
+real norm=vv.sum;
+norm=sqrt(norm);
+return norm;		
+}
+	

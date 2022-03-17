@@ -1,0 +1,250 @@
+
+macro grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt(dx(u1)^2+dy(u1)^2+dx(u2)^2+dy(u2)^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+//Constantes varias
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+
+int mbases=82,M;
+real[int] mum(mbases);  //Aqui almaceno los mu que voy escogiendo, 
+						//luego ya los ordenare en cada iteracion pues el orden va
+						//cambiando...
+mum+=1000; 
+
+real[int] Tmax(mbases+1); //donde almaceno los maximos
+
+real [int,int] BM(mbases+1,mbases+1); //matriz del sistema EIM
+BM=0;
+
+//Test de parada del algoritmo Greedy
+real epsG=5.e-5; //Para que el error maximo cometido este en torno a 1e-5.
+
+//Valores del rango del parametro
+real Remin=1000; 
+real Remax=5100;
+real Reopt; //Este sera el Reynolds que me da el maximo del funcional
+
+
+real nu;
+
+real ni=mbases*1.; //n-1 de valores de parametros que tomo (Numero de divisiones del intervalo) 
+int hm=82;
+real [int] vReim(ni+1),vReimh(hm+1); //Vector con los valores de los parametros
+
+for (int ig=0; ig<=ni; ig++){
+	vReim(ig)=Remin+ig*(Remax-Remin)/(ni);
+}
+
+for (int ig=0; ig<=hm; ig++){
+	vReimh(ig)=Remin+ig*(Remax-Remin)/(hm);
+}
+cout<<vReim<<endl;
+cout<<vReimh<<endl;
+
+int Nf=50;
+mesh Th=square(Nf,Nf,flags=0);
+
+
+//Defino los espacios de elementos finitos, y las funciones a resolver;
+fespace Vh3P2(Th,[P2,P2,P2]); 
+fespace VhP1dc(Th,P1dc);
+fespace VhP2(Th,P2);
+fespace VhP1(Th,P1);
+fespace VhP0(Th,P0);
+
+matrix IPh;
+{
+		matrix IdP2;
+		{
+			VhP2 faux2=1.;
+			IdP2 = faux2[];
+		}
+		
+		matrix PI=interpolate(VhP1,VhP2);
+		matrix IP=interpolate(VhP2,VhP1);
+		matrix IPPI=IP*PI;
+		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2, una componente de vel
+}
+
+matrix DXun=interpolate(VhP1dc,VhP2,op=1);
+matrix DYun=interpolate(VhP1dc,VhP2,op=2);
+
+////////////////////////////////////////////////////////////////////////////
+//La solucion al pb de Stokes como levantamiento de frontera
+
+VhP2 u1sto,u2sto,v1sto,v2sto;
+VhP1 psto,qsto;
+solve stokes([u1sto,u2sto,psto],[v1sto,v2sto,qsto])=
+		 int2d(Th)((1./50)*GradGrad(u1sto,u2sto,v1sto,v2sto))
+		-int2d(Th)(psto*div(v1sto,v2sto))+int2d(Th)(qsto*(div(u1sto,u2sto)))
+		+int2d(Th)(1e-8*psto*qsto)
+		+on(3, u1sto=1, u2sto=0)+on(1,2,4, u1sto=0,u2sto=0);
+
+//VhP2 G1=u1sto;
+//VhP2 G2=u2sto;
+
+
+//////////////////////////////////////////////////////////////////////////////
+func G=1*(y>=1);
+VhP2 G1=G;
+VhP2 G2=0;
+
+VhP0 tKcod,tKTcod,tau,mk;
+VhP1dc dxu1,dyu1,dxu2,dyu2;	
+VhP2 U1,U2;
+
+varf med(unused,v)=int2d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk);
+
+varf tauK(unused,v)=int2d(Th)((U1^2+U2^2)*v);
+varf tauKT(unused,v)=int2d(Th)((dxu1^2+dyu1^2+dxu2^2+dyu2^2)*v);
+
+
+VhP2[int] u1(hm+1),u2(hm+1);
+ifstream bu1("LPSv1Cav.txt");
+ifstream bu2("LPSv2Cav.txt");
+bu1>>M;
+bu2>>M;
+cout<<M<<endl;
+for(int i=0;i<=hm;i++){
+	bu1>>u1[i][];
+	u1[i]=u1[i]+G1;
+	bu2>>u2[i][];
+	u2[i]=u2[i]+G2;
+	
+}
+M=0;
+
+
+plot([u1[0],u2[0]]);
+VhP0[int] W(mbases+1),WL(mbases+1);
+
+real[int] ErrMax(mbases+1),REim(mbases+1),Rei(mbases+1);
+//////////////////////////////////////////////////////
+//  COMENZAMOS CON EL BUCLE PRINCIPAL PARA CALCULAR //
+//     LAS FUNCIONES DEL ESPACIO DE INTERPOLACION   //
+//////////////////////////////////////////////////////
+
+
+for (int i=0;i<=mbases;i++){
+	if (i==0){
+		
+		Reopt=vReim(i);
+		nu=1./Reopt; //El primer mu lo tomo aleatorio.
+		cout<<"Re: "<<Reopt<<", ";
+
+		VhP2 uaux;
+		uaux[]=IPh*u1[i][];
+		dxu1[]=DXun*uaux[];
+		dyu1[]=DYun*uaux[];
+		
+		uaux[]=IPh*u2[i][];
+		dxu2[]=DXun*uaux[];
+		dyu2[]=DYun*uaux[];
+		
+		U1=u1[i];
+		U2=u2[i];
+		real[int] tK=tauK(0,VhP0);
+		real[int] tKT=tauKT(0,VhP0);
+		tKcod[]=sqrt(tK);
+		tKTcod[]=sqrt(tKT);
+		plot(tKcod,fill=1,cmm=1/nu,wait=1);
+		tau=((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) 
+				+ (cc2*(tKcod/mk)/hTriangle))^(-1.);
+		
+		cout<<"tau50= "<<int2d(Th)(tau)<<endl;
+		W[0]=tau; //residuals
+		
+		Tmax(0)=W[0][].imax;
+		WL[0]=W[0]/W[0][].max;
+		BM(0,0)=WL[0][](Tmax(i));
+		plot(W[0]);
+	}
+	else{
+		include "EIMgreedyStab.idp";
+		if(ErrMax(i-1)<epsG){
+			M=i;
+			cout<<"mbases="<<M<<endl;
+			break;
+		}
+		else{
+		cout<<Errs<<endl;
+		Reopt=REim(i);
+		nu=1./Reopt; //El primer mu lo tomo aleatorio.
+		cout<<"Re: "<<Reopt<<", ";
+		
+		//VhP1dc dxu1,dyu1,dxu2,dyu2;
+		cout<<"Rei(i)="<<Rei(i)<<endl;
+		
+		VhP2 uaux;
+		uaux[]=IPh*u1[Rei(i)][];
+		dxu1[]=DXun*uaux[];
+		dyu1[]=DYun*uaux[];
+		
+		uaux[]=IPh*u2[Rei(i)][];
+		dxu2[]=DXun*uaux[];
+		dyu2[]=DYun*uaux[];
+		U1=u1[Rei(i)];
+		U2=u2[Rei(i)];
+
+		real[int] tK=tauK(0,VhP0);
+		real[int] tKT=tauKT(0,VhP0);
+		tKcod[]=sqrt(tK);
+		tKTcod[]=sqrt(tKT);
+		tau=((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) 
+				+ (cc2*(tKcod/mk)/hTriangle))^(-1.);
+		cout<<"taui="<<int2d(Th)(tau)<<endl;
+		
+		real[int,int] Bi(i,i);
+		Bi=BM(0:i-1,0:i-1);
+		real [int] xii(i),sigmai(i);
+		for (int j=0;j<i;j++){
+			xii(j)=tau[](Tmax(j));
+		}
+		matrix B;
+		B=Bi;
+		set(B,solver=sparsesolver);
+		sigmai=B^-1*xii;
+		W[i]=tau; //residuals
+		for (int j=0;j<i;j++){
+			W[i]=W[i]-sigmai(j)*WL[j];
+		}
+		VhP0 AW;
+		AW=abs(W[i]);
+		Tmax(i)=AW[].imax;
+		WL[i]=W[i]/W[i][](Tmax(i));
+		for (int j=0;j<=i;j++){
+			BM(i,j)=WL[j][](Tmax(i));
+		}
+	}
+	}
+}
+
+
+
+ofstream BaseGL("BaseTauL"+M+".txt",append);
+BaseGL<<M<<endl;
+for (int i=0;i<M;i++){
+BaseGL<<WL[i][]<<endl;
+}	
+
+real [int,int] BMfin(M,M);
+BMfin=BM(0:M-1,0:M-1);
+ofstream MatrixB("TauBM"+M+".txt");
+MatrixB<<BMfin<<endl;
+
+real [int] TM(M);
+TM=Tmax(0:M-1);
+ofstream Tmaxs("TauKi"+M+".txt");
+Tmaxs<<TM<<endl;
+
+cout<<ErrMax(0:M)<<endl;
+

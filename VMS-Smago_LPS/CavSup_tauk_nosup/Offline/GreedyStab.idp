@@ -1,0 +1,429 @@
+//Algoritmo de Greedy
+cout<<Re<<endl;
+//Valores del rango del parametro
+real Remin=1000;
+real Remax=5100;
+
+real dt=0.6;
+int niterN=9000; //número de iteraciones máximo para el método de BR
+
+int ni=164; //n-1 de valores de parametros que tomo (Numero de divisiones del intervalo)
+
+real [int] vRe(ni+1); //Vector con los valores de los parametros
+
+for (int ig=0; ig<=ni; ig++){
+	vRe(ig)=Remin+ig*(Remax-Remin)/ni;
+}
+
+int NI=(Remax-Remin)/ni;
+
+//////////////////////////////////////////
+////Construcion del estimador de error////
+//////////////////////////////////////////
+
+//Declaracion de matrices para la solucion de stokes
+//Matrices llenas
+
+real [int,int] StoNnui(2*i,2*i),StoNBi(2*i,2*i),PresPeni(2*i,2*i),SPresi(2*i,2*i),StoNBi2(2*i,2*i), MStoi(2*i,2*i);
+
+StoNnui=StoNnu(0:2*i-1,0:2*i-1);
+//StoNnus=StoNnui;
+
+
+StoNBi=StoNB(nbases-i:nbases+i-1,0:2*i-1);
+//StoNBs=StoNBi;
+StoNBi2=StoNBi';
+StoNBi2=(-1)*StoNBi2;
+
+
+PresPeni=PresPen(nbases-i:nbases+i-1,nbases-i:nbases+i-1);
+
+//	DECLARACION DE MATRICES PARA NS
+
+//matrices llenas
+real [int,int] vNS2ci(2*i,2*i),vNSdti(2*i,2*i);
+
+vNS2ci=vNSc2N(0:2*i-1,0:2*i-1);
+//cout<<vNS2ci<<endl;
+//vNS2cs=vNS2ci;
+
+vNSdti=vNSdt(0:2*i-1,0:2*i-1);
+//vNSdts=vNSdti;
+
+
+real RESant=0;
+real [int] ubNS(2*i);
+
+
+real[int] taunb(ni+1),deltanb(ni+1),epsnb(ni+1), presnb(ni+1);
+
+real[int,int] SNi(2*i,2*i);
+
+for (int inu=0;inu<=ni;inu++){
+	real cpu1=clock();
+	cout<<"--inu="<<inu<<"----Re="<<vRe(inu)<<"-------"<<endl;
+	//Resolución del pb de bases reducidas para cada valor del parametro;
+	
+	real nuBR=1./vRe(inu);
+
+
+	MStoi=nuBR*StoNnui;
+	MStoi+=StoNBi;
+	MStoi+=StoNBi2;
+	MStoi+=(1./dt)*vNSdti;
+	MStoi+=vNS2ci;
+	MStoi+=PresPeni;
+
+
+	VhP2 ubNv1,ubNv2;
+	VhP2 ubNp;
+					
+	real errBR=1.; //error de la velocidad entre una iteracion y la anterior.
+	real epsBR=1e-10; 
+	int cont=0; //Numero de iteraciones en el pb reducido
+	
+	//Actualización de la matriz del término de convección y de Smagorinsky
+	for(int iN=0; iN<=niterN && (errBR>epsBR);iN++){
+		cont++;
+		real [int,int] vNSNi(2*i,2*i),SmagoNi(2*i,2*i),bSmagoNi(mbases,2*i),SpresNi(2*i,2*i);
+		bSmagoNi=bSmagoN(0:mbases-1,0:2*i-1);
+	
+		vNSNi=0;
+		SmagoNi=0;
+		SpresNi=0;
+	
+		for (int s=0;s<i;s++){
+			real [int,int] vNSNint(2*i,2*i),vNSNI(2*nbases,2*nbases);
+			vNSNI=vNSN[s];
+			vNSNint=vNSNI(0:2*i-1,0:2*i-1);
+			vNSNint=ubNS(s)*vNSNint;
+			vNSNi+=vNSNint;
+		}
+        
+
+	
+		real[int] segmB(mbases),sigmal(mbases),gradun(4),un(i),bSmagoi(2*i);
+		un=ubNS(0:i-1);
+		for(int is=0;is<mbases;is++){
+			real[int,int] Gradi(4,i);
+			Gradi=GradTj[is](0:3,0:i-1);
+			gradun=Gradi*un;
+			gradun=gradun+DG[is];
+			segmB(is)=sqrt(gradun'*gradun);
+		}
+		
+		
+		sigmal=Binfm^-1*segmB;
+	
+	
+		for (int s=0;s<mbases;s++){
+			real [int,int] SmagoNint(2*i,2*i),SmagoNI(2*nbases,2*nbases);
+			SmagoNI=SmagoN[s];
+			SmagoNint=SmagoNI(0:2*i-1,0:2*i-1);
+			SmagoNint=sigmal(s)*SmagoNint;
+			SmagoNi+=SmagoNint;
+		}
+		
+		for (int s=0;s<i;s++){
+			bSmagoi(s)=sigmal'*bSmagoNi(0:mbases-1,s);
+		}
+        
+//        if (iN==0){
+//        cout<<vNSNi<<endl;
+//        cout<<SmagoNi<<endl;
+//        }
+
+
+////		 Calculos EIM 2
+		real [int] uNi(i+1), sigmaTau(taubases), segmTau(taubases);
+		real [int,int] CuNi(i+1,i+1);
+		uNi(0)=1;
+		uNi(1:i)=un;
+		CuNi=uNi*uNi';
+		for (int ki=0; ki<taubases; ki++){
+			real Nuk,Nguk;
+			Nuk=0;
+			Nguk=0;
+			real[int,int] Nuki(i+1,i+1), Nguki(i+1,i+1), 
+						  Auxi(i+1,i+1);
+			Nuki=NUK[ki](0:i,0:i);
+			Auxi=CuNi.*Nuki;
+			
+			Nuk=sqrt(Auxi.sum)/mk[](TauTint(ki));
+			Nguki=NGUK[ki](0:i,0:i);
+			Auxi=CuNi.*Nguki;
+		
+			Nguk=(CS*hk[](TauTint(ki)))^2*sqrt(Auxi.sum)/mk[](TauTint(ki));
+			
+			segmTau(ki)=1/(cc1*(nuBR+Nguk)/hk[](TauTint(ki))^2+
+					 		cc2*Nuk/hk[](TauTint(ki)));
+		}
+		
+		
+		sigmaTau=TauBinfm^-1*segmTau;
+
+		for (int s=0;s<taubases;s++){
+			real [int,int] SpresNint(2*i,2*i),SpresNI(2*nbases,2*nbases);
+			SpresNI=SpresN[s];
+			SpresNint=SpresNI(nbases-i:nbases+i-1,nbases-i:nbases+i-1);
+			SpresNint=sigmaTau(s)*SpresNint;
+			SpresNi+=SpresNint;
+		}
+//
+//	
+		
+		
+		//vNSNs=vNSNi;
+		//SmagoNs=SmagoNi;
+		//SpresNs=SpresNi;
+	
+		//cout<<SpresNi<<StoNBi<<endl;
+		
+		real[int,int] vNSf=MStoi;
+		vNSf+=vNSNi;
+		vNSf+=SmagoNi;
+		vNSf+=SpresNi;
+		
+	    
+	    
+	    
+		real [int] bvNSdt(2*i);
+		for (int s=0;s<i;s++){
+			real[int] bvNSdtint(2*i);
+			bvNSdtint=vNSdt(s,:);
+			bvNSdt+=ubNS(s)*bvNSdtint;
+		}
+	
+	
+		real [int] bvNSf(2*i);
+		bvNSf=0;
+
+		bvNSf=nuBR*bStoNnu(0:2*i-1);
+		bvNSf+=bNSsegN(0:2*i-1);
+		bvNSf+=(1./dt)*bvNSdt(0:2*i-1);
+		bvNSf+=bSmagoi(0:2*i-1);
+
+		//cout<<bvNSf<<endl; 
+		
+
+		
+		real [int] ubNSp=ubNS;
+        
+		
+//		cout<<bvNSf<<endl;
+//		cout<<vNSf<<endl;
+		//Resuelvo el pb reducido calculando la inversa
+		matrix Msparse=vNSf;
+
+		set(Msparse, solver=sparsesolver);
+		ubNS=Msparse^-1*bvNSf;
+		//ubNS=invM*bvNSf;
+		
+		
+		//cout<<ubNS<<endl;
+		real [int] uerr(i);
+		uerr=ubNS(0:i-1)-ubNSp(0:i-1);
+		errBR=uerr.l2;
+		errBR/=ubNSp.l2;
+		
+	
+	}
+
+//	cout<<"Solucion reducida"<<endl;
+//	cout<<ubNS<<endl;
+
+
+	//Defino la solucion reducida
+	ubNv1=0;
+	ubNv2=0;
+	ubNp=0;
+	
+	for (int kn=0;kn<i;kn++){
+		ubNv1=ubNv1+ubNS(kn)*Bvel1[kn];
+		ubNv2=ubNv2+ubNS(kn)*Bvel2[kn];
+		ubNp=ubNp+ubNS(i+kn)*Bpres[kn];
+	}
+	
+	//Le sumo el levantamiento
+	VhP2 UU1,UU2,UU1f,UU2f;
+	UU1=ubNv1+G1;
+	UU2=ubNv2+G2;
+	
+	VhP1dc UU1dcX,UU1dcY,UU2dcX,UU2dcY;
+	
+	UU1f[]=IPh*UU1[];
+	UU2f[]=IPh*UU2[];
+	
+	UU1dcX[]=DXun*UU1f[];
+	UU1dcY[]=DYun*UU1f[];
+	UU2dcX[]=DXun*UU2f[];
+	UU2dcY[]=DYun*UU2f[];
+	
+	cpu1=-cpu1+clock();
+	cout<<cpu1<<endl;
+	
+	
+	if(vRe(inu)==Re){ 
+		VhP2 erru1,erru2;
+		VhP2 errp;
+		//cout<<ubNS<<endl;
+		erru1=u1-ubNv1;
+		erru2=u2-ubNv2;
+		errp=p-ubNp;
+		
+		real eH1=
+		sqrt(int2d(Th)(erru1^2+erru2^2)+int2d(Th)(GradGrad(erru1,erru2,erru1,erru2)));
+
+		
+		cout<<"Error rel H1 vel: "<<eH1<<endl;
+		cout<<"Error rel L2 pres: "<<sqrt(int2d(Th)(errp^2))<<endl;
+		plot([UU1,UU2],cmm="Solucion vel de BR para Re="+vRe(inu),value=1);
+		//plot(pss[(Re-1000)/100],cmm="pres FE");
+		//plot(ubNp,cmm="pres BR");
+		//plot([erru1,erru2]);
+
+	}
+
+
+	varf probBCD([un1,un2,unp],[vvel1,vvel2,vpres])=
+					int2d(Th)(((1./Refijo)+((CS*hTriangle)^2)*mod(U1N,U2N))*
+							GradGrad(un1,un2,vvel1,vvel2))
+					+int2d(Th)(unp*vpres)
+					//seg miembro
+					+int2d(Th)(nuBR*GradGrad(UU1,UU2,vvel1,vvel2))
+					+int2d(Th)(UgradV(UU1,UU2,UU1,UU2)'*[vvel1,vvel2])
+					-int2d(Th)(div(vvel1,vvel2)*ubNp)
+					+int2d(Th)(div(ubNv1,ubNv2)*vpres)
+					+on(1,2,3,4, un1=0,un2=0)
+					;
+	
+	VhP1dc Gr=moddc(UU1dcX,UU1dcY,UU2dcX,UU2dcY);
+
+	
+	VhP1dc UU1fd,UU2fd;
+	Vh3P1dc [GG1f,GG2f,GGfp];
+
+
+	Vh3P2 [FF1,FF2,FFp]=[UU1,UU2,ubNp];
+	varf probS([un1,un2,unp],[vvel1,vvel2,vpres])=
+					int2d(Th)(((CS*hTriangle)^2)*Gr*(UU1fd*vvel1+UU2fd*vvel2));
+	
+					
+	real[int] bBCD=probBCD(0,Vh3P2);
+	
+	real[int] bSx(Vh3P2.ndof),bSy(Vh3P2.ndof);
+	//COMPONENTE X
+	{
+	matrix Maux=DX3*IPh3;					
+	UU1fd=UU1dcX;
+	UU2fd=UU2dcX;
+	real[int] bSaux=probS(0,Vh3P1dc);
+	bSx=Maux'*bSaux;
+	}
+	
+	//COMPONENTE Y
+	{
+	matrix Maux=DY3*IPh3;					
+	UU1fd=UU1dcY;
+	UU2fd=UU2dcY;
+	real[int] bSaux=probS(0,Vh3P1dc);
+	bSy=Maux'*bSaux;
+	}
+	
+	real[int] bS=bSx+bSy;
+	bS=bS.*cc; //bloqueo los nodos frontera
+	
+
+		VhP0 tKcod,tKTcod,tau;
+		varf tauK(unused,v)=int2d(Th)((UU1^2+UU2^2)*v);
+		varf tauKT(unused,v)=int2d(Th)(((UU1dcX)^2+(UU1dcY)^2+(UU2dcX)^2+(UU2dcY)^2)*v);
+		real[int] tK=tauK(0,VhP0);
+		real[int] tKT=tauKT(0,VhP0);
+	 	tKcod[]=sqrt(tK);
+		tKTcod[]=sqrt(tKT);
+
+		tau=((cc1*(nuBR+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) 
+		+ (cc2*(tKcod/mk)/hTriangle))^(-1.);
+	
+	VhP1dc FGP;
+	varf termPres(unp,q)=int2d(Th)(tau*FGP*q);
+
+
+
+	real[int] DDxx(Vh3P2.ndof);
+	{
+	FGP[]=DpX*ubNp[];
+	real[int] TermP=termPres(0,VhP1dc);
+	DDxx=DDx'*TermP;
+	}
+
+	real[int] DDyy(Vh3P2.ndof);
+	{
+	FGP[]=DpY*ubNp[];	
+	real[int] TermP=termPres(0,VhP1dc); 
+	DDyy=DDy'*TermP;
+	}
+
+	real[int] bP=DDxx+DDyy;
+
+	
+	real [int] bres=bBCD;
+	bres=bres+bS;
+	bres=bres+bP;
+	
+	matrix ERR=probBCD(Vh3P2,Vh3P2);
+	
+	set(ERR,solver=sparsesolver);
+	
+	Vh3P2 [bres1,bres2,bresp];
+	bres1[]=ERR^-1*bres;
+
+	real BRES=sqrt(int2d(Th)(((1./Refijo)+((CS*hTriangle)^2)*mod(U1N,U2N))*
+					GradGrad(bres1,bres2,bres1,bres2))
+				   +int2d(Th)(bresp^2));
+	real RESP=sqrt(int2d(Th)(bresp^2));
+	
+	cout<<"NiterRB="<<cont<<endl;
+	epsnb(inu)=BRES;
+	presnb(inu)=RESP;
+	
+	
+	real ref=5100;
+	real betah=fbeta(gamma0,muj,ref);
+	cout<<"Beta_mub^2: "<<betah^2<<endl;		
+	taunb(inu)=(4*BRES*romub)/betah^2;
+
+	
+	cout<<"TAUB="<<taunb(inu)<<endl;
+	cout<<"BRES="<<BRES<<endl;
+	
+	if (taunb(inu)<1){ //si el tau es menor que uno puedo calcular el delta n
+		deltanb(inu)=betah/(2*romub)*(1-sqrt(1-taunb(inu)));
+		cout<<"DELTA="<<deltanb(inu)<<endl;
+	}
+}
+
+
+if(taunb.max>1){
+	REbest(i)=vRe(taunb.imax);
+	TaunMax(i-1)=taunb.max;
+	ibest(i)=taunb.imax;
+	ResMax(i-1)=taunb.max;
+	PresErrMax(i-1)=presnb.max;
+	
+}
+else{
+	REbest(i)=vRe(deltanb.imax);
+	ibest(i)=deltanb.imax;
+	ResMax(i-1)=deltanb.max;
+	cout<<deltanb<<endl;
+	TaunMax(i-1)=taunb.max;
+	PresErrMax(i-1)=presnb.max;
+}
+
+cout<<"DELTA: "<<deltanb<<endl;
+cout<<"TAU:"<<taunb<<endl;
+
+
+ErrBR=ResMax(i-1);
+TaunMax(i-1)=taunb.max;

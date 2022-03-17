@@ -1,0 +1,663 @@
+///////////////////////////////////////////////////////////////
+///////////////"CAVIDAD VMS-SMAGO-LPS CON B.R./////////////////
+///////////////////////////////////////////////////////////////
+int Nf=50;
+mesh Th=square(Nf,Nf,flags=0);
+int[int] fforder=[1,1,1];
+
+load "iovtk"
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u2))^2+(dx(u2))^2+(dy(u1))^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //
+
+
+//Cargo el vector con los valores mu de las bases
+ifstream Nb("Rebest.txt");
+int nbases;
+Nb>>nbases;
+
+ifstream RE("Rebest.txt");
+real [int] REbest(nbases);
+RE>>REbest;
+//RE>>M;
+
+
+fespace Vh3P2(Th,[P2,P2,P2]);
+fespace Vh3P1(Th,[P1,P1,P1]);
+fespace Vh3P1dc(Th,[P1dc,P1dc,P1dc]);  
+fespace VhP1dc(Th,P1dc);
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+fespace VhP0(Th,P0);
+
+
+//Cargo las funciones de base
+ifstream Fbase("VNH.txt");
+VhP2 [int] Bvel1(nbases),Bvel2(nbases),Bsup1(nbases),Bsup2(nbases);
+VhP2 [int] Bpres(nbases);
+
+for (int i=0;i<nbases;i++){
+	Fbase>>Bvel1[i][];
+	Fbase>>Bvel2[i][];
+	Fbase>>Bsup1[i][];
+	Fbase>>Bsup2[i][];
+	Fbase>>Bpres[i][];
+}
+
+
+
+
+matrix IPh,IPh3,IPh1;
+{
+		matrix IdP2,Id3P2,IdP1dc;
+		{
+			VhP2 faux2=1.;
+			VhP1dc faux1=1.;
+			IdP2 = faux2[];
+			IdP1dc = faux1[];
+			Id3P2=[[IdP2,0,0],[0,IdP2,0],[0,0,IdP2]];
+		}
+		
+		matrix PIg = interpolate(VhP1,VhP1dc); 
+		matrix IPg = interpolate(VhP1dc,VhP1); 
+		matrix IPPIg = IPg*PIg;
+		IPh1 = IdP1dc + (-1.)*IPPIg;
+		
+		matrix PI=interpolate(VhP1,VhP2);
+		matrix IP=interpolate(VhP2,VhP1);
+		matrix IPPI=IP*PI;
+		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2, una componente de vel
+		
+		matrix PI3=interpolate(Vh3P1,Vh3P2);
+		matrix IP3=interpolate(Vh3P2,Vh3P1);
+		matrix IPPI3=IP3*PI3;
+		IPh3=Id3P2+(-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2; dos vel + pres (sin filtrar la p)
+}	
+
+VhP0 mk;
+//Calculo la medida de los elementos |K|^(1/2)
+varf med(unused,v)=int2d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk);
+VhP0 hk=hTriangle;
+real hT=hk[].max;
+
+matrix DX3,DY3; //P2->P1dc en las 3 componentes (Se usa en la matriz Smago)
+{
+	matrix Du1,Du2,Dp;
+	int[int] c0=[0,-1,-1];
+	int[int] c1=[-1,1,-1];
+	int[int] c2=[-1,-1,2];
+	
+	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
+	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
+	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=1);
+	DX3=Du1+Du2+Dp;
+	
+	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=2);
+	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=2);
+	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=2);
+	DY3=Du1+Du2+Dp;
+	
+}
+
+	
+
+int[int] cs=[2];
+matrix DDPx=interpolate(VhP1dc,Vh3P2,U2Vc=cs,op=1);
+matrix DDPy=interpolate(VhP1dc,Vh3P2,U2Vc=cs,op=2);
+
+matrix DDx=IPh1*DDPx;
+matrix DDy=IPh1*DDPy;
+
+matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+
+matrix DpX = IPh1*DXun;
+matrix DpY = IPh1*DYun;
+
+//Constantes varias
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+
+
+
+
+
+	
+////////////////////////////////////////////////////////////////////////////
+//Calculo la función levantamiento
+func G=1*(y>=1);
+
+VhP2 G1=G;
+VhP2 G2=0;
+//////////////////////////////////////////////////////////////////////////////	
+
+VhP1dc DxG1f,DyG1f,DxG2f,DyG2f;
+VhP2 G1F,G2F;
+G1F[]=IPh*G1[];
+G2F[]=IPh*G2[];
+
+DxG1f[]=DXun*G1F[];
+DyG1f[]=DYun*G1F[];
+DxG2f[]=DXun*G2F[];
+DyG2f[]=DYun*G2F[];
+
+ifstream EIM("BaseGL52.txt");
+int mbases;
+EIM>>mbases;
+
+VhP1dc[int] W(mbases); 
+for (int i=0;i<mbases;i++){
+	EIM>>W[i][];
+}
+
+
+ifstream MatrixBinf("MatrixBM52.txt");
+int ibinf,jbinf;
+MatrixBinf>>ibinf;
+MatrixBinf>>jbinf;
+real [int,int] Binf(ibinf,jbinf);
+for(int i=0;i<ibinf;i++){
+	for (int j=0;j<jbinf;j++){
+		MatrixBinf>>Binf(i,j);
+	}
+}
+
+matrix Binfm=Binf;
+set(Binfm,solver=sparsesolver);
+
+ifstream PuntosT("Tint52.txt");
+int ntint;
+PuntosT>>ntint;
+real[int] Tint(ntint);
+for (int i=0;i<ntint;i++){
+	PuntosT>>Tint(i);
+}
+//Cargo los archivos del EIM TauK
+ifstream EIMT("BaseTauL28.txt");
+int taubases;
+EIMT>>taubases;
+
+VhP0[int] TAU(taubases); 
+for (int i=0;i<taubases;i++){
+	EIMT>>TAU[i][];
+}
+
+ifstream MatrixTBinf("TauBM28.txt");
+int tibinf,tjbinf;
+MatrixTBinf>>tibinf;
+MatrixTBinf>>tjbinf;
+real [int,int] TauBinf(tibinf,tjbinf);
+for(int i=0;i<tibinf;i++){
+	for (int j=0;j<tjbinf;j++){
+		MatrixTBinf>>TauBinf(i,j);
+	}
+}
+
+matrix TauBinfm=TauBinf;
+set(TauBinfm,solver=sparsesolver);
+
+ifstream PuntosTau("TauKi28.txt");
+int tautint;
+PuntosTau>>tautint;
+real[int] TauTint(tautint);
+for (int i=0;i<tautint;i++){
+	PuntosTau>>TauTint(i);
+}
+
+
+
+
+
+//Cargo los segundos miembros del sistema de BR
+ifstream SEG("SegMRB.txt");
+real [int] bAN(3*nbases),bDN(3*nbases),bSmago(3*nbases);
+SEG>>bAN;
+SEG>>bDN;
+
+
+//Cargo las Matrices del sistema A,B,C,D, PE y DT
+ifstream MatrixRB("MatrixRB.txt");
+
+real[int,int] ANi(3*nbases,3*nbases),BNi(3*nbases,3*nbases),
+			  DNi(3*nbases,3*nbases),DTNi(3*nbases,3*nbases),
+			  PEi(3*nbases,3*nbases),
+			  bSmagoN(mbases,3*nbases),CNi(3*nbases,3*nbases),
+			  SNi(3*nbases,3*nbases),PNi(3*nbases,3*nbases);
+CNi=0;
+SNi=0;
+PNi=0;
+
+real[int,int][int] CN(2*nbases),SN(mbases),PN(taubases);
+
+int i,j,s;
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>ANi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>BNi(ik,jk);
+	}
+}
+
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>DNi(ik,jk);
+	}
+}
+
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>DTNi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>PEi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+	MatrixRB>>bSmagoN(ik,jk);
+	}
+}
+
+ifstream MatrixC("MatrixC.txt");
+MatrixC>>s;
+for (int is=0;is<s;is++){
+	MatrixC>>i;
+	MatrixC>>j;
+	real[int,int] auxC(3*nbases,3*nbases);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixC>>auxC(ik,jk);
+		}
+	}
+	CN[is]=auxC(0:3*nbases-1,0:3*nbases-1);
+}
+
+ifstream MatrixS("MatrixS.txt");
+MatrixS>>s;
+for (int is=0;is<s;is++){
+	MatrixS>>i;
+	MatrixS>>j;
+	real[int,int] auxS(3*nbases,3*nbases);
+	for(int ik=0;ik<i;ik++){
+		for(int jk=0;jk<j;jk++){
+			MatrixS>>auxS(ik,jk);
+		}
+	}
+	SN[is]=auxS(0:3*nbases-1,0:3*nbases-1);
+}
+
+ifstream MatrixP("MatrixSPres.txt");
+MatrixP>>s;
+for (int is=0;is<s;is++){
+	MatrixP>>i;
+	MatrixP>>j;
+	real[int,int] auxP(3*nbases,3*nbases);
+	for(int ik=0;ik<i;ik++){
+		for(int jk=0;jk<j;jk++){
+			MatrixP>>auxP(ik,jk);
+		}
+	}
+	PN[is]=auxP(0:3*nbases-1,0:3*nbases-1);
+}
+
+
+
+ifstream MatrixG("MatrixGrad.txt");
+real [int,int][int] GradTj(mbases);
+real[int][int] DG(mbases);
+real[int,int][int] NUK(taubases),NGUK(taubases);
+MatrixG>>s;
+for (int is=0;is<s;is++){
+	MatrixG>>i;
+	MatrixG>>j;
+	real[int,int] auxG(4,2*nbases);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixG>>auxG(ik,jk);
+		}
+	}
+	GradTj[is]=auxG(0:3,0:2*nbases-1);
+	DG[is]=[DxG1f[](Tint(is)),DyG1f[](Tint(is)),DxG2f[](Tint(is)),DyG2f[](Tint(is))];
+}
+
+
+MatrixG>>s;
+for (int is=0;is<s;is++){
+	MatrixG>>i;
+	MatrixG>>j;
+	real[int,int] auxT(2*nbases+1,2*nbases+1);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixG>>auxT(ik,jk);
+		}
+	}
+	NUK[is]=auxT(0:2*nbases,0:2*nbases);
+}
+MatrixG>>s;
+for (int is=0;is<s;is++){
+	MatrixG>>i;
+	MatrixG>>j;
+	real[int,int] auxT(2*nbases+1,2*nbases+1);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixG>>auxT(ik,jk);
+		}
+	}
+	NGUK[is]=auxT(0:2*nbases,0:2*nbases);
+}
+
+
+//Cargo los snapshots para calcular el error
+real hm;
+
+ifstream bu1("LPSv1Cav.txt");
+ifstream bu2("LPSv2Cav.txt");
+ifstream bp("LPSpCav.txt");
+bu1>>hm;
+bu2>>hm;
+bp>>hm;
+cout<<hm<<endl;
+VhP2[int] uh1(hm),uh2(hm),ph(hm);
+
+for(int i=0;i<hm;i++){
+	bu1>>uh1[i][];
+	uh1[i]=uh1[i]+G1;
+	bu2>>uh2[i][];
+	uh2[i]=uh2[i]+G2;
+	bp>>ph[i][];
+	
+}
+
+//////////////////////////////////////////////////////////////
+///////     COMENZAMOS A CALCULAR LOS ERRORES     ////////////
+//////////////////////////////////////////////////////////////
+
+
+real dt=0.6;
+int nIt=10000;
+real epserr=1.e-10;
+
+real Remin=1000;
+real Remax=5100;
+
+real ni=82;
+
+real[int] vRe(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRe(i)=Remin+i*(Remax-Remin)/(ni);
+}
+
+real[int] errV(ni+1),TamSmago(ni+1),errS(ni+1);
+
+for(int i=0;i<=ni;i++){
+////////////////////////////////////////////////////////////
+
+real Re=vRe(i);
+cout<<Re<<endl;
+
+//Ahora calculo la solucion BR:
+
+//matriz y segundo miembro fijos
+real[int,int] MNi(3*nbases,3*nbases),BNiT(3*nbases,3*nbases);
+BNiT=BNi';
+BNiT=(-1)*BNiT;
+
+MNi=(1./Re)*ANi;
+MNi+=BNi;
+MNi+=BNiT;
+MNi+=DNi;
+MNi+=(1./dt)*DTNi;
+MNi+=PEi; 
+
+
+
+real [int] bN(3*nbases);
+bN=(1./Re)*bAN+bDN;
+
+real [int] ubNS(3*nbases),ubNSp(3*nbases);
+
+ubNS=0;
+ubNSp=0;
+real errN=10;
+
+
+//Comienzo la resolucion iterativa del problema reducido 
+for(int iN=0; iN<nIt && (errN>epserr); iN++){
+	
+	CNi=0;
+	SNi=0;
+	PNi=0;
+
+	for (int s=0;s<2*nbases;s++){
+		real [int,int] CNint(3*nbases,3*nbases),vNSNI(3*nbases,3*nbases);
+		vNSNI=CN[s];
+		CNint=vNSNI(0:3*nbases-1,0:3*nbases-1);
+		CNint*=ubNS(s);
+		CNi+=CNint;
+	}
+
+
+	real [int] bdt(3*nbases);
+	for (int s=0;s<2*nbases;s++){
+		real[int] bvNSdtint(3*nbases);
+		bvNSdtint=DTNi(:,s);
+		bdt+=ubNS(s)*bvNSdtint;
+	}
+
+
+	real[int] segmB(mbases),sigmal(mbases),gradun(4),un(2*nbases);
+	un=ubNSp(0:2*nbases-1);
+	for(int is=0;is<mbases;is++){
+		real[int,int] Gradi(4,2*nbases);
+		Gradi=GradTj[is](0:3,0:2*nbases-1);
+		gradun=Gradi*un;
+		gradun=gradun+DG[is];
+		segmB(is)=sqrt(gradun'*gradun);
+	}
+
+	sigmal=Binfm^-1*segmB;
+	
+
+	for (int s=0;s<mbases;s++){
+		real [int,int] SmagoNint(3*nbases,3*nbases),SmagoNI(3*nbases,3*nbases);
+		SmagoNI=SN[s];
+		SmagoNint=SmagoNI(0:3*nbases-1,0:3*nbases-1);
+		SmagoNint*=sigmal(s);
+		SNi+=SmagoNint;
+	}
+
+
+	for (int s=0;s<2*nbases;s++){
+		bSmago(s)=sigmal'*bSmagoN(0:mbases-1,s);
+	}
+
+	
+    //Calculos EIM 2
+	real [int] uNi(2*nbases+1), sigmaTau(taubases), segmTau(taubases);
+	real [int,int] CuNi(2*nbases+1,2*nbases+1);
+	uNi(0)=1;
+	uNi(1:2*nbases)=un;
+	CuNi=uNi*uNi';
+	for (int ki=0; ki<taubases; ki++){
+		real Nuk,Nguk;
+		Nuk=0;
+		Nguk=0;
+		real[int,int] Nuki(2*nbases+1,2*nbases+1), Nguki(2*nbases+1,2*nbases+1), 
+					  Auxi(2*nbases+1,2*nbases+1);
+		Nuki=NUK[ki](0:2*nbases,0:2*nbases);
+		Auxi=CuNi.*Nuki;
+		Nuk=sqrt(Auxi.sum)/mk[](TauTint(ki));
+		Nguki=NGUK[ki](0:2*nbases,0:2*nbases);
+		Auxi=CuNi.*Nguki;
+		Nguk=(CS*hk[](TauTint(ki)))^2*sqrt(Auxi.sum)/mk[](TauTint(ki));
+		segmTau(ki)=(cc1*((1./Re)+Nguk)/hk[](TauTint(ki))^2+
+				 			cc2*Nuk/hk[](TauTint(ki)))^(-1);
+	}
+	
+
+	sigmaTau=TauBinfm^-1*segmTau;
+
+	for (int s=0;s<taubases;s++){
+		real [int,int] SpresNI(3*nbases,3*nbases),SpresNint(3*nbases,3*nbases);
+		SpresNI=PN[s];
+		SpresNint=SpresNI(0:3*nbases-1,0:3*nbases-1);
+		SpresNint*=sigmaTau(s);
+		PNi+=SpresNint;
+
+	}
+
+	real[int,int] MN(3*nbases,3*nbases);
+	MN=MNi;
+	MN+=CNi;
+	MN+=SNi;
+	MN+=PNi;
+	
+	
+	real [int] bfin=bN+(1./dt)*bdt;
+	bfin=bfin+bSmago; 
+
+	matrix Mfin=MN;
+	set(Mfin,solver=sparsesolver);
+	
+	ubNSp=ubNS; //la solucion del paso anterior.
+	
+	//Resolucion del sistema reducido
+	ubNS=Mfin^-1*bfin;
+
+    
+	real [int] uerr(2*nbases);
+	real [int] ubNSv(2*nbases),ubNSvp(2*nbases);
+	ubNSv=ubNS(0:2*nbases-1);
+	ubNSvp=ubNSp(0:2*nbases-1);
+	uerr=ubNSv-ubNSvp;
+	errN=uerr.l2;
+	errN/=ubNSp.l2;
+}
+
+
+
+//Construyo la solucion reducida obtenida
+VhP2 uN1,uN2;
+VhP2 pN;
+
+uN1=G1;
+uN2=G2;
+
+for (int kn=0;kn<nbases;kn++){
+	uN1=uN1+ubNS(2*kn)*Bvel1[kn]+ubNS(2*kn+1)*Bsup1[kn];
+	uN2=uN2+ubNS(2*kn)*Bvel2[kn]+ubNS(2*kn+1)*Bsup2[kn];
+	pN=pN+ubNS(2*nbases+kn)*Bpres[kn];
+}
+
+//plot([uN1,uN2],cmm="RB con Re="+Re);
+//plot([uh1[i],uh2[i]],wait=1,cmm="FE con Re="+Re);
+VhP2 errN1,errN2;
+VhP2 errpN;
+//
+
+errN1=abs(uh1[i]-uN1);
+errN2=abs(uh2[i]-uN2);
+errpN=abs(ph[i]-pN);
+
+//plot([errN1,errN2],wait=1,cmm="error vel Re="+Re);
+//plot(errpN,wait=1,cmm="error pres Re="+Re);
+real errBRvel=(int2d(Th)(//(1./1000+(CS*hTriangle)^2*mod(uh1[0],uh2[0]))*
+						GradGrad(errN1,errN2,errN1,errN2)));
+//+int2d(Th)([errN1,errN2]'*[errN1,errN2]);
+//errBRvel/=int2d(Th)((1./1000+(CS*hTriangle)^2*mod(us1[0],us2[0]))*
+//GradGrad(us1[i],us2[i],us1[i],us2[i]));
+//+int2d(Th)([us1[i],us2[i]]'*[us1[i],us2[i]]);
+real errBRpres=(int2d(Th)(errpN^2));
+//errBRpres/=int2d(Th)(pss[i]^2);
+errV(i)=sqrt(errBRvel+errBRpres);
+cout<<errV(i)<<endl;
+//--------------------------------------------------------------------
+//CALCULO DEL ERROR EN SMAGO
+//
+//Vh2P2 [w1,w2],[ww1,ww2];
+//
+//VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,GR;
+//VhP1dc u1NdcX,u1NdcY,u2NdcX,u2NdcY,GRN;
+//
+//u1dcX[]=DXun*us1[i][];
+//u1dcY[]=DYun*us1[i][];
+//u2dcX[]=DXun*us2[i][];
+//u2dcY[]=DYun*us2[i][];
+//
+//GR=moddc(u1dcX,u1dcY,u2dcX,u2dcY);
+//
+//u1NdcX[]=DXun*uN1G[];
+//u1NdcY[]=DYun*uN1G[];
+//u2NdcX[]=DXun*uN2G[];
+//u2NdcY[]=DYun*uN2G[];
+//
+//GRN=moddc(u1NdcX,u1NdcY,u2NdcX,u2NdcY);
+//
+//varf Error1([W1,W2],[v1,v2])=int2d(Th)(GradGrad(W1,W2,v1,v2))
+//							+int2d(Th)((CS*hTriangle)^2*GR*GradGrad(us1[i],us2[i],v1,v2))
+//							-int2d(Th)((CS*hTriangle)^2*GRN*GradGrad(uN1G,uN2G,v1,v2))
+//							+on(1,2,3,4,6, W1=0.,W2=0.)
+//							;
+//							
+//varf Error2([W1,W2],[v1,v2])=int2d(Th)(GradGrad(W1,W2,v1,v2))
+//							+int2d(Th)((CS*hTriangle)^2*GR*GradGrad(us1[i],us2[i],v1,v2))
+//							+on(1,2,3,4,6, W1=0.,W2=0.)
+//							;
+//							
+//matrix E1=Error1(Vh2P2,Vh2P2);
+//matrix E2=Error2(Vh2P2,Vh2P2);
+//
+//set(E1,solver=sparsesolver);							
+//set(E2,solver=sparsesolver);	
+//
+//real[int] l1=Error1(0,Vh2P2);
+//real[int] l2=Error2(0,Vh2P2);
+//
+//w1[]=E1^-1*l1;
+//ww1[]=E2^-1*l2;
+//
+//real eSma=sqrt(int2d(Th)(GradGrad(w1,w2,w1,w2))+int2d(Th)(w1^2+w2^2))/sqrt(int2d(Th)(GradGrad(ww1,ww2,ww1,ww2))+int2d(Th)(ww1^2+ww2^2));
+//
+//errS(i)=eSma;
+//
+//real TamS=sqrt(int2d(Th)(GradGrad(ww1,ww2,ww1,ww2))+int2d(Th)(ww1^2+ww2^2));
+//
+//TamSmago(i)=TamS;
+//cout<<TamS<<endl;
+//
+}
+
+cout<<"ErrV"<<errV<<endl;
+//cout<<"ErrS"<<endl<<errS<<endl;
+//cout<<"TamS"<<endl<<TamSmago<<endl;
