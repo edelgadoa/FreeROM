@@ -1,11 +1,3 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
 *.txt
 *.pvd
 *.vtu
