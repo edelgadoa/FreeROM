@@ -17,7 +17,7 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 	`git add -A .` -- añade TODOS los archivos que hay en la carpeta
 	
-	`git add *FILENAME*` -- añade solo el archivo FILENAME
+	`git add FILENAME` -- añade solo el archivo FILENAME
 
 3. Comprobar que los archivos han sido añadidos
 
@@ -35,4 +35,4 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 `git log` -- lista de todas las subidas realizadas
 
-`git rm *FILENAME*` -- elimina los archivos del repositorio (hay que hacer commit y push despues)
+`git rm FILENAME` -- elimina los archivos del repositorio (hay que hacer commit y push despues)
