@@ -36,3 +36,5 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 `git log` -- lista de todas las subidas realizadas
 
 `git rm FILENAME` -- elimina los archivos del repositorio (hay que hacer commit y push despues)
+
+`git add -f FILENAME` -- añade el archivo FILENAME aunque su extensión esté en gitignore
