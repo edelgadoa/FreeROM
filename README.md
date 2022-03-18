@@ -6,7 +6,7 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 **DESCARGAR**
 
-`git pull`  > descarga de Github
+`git pull`  > descarga de los cambios de Github
 
 **SUBIR**
 1. Mirar archivos que han sido cambiados
