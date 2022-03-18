@@ -5,4 +5,4 @@
 *.eps
 *.fig
 *.DS_Store
-
+*.out
