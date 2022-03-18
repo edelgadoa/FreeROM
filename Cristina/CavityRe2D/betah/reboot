@@ -1,0 +1,6 @@
+echo 'Que parametros quieres actualizar'
+read prob
+nombre="parameters$prob"
+nombre2="SolEF$prob"
+cp ../auxiliary/parameters.txt ../solutions/$nombre.txt
+rm ../solutions/txt/$nombre2*

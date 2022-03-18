@@ -1,0 +1,25 @@
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/write.idp";
+
+// infoparam;
+wh=[wref,href];
+createmesh(wh,Th,NN)
+plot(Th);
+{
+	fespace Vh(Th,P0);
+	Vh u=hTriangle;
+	cout << "h = " << u[].max << endl;
+	cout << "number of triangles=" << Th.nt << endl;
+	fespace VhP1(Th,P1);
+	VhP1 uu;
+	cout << "number of nodes = " << uu[].n << endl;
+	// plot(u, value=1,fill=1);
+	// cout << abs(u(wh[0]/2,wh[1]/2)-sqrt(wh[1]^2+wh[0]^2)/NN) << endl;
+	// cout << abs(u(W/2,wh[1]/2) - sqrt(wh[1]^2/NN^2+(W-2.*wh[0])^2/NN2^2)) << endl;
+	// cout << abs(u(W/2,(H-wh[1])/2+wh[1]) - sqrt((H-wh[1])^2/NN^2+(W-2.*wh[0])^2/NN2^2)) << endl;
+	int[int] Order = [1];
+	string DataName = "u";
+	savevtk("mesh.vtu", Th, u, dataname=DataName, order=Order);
+}
+savemesh(Th,"./meshNN"+NN+"w"+wh[0]+"h"+wh[1]+".msh");

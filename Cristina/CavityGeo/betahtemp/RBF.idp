@@ -1,0 +1,58 @@
+include "../auxiliary/betas.idp";
+real[int] gamma1(RBFcont+numparam+1); //n+1 gamma, 2 w_1, 1 w_0
+real[int] Betak(RBFnimax),Betak1(RBFnimax);
+
+{
+	real[int,int] RBFvwhi=RBFvwh(0:numparam-1,0:RBFcont-1);
+	gamma1=fgamma(betaI,RBFvwhi);//BLbeta*lbeta;
+	for (int k=0;k<RBFnimax;k++)Betak(k)=fbeta(gamma1,RBFvwhi,RBFvwhfina(0:numparam-1,k));
+	write("Betak0.txt",Betak,0,0);
+	
+}
+for (int k=0;k<RBFcont+numparam+1;k++)gamma(k)=gamma1(k); //actualizo los valores de gamma
+
+real errorRBF=1;
+real[int] C(RBFnimax);
+write("Output.txt","Number of basis until now: "+RBFcont,1,1);
+write("Output.txt","Starting the adaptitive method...",1,1);
+real lambdamin;
+for (int j=RBFcont;j<RBFnimax;j++)
+{
+// 		Calculamos el criterio
+	{
+		real[int,int] RBFvwhi=RBFvwh(0:numparam-1,0:j-1);
+		real[int] gammai=gamma(0:j+numparam);
+		C=calculocriterion(RBFvwhi,RBFvwhfina,gammai,Betak);
+	}
+	RBFvwh(:,j)=RBFvwhfina(0:numparam-1,C.imax);
+	// Calculamos el nuevo betah
+	write("Output.txt","New w: " + RBFvwh(0,j)+", h: "+RBFvwh(1,j),1,1);
+	{
+		wh=RBFvwh(0:numparam-1,j);
+		include "./Bhcompute.idp";
+		betaI(j)=lambdamin;	
+		write("Output.txt","--------------------- betah("+wh[0]+","+wh[1]+") = " +betaI(j)+"----------------------",1,1);
+	}
+	// Actualizamos betak para calcular el error
+	{
+		real[int] gammai(j+1+numparam+1);
+		real[int,int] RBFvwhi=RBFvwh(0:numparam-1,0:j);
+		gammai=fgamma(betaI,RBFvwhi);
+		for (int k=0;k<RBFnimax;k++)Betak1(k)=fbeta(gammai,RBFvwhi,RBFvwhfina(0:numparam-1,k));
+		write("Betak"+j+".txt",Betak1,0,0);
+		for (int k=0;k<j+1+numparam+1;k++)gamma(k)=gammai(k);
+	}
+	// Calculo del error en cada iteracion
+	real[int] Errbeta(RBFnimax);
+	Errbeta=Betak1-Betak;
+	Errbeta=abs(Errbeta);
+	errorRBF=Errbeta.max;//Errbeta.l2/Betak.l2; //norma infinito
+	write("Output.txt","-  Greedy error: " +errorRBF,1,1);
+//	write("Output.txt","     Betak min: " +Betak1.min,1,1);
+	Betak=Betak1;
+	if(errorRBF<RBFeps && Betak.min>0)
+	{
+		RBFcont=j+1;
+		break; //test de parada, asegurando que es positivo todo
+	}
+}

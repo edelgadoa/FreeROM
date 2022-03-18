@@ -1,0 +1,40 @@
+VhGVP defVP(uEF),defVP(wEF);
+// {
+// 	ifstream fileRe("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+// 	fileRe >> uEF[];
+// }
+{EFSta(uEF,wh);}
+wEF[]=uEF[];wEF[]+=G[];
+funcgeo(wh);
+matrix XgradTemp;
+{
+	varf a(u,v)=intN(Th)(gradgradtemp(u,v));
+	XgradTemp=a(VhGP2,VhGP2);
+}
+matrix der;
+{
+	funcgeo(wh);
+	varf a(u,v)=int2d(Th)(
+			etax*ugradvwxtemp(wEF,u,v)
+			+etay*ugradvwytemp(wEF,u,v)
+			+1./Pe*(gammax*gradxtemp(u,v)+gammay*gradytemp(u,v))
+			+1./Pr*(CS*hTri)^2*gradw0*(gammax*gradxtemp(u,v)+gammay*gradytemp(u,v))
+		)
+		+int1d(Th,paredes)(Nu/Pe*u*v*jacobian)
+		+on(techo,suelo,u=0)
+		;
+	der=a(VhGP2,VhGP2);
+}
+
+write("Output.txt","Power method...",1,1);
+real eps=1.e-5;
+real[int] eigen=powermethod(XgradTemp,der,eps);
+real autoval=eigen[0];
+
+VhGP2 autovec;
+autovec[]=eigen(1:eigen.n-1);
+// initiabeta[]=autovec[];
+// plot(autovec,value=1,fill=1);
+
+lambdamin=1./autoval;
+// cout << "autoval: " <<  lambdamin << endl;

@@ -1,0 +1,78 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+int case=3;
+if(case==1)wh=[2.891,2.734];
+if(case==2)wh=[2.649,2.65];
+if(case==3)wh=[2.469,2.923];
+// string case="wminhmax";
+// wh=[wmin,hmax];
+wh/=Longcarac;
+createmesh(wh,Th,NN);
+creationVh(Th,Vh)
+VhVP defVP(G);
+{
+	ifstream read("../lift/liftNN"+NN+"w"+wref+"h"+href+".txt");
+        read >> G[];
+}
+VhP2 Gtheta;
+{
+	ifstream read("../lift/lifttempNN"+NN+"w"+wref+"h"+href+".txt");
+	read >> Gtheta[];
+}
+VhVP defVP(uBR),defVP(uEF);
+VhP2 thetaBR,thetaEF;
+{
+	ifstream read("../solutions/txt/SolBR"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> uBR[];
+}
+{
+	ifstream read("../solutions/txt/SolBR"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> thetaBR[];
+}
+{
+	ifstream read("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> uEF[];
+}
+{
+	ifstream read("../solutions/txt/SolEF"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> thetaEF[];
+}
+uBR[]+=G[];uEF[]+=G[];
+thetaBR[]+=Gtheta[];thetaEF[]+=Gtheta[];
+/*plot(defVel(uBR),value=1,wait=1,cmm="vel BR");
+plot(defVel(uEF),value=1,wait=1,cmm="vel EF");
+
+plot(uBRP,value=1,fill=1,wait=1,cmm="pres BR");
+plot(uEFP,value=1,fill=1,wait=1,cmm="pres EF");
+
+plot(thetaBR,value=1,fill=1,wait=1,cmm="theta BR");
+plot(thetaEF,value=1,fill=1,wait=1,cmm="theta EF");
+*/
+real density=1.293;
+defVP(uEF)=[velocity*uEF,velocity*uEFY,density*velocity^2*uEFP];
+defVP(uBR)=[velocity*uBR,velocity*uBRY,density*velocity^2*uBRP];
+thetaEF[]*=thetac;thetaEF[]+=273.15;
+thetaBR[]*=thetac;thetaBR[]+=273.15;
+string DataName="Vel Pres Temp";
+int[int] Order=[1,1,1];
+bool Bin=true;
+string FileNameEF="./vtu/SolEF"+prob+"NN"+NN+"case"+case+".vtu";
+string FileNameBR="./vtu/SolBR"+prob+"NN"+NN+"case"+case+".vtu";
+savevtk(FileNameEF, Th, [uEF,uEFY,0],uEFP,thetaEF, dataname=DataName, order=Order);//,bin=Bin);
+savevtk(FileNameBR, Th, [uBR,uBRY,0],uEFP,thetaBR, dataname=DataName, order=Order);//,bin=Bin);
+
+//string FileNameG="./vtu/lift.vtu";
+//savevtk(FileNameG, Th, [G,GY,0],GP,Gtheta, dataname=DataName, order=Order);//,bin=Bin);
+
+// VhP1dc w;
+// macro vorti(v)(dx(v#Y)-dy(v)) // EOM
+// w=vorti(uEF);
+// plot(w,value=1,fill=1,cmm="vorticity");
+
+
+write("Output.txt","Done.",1,1);

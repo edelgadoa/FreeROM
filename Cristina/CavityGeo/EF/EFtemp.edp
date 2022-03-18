@@ -1,0 +1,96 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+infoparam;
+write("Output.txt","Computing the EF solutions with "+mpisize+" processors for h=",0,1);
+write("Output.txt",vh,1,1);
+write("Output.txt","and for w=",1,1);
+write("Output.txt",vw,1,1);
+wh=[wref,href];
+readTh(NN,wh);
+readlift(NN,wh);
+readlifttemp(NN,wh);
+
+omegas(omega,wh);
+readparameters(whSta);
+VhGP1dc nut;
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// matrixgeneration;
+
+write("Output.txt","Reading the RB...",1,1);
+int Nv,Np,N;
+{ifstream read("../results/basisVel.txt");read >> Nv;}
+VhGVel[int] defVel(baseVel)(Nv);
+{ifstream read("../results/basisVel.txt");read >> Nv;
+for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+{ifstream read("../results/basisPres.txt");read >> Np;}
+VhGP1[int] basePres(Np);
+{ifstream read("../results/basisPres.txt");read >> Np;
+for(int s=0;s<Np;s++)read >> basePres[s][];}
+N=Np+Nv;
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0)
+VhGP1dc gradw0;
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nv);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv-1);}
+for(int ii=0;ii<Nv;ii++)
+{
+	ini(VhGP2,auxbase);
+	VeltoP2(VhG,baseVel[ii],auxbase);
+	gradEIM(auxbase,auxgrad,EIMx,Grad);
+	for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+}
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+// {ifstream read("../solutions/txt/nut.txt");
+// read >> nut[];}
+ENDIFMACRO
+
+write("Output.txt","initializing Reduced Matrixes..."+N,1,1);
+initialization(StoN,NSN,SmaN,N);
+IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+
+int cont=0;
+VhGP2 thetaEF;
+for(int iw=0;iw<niw;iw++)
+{
+	for(int ih=0;ih<nih;ih++)
+	{
+		thetaEF[]=0;
+		wh=[vw[iw],vh[ih]];
+		write("Output.txt","  - w="+wh[0]+", h="+wh[1],1,1);
+		if(petsc==0 && mpirank==cont%mpisize){EFStaTemp(thetaEF,wh);}
+		if(petsc==1){EFStaTemp(thetaEF,wh);}
+		
+		cont++;
+		// if(0)
+		// {
+		// 	write("Output.txt","   Computing the residual...",1,1);
+		// 	VhGP2 residual;
+		// 	residualbTemp(thetaEF,wh,residual);
+		// 	// residual[]=abs(residual[]);
+		// 	real error=normL2(residual[],prodgradTemp);//residual[].max;
+		// 	//if(error>1.e-8)cout << "---------------------------- EEEEEEEEERRRRRRROOOOOOOOORRRRRRR ----------------------------" << endl;
+		// 	write("Output.txt","  - Residuo: "+error,1,1);
+		// 	plot(residual,value=1,wait=0,cmm="residual vel");
+		// 	// plot(residualP,value=1,wait=0);
+		// }
+
+	}
+}
+write("Output.txt","Done.",1,1);

@@ -1,0 +1,4 @@
+loadpath = "/Users/macarena/FreeFem-sources/plugin/mpi/"
+loadpath += "/Users/macarena/FreeFem-sources/plugin/hpddm/"
+loadpath += "/Users/macarena/FreeFem-sources/plugin/seq/"
+includepath = "/Users/macarena/FreeFem-sources/idp/"

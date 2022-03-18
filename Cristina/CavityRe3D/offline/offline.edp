@@ -1,0 +1,183 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+infoparam;
+
+// Greedy param
+int Nmax,Nvmax,Npmax,Nv,Np,N,nbasis;
+Npmax=niRe+1;
+Npmax=100;
+Nvmax=2*Npmax;Nmax=Nvmax+Npmax;nbasis=Npmax;
+real[int] errGreedy(Npmax);errGreedy(0)=10.;real epsGreedy=1.e-4;
+real[int,int] ReBest(numparam,Nmax);ReBest=0;
+ReBest(0:numparam-1,0)=Remin;
+real[int]  ResMax(Nmax),tau(niRe),delta(niRe),resnorm(niRe);
+ResMax(0)=1.;
+
+write("Output.txt","Computing the offline phase solutions with "+mpisize+" processors for Re=",0,1);
+write("Output.txt",vRe,1,1);
+write("Output.txt"," - epsGreedy = "+epsGreedy,1,1);
+
+readTh(NN);
+readlift(NN,Refijo);
+real[int,int] parameters(numparam,niRe);
+readparameters(ReSta);
+
+VhGVel[int] defVel(baseVel)(Nvmax);
+VhGP1[int] basePres(Npmax);
+VhGP1dc nut;
+
+IFMACRO(prob,"Smago")
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nvmax);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nvmax-1);}
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0);
+VhGP1dc gradw0;
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// plot(nut,value=1,fill=1);
+write("Output.txt","Reading the RBF...",1,1);
+readRBF;
+include "../auxiliary/betas.idp";
+real CSobolev,rhoT;
+ENDIFMACRO
+
+write("Output.txt","Generating matrixes...",1,1);
+matrixgeneration;
+write("Output.txt","initializing Reduced Matrixes...",1,1);
+initialization(StoN,NSN,SmaN,Nmax);
+
+IFMACRO(prob,"Smago")
+write("Output.txt","Computing the inyection constant...",1,1);
+if(1)
+{
+	include "./Sobolev.idp";
+	write("CS.txt",CSobolev,0,0);
+}
+else
+{
+	ifstream aux("CS.txt");
+	aux >> CSobolev;
+}
+rhoTselection;
+write("Output.txt", " - rhoT: " + rhoT,1,1);
+ENDIFMACRO
+
+write("Output.txt","Starting of the Greedy Algorithm.",1,1);
+write("./results/tau.txt","tau",0,0);
+write("./results/tau.txt","delta",0,0);
+write("./results/resnorm.txt","residual",0,0);
+
+int nbasis0=0;
+/*if(readbasis)
+{
+	{ifstream read("./results/nbasis.txt");read >> nbasis0;}
+	{
+		real[int,int] aux(numparam,nbasis0);
+		ifstream read("./results/ReBest.txt");read >> aux;
+		ReBest=aux(0:numparam-1,0:nbasis0-1);
+		cout << ReBest(0:numparam-1,0:nbasis0-1) << endl;
+	}
+	{ifstream read("./results/basisVel.txt");read >> Nv;
+	for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+	{ifstream read("./results/basisPres.txt");read >> Np;
+	for(int s=0;s<Np;s++)read >> basePres[s][];}
+	int ip=nbasis0-1;
+	for(int ii=0;ii<2*ip+2;ii++)
+	{
+		ini(VhGP2,auxbase);
+		VeltoP2(VhG,baseVel[ii],auxbase);
+		gradEIM(auxbase,auxgrad,EIMx,Grad);
+		for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+	}
+	N=3*(ip+1);Nv=2*(ip+1);Np=ip+1;
+	IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+	IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+	IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+	include "./greedy.idp";
+}
+*/
+
+for(int ip=nbasis0;ip<nbasis && errGreedy(ip)>epsGreedy;ip++)
+{
+	Re=ReBest(0:numparam-1,ip);
+	write("Output.txt","------------------------  ITERATION: " +ip+", actual error= "+errGreedy(ip)+ "  ----------------------------------",1,1);
+	write("Output.txt","Computing of the snapshots for Reynold = " + Re[0],1,1);
+	pause;
+	VhGVP defVP(uEF);
+	EFSta(uEF,Re);
+	pause;
+	N=3*(ip+1);Nv=2*(ip+1);Np=ip+1;
+//	cout << "N=" << N << endl;
+//	cout << "Nv=" << Nv << endl;
+//	cout << "Np=" << Np << endl;
+	[baseVel[Nv-2],baseVelY[Nv-2],baseVelZ[Nv-2]]=defVel(uEF);
+	basePres[Np-1]=uEFP;
+	write("Output.txt","Ok.",1,1);
+	write("Output.txt","Supremizer construction...",1,1);
+	pause;
+	VhGVel defVel(supEF);
+	supremizer(uEF,Re,supEF);
+	baseVel[Nv-1][]=supEF[];
+	pause;
+	write("Output.txt","Ok.",1,1);
+	if(GS)
+	{
+		write("Output.txt","Orthonormalization...",1,1);
+		orthoVel(Nv);
+		orthoPres(Np);
+		orthoVel(Nv);
+		orthoPres(Np);
+		normalization(baseVel,Nv,prodV);
+		normalization(basePres,Np,prodP);
+		int[int] check=[1,1];
+		orthocheck(Np,check)
+		if(check[0]==0)write("Output.txt","Bad ortho Vel...",1,1);
+		if(check[1]==0)write("Output.txt","Bad ortho Pres...",1,1);
+	}
+	plot([baseVel[Nv-2],baseVelY[Nv-2],baseVelZ[Nv-2]],value=1,wait=0,cmm="Vel, iteration = "+ip);
+	plot(basePres[Np-1],value=1,wait=0,fill=1,cmm="Pres, iteration = "+ip);
+	plot([baseVel[Nv-1],baseVelY[Nv-1],baseVelZ[Nv-1]],value=1,wait=0,cmm="Sup, iteration = "+ip);
+	IFMACRO(prob,"Smago")
+	for(int ii=Nv-2;ii<Nv;ii++)
+	{
+		ini(VhGP2,auxbase);
+		VeltoP2(VhG,baseVel[ii],auxbase);
+		gradEIM(auxbase,auxgrad,EIMx,Grad);
+		for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+	}
+	ENDIFMACRO
+	write("Output.txt","Ok.",1,1);
+	write("Output.txt","Selection of the new parameter, Greedy Algorithm",1,1);
+	include "./greedy.idp";
+	if(errGreedy(ip+1)<epsGreedy)
+	{
+		write("Output.txt","----------------------------------------------------------------------------------------------------------------------",1,1);
+		write("Output.txt","Greedy algorithm finished with "+Np+" basis.",1,1);
+		write("../results/selectedparam.txt",ReBest(0:numparam-1,0:Np-1),1,1);
+		write("Output.txt", "Writing the basis..." ,1,1);
+		write("../results/basisVel.txt",Nv,0,0);
+		for(int it=0;it<Nv;it++)write("../results/basisVel.txt",baseVel[it][],1,0);
+		write("../results/basisPres.txt",Np,0,0);
+		for(int it=0;it<Np;it++)write("../results/basisPres.txt",basePres[it][],1,0);
+		write("Output.txt", "Ok, writing the matrixes..." ,1,1);
+		IFMACRO(prob,"Stokes"){writeStoN(N,StoNs);}ENDIFMACRO
+		IFMACRO(prob,"NS"){writeStoN(N,StoNs);writeNSN(N,NSNs);}ENDIFMACRO
+		IFMACRO(prob,"Smago"){writeStoN(N,StoNs);writeNSN(N,NSNs);writeSmaN(N,SmaNs);}ENDIFMACRO
+	}
+}
+
+write("Output.txt","Done.",1,1);

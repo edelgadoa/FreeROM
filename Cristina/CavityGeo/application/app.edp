@@ -1,0 +1,157 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+
+// Greedy
+int Nv,Np,N,nbasis,Nt;
+// cout << ReBest(0) << endl;
+// real CSobolev,resnorm;
+
+infoparam;
+
+write("Output.txt","Computing the online phase solutions with "+mpisize+" processors...",0,1);
+real executiontime;
+wh=[wref,href];
+readTh(NN,wh);
+// //plot(Th);
+
+readlift(NN,wh);
+readlifttemp(NN,wh);
+// plot(GVel);
+omegas(omega,wh);
+// real[int,int] parameters(numparam,niw*nih);
+// readparameters(whSta);
+real[int,int] whSta(numparam,1),whStatemp(numparam,1);
+// whSta(0:numparam-1,0)=[-1,1];whStatemp(0:numparam-1,0)=[-1,1];
+VhGP1dc nut;
+VhGP2 thetaBR;
+
+write("Output.txt","Reading the RB...",1,1);
+{ifstream read("../results/basisVel.txt");read >> Nv;}
+VhGVel[int] defVel(baseVel)(Nv);
+{ifstream read("../results/basisVel.txt");read >> Nv;
+for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+{ifstream read("../results/basisPres.txt");read >> Np;}
+VhGP1[int] basePres(Np);
+{ifstream read("../results/basisPres.txt");read >> Np;
+for(int s=0;s<Np;s++)read >> basePres[s][];}
+{ifstream read("../results/basisTemp.txt");read >> Nt;}
+VhGP2[int] baseTemp(Nt);
+{ifstream read("../results/basisTemp.txt");read >> Nt;
+for(int s=0;s<Nt;s++)read >> baseTemp[s][];}
+N=Np+Nv;
+
+write("Output.txt","Basis constructed by "+Np+" snapshots for velocity and "+Nt+" for temperature.",1,1);
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0)
+VhGP1dc gradw0;
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nv);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv-1);}
+for(int ii=0;ii<Nv;ii++)
+{
+	ini(VhGP2,auxbase);
+	VeltoP2(VhG,baseVel[ii],auxbase);
+	gradEIM(auxbase,auxgrad,EIMx,Grad);
+	for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+}
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// plot(nut,value=1,fill=1);
+ENDIFMACRO
+
+
+write("Output.txt","initializing Reduced Matrixes..."+N,1,1);
+initialization(StoN,NSN,SmaN,N);
+initializationTemp(BouN,Nt);
+IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+readBouN(Nt,BouN);
+
+matrix matrixJ13,matrixJ2;
+{
+	varf a(thetau,thetav)=intN(Th,1,3)(thetau*thetav);
+	matrixJ13=a(VhGP2,VhGP2); 
+}
+{
+	varf a(thetau,thetav)=intN(Th,2)(thetau*thetav);
+	matrixJ2=a(VhGP2,VhGP2); 
+}
+
+pause;
+real[int,int] selected(numparam,niw*nih);
+real[int] JL(niw*nih),J(niw*nih),time(niw*nih),timeL(niw*nih); J=0;time=0;JL=0;timeL=0;
+int cont=0;
+real totaltime=mpiWtime();
+int groundfloor=1;
+for(int inw=0;inw<niw;inw++)
+{
+	for(int inh=0;inh<nih;inh++)
+	{
+		wh=[vw(inw),vh(inh)];
+		selected(0:numparam-1,cont)=wh;
+		if(mpirank==cont%mpisize)
+		{
+			timeL(cont)=mpiWtime();
+			ctegeo(wh);
+			matrix matrixJ=jacobian13*matrixJ13;
+			if(groundfloor)matrixJ=matrixJ+jacobian2*matrixJ2;
+			thetaBR[]=0;
+ 			BRStaTemp(thetaBR,wh,BouN);
+			//{
+			//	ifstream fileRe("../solutions/txt/SolEF"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+			//	fileRe >> thetaBR[];
+			//}
+			thetaBR[]+=Gtheta[];
+			thetaBR[]-=1;//thetac;
+			// plot(thetaBR,value=1,fill=1,wait=1);
+			real[int] aux2=matrixJ*thetaBR[];
+			JL(cont)=thetaBR[]'*aux2;
+			if(groundfloor)
+			{
+				JL(cont)/=wh[1]*W;
+			}
+			else
+			{
+				JL(cont)/=2*wh[0]*wh[1];
+			}
+			timeL(cont)=mpiWtime()-timeL(cont);
+			cout << cont/(niw*nih)*100 << "%" << endl;
+		}
+		cont++;
+	}
+}
+totaltime=mpiWtime()-totaltime;
+pause;
+// mpiAllReduce(restLinfL,restLinf,mpiCommWorld,mpiSUM);
+
+mpiAllReduce(JL,J,mpiCommWorld,mpiSUM);
+mpiAllReduce(timeL,time,mpiCommWorld,mpiSUM);
+pause;
+int whwinner=J.imin;
+selected*=Longcarac;
+write("Output.txt","Numero total de iteraciones: "+cont,1,1);
+write("Output.txt","Media de tiempo computacional: "+time.sum/cont,1,1);
+write("Output.txt","w="+selected(0,whwinner)+", h="+selected(1,whwinner),1,1);
+write("Output.txt","J="+J.min,1,1);
+write("Output.txt","total time="+totaltime,1,1);
+write("./results/J.txt",J,0,0);
+write("./results/selected.txt",selected,0,0);
+write("./results/time.txt",time,0,0);
+
+write("Output.txt","Done.",1,1);

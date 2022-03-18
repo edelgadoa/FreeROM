@@ -1,0 +1,39 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+int case;
+//case=1;Re[0]=2251;
+//case=2;Re[0]=3003;
+//case=3;Re[0]=3545;
+case=4;Re[0]=4860;
+readTh(NN);
+VhGVP defVP(G);
+{
+	ifstream read("../lift/liftNN"+NN+"Reynold"+Refijo+".txt");
+	read >> G[];
+}
+VhGVP defVP(uBR),defVP(uEF);
+{
+ 	ifstream read("../online/txt/SolBR"+prob+"NN"+NN+"Reynold"+Re[0]+".txt");
+ 	read >> uBR[];
+}
+{
+	ifstream read("../online/txt/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+".txt");
+	read >> uEF[];
+}
+uBR[]+=G[];uEF[]+=G[];
+
+string DataName="Vel Pres";
+int[int] Order=[1,1];
+bool Bin=true;
+string FileNamelift="./vtu/liftNN"+NN+"Reynold"+Refijo+".vtu";
+string FileNameBR="./vtu/SolBR"+prob+"NN"+NN+"case"+case+".vtu";
+//savevtk(FileNamelift, Th, [G,GY,GZ],GP, dataname=DataName, order=Order);//,bin=Bin);
+string FileNameEF="./vtu/SolEF"+prob+"NN"+NN+"case"+case+".vtu";
+savevtk(FileNameEF, Th, [uEF,uEFY,uEFZ],uEFP,dataname=DataName, order=Order);//,bin=Bin);
+savevtk(FileNameBR, Th, [uBR,uBRY,uBRZ],uBRP,dataname=DataName, order=Order);//,bin=Bin);
+
+write("Output.txt","Done.",1,1);

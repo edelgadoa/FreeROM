@@ -1,0 +1,172 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+int case=3;
+// Greedy
+int Nv,Np,N,nbasis,Nt;
+// cout << ReBest(0) << endl;
+real CSobolev,resnorm;
+
+
+write("Output.txt","Computing the online phase solutions with "+mpisize+" processors...",0,1);
+real executiontime;
+wh=[wref,href];
+readTh(NN,wh);
+// //plot(Th);
+
+readlift(NN,wh);
+readlifttemp(NN,wh);
+
+// plot(GVel);
+omegas(omega,wh);
+real[int,int] parameters(numparam,niw*nih);
+readparameters(whSta);
+VhGP1dc nut;
+
+write("Output.txt","Reading the RB...",1,1);
+{ifstream read("../results/basisVel.txt");read >> Nv;}
+VhGVel[int] defVel(baseVel)(Nv);
+{ifstream read("../results/basisVel.txt");read >> Nv;
+for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+{ifstream read("../results/basisPres.txt");read >> Np;}
+VhGP1[int] basePres(Np);
+{ifstream read("../results/basisPres.txt");read >> Np;
+for(int s=0;s<Np;s++)read >> basePres[s][];}
+{ifstream read("../results/basisTemp.txt");read >> Nt;}
+VhGP2[int] baseTemp(Nt);
+{ifstream read("../results/basisTemp.txt");read >> Nt;
+for(int s=0;s<Nt;s++)read >> baseTemp[s][];}
+N=Np+Nv;
+
+write("Output.txt","Basis constructed by "+Np+" snapshots.",1,1);
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0)
+VhGP1dc gradw0;
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nv);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv-1);}
+for(int ii=0;ii<Nv;ii++)
+{
+	ini(VhGP2,auxbase);
+	VeltoP2(VhG,baseVel[ii],auxbase);
+	gradEIM(auxbase,auxgrad,EIMx,Grad);
+	for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+}
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// plot(nut,value=1,fill=1);
+write("Output.txt","Reading the RBF...",1,1);
+readRBF;
+include "../auxiliary/betas.idp";
+real etamax,gammamax,phimax,phimin,rhoT;
+write("Output.txt","Computing the inyection constant...",1,1);
+{
+	ifstream aux("../offline/CS.txt");
+	aux >> CSobolev;
+}
+write("Output.txt", " - Sobolev constant: " + CSobolev,1,1);
+real tau,delta;
+ENDIFMACRO
+
+
+write("Output.txt","initializing Reduced Matrixes..."+N,1,1);
+initialization(StoN,NSN,SmaN,N);
+initializationTemp(BouN,Nt);
+IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+readBouN(Nt,BouN);
+
+matrix prodVP;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+	prodVP=a(VhGVP,VhGVP);
+}
+matrixprodTemp(prod)
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+write("Output.txt","Computing the Reduced Basis problem...",1,1);
+real[int] uNb(N);
+VhGVP defVP(uBR),defVP(uEF);
+VhGP2 thetaEF,thetaBR;
+VhGP2 residual;
+real[int,int] estimadorL(niw,nih),estimador(niw,nih),errorL2L(niw,nih),errorL2(niw,nih),errorH1L(niw,nih),errorH1(niw,nih),errorTL(niw,nih),errorT(niw,nih),errorLinfL(niw,nih),errorLinf(niw,nih);
+estimadorL=0;estimador=0;errorL2L=0;errorL2=0;errorH1L=0;errorH1=0;errorTL=0;errorT=0;errorLinfL=0;errorLinf=0;
+int cont=0;
+pause;
+for(int iw=0;iw<niw;iw++)
+{
+	for(int ih=0;ih<nih;ih++)
+	{
+		if(petsc==0 && mpirank==cont%mpisize)
+		{
+			cout << cont << endl;
+			wh=[vw[iw],vh[ih]];
+			BRStaTemp(thetaBR,wh,BouN);
+			// -------------------------------------------------------------------------
+			write("Output.txt","Computing the estimator...",1,1,mpirank);
+			{
+				uBR[]=0;uNb=0;
+				BRSta(uBR,uNb,wh,StoN,NSN,SmaN);
+				funcgeo(wh);
+				nut=(CS*hTri)^2*sqrt(phix*gradx(uBR,uBR)+phiy*grady(uBR,uBR));
+				residual[]=0;
+				residualbTemp(thetaBR,wh,residual);
+				real beta=1./Pe+nut[].min/Pr;
+				delta=normL2(residual[],prodgradTemp)/beta;
+				write("Output.txt","    - delta_N("+wh[0]+","+wh[1]+"): "+delta,1,1,mpirank);			}
+			// write("Output.txt","    - Residual= "+resnorm,1,1,mpirank);
+			estimadorL(iw,ih)=delta;
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			EFStaTemp(thetaEF,wh);
+			// -------------------------------------------------------------------------
+			write("Output.txt","Computing the exact error between FE and RB solutions...",1,1);
+			VhGP2 exacterror;
+			exacterror[]=thetaEF[]-thetaBR[];
+			// plot(thetaEF,value=1,cmm="EF temp",wait=0);
+			// plot(thetaBR,value=1,cmm="BR temp",wait=0);
+			// plot(exacterror,value=1,cmm="Error temp");
+			real errornormL2=normL2(exacterror[],prodTemp);
+			real errornormH1=normL2(exacterror[],prodgradTemp);
+			exacterror[]=abs(exacterror[]);
+			real errornormLinf=exacterror[].max;
+
+			errorL2L(iw,ih)=errornormL2;
+			errorH1L(iw,ih)=errornormH1;
+			errorLinfL(iw,ih)=errornormLinf;
+
+			// write("Output.txt", "L2 error="+errornormL2,1,1);
+			// write("Output.txt", "H1 error="+errornormH1,1,1);
+			write("Output.txt", "    - normH1("+wh[0]+","+wh[1]+"): "+errornormH1,1,1,mpirank);
+			// write("Output.txt", "Linf error="+errornormLinf,1,1);
+		}
+		cont++;
+	}
+}
+pause;
+mpiAllReduce(estimadorL,estimador,mpiCommWorld,mpiSUM);
+mpiAllReduce(errorL2L,errorL2,mpiCommWorld,mpiSUM);
+mpiAllReduce(errorH1L,errorH1,mpiCommWorld,mpiSUM);
+mpiAllReduce(errorLinfL,errorLinf,mpiCommWorld,mpiSUM);
+pause;
+write("estimadortemp.txt", estimador,0,0);
+write("errorL2temp.txt", errorL2,0,0);
+write("errorH1temp.txt", errorH1,0,0);
+write("errorTtemp.txt", errorT,0,0);
+write("errorLinftemp.txt", errorLinf,0,0);
+
+write("Output.txt","Done.",1,1);

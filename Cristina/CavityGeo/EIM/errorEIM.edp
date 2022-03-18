@@ -1,0 +1,80 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/auxEIMsta.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO;
+
+infoparam;
+write("Output.txt","Starting the EIM with "+mpisize+" processors for w=",0,1);
+write("Output.txt",vw,1,1);
+write("Output.txt","h=",1,1);
+write("Output.txt",vh,1,1);
+petsc=0;
+wh=[wref,href];
+readTh(NN,wh);
+
+readlift(NN,wh);
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+ini(VhGP2,w0)
+macrogradinter(VhG,matrixD)
+VhGP1dc gradw0;
+ENDIFMACRO
+
+omegas(omega,wh);
+readparameters(whSta);
+int niwh=nih*niw;
+real[int,int] matgradw(VhGP1dc.ndof,niwh);
+
+VhGP1dc gradw,rest,Ig,nut;
+write("Output.txt","Reading the EIM...",1,1);
+readEIM;
+
+matrix errEIM;
+{
+	varf a(u,v)=intN(Th)(u*v);
+	errEIM=a(VhGP1dc,VhGP1dc);
+}
+real[int] errL(niwh),err(niwh);errL=0;err=0;
+{
+	int cont=0;
+	for(int iw=0;iw<niw;iw++)
+	{
+		for(int ih=0;ih<nih;ih++)
+		{
+			if(mpirank==cont%mpisize)
+			{
+				wh=[vw(iw),vh(ih)];
+				write("Output.txt"," - w="+wh[0]+", h="+wh[1],1,1);
+				VhGVP defVP(uEF);
+				// {EFSta(uEF,wh);}
+				{
+					ifstream fileRe("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+					fileRe >> uEF[];
+				}
+				uEF[]+=G[];
+				equ(w0,uEF);
+				updategradw(w0,matrixD,Grad)
+				funcgeo(wh);
+				gradw=phix*modbx(Grad)+phiy*modby(Grad);
+				for(int ii=0;ii<gradw[].n;ii++){nut[][ii]=(CS*hTri[][ii])^2*sqrt(gradw[][ii]);}
+				
+				computeEIM(nut,Ig,M,EIMx,EIMq,EIMBinv);
+				rest[]=Ig[]-nut[];
+				// errL(cont)=normL2(rest[],errEIM);
+				rest[]=abs(rest[]);
+				errL(cont)=rest[].max/nut[].max;
+			}
+			cont++;
+		}
+	}
+	pause;
+	mpiAllReduce(errL,err,mpiCommWorld,mpiSUM);
+}
+
+write("./results/TotalError.txt",err,0,0);
+write("Output.txt","Done.",1,1);

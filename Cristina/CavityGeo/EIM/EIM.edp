@@ -1,0 +1,36 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/auxEIMsta.idp";
+
+infoparam;
+write("Output.txt","Starting the EIM with "+mpisize+" processors for w=",0,1);
+write("Output.txt",vw,1,1);
+write("Output.txt","h=",1,1);
+write("Output.txt",vh,1,1);
+petsc=0;
+wh=[wref,href];
+readTh(NN,wh);
+
+readlift(NN,wh);
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+ini(VhGP2,w0)
+macrogradinter(VhG,matrixD)
+VhGP1dc gradw0;
+ENDIFMACRO
+
+omegas(omega,wh);
+readparameters(whSta);
+int niwh=nih*niw;
+real[int,int] matgradw(VhGP1dc.ndof,niwh);
+write("Output.txt","Computing the solutions...",1,1);
+real iterationtime=mpiWtime();
+readsolutions(matgradw,VhG);
+iterationtime=mpiWtime()-iterationtime;
+write("Output.txt","Ok, time="+iterationtime,1,1);
+write("Output.txt","Starting the algorithm...",0,1);
+EIM(niwh,matgradw);
+write("Output.txt","Done.",1,1);

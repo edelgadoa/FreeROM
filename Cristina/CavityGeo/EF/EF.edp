@@ -1,0 +1,86 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
+
+infoparam;
+
+write("Output.txt","Computing the EF solutions with "+mpisize+" processors for h=",0,1);
+write("Output.txt",vh,1,1);
+write("Output.txt","and for w=",1,1);
+write("Output.txt",vw,1,1);
+wh=[wref,href];
+readTh(NN,wh);
+plot(Th);
+readlift(NN,wh);
+
+omegas(omega,wh);
+readparameters(whSta);
+real[int,int] selected(numparam,niw*nih);
+selected=0;
+int cont=0;
+VhGP1dc nut;
+nut[]=0;
+
+// {ifstream read("../solutions/txt/nut.txt");
+// read >> nut[];}
+// matrixgeneration;
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+ini(VhGP2,w0)
+macrogradinter(VhG,matrixD)
+VhGP1dc gradw0;
+ENDIFMACRO
+
+matrix prodVP;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+	// varf a(defVel(u),defVel(v))=intN(Th)(nut*gradgrad(u,v));
+	prodVP=a(VhGVP,VhGVP);
+}
+VhGVP defVP(uEF);
+for(int iw=0;iw<niw;iw++)
+{
+	for(int ih=0;ih<nih;ih++)
+	{
+		uEF[]=0;
+		wh=[vw[iw],vh[ih]];
+		// selected(0:numparam-1,cont)=wh;
+		write("Output.txt","  - w="+wh[0]+", h="+wh[1],1,1);
+		if(petsc==0 && mpirank==cont%mpisize){EFSta(uEF,wh)}
+		if(petsc==1){EFSta(uEF,wh)}
+		// uEF[]+=G[];
+		// plot(defVel(uEF),value=1,wait=1);
+		cont++;
+		// {
+// 			VhGVP defVP(uEFC),defVP(error);
+// 			EFStaC(uEFC,wh);
+// 			error[]=uEF[]-uEFC[];
+// 			error[]=abs(error[]);
+// 			cout << "error= " << error[].max << endl;
+// 			// plot(defVel(error),value=1,wait=1,cmm="error vel");
+// 			// plot(errorP,value=1,wait=1,fill=1,cmm="error pres");
+// 		}
+		// // nut[]=0;
+		if(0)
+		{
+			write("Output.txt","   Computing the residual...",1,1);
+			VhGVP defVP(residual);
+			residualb(uEF,wh,residual);
+			// residual[]=abs(residual[]);
+			real error=normL2(residual[],prodVP);//residual[].max;
+			//if(error>1.e-8)cout << "---------------------------- EEEEEEEEERRRRRRROOOOOOOOORRRRRRR ----------------------------" << endl;
+			write("Output.txt","  - Residuo: "+error,1,1);
+			plot(defVel(residual),value=1,wait=0,cmm="residual vel");
+			// plot(residualP,value=1,wait=0);
+		}
+
+	}
+}
+// write("param.txt",selected,0,0);
+write("Output.txt","Done.",1,1);

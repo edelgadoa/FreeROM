@@ -1,0 +1,39 @@
+macro prob()"Smago" //EOM
+int petsc=1;
+int GS=1;
+int readbasis=0;
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+int suelo=1;
+int paredi=2;
+int paredd=4;
+int[int] paredes=[suelo,paredd,paredi];
+int techo=3;
+int [int] borde = [suelo,paredd,techo,paredi]; // 1 suelo, 2 pared, 3 techo
+meshN Th,ThL;
+//
+int numparam=1;
+real[int] Re(numparam);
+real Remin=1000,Remax=5100;
+real dtRe=5;//100./2^3.;
+real niRe=(Remax-Remin)/dtRe+1.;
+real Refijo=(Remax+Remin)/2.;
+
+// real niRe=15;
+// real dtRe=(Remax-Remin)/(niRe-1.);
+real [int] vRe(niRe);
+for (int ig=0; ig<niRe; ig++)vRe(ig)=Remin+ig*dtRe;
+int NN = 50;
+real epspen=1.e-6;
+real dt=1.;//5.e-2;//5.e-2;//5.e-2;//1.e-2;//.e-3;//1.e-1;//2.e-1;
+real CS=0.18;
+real errEF=10.,epsEF=1.e-11,errBR=10.,epsBR=epsEF;
+int nEF=10000,nBR=nEF;
+
+load "PETSc";
+Mat MatAVP,MatAVel;
+int[int] mapVP,mapVel;
+string sparamsv="-pc_type lu -pc_factor_mat_solver_type mumps";
+
+func cero=0.;func ceroY=0.;func ceroZ=0.;
+func ceroP=1.;

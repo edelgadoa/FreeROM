@@ -1,0 +1,70 @@
+VhGVP defVP(uEF),defVP(wEF);
+{EFSta(uEF,wh);}
+wEF[]=uEF[];wEF[]+=G[];
+funcgeo(wh);
+// plot(defVel(wEF),value=1);
+equ(w0,wEF);
+updategradw(w0,matrixD,Grad);
+Gr=phix*modbx(Grad)+phiy*modby(Grad);
+// Gr=phix*gradx(wEF,wEF)+phiy*grady(wEF,wEF);
+Gr[]=sqrt(Gr[]);
+// plot(Gr, value=1,fill=1,wait=1);
+bool enrique=1;// Si enrique=1 desactivar eps*p*q
+matrix X;//=prodVP;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(1./Refijo*gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(nut*gradgrad(u,v)+uP*vP);
+	matrix Xt=a(VhGVP,VhGVP);
+	if(enrique){X=[[Xt,0],[0,1]];}
+	else{X=Xt;}
+}
+matrix der;
+{
+	varf a(defVP(zz),defVP(vv))=
+		intN(Th)(
+			1./Refijo*(gammax*gradx(zz,vv)+gammay*grady(zz,vv))
+			+etax*divx(zz)*vvP+etay*divy(zz)*vvP
+			-etax*divx(vv)*zzP-etay*divy(vv)*zzP
+			+etax*antisimetricx(G,zz,vv)+etay*antisimetricy(G,zz,vv)
+			+etax*antisimetricx(zz,G,vv)+etay*antisimetricy(zz,G,vv)
+			+etax*antisimetricx(uEF,zz,vv)+etay*antisimetricy(uEF,zz,vv)
+			+etax*antisimetricx(zz,uEF,vv)+etay*antisimetricy(zz,uEF,vv)
+			+(CS*hTri)^2*Gr*(gammax*gradx(zz,vv)+gammay*grady(zz,vv))
+			+(CS*hTri)^2*(phix*gradx(wEF,zz)+phiy*grady(wEF,zz))*(phix*gradx(wEF,vv)+phiy*grady(wEF,vv))/Gr*jacobian
+		//	+jacobian*epspen*zzP*vvP
+		)
+		+BC(zz,cero)
+		;
+	matrix Fvb=a(VhGVP,VhGVP);
+	if(enrique)
+	{
+		varf damultb(defVP(u),defVP(v))=-intN(Th)(jacobian*vP)+BC(u,cero);
+		real[int] Fmb=damultb(0,VhGVP);
+		der=[[Fvb,Fmb],
+		[Fmb',1]];
+	}
+	else{der=Fvb;}
+}
+write("Output.txt","Power method...",1,1);
+real areaTh=intN(Th)(jacobian);
+VhGVP defVP(VP1),defVP(VP1s);
+{
+	varf vP1(defVP(u),defVP(v))=intN(Th)(jacobian*vP/areaTh);
+	VP1[]=vP1(0,VhGVP);
+	defVP(VP1s)=[0.,0.,1.];
+}
+real[int] eigen(VhGVP.ndof);
+if(enrique){
+	real[int] aux=[uEF[],1];
+	eigen=powermethodRBF(X,der);}//,aux);}
+else{eigen=powermethodRBF(X,der,VP1[],VP1s[]);}//,initiabeta[]);}//,wEF[]);
+real autoval=eigen[0];
+VhGVP defVP(autovec);
+autovec[]=eigen(1:VhGVP.ndof);
+initiabeta[]=autovec[];
+// plot(defVel(autovec),value=1,fill=1);
+
+lambdamin=sqrt(1./autoval);
+// cout << "autoval: " <<  lambdamin << endl;

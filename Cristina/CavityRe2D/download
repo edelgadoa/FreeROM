@@ -1,0 +1,13 @@
+#!/bin/bash
+echo 'Introduzca la maquina, opciones: anoni, hpc2, hpc2-sas:'
+read maquina
+echo 'Carpeta a actualizar:'
+read carpeta
+echo 'Problema:'
+read carpetaexterna
+if [ "$carpeta" == "todo" ]
+then
+	scp -r $maquina:$carpetaexterna/* .
+else
+	scp -r $maquina:$carpetaexterna/$carpeta/* ./$carpeta/
+fi

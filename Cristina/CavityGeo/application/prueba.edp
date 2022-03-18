@@ -1,0 +1,52 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+W*=Longcarac;
+H*=Longcarac;
+wh=[4,2.5];
+// wh/=Longcarac;
+createmesh(wh,Th,NN);
+// plot(Th,value=1,fill=1);
+creationVh(Th,Vh);
+VhVP defVP(G);
+{
+	ifstream read("../lift/liftNN"+NN+"w"+wref+"h"+href+".txt");
+	read >> G[];
+}
+VhP2 Gtheta;
+{
+	ifstream read("../lift/lifttempNN"+NN+"w"+wref+"h"+href+".txt");
+	read >> Gtheta[];
+}
+
+// cout << velocity << endl;
+G[]*=velocity;
+// Gtheta[]*=thetac;
+// plot(defVel(G),value=1,fill=1,cmm="G",wait=1);
+// plot(Gtheta,value=1,fill=1,cmm="Gtheta",wait=1);
+
+// Calculo del funcional
+VhP2 thetaBR,thetaEF;
+
+wh/=Longcarac;
+{
+	ifstream read("../solutions/txt/SolBR"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> thetaBR[];
+}
+thetaBR[]+=Gtheta[];
+thetaBR[]*=thetac;
+plot(thetaBR,value=1,fill=1,cmm="thetaBR",wait=1);
+wh*=Longcarac;
+real area=intN(Th,1,2,3)(1);
+// cout << area << endl;
+// cout << wh[1]*W << endl;
+thetaBR[]-=thetac;
+real funcional=intN(Th,1,2,3)(thetaBR^2)/area;
+cout << funcional << endl;
+
+write("Output.txt","Done.",1,1);

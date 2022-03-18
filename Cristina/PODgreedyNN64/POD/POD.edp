@@ -1,0 +1,74 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/macro_ddm.idp";
+include "../auxiliary/auxPOD.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+infoparam;
+
+int Npmax=nEF*niRe,Nvmax=Npmax+1,Nv,Np,Nmax=Nvmax+2*Npmax,N;
+
+write("Output.txt","Computing the POD with epsPOD="+epsPOD+" and  "+mpisize+" processors for Re=",0,1);
+write("Output.txt",vRe,1,1);
+readTh(NN);
+readparameters(ReSta);
+
+IFMACRO(prob,"Smago")
+VhGP1dc nut;
+nut[]=0;
+// // {ifstream read("../solutions/txt/nut.txt");
+// // read >> nut[];}
+// // plot(nut,value=1,fill=1);
+ENDIFMACRO
+
+VhGVP[int] defVP(uEF)(nEF+1);
+write("Output.txt","Generating matrixes...",1,1);
+matrixprodV(prodV);matrixprodP(prodP);//matrixprodVP(prodVP);
+VhGVel[int] defVel(baseVel)(Nvmax+Npmax);
+VhGP1[int] basePres(Npmax);
+pause;
+
+Nv=0;Np=0;
+for(int i=0;i<Nvmax+Npmax;i++)baseVel[i][]=0;
+for(int i=0;i<Npmax;i++)basePres[i][]=0;
+
+real[int,int] snapsVel(VhGVel.ndof,nEF*niRe+1), snapsPres(VhGP1.ndof,nEF*niRe);
+readsol(snaps,T0+dtsave,T,Remin,Remax);
+write("Output.txt","Computing the POD...",1,1);
+write("Output.txt","- for vel...",1,1);
+POD(snapsVel,prodV,baseVel,Nv,autovalVel);
+write("./results/autovalVel.txt",autovalVel,0,0);
+write("./results/basisVel.txt",Nv,0,0);
+for(int it=0;it<Nv;it++)
+{
+	write("./results/basisVel.txt",baseVel[it][],1,0);
+	// plot(baseVel[it],value=1,fill=1,wait=1,cmm="it="+it);
+}
+
+write("Output.txt","- for pres...",1,1);
+// Np=3;
+POD(snapsPres,prodP,basePres,Np,autovalPres);
+write("./results/autovalPres.txt",autovalPres,0,0);
+write("./results/basisPres.txt",Np,0,0);
+for(int it=0;it<Np;it++)
+{
+	write("./results/basisPres.txt",basePres[it][],1,0);
+	// plot(basePres[it],value=1,fill=1,wait=1,cmm="it="+it);
+}
+
+write("Output.txt","Ok.",1,1);
+write("Output.txt","Supremizer construction...",1,1);
+VhGVel defVel(supEF);
+write("./results/basisSup.txt",Np,0,0);
+for(int i=0;i<Np;i++)
+{
+	supremizer(basePres[i],Refijo,supEF);
+	// plot(supEF,value=1,fill=1,wait=1,cmm="i"+i);
+	write("./results/basisSup.txt",supEF[],1,0);
+}
+write("Output.txt","Ok.",1,1);
+N=Nv+2*Np;
+write("Output.txt","Done with N="+N+".",1,1);

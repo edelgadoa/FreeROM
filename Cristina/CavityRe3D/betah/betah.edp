@@ -1,0 +1,93 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
+include "../auxiliary/powermethod.idp";
+
+infoparam;
+
+write("Output.txt","Starting the betah computation...",0,0);
+// nih=niw;
+real RBFniRe=niRe; // numero inicial de puntos de interpolacion
+real RBFniRefina=RBFniRe*3; // numero maximo de puntos de interpolacion
+int RBFnimax=RBFniRefina;
+int RBFcont=0;
+real[int] betaILocal(RBFnimax+1),betaI(RBFnimax+1); //vector donde guardo los valores de beta de los ptos de interpolacion
+betaILocal=0;betaI=0;
+real[int] gamma(RBFnimax+numparam+1); //vector donde guardo los coeficientes del RBF
+real RBFeps=1.e-4; // test de para para el método de la potencia
+
+readTh(NN);
+readparameters(ReSta);
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+ini(VhGP2,w0)
+macrogradinter(VhG,matrixD)
+VhGP1dc gradw0,Gr;
+ENDIFMACRO
+
+VhGP1dc nut;
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// plot(nut,value=1,fill=1);
+real[int,int] RBFvRe(numparam,RBFnimax),RBFvRefina(numparam,RBFnimax);
+RBFvRe=0;RBFvRefina=0;
+for (int i=0;i<RBFniRe;i++)RBFvRe(0:numparam-1,i)=Remin+i*(Remax-Remin)/(RBFniRe-1.);
+for (int i=0;i<RBFniRefina;i++)RBFvRefina(0:numparam-1,i)=Remin+i*(Remax-Remin)/(RBFniRefina-1.);
+
+write("Output.txt","Re=",1,1);
+write("Output.txt",RBFvRe,1,1);
+RBFcont=RBFniRe;
+
+write("Output.txt","Reading the lift...",1,1);
+readlift(NN,Refijo);
+pause;
+int cont;
+VhGVP defVP(initiabeta);initiabeta[]=1;
+if(0)
+{
+	write("Output.txt","Computing Bh...",1,1);
+	cont = 0;
+	real lambdamin;
+	for(int iRe=0; iRe<RBFniRe; iRe++)
+	{
+		if(mpirank==cont%mpisize)
+		{
+			Re=RBFvRe(0:numparam-1,iRe);
+			// wh=[wref,href];
+			//write("Output.txt"," - w="+wh[0]+", h="+wh[1],1,1,mpirank);
+			include "./Bhcompute.idp";
+			betaILocal(cont)=lambdamin;
+			write("Output.txt","--------------------- betah("+Re[0]+") = " +betaILocal(cont)+"----------------------",1,1,mpirank);
+		}
+		cont++;
+	}
+	pause;
+	mpiAllReduce(betaILocal,betaI,mpiCommWorld,mpiSUM);
+	pause;
+	write("./results/betaIk.txt",betaI(0:RBFcont-1),0,0);
+	write("./results/vparam.txt",RBFvRe(0:numparam-1,0:RBFcont-1),0,0);
+}
+else
+{
+	ifstream aux("./results/betaIk.txt");
+	real[int] aux1(RBFcont);
+	aux >> aux1;
+	betaI(0:RBFcont-1)=aux1;
+	cout << betaI(0:RBFcont-1) << endl;
+	include "./RBF.idp";
+	write("Output.txt","Writing the results...",1,1);
+	real [int] gammaf=gamma(0:RBFcont+numparam);
+	real [int,int] RBFvReIf=RBFvRe(0:numparam-1,0:RBFcont-1);
+	real [int] betaIf=betaI(0:RBFcont-1);
+	write("./results/gammaI.txt",gammaf,0,0);
+	write("./results/vparam.txt",RBFvReIf,0,0);
+	write("./results/betamuI.txt",betaIf,0,0);
+	write("./results/betaTSmago.txt",Betak,0,0);
+}
+write("Output.txt","Done",1,1);

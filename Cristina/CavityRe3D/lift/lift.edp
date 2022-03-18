@@ -1,0 +1,42 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+
+infoparam;
+readTh(NN);
+plot(Th);
+
+
+write("Output.txt","Computing the lift for velocity...",0,1);
+VhGVP defVP(G);
+if(0)
+{
+	func g=x*(x-1.)*y*(y-1.)*16.;
+	func gfunc = g*z*(z-0.75)*(z>=0.75)+0;
+	defVP(G)=[gfunc,0.,0.,0.];
+}
+else
+{
+	func g=x*(x-1.)*y*(y-1.)*16.;
+	func gY=0;
+	func gZ=0;
+	VhGVP defVP(gfunc);
+	matrix ASta;real[int] bSta(VhLVP.ndof);
+	{
+		varf a(defVP(u),defVP(v))=
+			intN(ThL)(
+				1./Refijo*(gradgrad(u,v))
+	   			 -div(v)*uP
+	   			 +div(u)*vP
+	   			 +uP*vP*epspen
+	   			 )
+			 +BC(u,g);
+		ASta=a(VhLVP,VhLVP);bSta=a(0,VhLVP);
+	}
+	solvesystem(ASta,bSta,gfunc,VP);
+	IFMACRO(dimension,3)defVP(G)=[gfunc,gfuncY,gfuncZ,0.];ENDIFMACRO
+	IFMACRO(dimension,2)defVP(G)=[gfunc,gfuncY,0.];ENDIFMACRO
+}
+plot(defVel(G),value=1,fill=1,wait=1);
+write("liftNN"+NN+"Reynold"+Refijo+".txt",G[],0,0,0,20);
+write("Output.txt","Done.",1,1);

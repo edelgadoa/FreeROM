@@ -1,0 +1,78 @@
+matrixBRTemp(ip);
+initializationTemp(BouNs,Nt);
+bigtosmallTemp(BouNs,Nt);
+
+real[int,int] selected(numparam,niw*nih);
+int cont=0;
+real[int] deltaL=delta;
+real[int] resnormL=resnorm;
+resnormL=0;deltaL=0;delta=0;resnorm=0;
+for(int inw=0;inw<niw;inw++)
+{
+	for(int inh=0;inh<nih;inh++)
+	{
+		wh=[vw(inw),vh(inh)];
+                selected(0:numparam-1,cont)=wh;
+		if(mpirank==cont%mpisize)
+		{
+			VhGP2 thetaBR;
+			write("Output.txt","  - w="+wh[0]+", h="+wh[1],1,1);
+			BRStaTemp(thetaBR,wh,BouNs);
+			if(0) // uso del error exacto
+			{
+				VhGP2 thetaEF,errorexacto;
+				EFStaTemp(thetaEF,wh)
+				errorexacto[]=thetaEF[]-thetaBR[];
+				errorexacto[]=abs(errorexacto[]);
+				resnormL(cont)=normL2(errorexacto[],prodgradTemp);
+				deltaL(cont)=resnorm(cont);
+				write("Output.txt","    - Exact error= "+resnormL(cont),1,1);
+			}
+			if(0) // residual
+			{
+				VhGP2 residual;
+				residualbTemp(thetaBR,wh,residual);
+				resnormL(cont)=normL2(residual[],prodgradTemp);
+				deltaL(cont)=resnorm(cont);
+				write("Output.txt","    - Residual= "+resnormL(cont),1,1);
+			}
+			if(1)// error estimator
+			{
+				// VhGVP defVP(uBR);
+				// real[int] uNb(N);
+				// BRSta(uBR,uNb,wh,StoN,NSN,SmaN);
+				// uBR[]+=G[];
+				// funcgeo(wh);
+				// nut=(CS*hTri)^2*sqrt(phix*gradx(uBR,uBR)+phiy*grady(uBR,uBR));
+				{
+					VhGP2 residual;
+					residualbTemp(thetaBR,wh,residual);
+					resnormL(cont)=normL2(residual[],prodgradTemp);
+				}
+				write("Output.txt","    - Residual= "+resnormL(cont),1,1);
+				IFMACRO(prob,"Smago");
+					include "../auxiliary/search.idp";
+					real betah=fbeta(RBFgamma,RBFmu,wh);
+					deltaL(cont)=resnormL(cont)/betah;
+					write("Output.txt","    - Delta="+deltaL(cont),1,1);
+				ENDIFMACRO
+			}
+			// pause;
+		}
+		cont++;
+	}
+}
+pause;
+mpiAllReduce(resnormL,resnorm,mpiCommWorld,mpiSUM);
+mpiAllReduce(deltaL,delta,mpiCommWorld,mpiSUM);
+pause;
+write("./results/delta"+ip+"temp.txt",delta,0,0);
+write("./results/resnorm"+ip+"temp.txt",resnorm,0,0);
+whBest(0:numparam-1,ip+1)=selected(0:numparam-1,delta.imax);
+write("./results/deltatemp.txt",delta.max,1,0);
+write("./results/resnormtemp.txt",resnorm.max,1,0);
+errGreedy(ip+1)=delta.max;
+// errGreedy=resnorm.max;
+write("Output.txt",whBest(0:numparam-1,0:ip+1),1,1);
+write("errgreedytemp.txt",errGreedy(1:ip+1),0,0);
+write("Output.txt",errGreedy(1:ip+1),1,1);

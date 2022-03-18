@@ -1,0 +1,166 @@
+macro initialization(StoN,NSN,SmagoN,N)
+real[int,int] 	StoN#nux13(N,N),StoN#nux2(N,N),StoN#nux4(N,N),
+				StoN#nuy13(N,N),StoN#nuy2(N,N),StoN#nuy4(N,N),
+				StoN#divx123(N,N),StoN#divx4(N,N),
+				StoN#divy13(N,N),StoN#divy24(N,N),
+				StoN#pen13(N,N),StoN#pen2(N,N),StoN#pen4(N,N);
+StoN#nux13=0;StoN#nux2=0;StoN#nux4=0;
+StoN#nuy13=0;StoN#nuy2=0;StoN#nuy4=0;
+StoN#divx123=0;StoN#divx4=0;
+StoN#divy13=0;StoN#divy24=0;
+StoN#pen13=0;StoN#pen2=0;StoN#pen4=0;
+real[int]   b#StoN#nux13(N),b#StoN#nux2(N),b#StoN#nux4(N),
+			b#StoN#nuy13(N),b#StoN#nuy2(N),b#StoN#nuy4(N),
+			b#StoN#divx123(N),b#StoN#divx4(N),
+			b#StoN#divy13(N),b#StoN#divy24(N);
+b#StoN#nux13=0;b#StoN#nux2=0;b#StoN#nux4=0;
+b#StoN#nuy13=0;b#StoN#nuy2=0;b#StoN#nuy4=0;
+b#StoN#divx123=0;b#StoN#divx4=0;
+b#StoN#divy13=0;b#StoN#divy24=0;
+// EOM
+
+macro bigtosmall(StoNs,NSNs,SmagoNs,N)
+StoNs#nux13=StoNnux13(0:N-1,0:N-1);
+StoNs#nux2=StoNnux2(0:N-1,0:N-1);
+StoNs#nux4=StoNnux4(0:N-1,0:N-1);
+StoNs#nuy13=StoNnuy13(0:N-1,0:N-1);
+StoNs#nuy2=StoNnuy2(0:N-1,0:N-1);
+StoNs#nuy4=StoNnuy4(0:N-1,0:N-1);
+StoNs#divx123=StoNdivx123(Nvmax-Nv:Nvmax+Np-1,0:N-1);
+StoNs#divx4=StoNdivx4(Nvmax-Nv:Nvmax+Np-1,0:N-1);
+StoNs#divy13=StoNdivy13(Nvmax-Nv:Nvmax+Np-1,0:N-1);
+StoNs#divy24=StoNdivy24(Nvmax-Nv:Nvmax+Np-1,0:N-1);
+StoNs#pen13=StoNpen13(Nvmax-Nv:Nvmax+Np-1,Nvmax-Nv:Nvmax+Np-1);
+StoNs#pen2=StoNpen2(Nvmax-Nv:Nvmax+Np-1,Nvmax-Nv:Nvmax+Np-1);
+StoNs#pen4=StoNpen4(Nvmax-Nv:Nvmax+Np-1,Nvmax-Nv:Nvmax+Np-1);
+b#StoNs#nux13=bStoNnux13(0:N-1);
+b#StoNs#nux2=bStoNnux2(0:N-1);
+b#StoNs#nux4=bStoNnux4(0:N-1);
+b#StoNs#nuy13=bStoNnuy13(0:N-1);
+b#StoNs#nuy2=bStoNnuy2(0:N-1);
+b#StoNs#nuy4=bStoNnuy4(0:N-1);
+b#StoNs#divx123=bStoNdivx123(Nvmax-Nv:Nvmax-Nv+Np-1);
+b#StoNs#divx4=bStoNdivx4(Nvmax-Nv:Nvmax-Nv+Np-1);
+b#StoNs#divy13=bStoNdivy13(Nvmax-Nv:Nvmax-Nv+Np-1);
+b#StoNs#divy24=bStoNdivy24(Nvmax-Nv:Nvmax-Nv+Np-1);
+//EOM
+
+macro StoNnuN(ii,jj)
+{
+	StoNnux13(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnux13);
+	StoNnux2(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnux2);
+	StoNnux4(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnux4);
+	StoNnuy13(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnuy13);
+	StoNnuy2(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnuy2);
+	StoNnuy4(ii,jj)=innerprod(baseVel[ii][],baseVel[jj][],matrixStoNnuy4);
+}
+//EOM
+macro bStoNnuN(ii)
+{
+	bStoNnux13(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnux13);
+	bStoNnux2(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnux2);
+	bStoNnux4(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnux4);
+	bStoNnuy13(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnuy13);
+	bStoNnuy2(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnuy2);
+	bStoNnuy4(ii)=innerprod(GVel[],baseVel[ii][],matrixStoNnuy4);
+}
+//EOM
+macro StoNdivN(ii,jj)
+{
+	StoNdivx123(ii+Nvmax,jj)=innerprod(basePres[ii][],baseVel[jj][],matrixStoNdivx123);
+	StoNdivx4(ii+Nvmax,jj)=innerprod(basePres[ii][],baseVel[jj][],matrixStoNdivx4);
+	StoNdivy13(ii+Nvmax,jj)=innerprod(basePres[ii][],baseVel[jj][],matrixStoNdivy13);
+	StoNdivy24(ii+Nvmax,jj)=innerprod(basePres[ii][],baseVel[jj][],matrixStoNdivy24);
+}
+//EOM
+macro bStoNdivN(ii)
+{
+	bStoNdivx123(ii+Nvmax)=innerprod(basePres[ii][],GVel[],matrixStoNdivx123);
+	bStoNdivx4(ii+Nvmax)=innerprod(basePres[ii][],GVel[],matrixStoNdivx4);
+	bStoNdivy13(ii+Nvmax)=innerprod(basePres[ii][],GVel[],matrixStoNdivy13);
+	bStoNdivy24(ii+Nvmax)=innerprod(basePres[ii][],GVel[],matrixStoNdivy24);
+}
+//EOM
+macro StoNpenN(ii,jj)
+{
+	StoNpen13(ii+Nvmax,jj+Nvmax)=innerprod(basePres[ii][],basePres[jj][],matrixStoNpen13);
+	StoNpen2(ii+Nvmax,jj+Nvmax)=innerprod(basePres[ii][],basePres[jj][],matrixStoNpen2);
+	StoNpen4(ii+Nvmax,jj+Nvmax)=innerprod(basePres[ii][],basePres[jj][],matrixStoNpen4);	
+}
+//EOM
+macro matrixBR(ii)
+{
+	for (int jj=0;jj<=ii; jj++)
+	{
+		StoNnuN(2*ii,2*jj);StoNnuN(2*ii,2*jj+1);StoNnuN(2*ii+1,2*jj);StoNnuN(2*ii+1,2*jj+1);
+		StoNdivN(ii,2*jj);StoNdivN(ii,2*jj+1);
+		StoNpenN(ii,jj);
+		if(jj<ii)
+		{
+			StoNnuN(2*jj,2*ii);StoNnuN(2*jj,2*ii+1);StoNnuN(2*jj+1,2*ii);StoNnuN(2*jj+1,2*ii+1);
+			StoNdivN(jj,2*ii);StoNdivN(jj,2*ii+1);
+			StoNpenN(jj,ii);
+		}
+	}
+	bStoNnuN(2*ii);bStoNnuN(2*ii+1);
+	bStoNdivN(ii);
+}
+//EOM
+
+NewMacro BRSta(uBR,wh,StoN,NSN,SmagoN)
+{
+	ctegeo(wh);
+	real[int,int] StoNnuF(N,N),StoNdivF(N,N),StoNpenF(N,N),ASta(N,N),Ainv(N,N);
+	StoNnuF=gammax13*StoN#nux13;
+	StoNnuF+=gammax2*StoN#nux2;
+	StoNnuF+=gammax4*StoN#nux4;
+	StoNnuF+=gammay13*StoN#nuy13;
+	StoNnuF+=gammay2*StoN#nuy2;
+	StoNnuF+=gammay4*StoN#nuy4;
+	// if(mpirank==0)cout << StoNnuF << endl;
+	
+	StoNdivF=etax123*StoN#divx123;
+	StoNdivF+=etax4*StoN#divx4;
+	StoNdivF+=etay13*StoN#divy13;
+	StoNdivF+=etay24*StoN#divy24;
+	// if(mpirank==0)cout << StoNdivF << endl;
+	
+	StoNpenF=jacobian13*StoN#pen13;
+	StoNpenF+=jacobian2*StoN#pen2;
+	StoNpenF+=jacobian4*StoN#pen4;
+	// if(mpirank==0)cout << StoNpenF << endl;
+	
+	ASta=StoNnuF;
+	ASta+=StoNdivF;
+	ASta-=StoNdivF';
+	ASta+=StoNpenF;
+	real[int] bStoNnuF(N),bStoNdivF(N),bSta(N),uNb(N);
+	bStoNnuF=gammax13*b#StoN#nux13;
+	bStoNnuF+=gammax2*b#StoN#nux2;
+	bStoNnuF+=gammax4*b#StoN#nux4;
+	bStoNnuF+=gammay13*b#StoN#nuy13;
+	bStoNnuF+=gammay2*b#StoN#nuy2;
+	bStoNnuF+=gammay4*b#StoN#nuy4;
+	// if(mpirank==0)cout << bStoNnuF << endl;
+	
+	bStoNdivF=etax123*b#StoN#divx123;
+	bStoNdivF+=etax4*b#StoN#divx4;
+	bStoNdivF+=etay13*b#StoN#divy13;
+	bStoNdivF+=etay24*b#StoN#divy24;
+	// if(mpirank==0)cout << bStoNdivF << endl;
+	
+	bSta=-bStoNnuF;
+	bSta-=bStoNdivF;
+	VhGVel defVel(u1),defVel(u0);
+	VhGP1 u1P;
+	load "lapack";
+	Ainv=ASta^-1;
+	uNb=Ainv*bSta;
+	if(GS==0)if(mpirank==0)cout << uNb << endl;
+	u1[]=0;u1P[]=0;
+	for(int s=0;s<Nv;s++)u1[]+=uNb(s)*baseVel[s][];
+	for(int s=0;s<Np;s++)u1P[]+=uNb(Nv+s)*basePres[s][];
+	defVP(uBR)=defVP(u1);
+	// write("cond"+ip+".txt",cond(ASta),1,0);
+}
+EndMacro

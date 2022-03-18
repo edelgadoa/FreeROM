@@ -1,0 +1,69 @@
+VhGVP defVP(uEF),defVP(wEF);
+{EFSta(uEF,Re);}
+wEF[]=uEF[];wEF[]+=G[];
+// plot(defVel(wEF),value=1);
+equ(w0,wEF);
+updategradw(w0,matrixD,Grad);
+Gr=modb(Grad);
+// Gr=phix*gradx(wEF,wEF)+phiy*grady(wEF,wEF);
+Gr[]=sqrt(Gr[]);
+// plot(Gr, value=1,fill=1,wait=1);
+bool enrique=1;// Si enrique=1 desactivar eps*p*q
+matrix X;//=prodVP;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(1./Refijo*gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(gradgrad(u,v)+uP*vP);
+	// varf a(defVP(u),defVP(v))=intN(Th)(nut*gradgrad(u,v)+uP*vP);
+	matrix Xt=a(VhGVP,VhGVP);
+	if(enrique){X=[[Xt,0],[0,1]];}
+	else{X=Xt;}
+}
+matrix der;
+{
+	varf a(defVP(zz),defVP(vv))=
+		intN(Th)(
+			1./Re[0]*gradgrad(zz,vv)
+			+vvP*div(zz)
+			-zzP*div(vv)
+			+antisimetric(G,zz,vv)
+			+antisimetric(zz,G,vv)
+			+antisimetric(uEF,zz,vv)
+			+antisimetric(zz,uEF,vv)
+			+(CS*hTri)^2*Gr*gradgrad(zz,vv)
+			+(CS*hTri)^2*gradgrad(wEF,zz)*gradgrad(wEF,vv)/Gr
+//			+epspen*zzP*vvP
+		)
+		+BC(zz,cero)
+		;
+	matrix Fvb=a(VhGVP,VhGVP);
+	if(enrique)
+	{
+		varf damultb(defVP(u),defVP(v))=-intN(Th)(vP)+BC(u,cero);
+		real[int] Fmb=damultb(0,VhGVP);
+		der=[[Fvb,Fmb],
+		[Fmb',1]];
+	}
+	else{der=Fvb;}
+}
+write("Output.txt","Power method...",1,1);
+real areaTh=intN(Th)(1.);
+VhGVP defVP(VP1),defVP(VP1s);
+{
+	varf vP1(defVP(u),defVP(v))=intN(Th)(vP/areaTh);
+	VP1[]=vP1(0,VhGVP);
+	defVP(VP1s)=[0.,0.,0.,1.];
+}
+real[int] eigen(VhGVP.ndof+1);
+if(enrique){
+	real[int] aux=[uEF[],1];
+	eigen=powermethodRBF(X,der);}//,aux);}
+else{eigen=powermethodRBF(X,der,VP1[],VP1s[]);}//,initiabeta[]);}//,wEF[]);
+real autoval=eigen[0];
+VhGVP defVP(autovec);
+autovec[]=eigen(1:VhGVP.ndof);
+initiabeta[]=autovec[];
+// plot(defVel(autovec),value=1,fill=1);
+
+lambdamin=sqrt(1./autoval);
+// cout << "autoval: " <<  lambdamin << endl;

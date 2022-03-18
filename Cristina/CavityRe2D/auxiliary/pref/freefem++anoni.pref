@@ -1,0 +1,4 @@
+loadpath = "/home/ccaravaca/ff++-dev/FreeFem-sources/plugin/mpi/"
+loadpath += "/home/ccaravaca/ff++-dev/FreeFem-sources/plugin/hpddm/"
+loadpath += "/home/ccaravaca/ff++-dev/FreeFem-sources/plugin/seq/"
+includepath = "/home/ccaravaca/ff++-dev/FreeFem-sources/idp/"

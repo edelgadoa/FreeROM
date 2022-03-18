@@ -1,0 +1,154 @@
+
+NewMacro EFSta(uEF,wh)
+{
+	include "../auxiliary/search.idp";
+	if(search(whSta,wh,1.e-9)==-1)
+	{
+		funcgeo(wh);
+		matrix ASta;real[int] bSta(VhLVP.ndof);
+		{
+			varf a(defVP(u),defVP(v))=
+				intN(ThL)(
+					1./Refijo*(gammax*gradx(u,v)+gammay*grady(u,v))
+		   			 -etax*uP*divx(v)-etay*uP*divy(v)
+		   			 +etax*vP*divx(u)+etay*vP*divy(u)
+		   			 +jacobian*uP*vP*epspen
+		   			 )
+		   		-intN(ThL)(
+		   			 1./Refijo*(gammax*gradx(G,v)+gammay*grady(G,v))
+		   			 +etax*vP*divx(G)+etay*vP*divy(G)
+		   			 )
+				 +BC(u,cero);
+			ASta=a(VhLVP,VhLVP);bSta=a(0,VhLVP);
+		}
+		solvesystem(ASta,bSta,uEF,VP);
+		write("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt",uEF[],0,0,mpirank,20);
+		updateparameters(whSta,wh);
+	}
+	else
+	{
+		write("Output.txt","   Reading the solution...",1,1);
+		ifstream fileRe("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+		fileRe >> uEF[];
+	}
+	// plot(uEFP,value=1,fill=1);
+}
+EndMacro
+NewMacro residualb(sol,wh,residual)
+{
+	VhGVP defVP(u);
+	u[]=sol[];
+	u[]+=G[];
+	// plot(defVel(sol),value=1,wait=1);
+	funcgeo(wh);
+	matrix Ares;real[int] bres(VhLVP.ndof);
+	{
+		varf a(defVP(u0),defVP(v))=
+			intN(ThL)(1./Refijo*gradgrad(u0,v)+u0P*vP)
+			+intN(ThL)(
+				1./Refijo*(gammax*gradx(u,v)+gammay*grady(u,v))
+	   			 -etax*u#P*divx(v)-etay*u#P*divy(v)
+	   			 +etax*vP*divx(u)+etay*vP*divy(u)
+	   			 +jacobian*u#P*vP*epspen
+	   			 )
+			 +BC(u0,cero);
+		Ares=a(VhLVP,VhLVP);bres=a(0,VhLVP);
+	}
+	solvesystem(Ares,bres,residual,VP);
+}
+EndMacro
+
+NewMacro supremizer(uEF,wh,sol)
+{
+	funcgeo(wh);
+	matrix Asup;real[int] bsup(VhLVel.ndof);
+	{
+		varf a(defVel(u),defVel(v))=
+			intN(ThL)(1./Refijo*gradgrad(u,v))
+			+intN(ThL)(-etax*uEF#P*dx(v)-etay*uEF#P*dy(vY))
+			+BC(u,cero);			
+		Asup=a(VhLVel,VhLVel);bsup=a(0,VhLVel);
+	}
+	solvesystem(Asup,bsup,sol,Vel);
+}
+EndMacro
+
+macro matrixprodV(prodV)
+matrix prodV;
+{
+	varf a(defVel(u),defVel(v))=
+		intN(Th)(1./Refijo*gradgrad(u,v));
+	prodV=a(VhGVel,VhGVel);
+}
+// EOM
+macro matrixprodP(prodP)
+matrix prodP;
+{
+	varf a(u,v)=
+		intN(Th)(u*v);
+	prodP=a(VhGP1,VhGP1);
+}
+// EOM
+macro matrixprodVP(prodVP)
+matrix prodVP;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(1./Refijo*gradgrad(u,v)+uP*vP);
+	prodVP=a(VhGVP,VhGVP);
+}
+// EOM
+macro matrixprodL2(prodL2)
+matrix prodL2;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(uporv(u,v));
+	prodL2=a(VhGVP,VhGVP);
+}
+// EOM
+macro matrixprodH1(prodH1)
+matrix prodH1;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(gradgrad(u,v));
+	prodH1=a(VhGVP,VhGVP);
+}
+// EOM
+NewMacro matrixgeneration();
+matrixprodV(prodV);matrixprodP(prodP);matrixprodVP(prodVP);
+matrix matrixStoNnux13,matrixStoNnux2,matrixStoNnux4;
+matrix matrixStoNnuy13,matrixStoNnuy2,matrixStoNnuy4;
+{
+	varf ax13(defVel(u),defVel(v))=intN(Th,1,3)(1./Refijo*gradx(u,v));
+	varf ax2(defVel(u),defVel(v))=intN(Th,2)(1./Refijo*gradx(u,v));
+	varf ax4(defVel(u),defVel(v))=intN(Th,4)(1./Refijo*gradx(u,v));
+	matrixStoNnux13=ax13(VhGVel,VhGVel);
+	matrixStoNnux2=ax2(VhGVel,VhGVel);
+	matrixStoNnux4=ax4(VhGVel,VhGVel);
+	varf ay13(defVel(u),defVel(v))=intN(Th,1,3)(1./Refijo*grady(u,v));
+	varf ay2(defVel(u),defVel(v))=intN(Th,2)(1./Refijo*grady(u,v));
+	varf ay4(defVel(u),defVel(v))=intN(Th,4)(1./Refijo*grady(u,v));
+	matrixStoNnuy13=ay13(VhGVel,VhGVel);
+	matrixStoNnuy2=ay2(VhGVel,VhGVel);
+	matrixStoNnuy4=ay4(VhGVel,VhGVel);
+}
+matrix matrixStoNdivx123,matrixStoNdivx4,matrixStoNdivy13,matrixStoNdivy24;
+{
+	varf ax123(defVel(u),[p])=intN(Th,1,2,3)(divx(u)*p);
+	varf ax4(defVel(u),[p])=intN(Th,4)(divx(u)*p);
+	matrixStoNdivx123=ax123(VhGVel,VhGP1);
+	matrixStoNdivx4=ax4(VhGVel,VhGP1);
+	varf ay13(defVel(u),[p])=intN(Th,1,3)(divy(u)*p);
+	varf ay24(defVel(u),[p])=intN(Th,2,4)(divy(u)*p);
+	matrixStoNdivy13=ay13(VhGVel,VhGP1);
+	matrixStoNdivy24=ay24(VhGVel,VhGP1);
+}
+matrix matrixStoNpen13,matrixStoNpen2,matrixStoNpen4;
+{
+	varf a13(u,v)=intN(Th,1,3)(epspen*u*v);
+	varf a2(u,v)=intN(Th,2)(epspen*u*v);
+	varf a4(u,v)=intN(Th,4)(epspen*u*v);
+	matrixStoNpen13=a13(VhGP1,VhGP1);
+	matrixStoNpen2=a2(VhGP1,VhGP1);
+	matrixStoNpen4=a4(VhGP1,VhGP1);
+}
+EndMacro

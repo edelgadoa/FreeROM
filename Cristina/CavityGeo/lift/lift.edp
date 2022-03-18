@@ -1,0 +1,76 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+
+infoparam;
+
+wh=[wref,href];
+
+readTh(NN,wh);
+
+// plot(Th);
+
+
+write("Output.txt","Computing the lift for velocity...",0,1);
+VhGVP defVP(G);VhGP2 Gtheta;
+if(0)
+{
+	// Definicion del levantamiento
+	// real a=-1./(wh[0]-W/2.)^2;
+	// func g=a*(x-W/2.)^2+1.;
+	real a=0.1;
+	func g=sin(pi*(x-wh[0])/(2*a))*(x<=(a+wh[0]))+((a+wh[0])<x)*(x<(W-wh[0]-a))+sin(pi*(W-wh[0]-x)/(2*a))*((W-wh[0]-a)<=x);
+
+	// Definicion de la funcion donde cae
+	// real a1=(H-wh[1])/(2*(wh[0]-W/2.));
+// 	real b1=H-wh[0]*a1;
+// 	real a2=-a1;
+// 	real b2=H+(W-wh[0])*a1;
+// 	func p2 = (a1*x+b1)*(x<=W/2.)+(a2*x+b2)*(W/2.<x);
+	real vertice=(H+3.*wh[1])/4.;//(H+wh[1])/2.;
+	real a1=(H-wh[1])/(2*(wh[0]-W/2.)^2);
+	func p2=a1*(x-W/2.)^2+vertice;
+
+	// Definicion de la funcion de como cae
+	func axy=g/(H+1.e-9-p2)^2;
+	func gfunc = axy*(y-p2)^2*(y>=p2)+0;
+	// func axy=g/(H+1.e-9-p2);
+	// func bxy=-axy*p2;
+	// func gfunc = (axy*y+bxy)*(y>=p2)+0;
+	IFMACRO(dimension,3)defVP(G)=[gfunc,0.,0.,0.];ENDIFMACRO
+	IFMACRO(dimension,2)defVP(G)=[gfunc,0.,0.];ENDIFMACRO
+}
+else
+{
+	omegas(omega,wh);
+	real a=0.1;
+	func g=sin(pi*(x-wh[0])/(2*a))*(x<=(a+wh[0]))+((a+wh[0])<x)*(x<(W-wh[0]-a))+sin(pi*(W-wh[0]-x)/(2*a))*((W-wh[0]-a)<=x);
+	func gY=0;
+	VhGVP defVP(gfunc);
+	funcgeo(wh);
+	matrix ASta;real[int] bSta(VhLVP.ndof);
+	{
+		varf a(defVP(u),defVP(v))=
+			intN(ThL)(
+				1./Refijo*(gammax*gradx(u,v)+gammay*grady(u,v))
+	   			 -etax*uP*dx(v)-etay*uP*dy(vY)
+	   			 +etax*vP*dx(u)+etay*vP*dy(uY)
+	   			 +jacobian*uP*vP*epspen
+	   			 )
+			 +BC(u,g);
+		ASta=a(VhLVP,VhLVP);bSta=a(0,VhLVP);
+	}
+	solvesystem(ASta,bSta,gfunc,VP);
+	IFMACRO(dimension,3)defVP(G)=[gfunc,gfunY,gfuncZ,0.];ENDIFMACRO
+	IFMACRO(dimension,2)defVP(G)=[gfunc,gfuncY,0.];ENDIFMACRO
+}
+plot(defVel(G),value=1,fill=1);
+write("liftNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt",G[],0,0,0,20);
+write("Output.txt","Computing the lift for temperature...",0,1);
+{
+	func gtheta=(thetas-thetaf)/H*y+thetaf;//thetas*(y>href/2.)+thetaf*(y<=href/2.);
+	Gtheta=gtheta;
+}
+plot(Gtheta,value=1,fill=1);
+write("lifttempNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt",Gtheta[],0,0,0,20);
+write("Output.txt","Done.",1,1);

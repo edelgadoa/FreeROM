@@ -1,0 +1,346 @@
+
+NewMacro EFSta(uEF,wh)
+{
+	include "../auxiliary/search.idp";
+	if(search(whSta,wh,1.e-9)==-1)
+	{
+		funcgeo(wh);
+		matrix ASta,AF,matrixerror;real[int] bSta(VhLVP.ndof),bF(VhLVP.ndof);
+		{
+			varf a(defVP(u),defVP(v))=
+				intN(ThL)(
+					1./Refijo*(gammax*gradx(u,v)+gammay*grady(u,v))
+		   			 -etax*uP*divx(v)-etay*uP*divy(v)
+		   			 +etax*vP*divx(u)+etay*vP*divy(u)
+		   			 +jacobian*uP*vP*epspen
+					 +etax*(antisimetricx(u,G,v)+antisimetricx(G,u,v))
+					 +etay*(antisimetricy(u,G,v)+antisimetricy(G,u,v))
+					 +1./dt*jacobian*uporv(u,v)
+		   			 )
+		   		-intN(ThL)(
+		   			 1./Refijo*(gammax*gradx(G,v)+gammay*grady(G,v))
+		   			 +etax*vP*divx(G)+etay*vP*divy(G)
+					 +etax*antisimetricx(G,G,v)+etay*antisimetricy(G,G,v)
+		   			 )
+				 +BC(u,cero);
+			ASta=a(VhLVP,VhLVP);bSta=a(0,VhLVP);
+		}
+		{
+			varf a(defVP(u),defVP(v))=intN(Th)(1./dt*jacobian*uporv(u,v));
+			matrixerror=a(VhGVP,VhGVP);
+		}
+		VhGVP defVP(u1),defVP(u0),defVP(errorEF);
+		errEF=10;u0[]=0;u1[]=0;errorEF[]=0;
+		for(int it=0;it<nEF & errEF>epsEF;it++)
+		{
+			{
+				varf a(defVP(u),defVP(v))=
+					intN(ThL)(etax*antisimetricx(u0,u,v)
+							+etay*antisimetricy(u0,u,v))
+					+intN(ThL)(1./dt*jacobian*uporv(u0,v));
+				AF=a(VhLVP,VhLVP);
+				bF=a(0,VhLVP);
+			}
+			AF=AF+ASta;
+			bF+=bSta;
+			solvesystem(AF,bF,u1,VP);
+			errorEF[]=u1[]-u0[];
+			errEF=normL2(errorEF[],matrixerror);
+			u0[]=u1[];
+			write("Output.txt",errEF,1,1);
+			if(it==nEF-1)cout << "max iteration achieved" << endl;
+		}
+		uEF[]=u1[];
+		write("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt",uEF[],0,0,mpirank,20);
+		updateparameters(whSta,wh);	
+	}
+	else
+	{
+		write("Output.txt","   Reading the solution...",1,1);
+		ifstream fileRe("../solutions/txt/SolEF"+prob+"NN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+		fileRe >> uEF[];
+	}
+	// plot(defVel(uEF),value=1,wait=1);
+}
+EndMacro
+NewMacro residualb(sol,wh,residual)
+{
+	VhGVP defVP(u);
+	u[]=sol[];
+	u[]+=G[];
+	// plot(defVel(sol),value=1,wait=1);
+	funcgeo(wh);
+	matrix Ares;real[int] bres(VhLVP.ndof);
+	{
+		varf a(defVP(u0),defVP(v))=
+			intN(ThL)(1./Refijo*gradgrad(u0,v)+u0P*vP)
+			+intN(ThL)(
+				1./Refijo*(gammax*gradx(u,v)+gammay*grady(u,v))
+	   			 -etax*u#P*divx(v)-etay*u#P*divy(v)
+	   			 +etax*vP*divx(u)+etay*vP*divy(u)
+	   			 +jacobian*u#P*vP*epspen
+				 +etax*antisimetricx(u,u,v)+etay*antisimetricy(u,u,v)
+	   			 )
+			 +BC(u0,cero);
+		Ares=a(VhLVP,VhLVP);bres=a(0,VhLVP);
+	}
+	solvesystem(Ares,bres,residual,VP);
+}
+EndMacro
+
+NewMacro supremizer(uEF,wh,sol)
+{
+	funcgeo(wh);
+	matrix Asup;real[int] bsup(VhLVel.ndof);
+	{
+		varf a(defVel(u),defVel(v))=
+			intN(ThL)(1./Refijo*gradgrad(u,v))
+			+intN(ThL)(-etax*uEF#P*dx(v)-etay*uEF#P*dy(vY))
+			+BC(u,cero);			
+		Asup=a(VhLVel,VhLVel);bsup=a(0,VhLVel);
+	}
+	solvesystem(Asup,bsup,sol,Vel);
+}
+EndMacro
+
+macro matrixprodV(prodV)
+matrix prodV;
+{
+	varf a(defVel(u),defVel(v))=
+		intN(Th)(1./Refijo*gradgrad(u,v));
+	prodV=a(VhGVel,VhGVel);
+}
+// EOM
+macro matrixprodP(prodP)
+matrix prodP;
+{
+	varf a(u,v)=
+		intN(Th)(u*v);
+	prodP=a(VhGP1,VhGP1);
+}
+// EOM
+macro matrixprodVP(prodVP)
+matrix prodVP;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(1./Refijo*gradgrad(u,v)+uP*vP);
+	prodVP=a(VhGVP,VhGVP);
+}
+// EOM
+
+macro matrixprodL2(prodL2)
+matrix prodL2;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(uporv(u,v));
+	prodL2=a(VhGVP,VhGVP);
+}
+// EOM
+macro matrixprodH1(prodH1)
+matrix prodH1;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(gradgrad(u,v));
+	prodH1=a(VhGVP,VhGVP);
+}
+// EOM
+NewMacro matrixgeneration();
+matrixprodV(prodV);matrixprodP(prodP);matrixprodVP(prodVP);
+matrix matrixStoNnux13,matrixStoNnux2,matrixStoNnux4;
+matrix matrixStoNnuy13,matrixStoNnuy2,matrixStoNnuy4;
+{
+	varf ax13(defVel(u),defVel(v))=intN(Th,1,3)(1./Refijo*gradx(u,v));
+	varf ax2(defVel(u),defVel(v))=intN(Th,2)(1./Refijo*gradx(u,v));
+	varf ax4(defVel(u),defVel(v))=intN(Th,4)(1./Refijo*gradx(u,v));
+	matrixStoNnux13=ax13(VhGVel,VhGVel);
+	matrixStoNnux2=ax2(VhGVel,VhGVel);
+	matrixStoNnux4=ax4(VhGVel,VhGVel);
+	varf ay13(defVel(u),defVel(v))=intN(Th,1,3)(1./Refijo*grady(u,v));
+	varf ay2(defVel(u),defVel(v))=intN(Th,2)(1./Refijo*grady(u,v));
+	varf ay4(defVel(u),defVel(v))=intN(Th,4)(1./Refijo*grady(u,v));
+	matrixStoNnuy13=ay13(VhGVel,VhGVel);
+	matrixStoNnuy2=ay2(VhGVel,VhGVel);
+	matrixStoNnuy4=ay4(VhGVel,VhGVel);
+}
+matrix matrixStoNdivx123,matrixStoNdivx4,matrixStoNdivy13,matrixStoNdivy24;
+{
+	varf ax123(defVel(u),[p])=intN(Th,1,2,3)(divx(u)*p);
+	varf ax4(defVel(u),[p])=intN(Th,4)(divx(u)*p);
+	matrixStoNdivx123=ax123(VhGVel,VhGP1);
+	matrixStoNdivx4=ax4(VhGVel,VhGP1);
+	varf ay13(defVel(u),[p])=intN(Th,1,3)(divy(u)*p);
+	varf ay24(defVel(u),[p])=intN(Th,2,4)(divy(u)*p);
+	matrixStoNdivy13=ay13(VhGVel,VhGP1);
+	matrixStoNdivy24=ay24(VhGVel,VhGP1);
+}
+matrix matrixStoNpen13,matrixStoNpen2,matrixStoNpen4;
+{
+	varf a13(u,v)=intN(Th,1,3)(epspen*u*v);
+	varf a2(u,v)=intN(Th,2)(epspen*u*v);
+	varf a4(u,v)=intN(Th,4)(epspen*u*v);
+	matrixStoNpen13=a13(VhGP1,VhGP1);
+	matrixStoNpen2=a2(VhGP1,VhGP1);
+	matrixStoNpen4=a4(VhGP1,VhGP1);
+}
+matrix matrixNSNugradvwliftx123,matrixNSNugradvwliftx4,
+	   matrixNSNugradvwlifty13,matrixNSNugradvwlifty24;
+{
+	varf ax123(defVel(u),defVel(v))=intN(Th,1,2,3)(antisimetricx(u,G,v)+antisimetricx(G,u,v));
+	varf ax4(defVel(u),defVel(v))=intN(Th,4)(antisimetricx(u,G,v)+antisimetricx(G,u,v));
+	varf ay13(defVel(u),defVel(v))=intN(Th,1,3)(antisimetricy(u,G,v)+antisimetricy(G,u,v));
+	varf ay24(defVel(u),defVel(v))=intN(Th,2,4)(antisimetricy(u,G,v)+antisimetricy(G,u,v));
+	matrixNSNugradvwliftx123=ax123(VhGVel,VhGVel);
+	matrixNSNugradvwliftx4=ax4(VhGVel,VhGVel);
+	matrixNSNugradvwlifty13=ay13(VhGVel,VhGVel);
+	matrixNSNugradvwlifty24=ay24(VhGVel,VhGVel);
+}
+matrix matrixNSNdt13,matrixNSNdt2,matrixNSNdt4;
+{
+	varf a13(defVel(u),defVel(v))=intN(Th,1,3)(uporv(u,v)/dt);
+	varf a2(defVel(u),defVel(v))=intN(Th,2)(uporv(u,v)/dt);
+	varf a4(defVel(u),defVel(v))=intN(Th,4)(uporv(u,v)/dt);
+	matrixNSNdt13=a13(VhGVel,VhGVel);
+	matrixNSNdt2=a2(VhGVel,VhGVel);
+	matrixNSNdt4=a4(VhGVel,VhGVel);
+}
+matrix 	matrixugradvwx123v,matrixugradvwx4v,matrixugradvwy13v,matrixugradvwy24v,
+		matrixugradvwx123s,matrixugradvwx4s,matrixugradvwy13s,matrixugradvwy24s;
+EndMacro
+
+
+
+
+// TEMPERATURA
+NewMacro EFStaTemp(theta,wh)
+{
+	include "../auxiliary/search.idp";
+	if(search(whStatemp,wh,1.e-9)==-1)
+	{
+		VhGVP defVP(uEF);
+		uEF[]=0;
+		EFSta(uEF,wh);
+		uEF[]+=G[];
+		funcgeo(wh);
+		matrix AF; real[int] bF(VhGP2.ndof);
+		{
+			varf a(u,v)=int2d(Th)(
+					etax*ugradvwxtemp(uEF,u,v)
+					+etay*ugradvwytemp(uEF,u,v)// (uEF*dx(u)+uEFY*dy(u))*v
+					+1./Pe*(gammax*gradxtemp(u,v)+gammay*gradytemp(u,v))//(dx(u)*dx(v)+dy(u)*dy(v))
+				)
+				+int1d(Th,paredes)(Nu/Pe*u*v*jacobian)
+				-int2d(Th)(
+					etax*ugradvwxtemp(uEF,Gtheta,v)
+					+etay*ugradvwytemp(uEF,Gtheta,v)//(uEF*dx(Gtheta)+uEFY*dy(Gtheta))*v
+					+1./Pe*(gammax*gradxtemp(Gtheta,v)+gammay*gradytemp(Gtheta,v))//(dx(Gtheta)*dx(v)+dy(Gtheta)*dy(v))
+				)
+				+int1d(Th,paredes)(Nu/Pe*(1.-Gtheta)*v*jacobian)
+				+on(techo,suelo,u=0)
+				;
+			AF=a(VhGP2,VhGP2);
+			bF=a(0,VhGP2);
+		}
+		set(AF,solver=sparsesolver);
+		theta[]=AF^-1*bF;
+		write("../solutions/txt/SolEF"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt",theta[],0,0,0,20);
+		updateparameterstemp(whStatemp,wh);
+	}
+	else
+	{
+		write("Output.txt","   Reading the solution...",1,1);
+		ifstream fileRe("../solutions/txt/SolEF"+prob+"BoussinesqNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+		fileRe >> theta[];
+	}
+	// plot(defVel(uEF),value=1,wait=1);
+}
+EndMacro
+
+NewMacro residualbTemp(sol,wh,residual)
+{
+	VhGVP defVP(uBR);
+	real[int] uNb(N);
+	BRSta(uBR,uNb,wh,StoN,NSN,SmaN);
+	uBR[]+=G[];
+	// plot(defVel(sol),value=1,wait=1);
+	funcgeo(wh);
+	matrix Ares;real[int] bres(VhGP2.ndof);
+	{
+		varf a(u0,v)=
+				intN(Th)(gradgradtemp(u0,v))
+				+intN(Th)(
+					etax*ugradvwxtemp(uBR,sol,v)+etay*ugradvwytemp(uBR,sol,v)// (uEF*dx(u)+uEFY*dy(u))*v
+					+1./Pe*(gammax*gradxtemp(sol,v)+gammay*gradytemp(sol,v))//(dx(u)*dx(v)+dy(u)*dy(v))
+					+etax*ugradvwxtemp(uBR,Gtheta,v)+etay*ugradvwytemp(uBR,Gtheta,v)//(uEF*dx(Gtheta)+uEFY*dy(Gtheta))*v
+					+1./Pe*(gammax*gradxtemp(Gtheta,v)+gammay*gradytemp(Gtheta,v)))//(dx(Gtheta)*dx(v)+dy(Gtheta)*dy(v))
+				+int1d(Th,paredes)(Nu/Pe*sol*v*jacobian)
+				-int1d(Th,paredes)(Nu/Pe*(1.-Gtheta)*v*jacobian)
+			+on(techo,suelo,u0=0);
+		Ares=a(VhGP2,VhGP2);bres=a(0,VhGP2);
+	}
+	set(Ares,solver=sparsesolver);
+	residual[]=Ares^-1*bres;
+}
+EndMacro
+
+macro matrixprodTemp(prod)
+matrix prod#Temp,prod#gradTemp;
+{
+	varf a(u,v)=intN(Th)(u*v);
+	prod#Temp=a(VhGP2,VhGP2);
+}
+{
+	varf a(u,v)=intN(Th)(gradgradtemp(u,v));
+	prod#gradTemp=a(VhGP2,VhGP2);
+}
+// EOM
+
+NewMacro matrixgenerationTemp()
+matrixprodTemp(prod);
+matrix matrixBouNpex13,matrixBouNpex2,matrixBouNpex4;
+matrix matrixBouNpey13,matrixBouNpey2,matrixBouNpey4;
+{
+	varf ax13(u,v)=intN(Th,1,3)(1./Pe*gradxtemp(u,v));
+	varf ax2(u,v)=intN(Th,2)(1./Pe*gradxtemp(u,v));
+	varf ax4(u,v)=intN(Th,4)(1./Pe*gradxtemp(u,v));
+	matrixBouNpex13=ax13(VhGP2,VhGP2);
+	matrixBouNpex2=ax2(VhGP2,VhGP2);
+	matrixBouNpex4=ax4(VhGP2,VhGP2);
+	varf ay13(u,v)=intN(Th,1,3)(1./Pe*gradytemp(u,v));
+	varf ay2(u,v)=intN(Th,2)(1./Pe*gradytemp(u,v));
+	varf ay4(u,v)=intN(Th,4)(1./Pe*gradytemp(u,v));
+	matrixBouNpey13=ay13(VhGP2,VhGP2);
+	matrixBouNpey2=ay2(VhGP2,VhGP2);
+	matrixBouNpey4=ay4(VhGP2,VhGP2);
+}
+matrix [int] matrixBouNugradvwx123(Nv),matrixBouNugradvwx4(Nv),matrixBouNugradvwy13(Nv),matrixBouNugradvwy24(Nv);
+for(int s=0;s<Nv;s++)
+{
+	VhGVel defVel(base);base[]=baseVel[s][];
+	varf ax123(u,v)=intN(Th,1,2,3)(ugradvwxtemp(base,u,v));
+	varf ax4(u,v)=intN(Th,4)(ugradvwxtemp(base,u,v));
+	varf ay13(u,v)=intN(Th,1,3)(ugradvwytemp(base,u,v));
+	varf ay24(u,v)=intN(Th,2,4)(ugradvwytemp(base,u,v));
+	matrixBouNugradvwx123[s]=ax123(VhGP2,VhGP2);
+	matrixBouNugradvwx4[s]=ax4(VhGP2,VhGP2);
+	matrixBouNugradvwy13[s]=ay13(VhGP2,VhGP2);
+	matrixBouNugradvwy24[s]=ay24(VhGP2,VhGP2);
+}
+matrix matrixBouNugradvwliftx123,matrixBouNugradvwliftx4,matrixBouNugradvwlifty13,matrixBouNugradvwlifty24;
+{
+	varf ax123(u,v)=intN(Th,1,2,3)(ugradvwxtemp(G,u,v));
+	varf ax4(u,v)=intN(Th,4)(ugradvwxtemp(G,u,v));
+	varf ay13(u,v)=intN(Th,1,3)(ugradvwytemp(G,u,v));
+	varf ay24(u,v)=intN(Th,2,4)(ugradvwytemp(G,u,v));
+	matrixBouNugradvwliftx123=ax123(VhGP2,VhGP2);
+	matrixBouNugradvwliftx4=ax4(VhGP2,VhGP2);
+	matrixBouNugradvwlifty13=ay13(VhGP2,VhGP2);
+	matrixBouNugradvwlifty24=ay24(VhGP2,VhGP2);
+}
+matrix matrixBouNgamma13,matrixBouNgamma4;
+{
+	varf a13(u,v)=int1d(Th,paredi)(Nu/Pe*u*v);
+	varf a4(u,v)=int1d(Th,pareds)(Nu/Pe*u*v);
+	matrixBouNgamma13=a13(VhGP2,VhGP2);
+	matrixBouNgamma4=a4(VhGP2,VhGP2);
+}
+EndMacro

@@ -1,0 +1,56 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
+infoparam;
+write("Output.txt","Starting the norm selection with "+mpisize+" processors...",0,1);
+readTh(NN);
+readlift(NN,Refijo);
+
+//real[int] Re(numparam);
+{
+	real[int,int] parameters(numparam,1);
+	parameters=-1;
+	write("../auxiliary/parameters.txt",parameters,0,0);
+}
+readparameters(ReSta);
+int cont=0;
+VhGP1dc nut,gradw0,gradw;
+ini(VhGP2,w0);
+ini(VhGP1dc,GradX);
+ini(VhGP1dc,GradY);
+ini(VhGP1dc,GradZ);
+macrogradinter(VhG,matrixD)
+if(1)
+{
+	Re[0]=Refijo;
+	VhGVP defVP(uEF);
+	write("Output.txt","  - Re="+Refijo,1,1);
+	EFSta(uEF,Re);
+	uEF[]+=G[];
+	plot(defVel(uEF),value=1,fill=1,wait=1);
+	equ(w0,uEF);
+	updategradw(w0,matrixD,Grad)
+	gradw0=modb(Grad);
+	for(int ii=0;ii<gradw[].n;ii++){nut[][ii]=(CS*hTri[][ii])^2*sqrt(gradw0[][ii]);}
+}
+else
+{
+	include "../auxiliary/auxEIMsta.idp";
+	include "../auxiliary/search.idp";
+	real[int,int] matgradw(VhGP1dc.ndof,niRe);
+	write("Output.txt","Computing the solutions...",1,1);
+	real iterationtime=mpiWtime();
+	readsolutions(matgradw,VhG);
+	iterationtime=mpiWtime()-iterationtime;
+	write("Output.txt","Ok, time="+iterationtime,1,1);
+	int[int] xkmu=ijmin(matgradw);
+	write("xkmu.txt",xkmu,0,0);
+	nut[]=matgradw(:,xkmu(1));
+}
+
+plot(nut,value=1,fill=1,wait=0);
+write("../solutions/txt/nut.txt",nut[],0,0);
+write("Output.txt","Done.",1,1);

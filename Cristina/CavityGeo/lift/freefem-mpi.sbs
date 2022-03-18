@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --time=100:00:00
+#SBATCH --ntasks=1
+
+module load freefem/4.9
+
+rm *.pref
+name=lift
+#PlaneML2D_BDF2
+# mkdir ${SLURM_JOB_ID}
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "terminal${SLURM_JOB_ID}.txt"

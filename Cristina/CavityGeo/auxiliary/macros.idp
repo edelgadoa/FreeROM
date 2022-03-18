@@ -1,0 +1,721 @@
+NewMacro createmesh(wh,Th,NN)
+{
+	// Puntos de definición del primer cuadrado
+	real x01 = 0., x11 = wh[0];
+	real y01 = 0., y11 = wh[1];
+	// Puntos de definición del segundo cuadrado
+	real x02 = wh[0], x12 = W-wh[0];
+	real y02 = 0., y12 = wh[1];
+	// Puntos de definición del tercer cuadrado
+	real x03 = W-wh[0], x13 = W;
+	real y03 = 0.,   y13 = wh[1];
+	// Puntos de definición del cuarto cuadrado
+	real x04 = wh[0], x14 = W-wh[0];
+	real y04 = wh[1], y14 = H;
+
+	// Discretización
+	// Nombramiento paredes:
+	// - 0 interior
+	// - 1 suelo
+	// - 2 paredes
+	int [int] icase = [suelo,0,paredi,paredi];
+	meshN Th1 = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],label = icase, region = 1);
+	//plot(Th1,wait = 1);
+	icase = [suelo,0,0,0];
+	meshN Th2 = square(NN#2,NN,[x02+(x12-x02)*x,y02+(y12-y02)*y],label = icase, region = 2);
+	//plot(Th2,wait = 1);
+	icase = [suelo,paredi,paredi,0];
+	meshN Th3 = square(NN,NN,[x03+(x13-x03)*x,y03+(y13-y03)*y],label = icase, region = 3);
+	//plot(Th3,wait = 1);
+	icase = [0,pareds,techo,pareds];
+	meshN Th4 = square(NN#2,NN,[x04+(x14-x04)*x,y04+(y14-y04)*y],label = icase, region = 4,flags=3);
+	//plot(Th4,wait = 1);
+	Th=Th1+Th2+Th3+Th4;
+}
+EndMacro
+macro PVP() [P2,P2,P1] //EOM
+macro PVel() [P2,P2] //EOM
+macro defVP(u) [u,u#Y,u#P] //EOM
+macro initVP(i) [i,i,i] //EOM
+macro initVel(i) [i,i] //EOM
+macro ini(Vh,v) Vh v,v#Y; // EOM
+macro equ(u,v) u=v;u#Y=v#Y; // EOM
+macro plus(u,v) u[]+=v[];u#Y[]+=v#Y[] // EOM
+IFMACRO(prob,"Smago")
+macro macrogradinter(Vh,D)
+matrix D#X=interpolate(Vh#P1dc,Vh#P2,op=1);
+matrix D#Y=interpolate(Vh#P1dc,Vh#P2,op=2);
+// EOM
+macro updategradw(v,matrixD,Grad)
+Grad#X[]=matrixD#X*v[];Grad#XY[]=matrixD#X*v#Y[];
+Grad#Y[]=matrixD#Y*v[];Grad#YY[]=matrixD#Y*v#Y[];
+// EOM
+macro gradEIM(u,gradu,EIMx,Grad)
+{updategradw(u,matrixD,Grad);
+for(int s=0;s<M;s++)gradu[s]=[Grad#X[](EIMx(s)),Grad#Y[](EIMx(s)),Grad#XY[](EIMx(s)),Grad#YY[](EIMx(s))];}// EOM
+ENDIFMACRO
+
+NewMacro creationVh(Th,name)
+fespace name#Vel(Th,PVel);
+fespace name#VP(Th,PVP);
+fespace name#P2(Th,P2);
+fespace name#P1(Th,P1);
+fespace name#P0(Th,P0);
+IFMACRO(dimension,2)fespace name#P1dc(Th,P1dc);ENDIFMACRO
+IFMACRO(dimension,3)fespace name#P1dc(Th,P1b);ENDIFMACRO
+EndMacro
+
+NewMacro readTh(NN,wh)
+Th=readmesh("../mesh/meshNN"+NN+"w"+wh[0]+"h"+wh[1]+".msh");
+Th=change(Th,rmInternalEdges=1);
+ThL=Th;
+creationVh(Th,VhG);
+creationVh(ThL,VhL);
+if(petsc)
+{
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	buildDmesh(ThL);
+	mapVP=restrict(VhLVP,VhGVP,myN2o);
+	mapVel=restrict(VhLVel,VhGVel,myN2o);
+	{macro def(i) defVP(i)//
+	macro init(i) initVP(i) // [i,i,i] // EOM
+	createMat(ThL,MatAVP,PVP);}
+	{macro def(i) defVel(i)//
+	macro init(i) initVel(i) // [i,i,i] // EOM
+	createMat(ThL,MatAVel,PVel);}
+}
+EndMacro
+
+NewMacro readlift(NN,wh)
+VhGVP defVP(G);
+VhGVel defVel(GVel);
+ini(VhGP2,GP2);
+{
+	ifstream read("../lift/liftNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> G[];
+}
+defVel(GVel)=defVel(G);
+equ(GP2,G);
+EndMacro
+
+NewMacro readlifttemp(NN,wh)
+VhGP2 Gtheta;
+{
+	ifstream read("../lift/lifttempNN"+NN+"w"+wh[0]+"h"+wh[1]+".txt");
+	read >> Gtheta[];
+}
+EndMacro
+
+macro readparameters(parameters)
+int nsol;
+{ifstream aux("../solutions/parameters"+prob+".txt");aux >> nsol;aux>>nsol;}
+real[int,int] parameters(numparam,nsol);
+{ifstream aux("../solutions/parameters"+prob+".txt");aux >> parameters;}
+{ifstream aux("../solutions/parameters"+prob+"Boussinesq.txt");aux >> nsol;aux>>nsol;}
+real[int,int] parameters#temp(numparam,nsol);
+{ifstream aux("../solutions/parameters"+prob+"Boussinesq.txt");aux >> parameters#temp;}
+//EOM
+
+macro updateparameters(u,param)
+if(u.m==1 && u(0,0)==-1)
+{u(0:numparam-1,0)=param;write("../solutions/parameters"+prob+".txt",u,0,0,mpirank);}
+else
+{int aux = u.m;u.resize(numparam,aux+1);aux = u.m;
+u(0:numparam-1,aux-1)=param;write("../solutions/parameters"+prob+".txt",u,0,0,mpirank);}
+// EOM
+
+macro updateparameterstemp(u,param)
+if(u.m==1 && u(0,0)==-1)
+{u(0:numparam-1,0)=param;write("../solutions/parameters"+prob+"Boussinesq.txt",u,0,0,mpirank);}
+else
+{int aux = u.m;u.resize(numparam,aux+1);aux = u.m;
+u(0:numparam-1,aux-1)=param;write("../solutions/parameters"+prob+"Boussinesq.txt",u,0,0,mpirank);}
+// EOM
+
+NewMacro omegas(omega,wh)
+VhGP0 omega#1,omega#2,omega#3,omega#4;
+omega#1=1.*(x<=wh[0])*(y<=wh[1])+0;
+omega#2=1.*(wh[0]<x)*(x<=W-wh[0])*(y<=wh[1])+0;
+omega#3=1.*(W-wh[0]<x)*(y<=wh[1])+0;
+omega#4=1.*(wh[1]<=y)+0;
+EndMacro
+
+NewMacro ctegeo(wh)
+jacobian13=wh[0]*wh[1]/(wref*href);jacobian2=(W-2.*wh[0])*wh[1]/((W-2.*wref)*href);jacobian4=(W-2.*wh[0])*(H-wh[1])/((W-2.*wref)*(H-href));
+etax123=wh[1]/href;etax4=(H-wh[1])/(H-href);etay13=wh[0]/wref;etay24=(W-2.*wh[0])/(W-2.*wref);
+gammax13=wref*wh[1]/(href*wh[0]);gammax2=(W-2.*wref)*wh[1]/((W-2.*wh[0])*href);gammax4=(W-2.*wref)*(H-wh[1])/((W-2.*wh[0])*(H-href));
+gammay13=1./gammax13;gammay2=1./gammax2;gammay4=1./gammax4;
+phix13=wref^2/wh[0]^2;phix24=(W-2.*wref)^2/(W-2.*wh[0])^2;phiy123=href^2/wh[1]^2;phiy4=(H-href)^2/(H-wh[1])^2;
+real hk1,hk2,hk3,hk4;
+hk1=sqrt(wh[1]^2+wh[0]^2)/NN;
+hk3=hk1;
+hk2=sqrt(wh[1]^2/NN^2+(W-2.*wh[0])^2/NN#2^2);
+hk4=sqrt((H-wh[1])^2/NN^2+(W-2.*wh[0])^2/NN#2^2);
+EndMacro
+NewMacro showctegeo()
+cout << "jacobian:" << jacobian13 << ", " << jacobian2 << ", " << jacobian4 << endl;
+cout << "etax:" << etax123 << ", " << etax4 << endl;
+cout << "etay:" << etay13 << ", " << etay24 << endl;
+cout << "gammax:" << gammax13 << ", " << gammax2 << ", " << gammax4 << endl;
+cout << "gammay:" << gammay13 << ", " << gammay2 << ", " << gammay4 << endl;
+cout << "phix:" << phix13 << ", " << phix24 << endl;
+cout << "phiy:" << phiy123 << ", " << phiy4 << endl;
+cout << "hk1:" << hk1 << endl;
+cout << "hk2:" << hk2 << endl;
+cout << "hk3:" << hk3 << endl;
+cout << "hk4:" << hk4 << endl;
+EndMacro
+NewMacro funcgeo(wh)
+ctegeo(wh)
+VhGP0 gammax,gammay,etax,etay,jacobian;
+jacobian=jacobian13*(omega1+omega3)+jacobian2*omega2+jacobian4*omega4;
+etax=etax123*(omega1+omega2+omega3)+etax4*omega4;
+etay=etay13*(omega1+omega3)+etay24*(omega2+omega4);
+gammax=gammax13*(omega1+omega3)+gammax2*omega2+gammax4*omega4;
+gammay=gammay13*(omega1+omega3)+gammay2*omega2+gammay4*omega4;
+VhGP1dc hTri,phix,phiy;
+phix=phix13*(omega1+omega3)+phix24*(omega2+omega4);
+phiy=phiy123*(omega1+omega2+omega3)+phiy4*omega4;
+hTri=hk1*omega1+hk3*omega3+hk2*omega2+hk4*omega4;
+EndMacro;
+
+NewMacro rhoTselection()
+write("Output.txt", " - Sobolev constant: " + CSobolev,1,1);
+{
+	include "../auxiliary/search.idp";
+	real dthh=(hmax-hmin)/2^6;//2;//(hmax-hmin)/(nih-1.);
+	// dth/=3;
+	real dtww=(wmax-wmin)/2^6;//(wmax-wmin)/(niw-1.);
+	// dtw/=3;
+	real nihh=(hmax-hmin)/dth+1.;//cout << "nih: " << nih << endl;
+	real niww=(wmax-wmin)/dtw+1.;//cout << "niw: " << niw << endl;
+	real[int,int] auxparam(numparam,nihh*niww);
+	int cont=0;
+	real w,h;
+	for(int i=0;i<nihh;i++)
+	{
+		w=wmin+i*dtww;
+		for(int j=0;j<niww;j++)
+		{
+			h=hmin+j*dthh;
+			auxparam(:,cont)=[w,h];
+			cont++;
+		}
+	}
+	real[int] etaa(nihh*niww),gammaa(nihh*niww),gammaamin(nihh*niww),phii(nihh*niww),phij(nihh*niww),hkk(nihh*niww);
+	for(int i=0;i<nihh*niww;i++)
+	{
+		wh=auxparam(0:numparam-1,i);
+		ctegeo(wh);
+		real[int] auxx(4),auxy(4);
+		auxx=[etax123,etax123,etax123,etax4];
+		auxy=[etay13,etay24,etay13,etay24];
+		etaa[i]=maxmax(auxx,auxy);
+		auxx=[gammax13,gammax2,gammax13,gammax4];
+		auxy=[gammay13,gammay2,gammay13,gammay4];
+		gammaa[i]=maxmax(auxx,auxy);
+		gammaamin[i]=minmin(auxx,auxy);
+		auxx=[phix13,phix24,phix13,phix24];
+		auxy=[phiy123,phiy123,phiy123,phiy4];
+		phii[i]=maxmax(auxx,auxy);
+		phij[i]=minmin(auxx,auxy);
+		auxx=[hk1,hk2,hk3,hk4];
+		hkk[i]=auxx.max;
+	}
+	etamax=etaa.max;
+	gammamax=gammaa.max;
+	real gammamin=gammaamin.min;
+	phimax=phii.max;
+	phimin=phij.min;
+	hkmax=hkk.max;
+	write("gammamin.txt",gammamin,0,0);
+//	write("etamax.txt",etamax,0,0);
+	rhoT=2.*etamax*CSobolev+(gammamax*sqrt(phimax)+3.*gammamax*phimax/sqrt(phimin))*CS^2*hkmax^(2-dimension/2);
+}
+EndMacro
+
+macro gradgrad(u,v) (dx(u)*dx(v)+dy(u)*dy(v)+dx(u#Y)*dx(v#Y)+dy(u#Y)*dy(v#Y))// EOM
+macro gradx(u,v)(dx(u)*dx(v)+dx(u#Y)*dx(v#Y))//EOM
+macro grady(u,v)(dy(u)*dy(v)+dy(u#Y)*dy(v#Y))//EOM
+macro gradgradtemp(u,v)(dx(u)*dx(v)+dy(u)*dy(v)) // EOM
+macro gradxtemp(u,v)(dx(u)*dx(v))//EOM
+macro gradytemp(u,v)(dy(u)*dy(v))//EOM
+
+macro ugradvw(u,v,ww) ([[u,u#Y]'*[dx(v),dy(v)],[u,u#Y]'*[dx(v#Y),dy(v#Y)]]'*[ww,ww#Y])// EOM
+macro ugradvwx(u,v,ww) (u*dx(v)*ww+u*dx(v#Y)*ww#Y)// EOM
+macro ugradvwy(u,v,ww) (u#Y*dy(v)*ww+u#Y*dy(v#Y)*ww#Y)// EOM
+macro ugradvwtemp(u,v,ww)((u*dx(v)+u#Y*dy(v))*ww) // EOM
+macro ugradvwxtemp(u,v,ww)(u*dx(v)*ww) // EOM
+macro ugradvwytemp(u,v,ww)(u#Y*dy(v)*ww) // EOM
+macro antisimetricx(u,v,ww)(0.5*(ugradvwx(u,v,ww)-ugradvwx(u,ww,v))) // EOM
+macro antisimetricy(u,v,ww)(0.5*(ugradvwy(u,v,ww)-ugradvwy(u,ww,v))) // EOM
+macro antisimetric(u,v,ww)(0.5*(ugradvw(u,v,ww)-ugradvw(u,ww,v))) // EOM
+macro uporv(u,v)([u,u#Y]'*[v,v#Y])// EOM
+macro div(u)(dx(u) + dy(u#Y))// EOM
+macro divx(u)(dx(u))// EOM
+macro divy(u)(dy(u#Y))// EOM
+macro modb(u) (u#X^2+u#Y^2+u#XY^2+u#YY^2)// EOM
+macro modbx(u) (u#X^2+u#XY^2)// EOM
+macro modby(u) (u#Y^2+u#YY^2)// EOM
+
+macro BC(u,G) on(techo,u=G,u#Y=G#Y)+on(paredes, u=0.,u#Y=0.)// EOM
+
+NewMacro solvesystem(A,b,u,Vel)
+{	if(petsc)
+	{
+		VhL#Vel def#Vel(u#L);
+		MatA#Vel = A;
+		set(MatA#Vel,sparams=sparamsv);
+		u#L[]=MatA#Vel^-1*b;
+		//plotMPI(ThL, defVel(u#L), PVel, defVel, real, cmm = "Sol L");
+		reduceSolution(u#L,u,MatA#Vel.D,map#Vel);
+		//plot(defVel(u),value=1,wait=1,cmm="Sol G");
+	}
+else{set(A,solver=sparsesolver);
+	u[]=A^-1*b;}
+}EndMacro
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}
+//EOM
+
+macro pause()mpiBarrier(mpiCommWorld)// EOM
+
+func real innerprod(real[int] & u,real[int] & v,matrix & A){real[int] aux=A*v;real result=u'*aux;return result;}
+func real normL2(real[int] & u, matrix & A){real result=innerprod(u,u,A);return sqrt(result);}
+
+func real norm2(real[int,int] & A)
+{
+	include "../auxiliary/powermethod.idp";
+	real[int,int] At=A',B=At*A;
+	real[int] lambda=powermethod(B);
+	return sqrt(lambda(0));
+}
+func real cond(real[int,int] & A)
+{
+	include "../auxiliary/powermethod.idp";
+	load "lapack";
+	real lambda1=norm2(A);
+	real[int,int] Ainv(A.n,A.m);Ainv=A^-1;
+	real lambda2=norm2(Ainv);
+	real result=lambda1*lambda2;
+	return result;
+}
+
+macro VeltoP2(Vh,base,ww)
+{Vh#Vel defVel(aux);aux[]=base[];equ(ww,aux);}// EOM
+
+macro readRBF()
+int RBFn;
+{ifstream aux("../betah/results/betamuI.txt");aux >> RBFn;}
+real[int] RBFbeta(RBFn);
+{ifstream aux("../betah/results/betamuI.txt");aux >> RBFbeta;}
+real[int,int] RBFmu(numparam,RBFn);
+{ifstream aux("../betah/results/vparam.txt");aux >> RBFmu;}
+real[int] RBFgamma(RBFn+numparam+1);
+{ifstream aux("../betah/results/gammaI.txt");aux >> RBFgamma;}
+//EOM
+
+macro readRBFtemp()
+int RBFn;
+{ifstream aux("../betahtemp/results/betamuI.txt");aux >> RBFn;}
+real[int] RBFbeta(RBFn);
+{ifstream aux("../betahtemp/results/betamuI.txt");aux >> RBFbeta;}
+real[int,int] RBFmu(numparam,RBFn);
+{ifstream aux("../betahtemp/results/vparam.txt");aux >> RBFmu;}
+real[int] RBFgamma(RBFn+numparam+1);
+{ifstream aux("../betahtemp/results/gammaI.txt");aux >> RBFgamma;}
+//EOM
+
+
+NewMacro writeStoN(N,StoN)
+write("../results/StoNnux"+N+".txt",StoN#nux13,0,0);
+write("../results/StoNnux"+N+".txt",StoN#nux2,1,0);
+write("../results/StoNnux"+N+".txt",StoN#nux4,1,0);
+write("../results/StoNnuy"+N+".txt",StoN#nuy13,0,0);
+write("../results/StoNnuy"+N+".txt",StoN#nuy2,1,0);
+write("../results/StoNnuy"+N+".txt",StoN#nuy4,1,0);
+write("../results/StoNdivx"+N+".txt",StoN#divx123,0,0);
+write("../results/StoNdivx"+N+".txt",StoN#divx4,1,0);
+write("../results/StoNdivy"+N+".txt",StoN#divy13,0,0);
+write("../results/StoNdivy"+N+".txt",StoN#divy24,1,0);
+write("../results/StoNpen"+N+".txt",StoN#pen13,0,0);
+write("../results/StoNpen"+N+".txt",StoN#pen2,1,0);
+write("../results/StoNpen"+N+".txt",StoN#pen4,1,0);
+write("../results/bStoNnux"+N+".txt",b#StoN#nux13,0,0);
+write("../results/bStoNnux"+N+".txt",b#StoN#nux2,1,0);
+write("../results/bStoNnux"+N+".txt",b#StoN#nux4,1,0);
+write("../results/bStoNnuy"+N+".txt",b#StoN#nuy13,0,0);
+write("../results/bStoNnuy"+N+".txt",b#StoN#nuy2,1,0);
+write("../results/bStoNnuy"+N+".txt",b#StoN#nuy4,1,0);
+write("../results/bStoNdivx"+N+".txt",b#StoN#divx123,0,0);
+write("../results/bStoNdivx"+N+".txt",b#StoN#divx4,1,0);
+write("../results/bStoNdivy"+N+".txt",b#StoN#divy13,0,0);
+write("../results/bStoNdivy"+N+".txt",b#StoN#divy24,1,0);
+EndMacro
+
+NewMacro readStoN(N,StoN)
+{
+	ifstream read("../results/StoNnux"+N+".txt");
+	read >> StoN#nux13;
+	read >> StoN#nux2;
+	read >> StoN#nux4;
+}
+{
+	ifstream read("../results/StoNnuy"+N+".txt");
+	read >> StoN#nuy13;
+	read >> StoN#nuy2;
+	read >> StoN#nuy4;
+}
+{
+	ifstream read("../results/StoNdivx"+N+".txt");
+	read >> StoN#divx123;
+	read >> StoN#divx4;
+}
+{
+	ifstream read("../results/StoNdivy"+N+".txt");
+	read >> StoN#divy13;
+	read >> StoN#divy24;
+}
+{
+	ifstream read("../results/StoNpen"+N+".txt");
+	read >> StoN#pen13;
+	read >> StoN#pen2;
+	read >> StoN#pen4;
+}
+{
+	ifstream read("../results/bStoNnux"+N+".txt");
+	read >> b#StoN#nux13;
+	read >> b#StoN#nux2;
+	read >> b#StoN#nux4;
+}
+{
+	ifstream read("../results/bStoNnuy"+N+".txt");
+	read >> b#StoN#nuy13;
+	read >> b#StoN#nuy2;
+	read >> b#StoN#nuy4;
+}
+{
+	ifstream read("../results/bStoNdivx"+N+".txt");
+	read >> b#StoN#divx123;
+	read >> b#StoN#divx4;
+}
+{
+	ifstream read("../results/bStoNdivy"+N+".txt");
+	read >> b#StoN#divy13;
+	read >> b#StoN#divy24;
+}
+EndMacro
+
+NewMacro writeNSN(N,NSN)
+write("../results/NSNugradvwliftx"+N+".txt",NSN#ugradvwliftx123,0,0);
+write("../results/NSNugradvwliftx"+N+".txt",NSN#ugradvwliftx4,1,0);
+write("../results/NSNugradvwlifty"+N+".txt",NSN#ugradvwlifty13,0,0);
+write("../results/NSNugradvwlifty"+N+".txt",NSN#ugradvwlifty24,1,0);
+write("../results/bNSNugradvwliftx"+N+".txt",b#NSN#ugradvwliftx123,0,0);
+write("../results/bNSNugradvwliftx"+N+".txt",b#NSN#ugradvwliftx4,1,0);
+write("../results/bNSNugradvwlifty"+N+".txt",b#NSN#ugradvwlifty13,0,0);
+write("../results/bNSNugradvwlifty"+N+".txt",b#NSN#ugradvwlifty24,1,0);
+write("../results/NSNdt"+N+".txt",NSN#dt13,0,0);
+write("../results/NSNdt"+N+".txt",NSN#dt2,1,0);
+write("../results/NSNdt"+N+".txt",NSN#dt4,1,0);
+write("../results/NSNugradvwx"+N+".txt",Nv,0,0);
+write("../results/NSNugradvwy"+N+".txt",Nv,0,0);
+for(int s=0;s<Nv;s++)
+{
+	write("../results/NSNugradvwx"+N+".txt",NSN#ugradvwx123[s],1,0);
+	write("../results/NSNugradvwx"+N+".txt",NSN#ugradvwx4[s],1,0);
+	write("../results/NSNugradvwy"+N+".txt",NSN#ugradvwy13[s],1,0);
+	write("../results/NSNugradvwy"+N+".txt",NSN#ugradvwy24[s],1,0);
+}
+EndMacro
+NewMacro readNSN(N,NSN)
+{
+	ifstream read("../results/NSNugradvwliftx"+N+".txt");
+	read >> NSN#ugradvwliftx123;
+	read >> NSN#ugradvwliftx4;
+}
+{
+	ifstream read("../results/NSNugradvwlifty"+N+".txt");
+	read >> NSN#ugradvwlifty13;
+	read >> NSN#ugradvwlifty24;
+}
+{
+	ifstream read("../results/NSNdt"+N+".txt");
+	read >> NSN#dt13;
+	read >> NSN#dt2;
+	read >> NSN#dt4;
+}
+{
+	ifstream read("../results/bNSNugradvwliftx"+N+".txt");
+	read >> b#NSN#ugradvwliftx123;
+	read >> b#NSN#ugradvwliftx4;
+}
+{
+	ifstream read("../results/bNSNugradvwlifty"+N+".txt");
+	read >> b#NSN#ugradvwlifty13;
+	read >> b#NSN#ugradvwlifty24;
+}
+{
+	ifstream readx("../results/NSNugradvwx"+N+".txt");
+	readx >> Nv;
+	ifstream ready("../results/NSNugradvwy"+N+".txt");
+	ready >> Nv;
+	for(int s=0;s<Nv;s++)
+	{
+		readx >> NSN#ugradvwx123[s];
+		readx >> NSN#ugradvwx4[s];
+		ready >> NSN#ugradvwy13[s];
+		ready >> NSN#ugradvwy24[s];
+	}
+}
+EndMacro
+NewMacro writeSmaN(N,SmaN)
+write("../results/SmaNx"+N+".txt",M,0,0);
+write("../results/SmaNy"+N+".txt",M,0,0);
+for(int s=0;s<M;s++)
+{
+	write("../results/SmaNx"+N+".txt",SmaN#x13[s],1,0);
+	write("../results/SmaNx"+N+".txt",SmaN#x2[s],1,0);
+	write("../results/SmaNx"+N+".txt",SmaN#x4[s],1,0);
+	write("../results/SmaNy"+N+".txt",SmaN#y13[s],1,0);
+	write("../results/SmaNy"+N+".txt",SmaN#y2[s],1,0);
+	write("../results/SmaNy"+N+".txt",SmaN#y4[s],1,0);
+}
+write("../results/bSmaNx"+N+".txt",b#SmaN#x13,0,0);
+write("../results/bSmaNx"+N+".txt",b#SmaN#x2,1,0);
+write("../results/bSmaNx"+N+".txt",b#SmaN#x4,1,0);
+write("../results/bSmaNy"+N+".txt",b#SmaN#y13,0,0);
+write("../results/bSmaNy"+N+".txt",b#SmaN#y2,1,0);
+write("../results/bSmaNy"+N+".txt",b#SmaN#y4,1,0);
+EndMacro
+NewMacro readSmaN(N,SmaN)
+{
+	ifstream readx("../results/SmaNx"+N+".txt");
+	readx >> M;
+	ifstream ready("../results/SmaNy"+N+".txt");
+	ready >> M;
+	for(int s=0;s<M;s++)
+	{
+		readx >> SmaN#x13[s];
+		readx >> SmaN#x2[s];
+		readx >> SmaN#x4[s];
+		ready >> SmaN#y13[s];
+		ready >> SmaN#y2[s];
+		ready >> SmaN#y4[s];
+	}
+}
+{
+	ifstream readx("../results/bSmaNx"+N+".txt");
+	ifstream ready("../results/bSmaNy"+N+".txt");
+	readx >> b#SmaN#x13;
+	readx >> b#SmaN#x2;
+	readx >> b#SmaN#x4;
+	ready >> b#SmaN#y13;
+	ready >> b#SmaN#y2;
+	ready >> b#SmaN#y4;
+}
+EndMacro
+macro writeBouNS(Nt,BouN)
+write("../results/BouNpex"+Nt+".txt",BouN#pex13,0,0);
+write("../results/BouNpex"+Nt+".txt",BouN#pex2,1,0);
+write("../results/BouNpex"+Nt+".txt",BouN#pex4,1,0);
+write("../results/BouNpey"+Nt+".txt",BouN#pey13,0,0);
+write("../results/BouNpey"+Nt+".txt",BouN#pey2,1,0);
+write("../results/BouNpey"+Nt+".txt",BouN#pey4,1,0);
+write("../results/bBouNpex"+Nt+".txt",b#BouN#pex13,0,0);
+write("../results/bBouNpex"+Nt+".txt",b#BouN#pex2,1,0);
+write("../results/bBouNpex"+Nt+".txt",b#BouN#pex4,1,0);
+write("../results/bBouNpey"+Nt+".txt",b#BouN#pey13,0,0);
+write("../results/bBouNpey"+Nt+".txt",b#BouN#pey2,1,0);
+write("../results/bBouNpey"+Nt+".txt",b#BouN#pey4,1,0);
+write("../results/BouNugradvwx"+Nt+".txt",Nv,0,0);
+write("../results/BouNugradvwy"+Nt+".txt",Nv,0,0);
+for(int ss=0;ss<Nv;ss++)
+{
+	write("../results/BouNugradvwx"+Nt+".txt",BouN#ugradvwx123[ss],1,0);
+	write("../results/BouNugradvwx"+Nt+".txt",BouN#ugradvwx4[ss],1,0);
+	write("../results/BouNugradvwy"+Nt+".txt",BouN#ugradvwy13[ss],1,0);
+	write("../results/BouNugradvwy"+Nt+".txt",BouN#ugradvwy24[ss],1,0);
+}
+write("../results/bBouNugradvwx"+Nt+".txt",b#BouN#ugradvwx123,0,0);
+write("../results/bBouNugradvwx"+Nt+".txt",b#BouN#ugradvwx4,1,0);
+write("../results/bBouNugradvwy"+Nt+".txt",b#BouN#ugradvwy13,0,0);
+write("../results/bBouNugradvwy"+Nt+".txt",b#BouN#ugradvwy24,1,0);
+write("../results/BouNugradvwliftx"+Nt+".txt",BouN#ugradvwliftx123,0,0);
+write("../results/BouNugradvwliftx"+Nt+".txt",BouN#ugradvwliftx4,1,0);
+write("../results/BouNugradvwlifty"+Nt+".txt",BouN#ugradvwlifty13,0,0);
+write("../results/BouNugradvwlifty"+Nt+".txt",BouN#ugradvwlifty24,1,0);
+write("../results/bBouNugradvwliftx"+Nt+".txt",b#BouN#ugradvwliftx123,0,0);
+write("../results/bBouNugradvwliftx"+Nt+".txt",b#BouN#ugradvwliftx4,1,0);
+write("../results/bBouNugradvwlifty"+Nt+".txt",b#BouN#ugradvwlifty13,0,0);
+write("../results/bBouNugradvwlifty"+Nt+".txt",b#BouN#ugradvwlifty24,1,0);
+write("../results/BouNgamma"+Nt+".txt",BouN#gamma13,0,0);
+write("../results/BouNgamma"+Nt+".txt",BouN#gamma4,1,0);
+write("../results/bBouNgamma"+Nt+".txt",b#BouN#gamma13,0,0);
+write("../results/bBouNgamma"+Nt+".txt",b#BouN#gamma4,1,0);
+//EOM
+macro writeBouSmago(Nt,BouN)
+write("../results/BouNprx"+Nt+".txt",M,0,0);
+write("../results/BouNpry"+Nt+".txt",M,0,0);
+for(int ss=0;ss<M;ss++)
+{
+	write("../results/BouNprx"+Nt+".txt",BouN#prx13[ss],1,0);
+	write("../results/BouNprx"+Nt+".txt",BouN#prx2[ss],1,0);
+	write("../results/BouNprx"+Nt+".txt",BouN#prx4[ss],1,0);
+	write("../results/BouNpry"+Nt+".txt",BouN#pry13[ss],1,0);
+	write("../results/BouNpry"+Nt+".txt",BouN#pry2[ss],1,0);
+	write("../results/BouNpry"+Nt+".txt",BouN#pry4[ss],1,0);
+}
+write("../results/bBouNprx"+Nt+".txt",b#BouN#prx13,0,0);
+write("../results/bBouNprx"+Nt+".txt",b#BouN#prx2,1,0);
+write("../results/bBouNprx"+Nt+".txt",b#BouN#prx4,1,0);
+write("../results/bBouNpry"+Nt+".txt",b#BouN#pry13,0,0);
+write("../results/bBouNpry"+Nt+".txt",b#BouN#pry2,1,0);
+write("../results/bBouNpry"+Nt+".txt",b#BouN#pry4,1,0);
+//EOM
+
+NewMacro writeBouN(Nt,BouN)
+IFMACRO(prob,"NS")writeBouNS(Nt,BouN);ENDIFMACRO
+IFMACRO(prob,"Smago")writeBouNS(Nt,BouN);writeBouSmago(Nt,BouN)ENDIFMACRO
+EndMacro
+
+macro readBouNS(Nt,BouN)
+{
+	ifstream readx("../results/BouNpex"+Nt+".txt");
+	ifstream ready("../results/BouNpey"+Nt+".txt");
+	readx >> BouN#pex13;
+	readx >> BouN#pex2;
+	readx >> BouN#pex4;
+	ready >> BouN#pey13;
+	ready >> BouN#pey2;
+	ready >> BouN#pey4;
+}
+{
+	ifstream readx("../results/bBouNpex"+Nt+".txt");
+	ifstream ready("../results/bBouNpey"+Nt+".txt");
+	readx >> b#BouN#pex13;
+	readx >> b#BouN#pex2;
+	readx >> b#BouN#pex4;
+	ready >> b#BouN#pey13;
+	ready >> b#BouN#pey2;
+	ready >> b#BouN#pey4;
+}
+{
+	ifstream readx("../results/BouNugradvwx"+Nt+".txt");
+	ifstream ready("../results/BouNugradvwy"+Nt+".txt");
+	readx >> Nv;ready >> Nv;
+	for(int ss=0;ss<Nv;ss++)
+	{
+		readx >> BouN#ugradvwx123[ss];
+		readx >> BouN#ugradvwx4[ss];
+		ready >> BouN#ugradvwy13[ss];
+		ready >> BouN#ugradvwy24[ss];
+	}
+}
+{
+	ifstream readx("../results/bBouNugradvwx"+Nt+".txt");
+	ifstream ready("../results/bBouNugradvwy"+Nt+".txt");
+	readx >> b#BouN#ugradvwx123;
+	readx >> b#BouN#ugradvwx4;
+	ready >> b#BouN#ugradvwy13;
+	ready >> b#BouN#ugradvwy24;
+}
+{
+	ifstream readx("../results/BouNugradvwliftx"+Nt+".txt");
+	ifstream ready("../results/BouNugradvwlifty"+Nt+".txt");
+	readx >> BouN#ugradvwliftx123;
+	readx >> BouN#ugradvwliftx4;
+	ready >> BouN#ugradvwlifty13;
+	ready >> BouN#ugradvwlifty24;
+}
+{
+	ifstream readx("../results/bBouNugradvwliftx"+Nt+".txt");
+	ifstream ready("../results/bBouNugradvwlifty"+Nt+".txt");
+	readx >> b#BouN#ugradvwliftx123;
+	readx >> b#BouN#ugradvwliftx4;
+	ready >> b#BouN#ugradvwlifty13;
+	ready >> b#BouN#ugradvwlifty24;
+}
+{
+	ifstream read("../results/BouNgamma"+Nt+".txt");
+	read >> BouN#gamma13;
+	read >> BouN#gamma4;
+}
+{
+	ifstream read("../results/bBouNgamma"+Nt+".txt");
+	read >> b#BouN#gamma13;
+	read >> b#BouN#gamma4;
+}
+//EOM
+
+macro readBouSmago(Nt,BouN)
+{
+	
+	ifstream readx("../results/BouNprx"+Nt+".txt");
+	ifstream ready("../results/BouNpry"+Nt+".txt");
+	readx >> M; ready >> M;
+	for(int ss=0;ss<M;ss++)
+	{
+		readx >> BouN#prx13[ss];
+		readx >> BouN#prx2[ss];
+		readx >> BouN#prx4[ss];
+		ready >> BouN#pry13[ss];
+		ready >> BouN#pry2[ss];
+		ready >> BouN#pry4[ss];
+	}
+}
+{
+	ifstream readx("../results/bBouNprx"+Nt+".txt");
+	ifstream ready("../results/bBouNpry"+Nt+".txt");
+	readx >> b#BouN#prx13;
+	readx >> b#BouN#prx2;
+	readx >> b#BouN#prx4;
+	ready >> b#BouN#pry13;
+	ready >> b#BouN#pry2;
+	ready >> b#BouN#pry4;
+}
+//EOM
+
+NewMacro readBouN(Nt,BouN)
+IFMACRO(prob,"NS")readBouNS(Nt,BouN);ENDIFMACRO
+IFMACRO(prob,"Smago")readBouNS(Nt,BouN);readBouSmago(Nt,BouN)ENDIFMACRO
+EndMacro
+
+NewMacro infoparam()
+{
+	bool show=1;
+	write("infoparam.txt","------------- PARAMETERS INFO ----------",0,show);
+	write("infoparam.txt","Number of proccesors: "+mpisize,1,show);
+	write("infoparam.txt","Geometrical: ",1,show);
+	write("infoparam.txt"," - wmin="+wmin,1,show);
+	write("infoparam.txt"," - wmax="+wmax,1,show);
+	write("infoparam.txt"," - hmin="+hmin,1,show);
+	write("infoparam.txt"," - hmax="+hmax,1,show);
+	write("infoparam.txt"," - W="+W,1,show);
+	write("infoparam.txt"," - H="+H,1,show);
+	write("infoparam.txt"," - href="+href,1,show);
+	write("infoparam.txt"," - wref="+wref,1,show);
+	write("infoparam.txt"," - NN="+NN,1,show);
+	write("infoparam.txt"," ",1,show);
+	write("infoparam.txt","Physical: ",1,show);
+	write("infoparam.txt"," - velocity="+velocity,1,show);
+	write("infoparam.txt"," - Reynold="+Refijo,1,show);
+	write("infoparam.txt"," - dt="+dt,1,show);
+	write("infoparam.txt"," - epspen="+epspen,1,show);
+	write("infoparam.txt"," - epsEF="+epsEF,1,show);
+	write("infoparam.txt"," - thetas="+thetas,1,show);
+	write("infoparam.txt"," - thetaf="+thetaf,1,show);
+	write("infoparam.txt"," - Pr="+Pr,1,show);
+	write("infoparam.txt"," - Pe="+Pe,1,show);
+	write("infoparam.txt"," - Nu="+Nu,1,show);
+	write("infoparam.txt"," ",1,show);
+}
+EndMacro

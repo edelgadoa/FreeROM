@@ -1,0 +1,69 @@
+NewMacro EulerExp(Re,inicond,sol)
+{
+	uEF[0][]=inicond[];
+	int cont=1;
+	VhGP2 un1,un0,f;
+	un0=u0;
+	// real tsave=dtsave;
+	matrix A;real[int] b(VhGP2.ndof);
+	for(real ti=dt;ti<=T+epsEF;ti+=dt)
+	{	
+		f=fuente(x,y,ti,1./Re[0]);
+		varf prueba(u,v)=intN(Th)(1./Re[0]*gradgrad(u,v)+1./dt*u*v)
+			+intN(Th)(1./dt*un0*v+f*v);
+		A=prueba(VhGP2,VhGP2);
+		b=prueba(0,VhGP2);
+		set(A,solver=sparsesolver);
+		un1[]=A^-1*b;
+		uEF[cont][]=un1[];
+		un0[]=un1[];
+		// un1=solexact(x,y,ti,1./Re[0]);
+		// plot(un1,value=1,fill=1,wait=1);
+		cont++;
+		// plot(un1,value=1,wait=0,cmm="ti="+ti);//,ps="../solutions/eps/uNN"+NN+"t"+ti+".eps");
+	}
+}
+EndMacro
+NewMacro EFSta(uEF,Re)
+{
+	VhGP2 u0=solexact(x,y,0,1./Re[0]);
+	EulerExp(Re,u0,sol)
+}
+EndMacro
+
+macro matrixprodV(prodV)
+matrix prodV;
+{
+	varf a(u,v)=
+		intN(Th)(1./Refijo*gradgrad(u,v));
+	prodV=a(VhGP2,VhGP2);
+}
+// EOM
+macro matrixprodL2(prodL2)
+matrix prodL2;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(uporv(u,v));
+	prodL2=a(VhGVP,VhGVP);
+}
+// EOM
+macro matrixprodH1(prodH1)
+matrix prodH1;
+{
+	varf a(defVP(u),defVP(v))=
+		intN(Th)(gradgrad(u,v));
+	prodH1=a(VhGVP,VhGVP);
+}
+// EOM
+NewMacro matrixgeneration();
+matrix matrixStoNnu;
+{
+	varf a(u,v)=intN(Th)(gradgrad(u,v));
+	matrixStoNnu=a(VhGP2,VhGP2);
+}
+matrix matrixNSNdt;
+{
+	varf a(u,v)=intN(Th)(u*v);
+	matrixNSNdt=a(VhGP2,VhGP2);
+}
+EndMacro

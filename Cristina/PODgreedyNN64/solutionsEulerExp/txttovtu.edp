@@ -1,0 +1,61 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+// int case=1;
+// if(case==1)wh=[2.891,2.734];
+// if(case==2)wh=[2.649,2.65];
+// if(case==3)wh=[2.469,2.923];
+load "iovtk";
+
+readTh(NN);
+
+Re=[16000];
+
+string DataName="Vel Pres";
+int[int] Order=[1,1];
+bool Bin=true;
+
+//readic(16,alpha);
+
+// VhVP defVP(G);
+// {
+// 	ifstream read("../lift/liftNN"+NN+"w"+wref+"h"+href+".txt");
+// 	read >> G[];
+// }
+
+VhGVP defVP(uEF),defVP(uBR),defVP(error);
+string FileNameEF,FileNameBR,FileNameError;
+write("Output.txt","Iniciating the loop in time...",1,1);
+int cont=0;
+//real ti=50;
+//FileNameBR="./vtu/SolBR"+prob+"NN"+NN+"Reynold"+Re[0]+".vtu";
+//FileNameError="./vtu/Error"+prob+"NN"+NN+"Reynold"+Re[0]+".vtu";
+T0=30;
+dtsave=0;
+T=30;
+for(real ti=dtsave+T0;ti<=T+epsEF;ti+=dtsave)
+{
+	dtsave=1;
+	write("Output.txt","t="+ti,1,1);
+	{
+		ifstream read("./txt/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+ti+".txt");
+		read >> uEF[];
+	}
+  //      {
+   //             ifstream read("./txt/SolBR"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+ti+".txt");
+    //            read >> uBR[];
+    //    }
+	// defVP(uEF)=defVP(u0);
+//	plot(defVel(uEF),value=1,wait=0,cmm="vel EF");
+//	plot(uEFP,value=1,fill=1,wait=0,cmm="pres EF");	
+	FileNameEF="./vtu/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+ti+".vtu";
+
+	savevtk(FileNameEF, Th, [uEF,uEFY,0],uEFP, dataname=DataName, order=Order,bin=Bin,append=false);	
+    //savevtk(FileNameBR, Th, [uBR,uBRY,0],uBRP, dataname=DataName, order=Order,bin=Bin,append=true);
+	//error[]=uEF[]-uBR[];
+	//error[]=abs(error[]);
+	//savevtk(FileNameError, Th, [error,errorY,0],errorP, dataname=DataName, order=Order,bin=Bin,append=true);
+}
+
+
+write("Output.txt","Done.",1,1);

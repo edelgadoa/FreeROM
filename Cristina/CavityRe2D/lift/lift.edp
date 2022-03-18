@@ -1,0 +1,63 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+
+infoparam;
+readTh(NN);
+// plot(Th);
+
+
+write("Output.txt","Computing the lift for velocity...",0,1);
+VhGVP defVP(G);
+if(0)
+{
+	// Definicion del levantamiento
+	// real a=-1./(1-0.5)^2;
+	// func g=a*(x-0.5)^2+1.;
+	real a=0.2;
+	func g=sin(pi*x/(2*a))*(x<=a)+1.*(a<x)*(x<1.-a)+sin(pi*(1.-x)/(2*a))*(1.-a<=x);
+
+	// Definicion de la funcion donde cae
+	// real a1=(H-wh[1])/(2*(wh[0]-W/2.));
+// 	real b1=H-wh[0]*a1;
+// 	real a2=-a1;
+// 	real b2=H+(W-wh[0])*a1;
+// 	func p2 = (a1*x+b1)*(x<=W/2.)+(a2*x+b2)*(W/2.<x);
+	real vertice=0.5;//(H+wh[1])/2.;
+	real a1=(1-vertice)/(1-0.5)^2;
+	func p2=a1*(x-0.5)^2+vertice;
+
+	// Definicion de la funcion de como cae
+	func axy=g/(1.+1.e-9-p2)^2;
+	func gfunc = axy*(y-p2)^2*(y>=p2)+0;
+	// func axy=g/(H+1.e-9-p2);
+	// func bxy=-axy*p2;
+	// func gfunc = (axy*y+bxy)*(y>=p2)+0;
+	IFMACRO(dimension,3)defVP(G)=[gfunc,0.,0.,0.];ENDIFMACRO
+	IFMACRO(dimension,2)defVP(G)=[gfunc,0.,0.];ENDIFMACRO
+}
+else
+{
+	real a=-1./(1-0.5)^2;
+	func g=a*(x-0.5)^2+1.;
+	func gY=0;
+	VhGVP defVP(gfunc);
+	matrix ASta;real[int] bSta(VhLVP.ndof);
+	{
+		varf a(defVP(u),defVP(v))=
+			intN(ThL)(
+				1./Refijo*(gradgrad(u,v))
+	   			 -div(v)*uP
+	   			 +div(u)*vP
+	   			 +uP*vP*epspen
+	   			 )
+			 +BC(u,g);
+		ASta=a(VhLVP,VhLVP);bSta=a(0,VhLVP);
+	}
+	solvesystem(ASta,bSta,gfunc,VP);
+	IFMACRO(dimension,3)defVP(G)=[gfunc,gfuncY,gfuncZ,0.];ENDIFMACRO
+	IFMACRO(dimension,2)defVP(G)=[gfunc,gfuncY,0.];ENDIFMACRO
+}
+plot(defVel(G),value=1,fill=1);
+write("liftNN"+NN+"Reynold"+Refijo+".txt",G[],0,0,0,20);
+write("Output.txt","Done.",1,1);

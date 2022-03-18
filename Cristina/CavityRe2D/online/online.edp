@@ -1,0 +1,174 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+// Greedy
+int Nv,Np,N,nbasis;
+// cout << ReBest(0) << endl;
+real CSobolev,resnorm;
+
+
+write("Output.txt","Computing the online phase solutions with "+mpisize+" processors...",0,1);
+real executiontime;
+readTh(NN);
+// //plot(Th);
+
+readlift(NN,Refijo);
+// plot(GVel);
+// real[int,int] parameters(numparam,niw*nih);
+readparameters(ReSta);
+VhGP1dc nut;nut[]=0;
+VhGVP defVP(uEF),defVP(uBR);
+
+write("Output.txt","Reading the RB...",1,1);
+{ifstream read("../results/basisVel.txt");read >> Nv;}
+VhGVel[int] defVel(baseVel)(Nv);
+{ifstream read("../results/basisVel.txt");read >> Nv;
+for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+{ifstream read("../results/basisPres.txt");read >> Np;}
+VhGP1[int] basePres(Np);
+{ifstream read("../results/basisPres.txt");read >> Np;
+for(int s=0;s<Np;s++)read >> basePres[s][];}
+N=Np+Nv;
+
+write("Output.txt","Basis constructed by "+Np+" snapshots.",1,1);
+if(0)
+{
+	string DataName="Vel";
+	int[int] Order=[1];
+	bool Bin=true;
+	for(int s=0;s<Nv;s++)
+	{
+		string FileName="./vtu/BaseVel"+s+".vtu";
+		savevtk(FileName, Th, [baseVel[s],baseVelY[s],0], dataname=DataName, order=Order,append=true);//,bin=Bin);
+	}
+	DataName="Pres";
+	for(int s=0;s<Np;s++)
+	{
+		string FileName="./vtu/BasePres"+s+".vtu";
+		savevtk(FileName, Th, basePres[s], dataname=DataName, order=Order,append=true);//,bin=Bin);
+	}
+}
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0)
+VhGP1dc gradw0;
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nv);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv-1);}
+for(int ii=0;ii<Nv;ii++)
+{
+	ini(VhGP2,auxbase);
+	VeltoP2(VhG,baseVel[ii],auxbase);
+	gradEIM(auxbase,auxgrad,EIMx,Grad);
+	for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+}
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+{ifstream read("../solutions/txt/nut.txt");
+read >> nut[];}
+// plot(nut,value=1,fill=1);
+write("Output.txt","Reading the RBF...",1,1);
+readRBF;
+include "../auxiliary/betas.idp";
+real rhoT;
+write("Output.txt","Computing the inyection constant...",1,1);
+{
+	ifstream aux("../offline/CS.txt");
+	aux >> CSobolev;
+}
+write("Output.txt", " - Sobolev constant: " + CSobolev,1,1);
+rhoTselection;
+write("Output.txt", " - rhoT: " + rhoT,1,1);
+real tau,delta;
+ENDIFMACRO
+
+
+write("Output.txt","initializing Reduced Matrixes..."+N,1,1);
+initialization(StoN,NSN,SmaN,N);
+IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+
+//Re=[wmin,hmin];
+Re[0]=4253.235;
+
+matrix prodVP;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+	prodVP=a(VhGVP,VhGVP);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+write("Output.txt","Computing the Reduced Basis problem...",1,1);
+write("Output.txt","Please, write Re=",1,1);
+// cin >> Re[0];
+write("Output.txt","Reynold="+Re[0],1,1);
+real executiontimeBR=mpiWtime();
+real[int] uNb(N);
+BRSta(uBR,uNb,Re[0],StoN,NSN,SmaN);
+executiontimeBR=mpiWtime()-executiontimeBR;
+write("Output.txt","RB problem time="+executiontimeBR,1,1);
+// -------------------------------------------------------------------------
+write("Output.txt","Computing the estimator...",1,1);
+{
+	VhGVP defVP(residual);
+	residualb(uBR,Re[0],residual);
+// plot(defVel(residual),value=1,wait=1);
+	resnorm=normL2(residual[],prodVP);
+}
+write("Output.txt","    - Residual= "+resnorm,1,1);
+IFMACRO(prob,"Smago");
+	include "../auxiliary/search.idp";
+	real betah=fbeta(RBFgamma,RBFmu,Re);
+	// write("Output.txt","    - Beta_N("+Re[0]+","+Re[1]+"): "+betah,1,1);
+	tau=4.*resnorm*rhoT/betah^2;
+	if(tau>1){delta=tau;}
+	else{delta=betah/(2.*rhoT)*(1.-sqrt(1.-tau));}
+	write("Output.txt","    - Delta="+delta,1,1);
+ENDIFMACRO
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+write("Output.txt","Computing the Finite Element problem...",1,1);
+write("Output.txt","Reynold="+Re[0],1,1);
+real executiontimeEF=mpiWtime();
+EFSta(uEF,Re);
+executiontimeEF=mpiWtime()-executiontimeEF;
+write("Output.txt","FE problem time="+executiontimeEF,1,1);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+write("Output.txt","Computing the exact error between FE and RB solutions...",1,1);
+VhGVP defVP(exacterror);
+exacterror[]=uEF[]-uBR[];
+plot(defVel(uEF),value=1,cmm="EF vel",wait=0);
+plot(defVel(uBR),value=1,cmm="BR vel",wait=0);
+plot(defVel(exacterror),value=1,cmm="Error vel");
+plot(exacterrorP,value=1,fill=1,cmm="Error pres");
+matrixprodL2(prodL2);matrixprodH1(prodH1);//matrixprodVP(prodVP);
+real errornormL2=normL2(exacterror[],prodL2);
+real errornormH1=normL2(exacterror[],prodH1);
+real errornormT=normL2(exacterror[],prodVP);
+exacterror[]=abs(exacterror[]);
+real errornormLinf=exacterror[].max;
+
+write("Output.txt", "L2 error="+errornormL2,1,1);
+write("Output.txt", "H1 error="+errornormH1,1,1);
+write("Output.txt", "T error="+errornormT,1,1);
+write("Output.txt", "Linf error="+errornormLinf,1,1);
+
+real speedup=executiontimeEF/executiontimeBR;
+write("Output.txt","speedup="+speedup,1,1);
+// write("case"+case+".txt",Re[0],0,0);
+// write("case"+case+".txt",errornormT,1,0);
+// write("case"+case+".txt",delta,1,0);
+
+write("Output.txt","Done.",1,1);

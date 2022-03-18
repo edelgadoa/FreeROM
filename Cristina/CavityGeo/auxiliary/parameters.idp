@@ -1,0 +1,66 @@
+macro prob()"Smago" //EOM
+int petsc=0;
+int GS=1;
+int readbasis=0;
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+int suelo=1;
+int paredi=2;
+int pareds=4;
+int[int] paredes=[suelo,pareds,paredi];
+int techo=3;
+int [int] borde = [suelo,pareds,techo,paredi]; // 1 suelo, 2 pared, 3 techo
+meshN Th,ThL;
+real hmin=2.5,wmin=2.;
+real hmax=3.,wmax=4;
+real W=20.+2.*wmax; // 4*wmax
+real H=2.*hmax; // 2*href + un poquito
+real Longcarac=W-2.*(wmax+wmin)/2.;
+// cout << "Longcarac = " << Longcarac << endl;
+// real hmin=0.6,hmax=1.2,wmin=0.5,wmax=1.2;
+// real W=3,H=2;
+hmin/=Longcarac;wmin/=Longcarac;hmax/=Longcarac;wmax/=Longcarac;
+W/=Longcarac;H/=Longcarac;
+real href=(hmin+hmax)/2.,wref=(wmin+wmax)/2.;
+
+real velocity=2.13e-3;//0.33e-2;
+real Refijo=velocity*Longcarac/1.51e-5;//1.e3;
+Refijo=3100;
+velocity=Refijo*(1.51e-5)/Longcarac;
+real Pr=0.71,Pe=Refijo*Pr,Nu=2.;
+real thetas=30.,thetaf=22,thetac=thetaf;
+thetas/=thetac;thetaf/=thetac;
+// thetas=25.;thetaf=22.5;thetac=thetas;
+// thetas/=thetac;thetaf/=thetac;
+int NN = 7,NN2=(W-2.*wref)/wref*NN;; // subdivisiones de cada cuadrado
+real epspen=1.e-7;
+real dt=5.e-2;//5.e-2;//5.e-2;//1.e-2;//.e-3;//1.e-1;//2.e-1;
+real CS=0.1;
+real errEF=10.,epsEF=1.e-11,errBR=10.,epsBR=epsEF;
+int nEF=10000,nBR=nEF;
+
+load "PETSc";
+Mat MatAVP,MatAVel;
+int[int] mapVP,mapVel;
+string sparamsv="-pc_type lu -pc_factor_mat_solver_type mumps";
+
+int numparam=2;
+real[int] wh(numparam);
+real dth=(hmax-hmin)/2^3;//2;//(hmax-hmin)/(nih-1.);
+real dtw=(wmax-wmin)/2^3;//(wmax-wmin)/(niw-1.);
+//dth*=2^3;dtw*=2^3;
+dth/=3;dtw/=3;
+real nih=(hmax-hmin)/dth+1.;//cout << "nih: " << nih << endl;
+real niw=(wmax-wmin)/dtw+1.;//cout << "niw: " << niw << endl;
+real [int] vh(nih),vw(niw);
+for (int ig=0; ig<nih; ig++)vh(ig)=hmin+ig*dth;
+for (int ig=0; ig<niw; ig++)vw(ig)=wmin+ig*dtw;
+real jacobian13,jacobian2,jacobian4;
+real etax123,etax4,etay13,etay24;
+real gammax13,gammax2,gammax4,gammay13,gammay2,gammay4;
+real phix13,phix24,phiy123,phiy4;
+
+func cero=0.;func ceroY=0.;func ceroZ=0.;
+func ceroP=1.;
+
+

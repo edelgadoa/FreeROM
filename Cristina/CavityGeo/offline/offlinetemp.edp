@@ -1,0 +1,167 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+
+infoparam;
+
+// Greedy param
+int Ntmax,Nt,nbasis,Nv,Np,N;
+Ntmax=nih*niw+1;
+Ntmax=100;nbasis=Ntmax;
+real[int] errGreedy(Ntmax);errGreedy(0)=10.;real epsGreedy=5.e-3;
+real[int,int] whBest(numparam,Ntmax);whBest=0;
+whBest(0:numparam,0)=[wmin,hmin];
+real[int]  ResMax(Ntmax),delta(nih*niw),resnorm(niw*nih);
+ResMax(0)=1.;
+
+write("Output.txt","Computing the offline phase for temperature with "+mpisize+" processors for h=",0,1);
+write("Output.txt",vh,1,1);
+write("Output.txt","and for w=",1,1);
+write("Output.txt",vw,1,1);
+write("Output.txt"," - epsGreed = "+epsGreedy,1,1);
+
+wh=[wref,href];
+readTh(NN,wh);
+readlift(NN,wh);
+readlifttemp(NN,wh);
+omegas(omega,wh);
+real[int,int] parameters(numparam,niw*nih);
+readparameters(whSta);
+VhGP2[int] baseTemp(Ntmax);
+VhGP1dc nut;
+// plot(defVel(GVel),value=1,wait=1);
+
+write("Output.txt","Reading the RB...",1,1);
+{ifstream read("../results/basisVel.txt");read >> Nv;}
+VhGVel[int] defVel(baseVel)(Nv);
+{ifstream read("../results/basisVel.txt");read >> Nv;
+for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+{ifstream read("../results/basisPres.txt");read >> Np;}
+VhGP1[int] basePres(Np);
+{ifstream read("../results/basisPres.txt");read >> Np;
+for(int s=0;s<Np;s++)read >> basePres[s][];}
+N=Np+Nv;
+real[int] uNb(N);
+VhGVP  defVP(uEF),defVP(uBR);
+
+write("Output.txt","Ok",1,1);
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0)
+VhGP1dc gradw0;
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+{real[int,int] aux(dimension^2,Nv);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv-1);}
+for(int ii=0;ii<Nv;ii++)
+{
+	ini(VhGP2,auxbase);
+	VeltoP2(VhG,baseVel[ii],auxbase);
+	gradEIM(auxbase,auxgrad,EIMx,Grad);
+	for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+}
+real[int][int] gradG(M);
+gradEIM(GP2,gradG,EIMx,Grad);
+// {ifstream read("../solutions/txt/nut.txt");
+// read >> nut[];}
+write("Output.txt","Reading the RBF...",1,1);
+readRBFtemp;
+include "../auxiliary/betas.idp";
+ENDIFMACRO
+
+
+write("Output.txt","initializing Reduced Matrixes..."+N,1,1);
+initialization(StoN,NSN,SmaN,N);
+IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+
+write("Output.txt","Generating matrixes...",1,1);
+matrixgenerationTemp;
+write("Output.txt","initializing Reduced Matrixes...",1,1);
+initializationTemp(BouN,Ntmax)
+
+int nbasis0=0;
+/*if(readbasis)
+{
+	{ifstream read("./results/nbasis.txt");read >> nbasis0;}
+	{
+		real[int,int] aux(numparam,nbasis0);
+		ifstream read("./results/whBest.txt");read >> aux;
+		whBest=aux(0:numparam-1,0:nbasis0-1);
+		cout << whBest(0:numparam-1,0:nbasis0-1) << endl;
+	}
+	{ifstream read("./results/basisVel.txt");read >> Nv;
+	for(int s=0;s<Nv;s++)read >> baseVel[s][];}
+	{ifstream read("./results/basisPres.txt");read >> Np;
+	for(int s=0;s<Np;s++)read >> basePres[s][];}
+	int ip=nbasis0-1;
+	for(int ii=0;ii<2*ip+2;ii++)
+	{
+		ini(VhGP2,auxbase);
+		VeltoP2(VhG,baseVel[ii],auxbase);
+		gradEIM(auxbase,auxgrad,EIMx,Grad);
+		for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+	}
+	N=3*(ip+1);Nv=2*(ip+1);Np=ip+1;
+	IFMACRO(prob,"Stokes"){readStoN(N,StoN);}ENDIFMACRO
+	IFMACRO(prob,"NS"){readStoN(N,StoN);readNSN(N,NSN);}ENDIFMACRO
+	IFMACRO(prob,"Smago"){readStoN(N,StoN);readNSN(N,NSN);readSmaN(N,SmaN);}ENDIFMACRO
+	include "./greedy.idp";
+}
+*/
+write("Output.txt","Starting of the Greedy Algorithm.",1,1);
+write("./results/deltatemp.txt","delta",0,0);
+write("./results/resnormtemp.txt","residual",0,0);
+
+for(int ip=nbasis0;ip<nbasis && errGreedy(ip)>epsGreedy;ip++)
+{
+	wh=whBest(0:numparam-1,ip);
+	write("Output.txt","------------------------  ITERATION: " +ip+", actual error= "+errGreedy(ip)+ "  ----------------------------------",1,1);
+	write("Output.txt","Computing of the snapshots for w = " + wh[0]+", h = "+wh[1] ,1,1);
+	pause;
+	VhGP2 thetaEF;
+	EFStaTemp(thetaEF,wh);
+	pause;
+	Nt=ip+1;
+//	cout << "N=" << N << endl;
+//	cout << "Nv=" << Nv << endl;
+//	cout << "Np=" << Np << endl;
+	baseTemp[Nt-1][]=thetaEF[];
+	write("Output.txt","Ok.",1,1);
+	if(GS)
+	{
+		write("Output.txt","Orthonormalization...",1,1);
+		orthoTemp(Nt);
+		normalization(baseTemp,Nt,prodgradTemp);
+		int[int] check=[1];
+		orthocheckTemp(Nt,check)
+		if(check[0]==0)write("Output.txt","Bad ortho Temp...",1,1);
+	}
+	plot(baseTemp[Nt-1],value=1,wait=0,fill=1,cmm="Temp, iteration = "+ip);
+	write("Output.txt","Ok.",1,1);
+	write("Output.txt","Selection of the new parameter, Greedy Algorithm",1,1);
+	include "./greedytemp.idp";
+	if(errGreedy(ip+1)<epsGreedy)
+	{
+		write("Output.txt","----------------------------------------------------------------------------------------------------------------------",1,1);
+		write("Output.txt","Greedy algorithm finished with "+Nt+" basis.",1,1);
+		write("../results/selectedparam.txt",whBest(0:numparam-1,0:Nt-1),1,1);
+		write("Output.txt", "Writing the basis..." ,1,1);
+		write("../results/basisTemp.txt",Nt,0,0);
+		for(int it=0;it<Nt;it++)write("../results/basisTemp.txt",baseTemp[it][],1,0);
+		write("Output.txt", "Ok, writing the matrixes..." ,1,1);
+		writeBouN(Nt,BouNs);
+	}
+}
+
+write("Output.txt","Done.",1,1);

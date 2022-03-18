@@ -1,0 +1,78 @@
+matrixBR(ip);
+initialization(StoNs,NSNs,SmaNs,N);
+bigtosmall(StoNs,NSNs,SmaNs,N);
+
+real[int,int] selected(numparam,niRe);
+int cont=0;
+real[int] uNb(N);
+for(int inRe=0;inRe<niRe;inRe++)
+{
+	Re=vRe(inRe);
+	selected(0:numparam-1,cont)=Re;
+	VhGVP defVP(uBR);
+	write("Output.txt","  - Reynold="+Re[0],1,1);
+	BRSta(uBR,uNb,Re[0],StoNs,NSNs,SmaNs);
+	if(0) // uso del error exacto
+	{
+		VhGVP defVP(uEF),defVP(errorexacto);
+		EFSta(uEF,Re);
+		errorexacto[]=uEF[]-uBR[];
+		errorexacto[]=abs(errorexacto[]);
+		resnorm(cont)=normL2(errorexacto[],prodVP);
+		tau(cont)=resnorm(cont);
+		delta(cont)=tau(cont);
+		write("Output.txt","    - Exact error= "+resnorm(cont),1,1);
+	}
+	if(0) // residual
+	{
+		VhGVP defVP(residual);
+		residualb(uBR,Re[0],residual);
+		resnorm(cont)=normL2(residual[],prodVP);
+		tau(cont)=resnorm(cont);
+		delta(cont)=tau(cont);
+		write("Output.txt","    - Residual= "+resnorm(cont),1,1);
+	}
+	if(1)// error estimator
+	{
+		{
+			VhGVP defVP(residual);
+			residualb(uBR,Re[0],residual);
+			resnorm(cont)=normL2(residual[],prodVP);
+		}
+		write("Output.txt","    - Residual= "+resnorm(cont),1,1);
+		IFMACRO(prob,"Smago");
+			include "../auxiliary/search.idp";
+	 		// funcgeo(Re);
+			// etamax=maxmax(etax[],etay[]);
+// 				gammamax=maxmax(gammax[],gammay[]);
+// 				phimax=maxmax(phix[],phiy[]);
+// 				phimin=minmin(phix[],phiy[]);
+			// rhoT=2.*etamax*CSobolev+(gammamax*sqrt(phimax)+3.*gammamax*phimax/sqrt(phimin))*CS^2*hTri[].max^(2-dimension/2);
+			// cout << "rhoT=" << rhoT << endl;
+			real betah=fbeta(RBFgamma,RBFmu,Re);
+			// write("Output.txt","    - Beta_N("+Re[0]+","+Re[1]+"): "+betah,1,1);
+			tau(cont)=4.*resnorm(cont)*rhoT/betah^2;
+			if(tau(cont)>1){delta(cont)=tau(cont);}
+			else{delta(cont)=betah/(2.*rhoT)*(1.-sqrt(1.-tau(cont)));}
+			write("Output.txt","    - Delta="+delta(cont),1,1);
+		ENDIFMACRO
+	}
+	
+	pause;
+	cont++;
+}
+if(tau.max>1)write("Output.txt","WARNING, Tau > 1",1,1);
+write("./results/tau"+ip+".txt",tau,0,0);
+write("./results/delta"+ip+".txt",delta,0,0);
+write("./results/resnorm"+ip+".txt",resnorm,0,0);
+ReBest(0:numparam-1,ip+1)=selected(0:numparam-1,resnorm.imax);
+if(tau.max>1){ReBest(0:numparam-1,ip+1)=selected(0:numparam-1,tau.imax);}
+else{ReBest(0:numparam-1,ip+1)=selected(0:numparam-1,delta.imax);}
+write("./results/tau.txt",tau.max,1,0);
+write("./results/delta.txt",delta.max,1,0);
+write("./results/resnorm.txt",resnorm.max,1,0);
+errGreedy(ip+1)=delta.max;
+// errGreedy=resnorm.max;
+write("Output.txt",ReBest(0:numparam-1,0:ip+1),1,1);
+write("errgreedy.txt",errGreedy(1:ip+1),0,0);
+write("Output.txt",errGreedy(1:ip+1),1,1);

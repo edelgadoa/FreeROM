@@ -1,0 +1,104 @@
+verbosity = 1;
+int numparam=2;
+int ncases=3; // numero de casos 
+real[int,int] wh(numparam,ncases);
+int[int] speedup(ncases);
+real[int] errornormT(ncases),errornormtheta(ncases),deltav(ncases),deltatheta(ncases);
+
+for (int i=1;i<=ncases;i++)
+{
+	ifstream aux("case"+i+".txt");
+	for(int ii=0;ii<numparam;ii++)
+	{
+		aux >> wh(ii,i-1);
+	}
+	aux >> errornormT(i-1);
+	aux >> deltav(i-1);
+	aux >> errornormtheta(i-1);
+	aux >> deltatheta(i-1);
+	aux >> speedup(i-1);
+}
+cout << wh << endl;
+ofstream write("sumuptable.txt");
+write << "\\begin{itemize}" << endl;
+for(int i=1;i<=ncases;i++)
+{
+	write << "\\item Case "+i+": $\\omega="+wh(0,i-1)+"$, $\\sigma="+wh(1,i-1)+"$" << endl;
+}
+write << "\\end{itemize}" << endl;
+write << "\\begin{table}[H]" << endl;
+write << "   $$" << endl;
+write << "   \\begin{tabular}{|c|";
+for (int i=1;i<=ncases;i++)
+{
+	write << "c";
+}
+
+write << "|}" << endl;
+
+// Primera fila, datos y casos
+write << "   \\hline " << endl;
+write << "   Data";
+for (int i=1; i<=ncases; i++)
+{
+	 write << " & Case " + i;
+}
+write << "\\\\" << endl;
+write << "   \\hline" << endl;
+
+// Quinta fila, norma del error en velocidad
+write << "   $\\|U_h-U_N\\|_T$";
+write.precision(2);
+for (int i=0; i<ncases; i++)
+{
+	write << " & ";
+	write.scientific; // scientific, fixed, showbase,noshowbase
+	write << "$"+errornormT(i)+"$";
+}
+write << " \\\\" << endl;
+
+write << "  $\\ \\Delta_N$";
+write.precision(2);
+for (int i=0; i<ncases; i++)
+{
+	write << " & ";
+	write.scientific; // scientific, fixed, showbase,noshowbase
+	write << "$"+deltav(i)+"$";
+}
+write << " \\\\" << endl;
+
+// Quinta fila, norma del error en velocidad
+write << "   $\\|\\theta_h-\\theta_N\\|_{L^2}$";
+write.precision(2);
+for (int i=0; i<ncases; i++)
+{
+	write << " & ";
+	write.scientific; // scientific, fixed, showbase,noshowbase
+	write << "$"+errornormtheta(i)+"$";
+}
+write << " \\\\" << endl;
+
+write << "   $\\ \\Delta_N$";
+write.precision(2);
+for (int i=0; i<ncases; i++)
+{
+	write << " & ";
+	write.scientific; // scientific, fixed, showbase,noshowbase
+	write << "$"+deltatheta(i)+"$";
+}
+write << " \\\\" << endl;
+
+// Cuarta fila, speedup
+write << "   speedup";
+for (int i=0; i<ncases; i++)
+{
+	write << " & " + speedup(i);
+}
+write << " \\\\" << endl;
+write << "   \\hline" << endl;
+write << "   \\end{tabular}$$" << endl;
+write << "   \\vspace{-0.4cm}" << endl;
+write << "\\end{table}" << endl;
+
+// Cuando se obtenga la tabla, hacer un reemplazo de "e-0" por "\cdot 10^{-"
+	// y "$ " por "}$ "
