@@ -1,0 +1,100 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+
+// Definimos las matrices de interpolacion Id-π_h y de derivadas
+
+// Notacion de las matrices: IPh_EFX_EFY: Matriz de filtrado de EFX -> EFY -> EFX
+//							 ------------------------------------------------------
+//						     DX_EFX: Matrix derivando respecto de x de TODOS los EF a la vez
+//						     DY_EFX: Matrix derivando respecto de y de TODOS los EF a la vez
+//						     DZ_EFX: Matrix derivando respecto de z de TODOS los EF a la vez (3D)
+//							 -------------------------------------------------------
+//						     DXN_EFX: Matrix derivando respecto de x de la componente N del EFX
+//							 -------------------------------------------------------
+//                           IPh_DXN_EFX: Matrix del filtrado derivando respecto de x de la componente N del EFX
+//                           IPh_DYN_EFX: Matrix del filtrado derivando respecto de x de la componente N del EFX
+//                           
+
+
+
+// Matrices de filtrado. /// REVISAR NOTACION DE LAS MATRICES, PARECE QUE FREEFEM NO LE GUSTA _
+matrix IPh_P2_P1, IPh_3P2_3P1, IPh_P1dc_P1;
+
+{
+		matrix Id_P2,Id_3P2,Id_P1dc; // Id_EFX: Matriz Identidad con dim(EFX) grados de libertad
+		{
+			VhP2 faux2=1.;
+			VhP1dc faux1=1.;
+			Id_P2 = faux2[];
+			Id_P1dc = faux1[];
+			Id_3P2=[[Id_P2,0,0],[0,Id_P2,0],[0,0,Id_P2]];
+		}
+		
+		matrix PIg = interpolate(VhP1,VhP1dc); //(Id-πh) P1dc->P1->P1dc
+		matrix IPg = interpolate(VhP1dc,VhP1); 
+		matrix IPPIg = IPg*PIg;
+		IPhdc = IdP1dc + (-1.)*IPPIg;
+		
+		matrix PI=interpolate(VhP1,VhP2);
+		matrix IP=interpolate(VhP2,VhP1);
+		matrix IPPI=IP*PI;
+		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2 
+		
+		matrix PI3=interpolate(Vh3P1,Vh3P2);
+		matrix IP3=interpolate(Vh3P2,Vh3P1);
+		matrix IPPI3=IP3*PI3;
+		IPh3=Id3P2+(-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2
+}
+
+// Matrices de derivadas	
+matrix DX_3P2, DY_3P2; // ∂x, ∂y 3P2 -> 3P1dc en las 3 componentes 
+matrix DX_P2, DY_P2;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
+matrix DX1_3P2, DX2_3P2, DX3_3P2; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix DY1_3P2, DY2_3P2, DY3_3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+
+{
+	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
+	int[int] c0=[0,-1,-1];
+	int[int] c1=[-1,1,-1];
+	int[int] c2=[-1,-1,2];
+	
+	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
+	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
+	D3 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=1);
+	
+	DX_3P2_3P1dc = D1 + D2 + D3;
+	
+	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=2);
+	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=2);
+	D3 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=2);
+	
+	DY_3P2_3P1dc = D1 + D2 + D3;
+	
+	/////////////////////////////////////////////////////////
+	
+	int[int] cs2=[0];
+	matrix DX1_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	matrix DY1_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+
+	cs2=[1];
+	matrix DX2_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	matrix DY2_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+
+
+	cs2=[2];
+	matrix DX3_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	matrix DY3_3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	
+	////////////////////////////////////////////////////////
+	
+	matrix DX_P2 = interpolate(VhP1dc,VhP2,op=1);
+	matrix DY_P2 = interpolate(VhP1dc,VhP2,op=2);
+
+}
+
+// Matrices de derivada, con filtrado
+matrix IPh_DX3_3P2 = IPh_P1dc_P1 * DX3_3P2; // (I-πh) de ∂x componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
+matrix IPh_DY3_3P2 = IPh_P1dc_P1 * DY3_3P2; // (I-πh) de ∂y componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
+

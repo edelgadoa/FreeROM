@@ -1,0 +1,31 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros
+include "../../Auxiliary/Macros_2D.idp"
+
+// Creamos la matriz
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF y de los EF globales
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+Vh3P2 [u1, u2, p];
+VhP1dc u1dx, u1dy, u2dx, u2dy; 
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
