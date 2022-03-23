@@ -29,7 +29,6 @@ macro updategradw(v,matrixD,Grad)
 Grad#X[]=matrixD#X*v[];Grad#XY[]=matrixD#X*v#Y[];Grad#XZ[]=matrixD#X*v#Z[];
 Grad#Y[]=matrixD#Y*v[];Grad#YY[]=matrixD#Y*v#Y[];Grad#YZ[]=matrixD#Y*v#Z[];
 Grad#Z[]=matrixD#Z*v[];Grad#ZY[]=matrixD#Z*v#Y[];Grad#ZZ[]=matrixD#Z*v#Z[];
-
 // EOM
 macro gradEIM(u,gradu,EIMx,Grad)
 {updategradw(u,matrixD,Grad);

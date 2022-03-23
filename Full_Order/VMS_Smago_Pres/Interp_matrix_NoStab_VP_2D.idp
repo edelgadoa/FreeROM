@@ -2,7 +2,6 @@
 // FreeROM 
 /////////////// 
 
-
 // Definimos las matrices de interpolacion Id-π_h y de derivadas
 
 // Notacion de las matrices: IPhEFXEFY: Matriz de filtrado de EFX -> EFY -> EFX
@@ -19,7 +18,7 @@
 
 
 
-// Matrices de filtrado. /// REVISAR NOTACION DE LAS MATRICES, PARECE QUE FREEFEM NO LE GUSTA _
+// Matrices de filtrado. 
 matrix IPhP2P1, IPh3P23P1, IPhP1dcP1;
 
 {
@@ -29,23 +28,23 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1;
 			VhP1dc faux1=1.;
 			IdP2 = faux2[];
 			IdP1dc = faux1[];
-			Id3P2=[[Id_P2,0,0],[0,Id_P2,0],[0,0,Id_P2]];
+			Id3P2=[[IdP2, 0, 0],[0, IdP2, 0],[0, 0, IdP2]];
 		}
 		
 		matrix PIg = interpolate(VhP1,VhP1dc); //(Id-πh) P1dc->P1->P1dc
 		matrix IPg = interpolate(VhP1dc,VhP1); 
 		matrix IPPIg = IPg*PIg;
-		IPhdc = IdP1dc + (-1.)*IPPIg;
+		IPhP1dcP1 = IdP1dc + (-1.)*IPPIg;
 		
 		matrix PI=interpolate(VhP1,VhP2);
 		matrix IP=interpolate(VhP2,VhP1);
 		matrix IPPI=IP*PI;
-		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2 
+		IPhP2P1 = IdP2 + (-1.)*IPPI;  // (Id-πh) P2->P1->P2 
 		
 		matrix PI3=interpolate(Vh3P1,Vh3P2);
 		matrix IP3=interpolate(Vh3P2,Vh3P1);
 		matrix IPPI3=IP3*PI3;
-		IPh3=Id3P2+(-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2
+		IPh3P23P1 = Id3P2 + (-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2
 }
 
 // Matrices de derivadas	
@@ -75,22 +74,22 @@ matrix D1Y3P2, D2Y3P2, D3Y3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 
 	/////////////////////////////////////////////////////////
 	
 	int[int] cs2=[0];
-	matrix D1X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	matrix D1Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	D1X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	D1Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
 
 	cs2=[1];
-	matrix D2X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	matrix D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	D2X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
 
 
 	cs2=[2];
-	matrix D3X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	matrix D3Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	D3X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
+	D3Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
 	
 	////////////////////////////////////////////////////////
 	
-	matrix DXP2 = interpolate(VhP1dc,VhP2,op=1);
-	matrix DYP2 = interpolate(VhP1dc,VhP2,op=2);
+	DXP2 = interpolate(VhP1dc,VhP2,op=1);
+	DYP2 = interpolate(VhP1dc,VhP2,op=2);
 
 }
 

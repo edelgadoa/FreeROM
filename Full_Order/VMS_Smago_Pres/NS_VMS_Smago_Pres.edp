@@ -29,3 +29,6 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
 
+// Definimos los parametros a usar
+include "Parametros_2D.idp"
+
