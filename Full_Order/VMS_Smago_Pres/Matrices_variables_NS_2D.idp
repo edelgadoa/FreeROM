@@ -1,0 +1,16 @@
+///////////////
+// FreeROM 
+///////////////
+
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	
+varf FVNS ([uu,uuY,uuP],[v,vY,vP])= int2d(Th)(UGradVW(uEF,uu,v))			
+								  //Segundo miembro
+								  +int2d(Th)((1./dt)*(uEF*v+uEFY*vY));
+				
+						
+MNS=FVNS(Vh3P2,Vh3P2);
+bNS=FVNS(0,Vh3P2);

@@ -22,13 +22,30 @@ include "../../Mallas/CuadradoNxNy.idp"
 // Definimos los espacios de EF y de los EF globales
 include "FE_Spaces_NoStab_VP_2D.idp"
 
-Vh3P2 [u1, u2, p];
-VhP1dc u1dx, u1dy, u2dx, u2dy; 
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
-
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
 include "Parametros_2D.idp"
 
+Reynolds = 1000;
+
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+include "FE_VMS_LPS_2D.idp"
+
+// Dibujamos la solucion, con levantamiento
+
+Vh3P2 [uEFL, uEFLY, uEFLP];
+uEFL[]=uEF[]+Lev[];
+
+plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+plot(uEFLP, cmm="FE pres para Re="+Reynolds);

@@ -12,22 +12,30 @@ real CS = 0.1; // Smago
 real cc1=16.; // tauk
 real cc2=sqrt(cc1);
 
-VhP0 mk;
+VhP0 tKcod,tKTcod,tau,mk;
 varf med(unused,v)=int2d(Th)(1.*v);
 real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk); 
 
 
+
 // Parametros para el problema de EF
 real dt = 1;
+real epspen = 1e-8;
+
 
 int niterFE = 2000; 
 real epsFE = 1e-10;
 
+real ERROR = 10; // inicializacion del error para el bucle
+
 // Parametros para el problema ROM
 int niterRB = 2000;
-real epsRB = 1e-5; //parada del Greedy
+real epsRB = 1e-10; 
 
-// Parametros mu
-real Reynolds = 1000; // Esto es perceptible de cambiarlo
+real epsGreedy = 1e-5; //parada del Greedy
+real epsEIM = 1e-5;
+
+// Parametros mu (cambiar según el problema)
+real Reynolds; 
 
