@@ -73,6 +73,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	uEF[]=MFinal^-1*bFinal;
 	
+	plot([uEF, uEFY],wait=1);
+	plot(uEFP, wait=1);
 	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY;
