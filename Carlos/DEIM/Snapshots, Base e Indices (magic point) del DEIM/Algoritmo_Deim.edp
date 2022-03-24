@@ -1,0 +1,78 @@
+load "lapack"
+include "DatosNVDeim.edp"
+include "MalladoNVDeim.edp"
+include "PlanteaNVDeim.edp"
+
+real[int,int] V(grv,d);
+ifstream file("VDeim.txt");
+file >> V;
+
+//Aplicar algoritmo DEIM para obtener los coeficientes
+real[int] I(d),phi1aux2(grv),absphiaux(grv);
+real indice,maxi;
+//Algoritmo para seleccionar un indice
+//Inicializacion del algoritmo 
+Xh phi1,phi1aux;
+phi1aux2 = (V(:,0));
+for(int i = 0;i<grv;i++){
+phi1aux2(i) = abs(phi1aux2(i));}
+//Q inicial y el indice inicial 
+maxi = phi1aux2.max;
+indice = 0;
+for(int i = 0;i<grv;i++){
+	if(maxi == abs(V(i,0))) break;
+	indice += 1;
+}
+I(0) = indice;
+
+
+//cout << V(:,0) << endl;
+//cout << maxi<< endl;
+//cout << indice << endl;
+real indice2;
+real[int] res(grv),resaux(grv),aux2(grv),pmI(d);
+real maxi2;
+real[int,int] QI(d,d);
+
+
+for(int i = 1;i<d;i++){
+	real[int,int] Q(grv,i),QI(i,i),mult(grv,i),QIinv(i,i);
+	real[int] pmI(i);
+	res = 0;
+	maxi2 = 0;
+	QI = 0;
+	Q =0;
+	mult = 0;
+	resaux = 0;
+	aux2 = 0;
+	Q = V(0:(grv-1),0:(i-1));
+	//Construir QI
+	for(int j = 0;j<i;j++){
+		QI(j,:) = Q(I(j),:);
+	}
+	//Construir (pm)I
+	for(int j = 0;j<i;j++){
+		pmI(j) = V(I(j),i);
+	}
+	//Calcular el residuo 
+	QIinv = QI^-1;
+	mult = Q*(QIinv);
+	resaux = mult*pmI;
+	res = V(:,i) - resaux;
+	//Calcular el maximo y el indice 
+	for(int o = 0; o<grv; o++){
+		aux2(o) = abs(res(o));
+	}
+	maxi2 = aux2.max;
+	indice = 0;
+	for(int g = 0;g<grv;g++){
+		if (maxi2 == aux2(g)) break;
+		indice += 1;
+	}
+	I(i) = indice;
+	//cout << mult << endl;
+	
+}
+
+ofstream file2("Indices.txt");
+file2 << I;

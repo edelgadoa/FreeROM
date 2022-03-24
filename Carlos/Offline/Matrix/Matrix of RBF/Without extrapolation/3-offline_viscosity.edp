@@ -1,0 +1,122 @@
+// Author: Carlos Núñez - 08/11/2021
+/*
+This script performs the offline phase of a POD-G-ROM for a 2D laminar unsteady flow around a circular cylinder.
+*/
+load "lapack"
+
+// MACRO DEFINITION
+macro Grad(u) [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,dU,dNu,nSnapt,M; //ndof and dU,dP are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure snapshots, number of snapshots and number of parameters.
+
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 
+fespace Ph(Th,P0);
+Ph h=hTriangle; Ph taum;//,tauccout << "size of mesh = " << h[].max << endl; 
+			   // Pressure FE space
+
+Xh meanu,meanv,meanu2,meanv2,meanu1,meanv1;
+
+real Cs = 1.e-2;
+
+
+//Caso en el que tomamos un parametro que no estaba en los snapshots
+
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu1[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv1[];
+
+ifstream introumean2("Data/Snapshots/umean5.txt");    // Importing umean field
+introumean2>>meanu2[];
+
+ifstream introvmean2("Data/Snapshots/vmean5.txt");    // Importing vmean field
+introvmean2>>meanv2[];
+
+meanu = meanu1/2 + meanu2/2;
+meanv = meanv1/2 + meanv2/2;
+
+
+//Caso en el que tomamos paramatros de nuestro snapshots 
+
+/*
+ifstream introumean("Data/Snapshots/umean5.txt");    // Importing umean field
+introumean>>meanu[];
+
+ifstream introvmean("Data/Snapshots/vmean5.txt");    // Importing vmean field
+introvmean>>meanv[];
+*/
+
+
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODnu("Data/PODbasis/viscosity/BasePODviscosity.txt"); // Importing viscosity POD basis
+introPODnu>>ndof;introPODnu>>dNu;
+real[int,int] Phinu(ndof,dNu);
+for(int i=0;i<ndof;i++){for(int j=0;j<dNu;j++){introPODnu>>Phinu(i,j);}}
+
+ifstream introSnapnu("Data/Snapshots_total/nuSnaptotal.txt"); //Importing Snapshots viscosity
+introSnapnu>>ndof;introSnapnu>>nSnapt;
+real[int,int] nuSnap(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j = 0;j<nSnapt;j++){introSnapnu>>nuSnap(i,j);}}
+
+//CALCULATE THE TURBULENCE VISOCISTY TRILINEAR TENSOR AND THE MATRIX ASSOCIATED
+
+real[int,int][int] D(dNu);
+real[int,int] Daux(dU,dU),D2(dU,dNu);
+Daux = 0;
+for(int i=0;i<dNu;i++){
+	D[i] = Daux(0:dU-1,0:dU-1);
+}
+
+
+
+Xh modenuj,modeui,modeuk,modevi,modevk;
+
+
+
+
+Xh modenui,modeuj,modevj;
+
+
+for(int i = 0;i<dNu;i++){
+	modenui[] = Phinu(:,i);
+	for(int j = 0;j<dU;j++){
+		modeuj[] = Phiu(:,j); modevj[] = Phiv(:,j);
+		for(int k = 0;k<dU;k++){
+			modeuk[] = Phiu(:,k); modevk[] = Phiv(:,k);
+			D[i](j,k) = int2d(Th)((Cs*h)^2*(modenui*(Grad(modeuj)'*Grad(modeuk)) + modenui*(Grad(modevj)'*Grad(modevk))));}}
+		cout << i+1 << " Element of Trilinear Tensor" << endl;
+}
+
+
+
+for(int k=0;k<dU;k++){
+	modeuk[] = Phiu(:,k); modevk[] = Phiv(:,k);
+	cout << k+1 << " Row of RHS Viscosity Matrix" << endl;
+	for(int j = 0;j<dNu;j++){
+		modenuj[] = Phinu(:,j);
+		D2(k,j)=int2d(Th)((Cs*h)^2*(modenuj*Grad(meanu)'*Grad(modeuk) + modenuj*Grad(meanv)'*Grad(modevk)));}
+}
+
+cout << "Built RHS Viscosity Matrix D2" << endl; 
+cout << "Built Trilinear Tensor D" << endl;		  
+
+ofstream outputD("Data/MatrixOff/D.txt"); outputD << D;
+ofstream outputD2("Data/MatrixOff/Reynolds_187/D2.txt"); outputD2 << D2;

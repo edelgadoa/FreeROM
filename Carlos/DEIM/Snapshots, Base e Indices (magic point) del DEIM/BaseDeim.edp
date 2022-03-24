@@ -1,0 +1,66 @@
+//Calculo de la base POD
+load "lapack"
+load "iovtk"
+include "DatosNVDeim.edp"
+include "MalladoNVDeim.edp"
+include "PlanteaNVDeim.edp"
+
+//Incluimos la matriz de correlacion y los snapshots
+real[int,int] Ccf(m2,m2),SnapDeim(grv,m2);
+ifstream file("Correlacionf.txt");
+file >> Ccf;
+ifstream file2("SnapDeim.txt");
+file2 >> SnapDeim;
+//realizamos una SVD a la matriz de correlacion 
+
+real[int,int] eigenvectors(Ccf.n,Ccf.n),VV(Ccf.m,Ccf.m);
+real[int] eigenvalues(Ccf.n);
+
+
+dgesdd(Ccf,eigenvectors,eigenvalues,VV);
+//cout << eigenvalues << endl;
+for(int i = 0;i<d;i++){
+	eigenvalues(i) = sqrt(eigenvalues(i));
+}
+
+for(int i = 0;i<d;i++){
+	for(int j = 0;j<m2;j++){
+		eigenvectors(j,i) = eigenvectors(j,i)*sqrt(m2);
+	}
+}
+
+//Calculamos la base POD
+real[int,int] V(grv,d);
+real trapu;
+Xh modep,modepold;
+
+for(int k = 0;k<d;k++){
+	
+	for(int i = 0;i<grv;i++){
+		
+		trapu = 0.;
+		for(int j = 0;j<m2;j++){
+			
+			trapu += SnapDeim(i,j)*eigenvectors(j,k)/(m2);
+		}
+		V(i,k) = trapu/eigenvalues(k);
+	}
+	modep[] = V(:,k);
+	real orthog,orthon,orthogp,orthonp;
+	//H1-POD basis
+	//orthog = int2d(Th)(modeu*modeuold + grad(modeu)'*grad(modeuold));
+	//orthon = int2d(Th)(modeu*modeu + grad(modeu)'*grad(modeu));
+	//L2-POD basis
+	orthog = int2d(Th)(modep*modepold);
+	orthon = int2d(Th)(modep*modep);
+	/*cout << "--------------------------------------------"<<endl;
+	cout << "Mode n. "<< k+1 << ", orthog. velocity = " << orthog  << endl;
+	cout << "Mode n. "<< k+1 << ", orthon. velocity = " << orthon  << endl;*/
+	modepold[] = modep[];
+	//plot(modep,fill=1,value=1,cmm="POD mode n. "+(k+1));  // Plot of POD modes
+}
+
+
+ofstream file4("VDeim.txt");
+file4 << V;
+

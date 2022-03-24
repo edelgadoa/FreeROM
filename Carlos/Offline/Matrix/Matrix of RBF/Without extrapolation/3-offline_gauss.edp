@@ -1,0 +1,128 @@
+// Author: Carlos Núñez - 08/11/2021
+/*
+This script performs the offline phase of a POD-G-ROM for a 2D laminar unsteady flow around a circular cylinder.
+*/
+
+load "lapack"
+
+// MACRO DEFINITION
+macro Grad(u) [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,dU,dNu,nSnapt,M; //ndof and dU,dP are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure snapshots, number of snapshots and number of parameters.
+
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 			   // Pressure FE space
+
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1_200-400_nu.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2_200-400_nu.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODnu("Data/PODbasis/viscosity/BasePODviscosity_200-400_nu.txt"); // Importing viscosity POD basis
+introPODnu>>ndof;introPODnu>>dNu;
+real[int,int] Phinu(ndof,dNu);
+for(int i=0;i<ndof;i++){for(int j=0;j<dNu;j++){introPODnu>>Phinu(i,j);}}
+
+ifstream introSnapnu("Data/Snapshots_total/nuSnaptotal_200-400_nu.txt"); //Importing Snapshots viscosity
+introSnapnu>>ndof;introSnapnu>>nSnapt;
+real[int,int] nuSnap(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j = 0;j<nSnapt;j++){introSnapnu>>nuSnap(i,j);}}
+
+
+
+
+//WEIGHT FUNCTIONS ASSOCIATED TO GAUSSIAN FUNCTIONS 
+
+real[int,int] Y(nSnapt,dNu);
+
+Xh nu1,modenui,nup;
+
+varf Mass(u,v)=int2d(Th)(u*v);
+matrix MassNu = Mass(Xh,Xh);
+for(int i=0;i<nSnapt;i++){
+	nu1[] = nuSnap(:,i);
+	nup[] = MassNu*nu1[];
+	for(int j = 0;j<dNu;j++){
+		modenui[] = Phinu(:,j);
+		Y(i,j) = modenui[]'*nup[];
+		}
+}
+ofstream outputY("Data/MatrixOff/200-400_nu/Y.txt"); outputY << Y;
+//Matrix formed by Gaussian functions centered in x^i_nu,t, x^j_nu,t
+
+//Construct the Cartesian product of the discretized parameter set and the set of time instants on [0,1]^2
+M = 5; 
+int nSnap = 200;
+real[int] PM(M),TI(nSnap),PMnorm(M),TInorm(nSnap),xmutaux(2);
+for(int i=0;i<M;i++){
+	PM(i) = 0.3 + 0.075*(i);
+}
+for(int i = 0;i<M;i++){
+	PMnorm(i) = (PM(i)-0.3)/(0.6-0.3);
+}
+for(int i=0;i<nSnap;i++){
+	TI(i) = 10 + 1.e-2*(i);
+}
+for(int i = 0;i<nSnap;i++){
+	TInorm(i) = (TI(i)-10)/(11.99-10);
+}
+
+real[int,int] Xmut(2,nSnapt);
+int cont = 0;
+for(int i = 0;i<M;i++){
+	for(int j = 0;j<nSnap;j++){
+		Xmut(:,cont) = [PMnorm(i),TInorm(j)];
+		cont += 1;}
+	}
+
+
+	//RB function 
+func real gauss(real r){
+ 	if( 1- r >= 0){
+	 return 	 (1 -2*r); }
+	 else{
+	return 	 0;}
+}
+
+
+//DEFINE THE MATRIX OF THE GAUSSIAN FUNCTION AND THE CARTESIAN PRODUCT
+
+real[int,int] Agauss(nSnapt,nSnapt),Ainv(nSnapt,nSnapt),I(nSnapt,nSnapt);
+real[int] aux(2);
+
+for(int i = 0;i<nSnapt;i++){
+	for (int j = i;j<nSnapt;j++){
+		aux = Xmut(:,i) - Xmut(:,j);
+		Agauss(i,j) = gauss(aux.l2);
+		Agauss(j,i) = Agauss(i,j);
+		
+	}
+}
+
+
+matrix MAgauss = Agauss;
+
+set(MAgauss,solver=UMFPACK);
+
+
+//RESOLVE THE LINEAR SYSTEM ASOCIATED TO THE dNu number of POD basis of the viscosity 
+
+real[int,int] Wgaus(nSnapt,dNu);
+for(int i = 0;i<dNu;i++){
+	Wgaus(:,i) = MAgauss^(-1)*Y(:,i);
+}
+
+
+ofstream outputWeight("Data/MatrixOff/Weight.txt"); outputWeight << Wgaus;

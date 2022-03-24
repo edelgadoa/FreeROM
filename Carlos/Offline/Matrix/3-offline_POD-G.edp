@@ -1,0 +1,213 @@
+// Author: Samuele Rubino - 06/02/2019
+/*
+This script performs the offline phase of a POD-G-ROM for a 2D laminar unsteady flow around a circular cylinder.
+*/
+
+// MACRO DEFINITION
+macro Grad(u) [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,dU,dP; //ndof and dU,dP are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure snapshots 
+
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 			   // Pressure FE space
+
+Xh meanu,meanv,meanu2,meanv2,meanu1,meanv1;
+
+//Caso en el que tomamos un parametro que no estaba en los snapshots
+
+
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu1[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv1[];
+
+ifstream introumean2("Data/Snapshots/umean5.txt");    // Importing umean field
+introumean2>>meanu2[];
+
+ifstream introvmean2("Data/Snapshots/vmean5.txt");    // Importing vmean field
+introvmean2>>meanv2[];
+
+meanu = meanu1/2 + meanu2/2;
+meanv = meanv1/2 + meanv2/2;
+
+
+
+//Caso en el que tomamos paramatros de nuestro snapshots 
+
+
+/*
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv[];
+*/
+
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODp("Data/PODbasis/pressure/BasePODpressure.txt"); // Importing p POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+
+
+
+// OFFLINE MATRIX/VECTOR CONSTRUCTION
+Xh modeuj,modeuk,modeui,modevj,modevk,modevi;
+Qh modepj,modepi;
+
+real[int,int] M(dU,dU);  // MASS MATRIX (Identity matrix for L2-POD basis)
+
+real[int,int] A(dU,dU);  // STIFFNESS MATRIX (Identity matrix for H1-POD basis)
+
+real[int,int] P(dP,dU);  // DIV. MATRIX
+
+real[int,int] B1(dU,dU); // CONVECTION MATRIX associated to the mean flow
+
+real[int,int] B2(dU,dU); // RHS CONVECTION MATRIX associated to the mean flow
+
+real[int] vb1(dU),vb2(dU); // RHS VECTORS associated to the stiffness and convection mean flow, resp.				 
+
+real[int] vp(dP); 		   // RHS VECTORS associated to the div. mean flow.				 
+
+real[int,int] aux(dU,dU);  // AUX. MATRIX for CONVECTION TERM (TRILINEAR TENSOR)
+
+real[int,int][int] C(dU);  // VECTOR of MATRICES for CONVECTION TERM (TRILINEAR TENSOR)
+
+//CALCULATE THE MATRIX IN PARALEL
+
+
+//ONE PROCESS
+
+for(int j=0;j<dU;j++)
+{ 
+	aux=0.;
+	C[j]=aux(0:dU-1,0:dU-1);
+}
+
+
+// INITIALIZATION CONVECTION TRILINEAR TENSOR
+
+for(int j=0;j<dU;j++)
+{	
+	modeuj[]=Phiu(:,j);modevj[]=Phiv(:,j);
+	cout << j+1 << " Row of Mass, Stiffness, Convection Matrices" << endl; 		
+		
+	for(int i=j;i<dU;i++)
+	{	
+		modeui[]=Phiu(:,i);modevi[]=Phiv(:,i);
+		
+		M(j,i)=int2d(Th)(modeuj*modeui+modevj*modevi);
+		if (i!=j) {M(i,j)=M(j,i);}
+		
+		A(j,i)=int2d(Th)(Grad(modeuj)'*Grad(modeui)+Grad(modevj)'*Grad(modevi));   
+		if (i!=j) {A(i,j)=A(j,i);}
+		
+		B1(j,i)=int2d(Th)(modeuj*([meanu,meanv]'*Grad(modeui))+modevj*([meanu,meanv]'*Grad(modevi)));
+		if (i!=j) {B1(i,j)=int2d(Th)(modeui*([meanu,meanv]'*Grad(modeuj))+modevi*([meanu,meanv]'*Grad(modevj)));}
+	}
+	
+	cout << j+1 << " Elements of RHS" << endl;
+	cout << endl;
+	vb1(j)=int2d(Th)(Grad(modeuj)'*Grad(meanu)+Grad(modevj)'*Grad(meanv));
+	vb2(j)=int2d(Th)(modeuj*([meanu,meanv]'*Grad(meanu))+modevj*([meanu,meanv]'*Grad(meanv)));	
+}
+
+for(int j=0;j<dP;j++)
+{	
+	modepj[]=Phip(:,j);
+	cout << j+1 << " Row of Div. Matrix" << endl; 		
+		
+	for(int i=0;i<dU;i++)
+	{	
+		modeui[]=Phiu(:,i);modevi[]=Phiv(:,i);
+		
+		P(j,i)=int2d(Th)(modepj*div(modeui,modevi));
+	}
+	
+	cout << j+1 << " Elements of RHS" << endl;
+	cout << endl;
+	vp(j)=int2d(Th)(modepj*div(meanu,meanv));
+}		
+
+for(int j = 0;j<dU;j++){
+	cout << j+1 << " Row of RHS Matrix" << endl; 
+	modeuj[] = Phiu(:,j); modevj[] = Phiv(:,j);
+	for(int k = 0;k<dU;k++){
+		modeuk[] = Phiu(:,k); modeuk[] = Phiv(:,k);
+		B2(j,k)=int2d(Th)(modeuj*([modeuk,modevk]'*Grad(meanu))+modevj*([modeuk,modevk]'*Grad(meanv)));
+		}
+}
+	
+cout << "Built RHS Convection Matrix B2" << endl; 
+cout << "Built Mass Matrix M" << endl;			  
+cout << "Built Stiffness Matrix A" << endl;		  
+cout << "Built Div. Matrix P" << endl;		  
+cout << "Built Convection Matrix B1" << endl;     
+cout << "Built RHS Vector b1" << endl;		      
+cout << "Built RHS Vector b2" << endl;		      
+cout << "Built RHS Vector p" << endl;		      
+
+
+//------------Export data----------------
+
+ofstream outputM("Data/Matrixoff/Reynolds_187/M.txt");	outputM<<M;			// Mass Matrix (Identity matrix for L2-POD basis)          
+ofstream outputA("Data/Matrixoff/Reynolds_187/A.txt");	outputA<<A;    		// Stiffness Matrix (Identity matrix for H1-POD basis)
+
+ofstream outputP("Data/Matrixoff/Reynolds_187/P.txt");	outputP<<P;    		// Div. Matrix 
+ofstream outputB1("Data/Matrixoff/Reynolds_187/B1.txt"); outputB1<<B1;  	// Convection matrix associated to the mean flow (Phi_j , U_h Grad(Phi_i))
+ofstream outputvb1("Data/Matrixoff/Reynolds_187/vb1.txt");	outputvb1<<vb1; // RHS Vector associated to the stiff. mean flow (Grad(Phi_j) , Grad(U_h))
+ofstream outputvb2("Data/Matrixoff/Reynolds_187/vb2.txt");	outputvb2<<vb2; // RHS Vector associated to the conv. mean flow (Phi_j , U_h Grad(U_h))
+
+
+ofstream outputvp("Data/Matrixoff/Reynolds_187/vp.txt");	outputvp<<vp; 	// RHS Vector associated to the div. mean flow (Psi_j , div(U_h))
+
+ofstream outputB2("Data/MatrixOff/Reynolds_187/B2.txt"); outputB2<<B2;		// RHS Convection matrix associated to the mean flow (Phi_j , Phi_k Grad(U_h))
+
+//SECOND PROCESS
+
+
+
+for(int j=0;j<dU;j++)
+{	
+	modeuj[]=Phiu(:,j);modevj[]=Phiv(:,j);
+	
+	for(int k=0;k<dU;k++)
+	{
+		modeuk[]=Phiu(:,k);modevk[]=Phiv(:,k);
+		
+		for(int i=0;i<dU;i++)
+		{	
+			modeui[]=Phiu(:,i);modevi[]=Phiv(:,i);
+			//aux(k,i)=int2d(Th)(modeuj*([modeuk,modevk]'*Grad(modeui))+modevj*([modeuk,modevk]'*Grad(modevi)));
+			C[j](k,i)=int2d(Th)(modeuj*([modeuk,modevk]'*Grad(modeui))+modevj*([modeuk,modevk]'*Grad(modevi)));
+		}
+	}
+	
+	cout << j+1 << " Element of Trilinear Tensor" << endl;	
+	cout << endl;
+}
+
+
+cout << "Built Trilinear Tensor C" << endl;		  
+
+//------------Export data----------------
+ofstream outputC("Data/MatrixOff/C.txt");		outputC<<C;		// Convection trilinear tensor (Phi_j , Phi_k Grad(Phi_i))
+

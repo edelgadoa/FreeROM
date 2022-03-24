@@ -1,0 +1,259 @@
+// Author: Carlos Núñez - 08/11/2021
+/*
+This script performs the offline phase corresponding to the viscosity part with the method that we can extrapolate in time 
+*/
+load "iovtk"  // Post-process with ParaView
+load "lapack"
+
+// MACRO DEFINITION
+macro Grad(u) [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,dU,nSnapt,M,dNu,dNumean; //ndof and dU,dP are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure snapshots, number of snapshots and number of parameters.
+// TIME SETUP FOR NUMERICAL SIMULATION
+real dt = 2.e-3;  // Time step
+real dtt = 1./dt; // Inverse of time step
+int nSnap = 1000;
+
+///////////////////
+//READING DATA 
+//////////////////
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 			   // Pressure FE space
+
+
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2.txt"); // Importing u POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODnu("Data/PODbasis/viscosity-extrapolate/BasePODviscosity.txt"); // Importing u POD basis
+introPODnu>>ndof;introPODnu>>dNu;
+real[int,int] Phinu(ndof,dNu);
+for(int i=0;i<ndof;i++){for(int j=0;j<dNu;j++){introPODnu>>Phinu(i,j);}}
+
+ifstream introSnapnu1("Data/Snapshots/nuSnap.txt"); //Importing Snapshots viscosity
+introSnapnu1>>ndof;introSnapnu1>>nSnapt;
+real[int,int] nuSnap1(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu1>>nuSnap1(i,j);}}
+
+ifstream introSnapnu2("Data/Snapshots/nuSnap2.txt"); //Importing Snapshots viscosity
+introSnapnu2>>ndof;introSnapnu2>>nSnapt;
+real[int,int] nuSnap2(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu2>>nuSnap2(i,j);}}
+
+ifstream introSnapnu3("Data/Snapshots/nuSnap3.txt"); //Importing Snapshots viscosity
+introSnapnu3>>ndof;introSnapnu3>>nSnapt;
+real[int,int] nuSnap3(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu3>>nuSnap3(i,j);}}
+
+ifstream introSnapnu4("Data/Snapshots/nuSnap4.txt"); //Importing Snapshots viscosity
+introSnapnu4>>ndof;introSnapnu4>>nSnapt;
+real[int,int] nuSnap4(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu4>>nuSnap4(i,j);}}
+
+ifstream introSnapnu5("Data/Snapshots/nuSnap5.txt"); //Importing Snapshots viscosity
+introSnapnu5>>ndof;introSnapnu5>>nSnapt;
+real[int,int] nuSnap5(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu5>>nuSnap5(i,j);}}
+
+ifstream introuSnap1("Data/Snapshots/uSnap.txt"); //Importing  velocity Snapshots 
+introuSnap1>>ndof;introuSnap1>>nSnapt;
+real[int,int] uSnap1(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introuSnap1>>uSnap1(i,j);}}
+
+ifstream introvSnap1("Data/Snapshots/vSnap.txt"); //Importing velocity Snapshots
+introvSnap1>>ndof;introvSnap1>>nSnapt;
+real[int,int] vSnap1(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introvSnap1>>vSnap1(i,j);}}
+
+ifstream introuSnap2("Data/Snapshots/uSnap2.txt"); //Importing  velocity Snapshots 
+introuSnap2>>ndof;introuSnap2>>nSnapt;
+real[int,int] uSnap2(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introuSnap2>>uSnap2(i,j);}}
+
+ifstream introvSnap2("Data/Snapshots/vSnap2.txt"); //Importing velocity Snapshots
+introvSnap2>>ndof;introvSnap2>>nSnapt;
+real[int,int] vSnap2(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introvSnap2>>vSnap2(i,j);}}
+
+ifstream introuSnap3("Data/Snapshots/uSnap3.txt"); //Importing  velocity Snapshots 
+introuSnap3>>ndof;introuSnap3>>nSnapt;
+real[int,int] uSnap3(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introuSnap3>>uSnap3(i,j);}}
+
+ifstream introvSnap3("Data/Snapshots/vSnap3.txt"); //Importing velocity Snapshots
+introvSnap3>>ndof;introvSnap3>>nSnapt;
+real[int,int] vSnap3(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introvSnap3>>vSnap3(i,j);}}
+
+ifstream introuSnap4("Data/Snapshots/uSnap4.txt"); //Importing  velocity Snapshots 
+introuSnap4>>ndof;introuSnap4>>nSnapt;
+real[int,int] uSnap4(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introuSnap4>>uSnap4(i,j);}}
+
+ifstream introvSnap4("Data/Snapshots/vSnap4.txt"); //Importing velocity Snapshots
+introvSnap4>>ndof;introvSnap4>>nSnapt;
+real[int,int] vSnap4(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introvSnap4>>vSnap4(i,j);}}
+
+ifstream introuSnap5("Data/Snapshots/uSnap5.txt"); //Importing  velocity Snapshots 
+introuSnap5>>ndof;introuSnap5>>nSnapt;
+real[int,int] uSnap5(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introuSnap5>>uSnap5(i,j);}}
+
+ifstream introvSnap5("Data/Snapshots/vSnap5.txt"); //Importing velocity Snapshots
+introvSnap5>>ndof;introvSnap5>>nSnapt;
+real[int,int] vSnap5(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introvSnap5>>vSnap5(i,j);}}
+
+
+
+
+/////////////////////////////////
+//CONSTRUCT THE OFFLINE MATRIX NECCESARY TO THE PROCESS
+////////////////////////////////
+
+real[int,int] A11(nSnapt-1,dU),A12(nSnapt-1,dU),A13(nSnapt-1,dU),A14(nSnapt-1,dU),A15(nSnapt-1,dU);
+real[int,int] A21(nSnapt-1,dU),A22(nSnapt-1,dU),A23(nSnapt-1,dU),A24(nSnapt-1,dU),A25(nSnapt-1,dU);
+
+Xh modeu,modev,u1,v1,u2,v2,u3,v3,u4,v4,u5,v5,u1p,v1p,u2p,v2p,u3p,v3p,u4p,v4p,u5p,v5p;
+
+//Construct A1,k k=1,..5 
+varf Mass(u,v) = int2d(Th)(u*v);
+matrix MassNu = Mass(Xh,Xh); 
+for(int i = 0;i<nSnapt-1;i++){
+	u1[] = uSnap1(:,i); v1[] = vSnap1(:,i); u1p[] = MassNu*u1[]; v1p[] = MassNu*v1[];
+	u2[] = uSnap2(:,i); v2[] = vSnap2(:,i); u2p[] = MassNu*u2[]; v2p[] = MassNu*v2[];
+	u3[] = uSnap3(:,i); v3[] = vSnap3(:,i); u3p[] = MassNu*u3[]; v3p[] = MassNu*v3[];
+	u4[] = uSnap4(:,i); v4[] = vSnap4(:,i); u4p[] = MassNu*u4[]; v4p[] = MassNu*v4[];
+	u5[] = uSnap5(:,i); v5[] = vSnap5(:,i); u5p[] = MassNu*u5[]; v5p[] = MassNu*v5[];
+	for(int j = 0;j<dU;j++){
+		modeu[] = Phiu(:,j); modev[] = Phiv(:,j);
+		A11(i,j) = (modeu[]'*u1p[] + modev[]'*v1p[]); 
+		A12(i,j) = (modeu[]'*u2p[] + modev[]'*v2p[]); 
+		A13(i,j) = (modeu[]'*u3p[] + modev[]'*v3p[]); 
+		A14(i,j) = (modeu[]'*u4p[] + modev[]'*v4p[]); 
+		A15(i,j) = (modeu[]'*u5p[] + modev[]'*v5p[]); 
+	}
+}
+
+//Construct A2,k k = 1,..5
+for(int i = 0;i<nSnapt-1;i++){
+	u1[] = uSnap1(:,i+1); v1[] = vSnap1(:,i+1); u1p[] = MassNu*u1[]; v1p[] = MassNu*v1[];
+	u2[] = uSnap2(:,i+1); v2[] = vSnap2(:,i+1); u2p[] = MassNu*u2[]; v2p[] = MassNu*v2[];
+	u3[] = uSnap3(:,i+1); v3[] = vSnap3(:,i+1); u3p[] = MassNu*u3[]; v3p[] = MassNu*v3[];
+	u4[] = uSnap4(:,i+1); v4[] = vSnap4(:,i+1); u4p[] = MassNu*u4[]; v4p[] = MassNu*v4[];
+	u5[] = uSnap5(:,i+1); v5[] = vSnap5(:,i+1); u5p[] = MassNu*u5[]; v5p[] = MassNu*v5[];
+	for(int j = 0;j<dU;j++){
+		modeu[] = Phiu(:,j); modev[] = Phiv(:,j);
+		A21(i,j) = (modeu[]'*u1p[] + modev[]'*v1p[]); 
+		A22(i,j) = (modeu[]'*u2p[] + modev[]'*v2p[]); 
+		A23(i,j) = (modeu[]'*u3p[] + modev[]'*v3p[]); 
+		A24(i,j) = (modeu[]'*u4p[] + modev[]'*v4p[]); 
+		A25(i,j) = (modeu[]'*u5p[] + modev[]'*v5p[]); 
+	}
+}
+
+//Construct A^.,k k = 1,..5
+
+real[int,int] AA1(nSnapt-1,dU),AA2(nSnapt-1,dU),AA3(nSnapt-1,dU),AA4(nSnapt-1,dU),AA5(nSnapt-1,dU);
+
+AA1 = dtt*A21-dtt*A11;
+AA2 = dtt*A22-dtt*A12;
+AA3 = dtt*A23-dtt*A13;
+AA4 = dtt*A24-dtt*A14;
+AA5 = dtt*A25-dtt*A15;
+
+
+//Construct A gorro = [A2,k A^.,k]
+real[int,int] Agorro1(nSnapt-1,2*dU),Agorro2(nSnapt-1,2*dU),Agorro3(nSnapt-1,2*dU),Agorro4(nSnapt-1,2*dU),Agorro5(nSnapt-1,2*dU);
+
+for(int i = 0; i<dU;i++){
+Agorro1(:,i) = A21(:,i);
+Agorro1(:,i+dU) = AA1(:,i);
+Agorro2(:,i) = A22(:,i);
+Agorro2(:,i+dU) = AA2(:,i);
+Agorro3(:,i) = A23(:,i);
+Agorro3(:,i+dU) = AA3(:,i);
+Agorro4(:,i) = A24(:,i);
+Agorro4(:,i+dU) = AA4(:,i);
+Agorro5(:,i) = A25(:,i);
+Agorro5(:,i+dU) = AA5(:,i);
+
+}
+
+//Construct G gorro
+real[int,int] G1(nSnapt-1,dNu),G2(nSnapt-1,dNu),G3(nSnapt-1,dNu),G4(nSnapt-1,dNu),G5(nSnapt-1,dNu);
+
+Xh nu1,nu2,nu1p,nu3,nu4,nu5,nu2p,nu3p,nu4p,nu5p,modenu;
+
+for(int i = 0;i<nSnapt-1;i++){
+	nu1[] = nuSnap1(:,i+1); nu1p[] = MassNu*nu1[];
+	nu2[] = nuSnap2(:,i+1); nu2p[] = MassNu*nu2[];
+	nu3[] = nuSnap3(:,i+1); nu3p[] = MassNu*nu3[];
+	nu4[] = nuSnap4(:,i+1); nu4p[] = MassNu*nu4[];
+	nu5[] = nuSnap5(:,i+1); nu5p[] = MassNu*nu5[];	
+	for(int j = 0;j<dNu;j++){
+		modenu[] = Phinu(:,j);
+		
+		G1(i,j) = modenu[]'*nu1p[];
+		G2(i,j) = modenu[]'*nu2p[];
+		G3(i,j) = modenu[]'*nu3p[];
+		G4(i,j) = modenu[]'*nu4p[];
+		G5(i,j) = modenu[]'*nu5p[];
+		}
+}
+
+real[int,int] Ggorro(nSnap-5,dNu);
+for(int i=0;i<nSnapt-1;i++){
+	Ggorro(i,:) = G1(i,:);
+	Ggorro(i+(nSnapt-1),:) = G2(i,:);
+	Ggorro(i+2*(nSnapt-1),:) = G3(i,:);
+	Ggorro(i+3*(nSnapt-1),:) = G4(i,:);
+	Ggorro(i+4*(nSnapt-1),:) = G5(i,:);
+}
+
+//Resolver todos los sistemas
+real[int,int] Weightextrapolate(2*dU,dNu),Agorro(nSnap-5,2*dU),Agorrot(2*dU,nSnap-5),A(2*dU,2*dU),GA(2*dU,dNu);
+for(int i=0;i<nSnapt-1;i++){
+	Agorro(i,:) = Agorro1(i,:);
+	Agorro(i+(nSnapt-1),:) = Agorro2(i,:);
+	Agorro(i+2*(nSnapt-1),:) = Agorro3(i,:);
+	Agorro(i+3*(nSnapt-1),:) = Agorro4(i,:);
+	Agorro(i+4*(nSnapt-1),:) = Agorro5(i,:);
+}
+
+Agorrot = Agorro';
+A = Agorrot*Agorro;
+matrix MA = A;
+set(MA,solver=UMFPACK);
+GA = Agorrot*Ggorro;
+
+
+
+for(int i = 0;i<dNu;i++){
+	Weightextrapolate(:,i) = Agorrot*Ggorro(:,i);
+}
+
+
+
+ofstream outputWE("Data/MatrixOff/viscosity-extrapolate/Weightextrapolate.txt");
+outputWE << Weightextrapolate;
+
+ofstream outputA("Data/MatrixOff/viscosity-extrapolate/Agorro.txt");
+outputA << Agorro;
+
+ofstream outputG("Data/MatrixOff/viscosity-extrapolate/Ggorro.txt");
+outputG << Ggorro;

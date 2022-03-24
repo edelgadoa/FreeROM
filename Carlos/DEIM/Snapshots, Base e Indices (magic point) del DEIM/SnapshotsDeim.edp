@@ -1,0 +1,148 @@
+load "lapack"
+load "iovtk"
+
+include "DatosNVDeim.edp"
+include "MalladoNVDeim.edp"
+include "PlanteaNVDeim.edp"
+
+macro mod(u,v) (sqrt(dx(u)^2 + dx(v)^2 + dy(u)^2 + dy(v)^2)) //
+//Datos del cilindro
+
+real Um = 1.5;
+real H = 0.41;
+func U1 = 4.*Um*y*(H-y)/(H*H);
+func U2 = 0.;
+
+//Calcular u1 median euler semi implicito 
+
+varf au1([u,v,p],[uu,vv,pp]) = int2d(Th)(mit3*ddt*u*uu + mit3*ddt*v*vv)
++ int2d(Th)(([u0,v0]'*grad(u)*uu+[u0,v0]'*grad(v)*vv))
++ int2d(Th)(nu*(grad(u)'*grad(uu)+grad(v)'*grad(vv)))
+- int2d(Th)(p*div(uu,vv))
++ int2d(Th)(div(u,v)*pp)
+//+ int2d(Th)(1.e-10*p*pp)
++ on(3,u=0,v=0)
++ on(1,u=U1,v=U2)
++ on(4,u=0,v=0)
+;
+varf bu1([u,v,p],[uu,vv,pp]) = 
+int2d(Th)(mit3*ddt*u0*uu+mit3*ddt*v0*vv)
++ on(3,u=0,v=0)
++ on(1,u=U1,v=U2)
++ on(4,u=0,v=0)
+;
+matrix Au1 = au1(Vh,Vh);
+real[int] Bu1 = bu1(0,Vh);
+set(Au1,solver=UMFPACK);
+u1[] = Au1^-1*Bu1;
+
+
+
+
+
+
+
+
+//Constantes para el modelo de smagorinski 
+real Cs = 1.e-1;
+fespace Ph(Th, P0);
+Ph h = hTriangle;
+real delta = h[].max;
+Xh ugorron,vgorron;
+//Bucle hasta estabilización
+for(int k = 1;k<4000;k++){
+	//diver = 0;
+	ugorron = 2*u1-u0;
+	vgorron = 2*v1-v0;
+	//Calcular el sistema en cada etapa de tiempo
+	varf a1([u,v,p],[uu,vv,pp]) =
+	int2d(Th)(3*u*ddt*uu*mit + 3*v*ddt*vv*mit)
+	+ int2d(Th)(([ugorron,vgorron]'*grad(u)*uu+[ugorron,vgorron]'*grad(v)*vv))
+	//- int2d(Th)(mit*([2*u1-u0,2*v1-v0]'*grad(uu)*u + [2*u1-u0,2*v1-v0]'*grad(vv)*v))
+	+ int2d(Th)(nu*(grad(u)'*grad(uu)+grad(v)'*grad(vv)))
+	+ int2d(Th)(((Cs*h)^2)*(mod(ugorron,vgorron)*(grad(u)'*grad(uu) + grad(v)'*grad(vv))))
+	- int2d(Th)(p*div(uu,vv))
+	+ int2d(Th)(div(u,v)*pp)
+	//+ int2d(Th)(1.e-10*p*pp)
+	+ on(3,u=0,v=0)
+	+ on(1,u=U1,v=U2)
+	+ on(4,u=0,v=0)
+	;
+	
+	varf b([u,v,p],[uu,vv,pp]) = 
+	int2d(Th)(2*u1*ddt*uu + 2*v1*ddt*vv)
+	- int2d(Th)(u0*ddt*mit*uu + v0*ddt*vv*mit)
+	+ on(3,u=0,v=0)
+	+ on(1,u=U1,v=U2)
+	+ on(4,u=0,v=0)
+	;
+	
+	matrix A = a1(Vh,Vh);
+	real[int] B = b(0,Vh);
+	set(A,solver=UMFPACK);
+	u[] = A^-1*B;
+	u0[] = u1[];
+	u1[] = u[];
+	plot([u,v],fill=true,value=1,dim=2,cmm="iteration k"+k);
+	
+	
+}
+
+
+
+
+
+//Bucle para tomar los snapshots
+
+Xh normfro;
+
+real[int,int] Snapnorm(grv,m2);
+//Bucle para tomar snapshots 
+for(int k = 4000;k<4160;k++){
+	ugorron = 2*u1-u0;
+	vgorron = 2*v1-v0;
+	//Calcular el sistema en cada etapa de tiempo
+	varf a1([u,v,p],[uu,vv,pp]) =
+	int2d(Th)(3*u*ddt*uu*mit + 3*v*ddt*vv*mit)
+	+ int2d(Th)(([ugorron,vgorron]'*grad(u)*uu+[ugorron,vgorron]'*grad(v)*vv))
+	//- int2d(Th)(mit*([2*u1-u0,2*v1-v0]'*grad(uu)*u + [2*u1-u0,2*v1-v0]'*grad(vv)*v))
+	+ int2d(Th)(nu*(grad(u)'*grad(uu)+grad(v)'*grad(vv)))
+	+ int2d(Th)(((Cs*h)^2)*(mod(ugorron,vgorron)*(grad(u)'*grad(uu) + grad(v)'*grad(vv))))
+	- int2d(Th)(p*div(uu,vv))
+	+ int2d(Th)(div(u,v)*pp)
+	//+ int2d(Th)(1.e-10*p*pp)
+	+ on(3,u=0,v=0)
+	+ on(1,u=U1,v=U2)
+	+ on(4,u=0,v=0)
+	;
+	
+	varf b([u,v,p],[uu,vv,pp]) = 
+	int2d(Th)(2*u1*ddt*uu + 2*v1*ddt*vv)
+	- int2d(Th)(u0*ddt*mit*uu + v0*ddt*vv*mit)
+	+ on(3,u=0,v=0)
+	+ on(1,u=U1,v=U2)
+	+ on(4,u=0,v=0)
+	;
+	
+	matrix A = a1(Vh,Vh);
+	real[int] B = b(0,Vh);
+	set(A,solver=UMFPACK);
+	u[] = A^-1*B;
+	
+	
+	//Tomar los snapshots del periodo de la norma frobenius 
+	Xh ugn,vgn;
+	ugn = 2*u1-u0;
+	vgn = 2*v1-v0;
+	
+	normfro = mod(ugn,vgn);
+	Snapnorm(:,k-4000) = normfro[]; 
+	plot(normfro,fill=1,cmm=" Deim iteration k = "+k,value=1);
+	u0[] = u1[];
+	u1[] = u[];
+}
+
+//Extraer todos los datos 
+
+ofstream fnorm("SnapDeim.txt");
+fnorm << Snapnorm;

@@ -1,0 +1,201 @@
+// Author: Carlos Núñez - 08/11/2021 
+/*
+This script compute the POD mean basis of the turbulence viscosity
+*/
+
+load "iovtk"  // Post-process with ParaView
+load "lapack"
+
+// MACRO DEFINITION
+macro Grad(u) [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,dU,nSnapt,M; //ndof and dU,dP are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure snapshots, number of snapshots and number of parameters.
+// TIME SETUP FOR NUMERICAL SIMULATION
+real dt = 2.e-3;  // Time step
+real dtt = 1./dt; // Inverse of time step
+
+///////////////////
+//READING DATA 
+//////////////////
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 			   // Pressure FE space
+
+
+ifstream introSnapnu1("Data/Snapshots/nuSnap.txt"); //Importing Snapshots viscosity
+introSnapnu1>>ndof;introSnapnu1>>nSnapt;
+real[int,int] nuSnap1(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu1>>nuSnap1(i,j);}}
+
+ifstream introSnapnu2("Data/Snapshots/nuSnap2.txt"); //Importing Snapshots viscosity
+introSnapnu2>>ndof;introSnapnu2>>nSnapt;
+real[int,int] nuSnap2(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu2>>nuSnap2(i,j);}}
+
+ifstream introSnapnu3("Data/Snapshots/nuSnap3.txt"); //Importing Snapshots viscosity
+introSnapnu3>>ndof;introSnapnu3>>nSnapt;
+real[int,int] nuSnap3(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu3>>nuSnap3(i,j);}}
+
+ifstream introSnapnu4("Data/Snapshots/nuSnap4.txt"); //Importing Snapshots viscosity
+introSnapnu4>>ndof;introSnapnu4>>nSnapt;
+real[int,int] nuSnap4(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu4>>nuSnap4(i,j);}}
+
+ifstream introSnapnu5("Data/Snapshots/nuSnap5.txt"); //Importing Snapshots viscosity
+introSnapnu5>>ndof;introSnapnu5>>nSnapt;
+real[int,int] nuSnap5(ndof,nSnapt);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnapt;j++){introSnapnu5>>nuSnap5(i,j);}}
+
+
+//////////////////////////////////////////////////////
+//CONSTRUCT THE TIME AVERAGE BASIS OF THE VISCOSITY 
+///////////////////////////////////////////////////////
+
+Xh meannu1,meannu2,meannu3,meannu4,meannu5;
+
+for(int i = 0;i<nSnapt;i++){
+	meannu1[] += nuSnap1(:,i);
+	meannu2[] += nuSnap2(:,i);
+	meannu3[] += nuSnap3(:,i);
+	meannu4[] += nuSnap4(:,i);
+	meannu5[] += nuSnap5(:,i);
+}
+meannu1[] = meannu1[]/nSnapt;
+meannu2[] = meannu2[]/nSnapt;
+meannu3[] = meannu3[]/nSnapt;
+meannu4[] = meannu4[]/nSnapt;
+meannu5[] = meannu5[]/nSnapt;
+
+real[int,int] BasePODviscositymeanpart(ndof,5);
+
+BasePODviscositymeanpart(:,0) = meannu1[];
+BasePODviscositymeanpart(:,1) = meannu2[];
+BasePODviscositymeanpart(:,2) = meannu3[];
+BasePODviscositymeanpart(:,3) = meannu4[];
+BasePODviscositymeanpart(:,4) = meannu5[];
+
+ofstream outputBPvm("Data/PODbasis/viscosity-extrapolate/BasePODviscositymeanpart.txt");
+outputBPvm << BasePODviscositymeanpart;
+
+///////////////////////////////////////////////////
+//CONSTRUCT THE POD BASIS OF THE  TURBULENCE VISCOSITY
+///////////////////////////////////////////////////
+
+//PRIMERO QUITAMOS LA MEDIA A CADA UNO DE LOS SNAPSHOTS
+
+for(int i=0;i<nSnapt;i++){
+	nuSnap1(:,i) -= meannu1[];
+	nuSnap2(:,i) -= meannu2[];
+	nuSnap3(:,i) -= meannu3[];
+	nuSnap4(:,i) -= meannu4[];
+	nuSnap5(:,i) -= meannu5[];
+}
+
+//CONSTRUIMOS LA MATRIZ TOTAL DE SNAPSHOTS
+int nSnap = 1000;
+real[int,int] NU(ndof,nSnap);
+for(int i = 0;i<nSnapt;i++){
+
+	NU(:,i) = nuSnap1(:,i);
+	NU(:,i+200) = nuSnap2(:,i);
+	NU(:,i+400) = nuSnap3(:,i);
+	NU(:,i+600) = nuSnap4(:,i);
+	NU(:,i+800) = nuSnap5(:,i);
+}
+
+//CONSTRUIMOS LA MATRIZ DE CORRELACION
+
+varf Mass(u,v)=int2d(Th)(u*v);
+matrix MassNu = Mass(Xh,Xh);
+real[int,int] Knu(nSnap,nSnap); 
+
+Xh nu1,nup,nu2;
+
+for(int i=0;i<nSnap;i++)
+{
+	 nu1[] = NU(:,i);
+	 nup[] = MassNu*nu1[];
+	for(int j=i;j<nSnap;j++)	
+	{
+		nu2[] = NU(:,j);
+		Knu(i,j) = (nu2[]'*nup[])/nSnap;
+		
+		if (j!=i) {Knu(j,i) = Knu(i,j);}
+	}
+}
+
+ofstream CorrMatrixNu("data/Correlation/CorrelationNuextrapolate.txt"); CorrMatrixNu << Knu;
+
+// EIGENVALUES
+real[int,int] Unu(nSnap,nSnap),Vnu(nSnap,nSnap);
+real[int] Snu(nSnap); // Eigenvalues vector
+
+// SVD 
+
+dgesdd(Knu,Unu,Snu,Vnu);
+
+ofstream EigenvNu("Data/Eigenvalues/nuextrapolate.txt");
+ofstream EigenvNu2("Data/Eigenvalues/nuextrapolate2.txt");
+int dNu; //dNu = dimension ensemble of viscosity snapshots 
+real tol=1.e-8; // tolerance
+
+for(int i=0;i<nSnap;i++)
+{
+	if (Snu(i)<tol) {break;}
+	cout<< i+1 << " EigenvalueNu = " << Snu(i) << endl; 
+	EigenvNu << 3 << endl;
+	dNu=i+1;
+}
+
+cout<< " Dimension ensemble of viscosity snapshots = " << dNu << endl; 	
+
+EigenvNu2 << Snu;
+
+
+// POD basis and time coefficients
+real [int,int] Vinu(ndof,dNu),aiNu(ndof,dNu); 
+real trapnu; // Variables to make the time integration
+Xh modenu,modenuold,velmagPOD;
+
+//Viscosity POD basis
+
+for(int k=0;k<dNu;k++)
+{
+	for(int i=0;i<ndof;i++)
+	{
+		trapnu=0.;
+		for(int j=0;j<nSnap;j++)
+		{	
+			trapnu+=NU(i,j)*Unu(j,k);			
+			aiNu(j,k)=sqrt(Snu(k)*nSnap)*Unu(j,k);
+		}
+		Vinu(i,k)=trapnu/sqrt(Snu(k)*nSnap);
+	}
+	modenu[]=Vinu(:,k);	
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modenu*modenuold);
+	orthon=int2d(Th)(modenu*modenu);
+	
+	cout << "-------------------------------------------" << endl;
+	cout << "Viscosity Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Viscosity Mode n. " << k+1 << ", orthon. = " << orthon << endl;
+		
+	plot(modenu,fill=1,cmm="Viscosity, POD mode n. "+(k+1));// Plot of POD modes pressure	
+	
+	//Save vtk data for visualization with ParaView
+	savevtk("PostProc/VTK/POD/Viscosity_"+(k+1)+".vtk",Th,modenu,dataname="visPOD");	
+	cout << "-------------------------------------------" << endl;
+	modenuold=modenu;
+} 
+ofstream outputaiNu("Data/PODbasis/viscosity-extrapolate/PODtimeCoNu.txt");		outputaiNu<<aiNu;
+ofstream outputbNu("Data/PODbasis/viscosity-extrapolate/BasePODviscosity.txt");	outputbNu<<Vinu;
+

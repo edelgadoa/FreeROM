@@ -1,0 +1,20 @@
+//Datos del problema 
+int n = 15;
+
+
+
+
+//Numero de la base de la POD
+
+int d =30;
+
+//Datos para el problema
+//real Re = 100;
+real nu = 1.e-3;
+real dt = 2.e-3;
+real ddt = 1/dt;
+real mit = 1./2;
+real ter = 1./3;
+real mit3 = 3./2;
+real periodo = 0.334;
+int m2 = periodo/dt;
