@@ -1,0 +1,300 @@
+load "lapack"
+include "DatosNV.edp"
+include "MalladoNV.edp"
+include "PlanteaNV.edp"
+load "iovtk"
+
+//Incluimos las matrices y vectores ya definidos offline
+
+real[int,int] [int] C(d),BD(d2);
+real[int,int] Caux(d,d),ABC(d,d),Cav(d,d),A(d,d),U(grv,d),V(grv,d),CC(d,d),CC2(d,d),Snapuperiodo(grv,m2),Snapvperiodo(grv,m2),BDav(d,d2);
+real[int] ABCav(d),Mediau(grv),Mediav(grv),I(d2);
+real[int,int] dxU(d,d2),dxV(d,d2),dyU(d,d2),dyV(d,d2),VDeim(grv,d2);
+Cs = 1.e-2;
+Caux = 0.;
+for(int i = 0;i<d;i++){
+	C[i] = Caux(0:d-1,0:d-1);
+}
+for(int i = 0;i<d2;i++){
+BD[i] = Caux(0:d-1,0:d-1);
+}
+Snapuperiodo = 0.;
+Snapvperiodo = 0.;
+ABC = 0.;
+Cav = 0.;
+A = 0.;
+U = 0.;
+V = 0.;
+ABCav = 0.;
+Mediau = 0.;
+Mediav = 0.;
+
+ifstream file("C.txt");
+for(int i =0;i<d;i++){
+	file >> C[i];
+}
+ifstream ff("BD.txt");
+for(int i = 0;i<d2;i++){
+	ff >> BD[i];
+}
+ifstream ff2("BDav.txt");
+ff2 >> BDav;
+ifstream file2("ABC.txt");
+file2 >> ABC;
+ifstream file3("Cav.txt");
+file3 >> Cav;
+ifstream file4("A.txt");
+file4 >> A;
+ifstream file5("BasePODvelocity1.txt");
+file5 >> U;
+ifstream file6("BasePODvelocity2.txt");
+file6 >> V;
+ifstream file7("ABCav.txt");
+file7 >> ABCav;
+ifstream file8("Mediau.txt");
+file8 >> Mediau;
+ifstream file9("Mediav.txt");
+file9 >> Mediav;
+ifstream file10("Snapshotsuperiodo.txt");
+file10 >> Snapuperiodo;
+ifstream file11("Snapshotsvperiodo.txt");
+file11 >> Snapvperiodo;
+ifstream file12("dxU.txt");
+file12 >> dxU;
+ifstream file13("dxV.txt");
+file13 >> dxV;
+ifstream file14("dyU.txt");
+file14 >> dyU;
+ifstream file15("dyV.txt");
+file15 >> dyV;
+ifstream file16("Indices.txt");
+file16 >> I;
+ifstream file17("VDeim.txt");
+file17 >> VDeim;
+
+
+//Vamos a calcular ahora los coeficientes a;
+
+//Vamos a calcular datos de la S-POD-G-ROM 
+real[int] Kinetic(1001);
+
+//Construimos la matriz QI
+real[int,int] QI(d2,d2);
+QI = 0.;
+for(int i = 0;i<d2;i++){
+	QI(i,:) = VDeim(I(i),:);
+}
+matrix Q = QI;
+set(Q,solver=UMFPACK);
+
+//Calculamos el coeficiente inicial 
+real[int] a(d),a0(d),a1(d),Cavn(d),Cavn1(d),An(d),An1(d),AAv(d),CCv(d),ACv(d),B1(d);
+a1 = 0.;
+a0 = 0.;
+a = 0.;
+Xh phiu,phiv,U0,V0,mmediau,mmediav;
+U0[] = Snapuperiodo(:,0);
+V0[] = Snapvperiodo(:,0);
+mmediau[] = Mediau;
+mmediav[] = Mediav;
+for(int i = 0;i<d;i++){
+	phiu[] = U(:,i);
+	phiv[] = V(:,i);
+	a0(i) = int2d(Th)(phiu*(U0-mmediau) + phiv*(V0-mmediav));
+	
+ }
+ //Construir solucion inicial en el tiempo T = 5
+ Xh urebuiltinit,vrebuiltinit;
+ urebuiltinit[] = Mediau;
+ vrebuiltinit[] = Mediav;
+ for(int i =0;i<d;i++){
+	 urebuiltinit[] += U(:,i)*a0(i);
+	 vrebuiltinit[] += V(:,i)*a0(i);
+  }
+  //Energia cinetica etapa inicial 
+  Kinetic(0) = mit*int2d(Th)(urebuiltinit^2 + vrebuiltinit^2);
+  
+  //plot([urebuiltinit,vrebuiltinit],wait=1,value=1,cmm="Etapa 0");
+  
+  
+  
+  //Calcular a1 
+  real[int,int] CCa1(d,d),ABCa1(d,d),ABCa1t(d,d),BDDa1(d,d),ABDa1(d,d);
+  real[int] Aa0(d),Cava0(d),AAa0(d),ABCa0(d),dxu1(d2),dxv1(d2),dyu1(d2),dyv1(d2),dxyuv1(d2),alpha1(d2),BDav21(d),ABCaa0(d);
+  CCa1 = 0.;
+  Xh mediau1,mediav1,dxmediau1,dymediau1,dxmediav1,dymediav1;
+  mediau1[] = Mediau;
+  mediav1[] = Mediav;
+  dxmediau1 = dx(mediau1);
+  dymediau1 = dy(mediau1);
+  dxmediav1 = dx(mediav1);
+  dymediav1 = dy(mediav1);
+  
+dxu1=0.;
+dxv1=0.;
+dyu1=0.;
+dyv1=0.;
+for(int i = 0;i<d2;i++){
+	dxu1(i) = (dxmediau1[](I(i)) + (dxU(:,i)'*a1))^2;
+	dxv1(i) = (dxmediav1[](I(i)) + (dxV(:,i)'*a1))^2;
+	dyu1(i) = (dymediau1[](I(i)) + (dyU(:,i)'*a1))^2;
+	dyv1(i) = (dymediav1[](I(i)) + (dyV(:,i)'*a1))^2;
+}
+for(int i = 0;i<d2;i++){
+	dxyuv1(i) = sqrt(dxu1(i) + dxv1(i) + dyu1(i) + dyv1(i));
+}
+//cout << dxyuv << endl;
+alpha1 = 0;
+//Calculamos ahora el vector de coeficientes del DEIM alpha
+alpha1 = Q^-1*dxyuv1;
+//cout << alpha << endl;
+//Calculamos la matriz BD;
+BDDa1 = 0.;
+for(int i= 0;i<d2;i++){
+	BDDa1 += BD[i]*alpha1(i);
+}
+  //Matriz
+  for(int i = 0;i<d;i++){
+	  CCa1 += C[i]*a0;
+  }
+  ABCa1 = ABC + CCa1;
+  ABDa1 = ABCa1 + (Cs^2)*BDDa1;
+  //ABDa1 = ABCa1 + 0*BDDa1;
+  ABCa1t = ABDa1';
+  matrix Aa1 = ABCa1t;
+  set(Aa1,solver="sparsesolver");
+  //Vector
+  BDav21 = BDav*alpha1;
+  
+  Aa0 = A*a0;
+  Cava0 = Cav*a0;
+  AAa0 = (mit3*ddt)*Aa0 - Cava0;
+  ABCa0 = ABCav + AAa0;
+  ABCaa0 = ABCa0 - (Cs^2)*BDav21;
+  //ABCaa0 = ABCa0 - 0*BDav21;
+  //Calcular a1
+  a1 = Aa1^-1*ABCaa0;
+  
+  //Recalcular la solucion en la etapa 1
+  Xh urebuiltinit2,vrebuiltinit2;
+  urebuiltinit2[] = Mediau;
+  vrebuiltinit2[] = Mediav;
+  for(int i =0;i<d;i++){
+ 	 urebuiltinit2[] += U(:,i)*a1(i);
+ 	 vrebuiltinit2[] += V(:,i)*a1(i);
+   }
+   //Energia cinetica etapa 1
+   Kinetic(1) = mit*int2d(Th)(urebuiltinit2^2 + vrebuiltinit2^2);
+   //plot([urebuiltinit2,vrebuiltinit2],wait=1,value=1,cmm="Etapa 1");
+  
+  
+  
+  
+  //Bucle en tiempo para calcular los coeficientes 
+  
+real[int,int] MM(d,d),AA2(d,d),AA2t(d,d),BDD(d,d),MM2(d,d);
+real[int] dxu(d2),dxv(d2),dyu(d2),dyv(d2),dxyuv(d2),alpha(d2),BDav2(d),BB1(d);
+Xh mediau,mediav,dxmediau,dymediau,dxmediav,dymediav;
+mediau[] = Mediau;
+mediav[] = Mediav;
+dxmediau = dx(mediau);
+dymediau = dy(mediau);
+dxmediav = dx(mediav);
+dymediav = dy(mediav);
+
+
+for(int k=2;k<1001;k++){
+	
+	//Evaluamos el termino de smagorinski en los puntos magicos
+	//Primero multiplicamos cada derivada por el coeficiente en tiempo y elevamos al cuadrado y hacemos la raiz cuadrada
+	dxu=0.;
+	dxv=0.;
+	dyu=0.;
+	dyv=0.;
+	for(int i = 0;i<d2;i++){
+		dxu(i) = (dxmediau[](I(i)) + (dxU(:,i)'*a1))^2;
+		dxv(i) = (dxmediav[](I(i)) + (dxV(:,i)'*a1))^2;
+		dyu(i) = (dymediau[](I(i)) + (dyU(:,i)'*a1))^2;
+		dyv(i) = (dymediav[](I(i)) + (dyV(:,i)'*a1))^2;
+	}
+	for(int i = 0;i<d2;i++){
+		dxyuv(i) = sqrt(dxu(i) + dxv(i) + dyu(i) + dyv(i));
+	}
+	//cout << dxyuv << endl;
+	alpha = 0;
+	//Calculamos ahora el vector de coeficientes del DEIM alpha
+	alpha = Q^-1*dxyuv;
+	//cout << alpha << endl;
+	//Calculamos la matriz BD;
+	BDD = 0.;
+	for(int i= 0;i<d2;i++){
+		BDD += BD[i]*alpha(i);
+	}
+	//cout << BDD << endl;
+	//Calculamos la matriz del sistema
+	CC=0;
+	CC2 = 0;
+	for(int i =0;i<d;i++){
+		CC += C[i]*a1(i);
+		CC2 += C[i]*a0(i);
+	}
+	MM = 2*CC - CC2;
+	MM2 = MM + (Cs^2)*BDD ;
+	//MM2 = MM + 0*BDD ;
+	AA2 = MM2 + ABC;
+	AA2t = AA2';
+	matrix A1 = AA2t;
+	set(A1,solver="sparsesolver");
+	//Calculamos el vector
+	//Calculamos el vector de alpha
+	BDav2 = BDav*alpha;
+	//Calculamos el resto de vectores
+	Cavn = Cav*a1;
+	Cavn1 = Cav*a0;
+	An = (A*a1);
+	An1 = A*a0;
+	AAv = (ddt*2)*An - (ddt*mit)*An1;
+	CCv = -2*Cavn + Cavn1;
+	ACv = AAv + CCv;
+	B1 = ABCav + ACv;
+	BB1 = B1 - (Cs^2)*BDav2;
+	//BB1 = B1 - 0*BDav2;
+	//Resolvemos el sistema y reestablecemos los valores
+	a = A1^-1*BB1;
+	
+	Xh urebuilt,vrebuilt,u1rebuilt,v1rebuilt,u0rebuilt,v0rebuilt;
+	urebuilt[] =  Mediau;
+	vrebuilt[] =  Mediav;
+	
+	for(int i =0;i<d;i++){
+		urebuilt[] += U(:,i)*a(i);
+		vrebuilt[] += V(:,i)*a(i);
+	}
+	
+
+	plot([urebuilt,vrebuilt],value=1,cmm="Iteration k = "+k);
+	a0 = a1;
+	a1 = a;
+
+	//Calculamos la energia cinetica 
+	Kinetic(k) = mit*int2d(Th)(urebuilt^2 + vrebuilt^2);
+	
+}
+//reconstruimos la solucion 
+
+Xh urebuilt,vrebuilt;
+urebuilt[] =  Mediau;
+vrebuilt[] =  Mediav;
+
+for(int i =0;i<d;i++){
+	urebuilt[] += U(:,i)*a(i);
+	vrebuilt[] += V(:,i)*a(i);}
+//plot([urebuilt,vrebuilt],wait=1,cmm="POD Navier stokes T=7 segundos");
+
+
+//Extraemos datos
+ofstream ffile ("Kinetic2_POD_3_30.txt");
+//ofstream ffile ("Kinetic2_POD_15.txt");
+for(int i = 0;i<1001;i++){
+	ffile << Kinetic(i) << endl;}
+

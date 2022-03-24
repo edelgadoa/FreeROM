@@ -1,0 +1,31 @@
+//Definimos el espacio de funciones con los polinomios P2 para la velocidad y los P1 para la presion
+fespace Vh(Th,[P2,P2,P1]);
+fespace Wh(Th,P1);
+fespace Uh(Th,[P2,P2]);
+fespace Xh(Th,P2);
+
+
+//Las funciones del espacio 
+Vh [u,v,p],[u0,v0,p0],[u1,v1,p1],[uu,vv,pp],[up,vp,q];
+
+//Snapshots pero en funciones base
+Vh[int] [usnsh,vsnsh,psnsh](200);
+
+//las funciones test son uu vv pp 
+//los valores intermedios 
+Vh [uavg,vavg,pavg];
+uavg[] = 0.;
+u0[] = 0.;
+
+
+int gr;
+gr = Vh.ndof;
+int grv;
+grv = Xh.ndof;
+int grp;
+grp = Wh.ndof;
+
+
+//macros necesarios
+macro div(u,v)(dx(u)+dy(v)) //
+macro grad(u) [dx(u),dy(u)] //

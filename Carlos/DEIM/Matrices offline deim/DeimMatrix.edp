@@ -1,0 +1,56 @@
+
+//Phase offline of the POD
+
+load "lapack"
+include "DatosNV.edp"
+include "MalladoNV.edp"
+include "PlanteaNV.edp"
+
+//Definimos las matrices offline 
+real[int,int] U(grv,d),V(grv,d);
+real[int] Mediau(grv),Mediav(grv);
+ifstream file("BasePODvelocity1.txt");
+file >> U;
+ifstream filef("BasePODvelocity2.txt");
+filef >> V;
+
+ifstream file2("Mediau.txt");
+file2 >> Mediau;
+
+ifstream file3("Mediav.txt");
+file3 >> Mediav;
+
+//Matriz
+Xh vd,grvd,grvd2;
+
+
+
+
+for(int i = 0;i<d;i++){
+	uu1[] = V(:,i);
+	vv1[] = V(:,i);
+	for(int j = 0;j<d2;j++){
+		vd[] = VDeim(:,j);
+		BDav(i,j) = int2d(Th)((h)^2*(vd*grad(uavg1)'*grad(uu1) + vd*grad(vavg1)'*grad(vv1)));
+	}
+}
+
+//Vector de matrices 
+for(int i = 0;i<d2;i++){
+	vd[] = VDeim(:,i);
+	for(int j = 0;j<d;j++){
+		uu1[] = U(:,j);
+		vv1[] = V(:,j);
+		for(int k = 0;k<d;k++){
+			uu2[] = U(:,k);
+			vv2[] = V(:,k);
+			BD[i](j,k) = int2d(Th)((h)^2*(vd*grad(uu1)'*grad(uu2) + vd*grad(vv1)'*grad(vv2)));}}
+}
+
+//Sacar los archivos
+ofstream ff("BD.txt");
+for(int i = 0;i<d2;i++){
+ff << BD[i];}
+
+ofstream ff2("BDav.txt");
+ff2 << BDav;

@@ -1,0 +1,296 @@
+// Author: Samuele Rubino - 02/04/2020 modified by Carlos Nuñez 
+/*
+This script computes the POD velocity/pressure and viscosity modes for a 2D laminar unsteady flow around a circular cylinder.
+*/
+
+// LOAD LIBRIERIES
+load "iovtk"  // Post-process with ParaView
+load "lapack" // Eigenvalue problem solving
+
+// MACRO DEFINITION
+macro Grad(u)  [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+// READ SNAPSHOTS
+int ndof,nSnap;
+
+//Leemos los snapshots totales (juntando todos los parametros) de la velocidad, presion y viscosidad turbulenta
+
+ifstream introu("Data/Snapshots_total/uSnaptotal.txt");
+introu>>ndof; introu>>nSnap;
+real [int,int] Au(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){ introu>>Au(i,j); }}
+
+ifstream introv("Data/Snapshots_total/vSnaptotal.txt");
+introv>>ndof; introv>>nSnap;
+real [int,int] Av(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){ introv>>Av(i,j); }}
+
+ifstream introp("Data/Snapshots_total/pSnaptotal.txt");
+introp>>ndof; introp>>nSnap;
+real [int,int] Ap(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){ introp>>Ap(i,j); }}
+
+ifstream intronu("Data/Snapshots_total/nuSnaptotal.txt");
+intronu>>ndof; intronu>>nSnap;
+real[int,int] nuSnap(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){ intronu>>nuSnap(i,j); }}
+
+// FE SPACES DEFINITION
+mesh Th=readmesh("Data/Mesh.msh");
+//plot(Th,wait=1);
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 		   	 // Velocity FE space
+fespace Qh(Th,PkP); 		   	 // Pressure FE space
+fespace XhxQh(Th,[PkU,PkU,PkP]); // VelocityPressure FE product space
+
+// INITIALIZATION
+Xh 	  u1,u2,v1,v2,nu1,nu2;
+Xh 	  up,vp,nup;
+Qh 	  p1,p2;
+Qh 	  pp;
+
+// CORRELATION MATRIX for VELOCITY/PRESSURE and TURBULENCE VISCOSITY
+varf Mass(u,v)=int2d(Th)(u*v);
+
+//Definir las matrices de masa 
+matrix MassMU=Mass(Xh,Xh);
+matrix MassMP=Mass(Qh,Qh);
+matrix MassNu = Mass(Xh,Xh);
+
+real[int,int] KU(nSnap,nSnap),KP(nSnap,nSnap),Knu(nSnap,nSnap); 
+for(int i=0;i<nSnap;i++)
+{
+	u1[]=Au(:,i);	v1[]=Av(:,i);	p1[]=Ap(:,i); nu1[] = nuSnap(:,i);
+	for(int j=i;j<nSnap;j++)	
+	{
+		u2[]=Au(:,j);	v2[]=Av(:,j);	p2[]=Ap(:,j); nu2[] = nuSnap(:,j);
+		
+		// L2-POD basis
+		up[]=MassMU*u1[];
+		vp[]=MassMU*v1[];
+		KU(i,j)=(u2[]'*up[]+v2[]'*vp[])/nSnap;
+		//KU(i,j)=int2d(Th)(u1*u2+v1*v2)/nSnap;
+		pp[]=MassMP*p1[];
+		KP(i,j)=(p2[]'*pp[])/nSnap;
+		//KP(i,j)=int2d(Th)(p1*p2)/nSnap;
+		nup[] = MassNu*nu1[];
+		Knu(i,j) = (nu2[]'*nup[])/nSnap;
+		/*
+		// H1-POD basis
+		KU(i,j)=int2d(Th)(Grad(u1)'*Grad(u2)+Grad(v1)'*Grad(v2))/nSnap;
+		
+		KP(i,j)=int2d(Th)(Grad(p1)'*Grad(p2))/nSnap;
+		*/
+		if (j!=i) {KU(j,i) = KU(i,j); KP(j,i) = KP(i,j); Knu(j,i) = Knu(i,j);}
+	}
+	//cout<< i+1 << " Row of KU and KP computed" << endl;
+}
+
+ofstream CorrMatrixU("Data/Correlation/CorrelationVelocity.txt"); CorrMatrixU<<KU;
+ofstream CorrMatrixP("Data/Correlation/CorrelationPressure.txt"); CorrMatrixP<<KP;
+ofstream CorrMatrixNu("data/Correlation/CorrelationNu.txt"); CorrMatrixNu << Knu;
+
+// EIGENVALUES
+real[int,int] UU(nSnap,nSnap),VU(nSnap,nSnap),UP(nSnap,nSnap),VP(nSnap,nSnap),Unu(nSnap,nSnap),Vnu(nSnap,nSnap);
+real[int] SU(nSnap),SP(nSnap),Snu(nSnap); // Eigenvalues vector
+
+// SVD 
+dgesdd(KU,UU,SU,VU);
+dgesdd(KP,UP,SP,VP);
+dgesdd(Knu,Unu,Snu,Vnu);
+ofstream EigenvU("Data/Eigenvalues/U.txt");
+ofstream EigenvP("Data/Eigenvalues/P.txt");
+ofstream EigenvU2("Data/Eigenvalues/U2.txt");
+ofstream EigenvP2("Data/Eigenvalues/P2.txt");
+ofstream EigenvNu("Data/Eigenvalues/nu.txt");
+ofstream EigenvNu2("Data/Eigenvalues/nu2.txt");
+int dU; // dU = dimension ensemble of velocity snapshots (L2-POD basis, NoDQ)
+int dP; // dP = dimension ensemble of pressure snapshots (L2-POD basis, NoDQ)
+int dNu; //dNu = dimension ensemble of viscosity snapshots 
+real tol=1.e-10; // tolerance
+
+for(int i=0;i<nSnap;i++)
+{
+	if (SU(i)<tol) {break;}
+	cout<< i+1 << " EigenvalueU = " << SU(i) << endl; 	
+	EigenvU << SU(i) << endl;
+	dU=i+1;
+}
+cout<< " Dimension ensemble of velocity snapshots = " << dU << endl; 	
+
+for(int i=0;i<nSnap;i++)
+{
+	if (SP(i)<tol) {break;}
+	cout<< i+1 << " EigenvalueP = " << SP(i) << endl; 	
+	EigenvP << SP(i) << endl;
+	dP=i+1;
+}
+cout<< " Dimension ensemble of pressure snapshots = " << dP << endl; 	
+
+for(int i=0;i<nSnap;i++)
+{
+	if (Snu(i)<1.e-8) {break;}
+	cout<< i+1 << " EigenvalueNu = " << Snu(i) << endl; 	
+	EigenvNu << Snu(i) << endl;
+	dNu=i+1;
+}
+cout<< " Dimension ensemble of viscosity snapshots = " << dNu << endl; 	
+
+EigenvU2 << SU;
+EigenvP2 << SP;
+EigenvNu2 << Snu;
+
+
+
+// POD basis and time coefficients
+real [int,int] Viu(ndof,dU),Viv(ndof,dU),aiU(nSnap,dU),Vip(ndof,dP),aiP(nSnap,dP),Vinu(ndof,dNu),aiNu(ndof,dNu); 
+real trapu,trapv,trapp,trapnu; // Variables to make the time integration
+Xh modeu,modeuold,modev,modevold,modenu,modenuold,velmagPOD;
+Qh modep,modepold;
+
+real StrongDivMode; // Strong divergence
+varf divergenceMode([unused1,unused2,unused3],[rhs1,rhs2,rhs3])=int2d(Th)(div(modeu,modev)*rhs3); // Weak divergence
+
+
+//Velocity POD basis
+
+if(mpirank == 0){
+for(int k=0;k<dU;k++)
+{
+	for(int i=0;i<ndof;i++)
+	{
+		trapu=0.;	trapv=0.;
+		for(int j=0;j<nSnap;j++)
+		{	
+			trapu+=Au(i,j)*UU(j,k);			
+			trapv+=Av(i,j)*UU(j,k);			
+			aiU(j,k)=sqrt(SU(k)*nSnap)*UU(j,k);
+		}
+		Viu(i,k)=trapu/sqrt(SU(k)*nSnap);
+		Viv(i,k)=trapv/sqrt(SU(k)*nSnap); 		
+	}
+	modeu[]=Viu(:,k);	
+  	modev[]=Viv(:,k);
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modeu*modeuold+modev*modevold);
+	orthon=int2d(Th)(modeu*modeu+modev*modev);
+	
+	/*
+	// H1-POD basis
+	orthog=int2d(Th)(Grad(modeu)'*Grad(modeuold)+Grad(modev)'*Grad(modevold));
+	orthon=int2d(Th)(Grad(modeu)'*Grad(modeu)+Grad(modev)'*Grad(modev));
+	*/
+	cout << "-------------------------------------------" << endl;
+	cout << "Vel. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Vel. Mode n. " << k+1 << ", orthon. = " << orthon << endl;
+	
+	StrongDivMode = sqrt(int2d(Th)(div(modeu,modev)^2));
+	real [int] divVectMode=divergenceMode(0,XhxQh);
+	divVectMode = abs(divVectMode);	
+	cout << "Vel. Mode n. " << k+1 << ", Strong div. = " << StrongDivMode << ",\t Weak div. = " << divVectMode.max << endl;
+	
+	velmagPOD=sqrt(modeu^2+modev^2);
+	
+	plot(velmagPOD,fill=1,cmm="Velocity magnitude, POD mode n. "+(k+1));// Plot of POD modes velocity magnitude	
+	
+	//Save vtk data for visualization with ParaView
+	savevtk("PostProc/VTK/POD/modeU_"+(k+1)+".vtu",Th,velmagPOD,dataname="velPOD");	
+	cout << "-------------------------------------------" << endl;
+	modeuold=modeu;
+	modevold=modev;
+} 
+//------------Export data---------------------
+ofstream outputaiU("Data/PODbasis/velocity/PODtimeCoU.txt");		outputaiU<<aiU;
+ofstream outputbu("Data/PODbasis/velocity/BasePODvelocity1.txt");	outputbu<<Viu;
+ofstream outputbv("Data/PODbasis/velocity/BasePODvelocity2.txt");	outputbv<<Viv;
+}
+
+
+//Pressure POD basis
+
+if(mpirank==1){
+for(int k=0;k<dP;k++)
+{
+	for(int i=0;i<ndof;i++)
+	{
+		trapp=0.;
+		for(int j=0;j<nSnap;j++)
+		{	
+			trapp+=Ap(i,j)*UP(j,k);			
+			aiP(j,k)=sqrt(SP(k)*nSnap)*UP(j,k);
+		}
+		Vip(i,k)=trapp/sqrt(SP(k)*nSnap);
+	}
+	modep[]=Vip(:,k);	
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modep*modepold);
+	orthon=int2d(Th)(modep*modep);
+	
+	/*
+	// H1-POD basis
+	orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+	orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+	*/
+	cout << "-------------------------------------------" << endl;
+	cout << "Pres. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Pres. Mode n. " << k+1 << ", orthon. = " << orthon << endl;
+		
+	plot(modep,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
+	
+	//Save vtk data for visualization with ParaView
+	savevtk("PostProc/VTK/POD/modeP_"+(k+1)+".vtu",Th,modep,dataname="presPOD");	
+	cout << "-------------------------------------------" << endl;
+	modepold=modep;
+} 
+ofstream outputaiP("Data/PODbasis/pressure/PODtimeCoP.txt");		outputaiP<<aiP;
+ofstream outputbp("Data/PODbasis/pressure/BasePODpressure.txt");	outputbp<<Vip;
+}
+
+//Viscosity POD basis
+
+if(mpirank==2){
+for(int k=0;k<dNu;k++)
+{
+	for(int i=0;i<ndof;i++)
+	{
+		trapnu=0.;
+		for(int j=0;j<nSnap;j++)
+		{	
+			trapnu+=nuSnap(i,j)*Unu(j,k);			
+			aiNu(j,k)=sqrt(Snu(k)*nSnap)*Unu(j,k);
+		}
+		Vinu(i,k)=trapnu/sqrt(Snu(k)*nSnap);
+	}
+	modenu[]=Vinu(:,k);	
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modenu*modenuold);
+	orthon=int2d(Th)(modenu*modenu);
+	
+	/*
+	// H1-POD basis
+	orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+	orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+	*/
+	cout << "-------------------------------------------" << endl;
+	cout << "Viscosity Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Viscosity Mode n. " << k+1 << ", orthon. = " << orthon << endl;
+		
+	plot(modenu,fill=1,cmm="Viscosity, POD mode n. "+(k+1));// Plot of POD modes pressure	
+	
+	//Save vtk data for visualization with ParaView
+	savevtk("PostProc/VTK/POD/Viscosity_"+(k+1)+".vtu",Th,modep,dataname="visPOD");	
+	cout << "-------------------------------------------" << endl;
+	modenuold=modenu;
+} 
+ofstream outputaiNu("Data/PODbasis/viscosity/PODtimeCoNu.txt");		outputaiNu<<aiNu;
+ofstream outputbNu("Data/PODbasis/viscosity/BasePODviscosity.txt");	outputbNu<<Vinu;
+
+}

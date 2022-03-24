@@ -1,0 +1,12 @@
+//Mallado del rectangulo con el cilindro como obstaculo
+
+//mallado sacado del articulo de samuele
+
+border r1(t = 0, 2.2){x = t;y=0;label=4;}
+border r2(t = 0, 0.41){x=2.2;y=t;label=2;}
+border r3(t = 2.2, 0){x = t;y=0.41;label=4;}
+border r4(t = 0.41, 0){x = 0;y = t;label =1;}
+border c1(t =2*pi,0){x = 0.2+0.05*sin(t);y = 0.2+0.05*cos(t);label=3;}
+mesh Th = buildmesh( r1(5*n) + r2(n) + r3(5*n) + r4(n) + c1(-n*3));
+
+//plot(Th,wait=1);

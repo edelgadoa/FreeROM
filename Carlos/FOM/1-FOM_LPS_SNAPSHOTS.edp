@@ -1,0 +1,979 @@
+// Author: Samuele Rubino - 30/01/2019 modified by Carlos Núñez 
+
+// LOAD LIBRIERIES
+load "iovtk" // Post-process with ParaView
+load "lapack"
+
+// MACRO DEFINITION
+macro Grad(u)  [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+macro rot(u,v) (dx(v)-dy(u))//EOM 2D Rotational operator/Vorticity field
+macro mod(u,v) (sqrt(dx(u)^2 + dx(v)^2 + dy(u)^2 + dy(v)^2)) //Frobenius norm 
+
+// GEOMETRICAL PARAMETERS
+real H 	  = 0.41; // Channel height
+real D    = 0.1;  // Cylinder diameter
+real xCyl = 0.2;  // Cylinder center x-position
+real yCyl = 0.2;  // Cylinder center y-position
+real xin  = 0.;   // Inlet position
+real xout = 2.2;  // Outlet position
+
+// PHYSICAL PARAMETERS
+real nu  = 1.e-3; // Kinematic viscosity for Re = 100.
+
+real Cs = 1.e-2; //Smagorinsky constant
+//Parameter change max inlet velocity
+real Um;
+
+
+// INFLOW CONDITION
+real Ubar= 2*Um/3; 			 // \int_{\Gamma_in} Uin / \int_{\Gamma_in} =1
+real Re  = Ubar*D/nu; 		 // Reynolds number = 100
+cout << "Ubar = " << Ubar << endl;
+cout << "Re = " << Re << endl;
+
+// MESH PARTITIONING (Intermediate grid)
+int n0 = 4;     // Mesh density base number 
+int n1 = 25*n0; // Points density on cylinder
+int n2 = 25*n0; // Points density on inlet
+int n3 = 15*n0; // Points density on top, outlet and bottom
+// BUILDING MESH
+border cylinder(t=2*pi,0)   {x=xCyl+D/2*cos(t); y=yCyl+D/2*sin(t); label=1;} ;
+border inlet   (t=H,0)      {x=xin;             y=t;               label=2;} ;
+border top     (t=xout,xin) {x=t;               y=H;               label=3;} ;
+border outlet  (t=0,H)      {x=xout;            y=t;               label=4;} ;
+border bottom  (t=xin,xout) {x=t;               y=0;               label=5;} ;
+mesh Th = buildmesh(cylinder(n1*pi*D)+inlet(n2*H)+top(n3*(xout-xin))+outlet(n3*H)+bottom(n3*(xout-xin))) ;
+//plot(Th,cmm="Mesh") ;
+
+
+// FE SPACES DEFINITION
+func PkU=P2;
+func PkP=P2;
+func Pk1dc=P1dc; 
+func Pk1=P1; 
+fespace Xh(Th,PkU); 		   	 // Velocity FE space
+fespace Qh(Th,PkP); 		   	 // Pressure FE space
+fespace Xh1dc(Th,Pk1dc); 		 // 2D Piecewise linear DC FE space
+fespace Xh1(Th,Pk1);	 		 // 2D Piecewise linear FE space
+fespace XhxQh(Th,[PkU,PkU,PkP]); // VelocityPressure FE product space ==> EO FE (not weakly divergence-free)
+fespace Ph(Th,P0);
+Ph h=hTriangle; Ph taum;//,tauc;cout << "size of mesh = " << h[].max << endl; 
+cout << "ndof velocity = " << 2*Xh.ndof << endl;
+cout << "ndof pressure = " << Qh.ndof << endl;
+cout << "------------------------------" << endl;
+
+// TIME SETUP FOR NUMERICAL SIMULATION
+real t  = 0.;	  // Initial time
+real dt = 2.e-3;  // Time step
+real dtt = 1./dt; // Inverse of time step
+real T  = 9.;  // Final time
+int nit = T/dt;   // # Iterations
+int  it = 0;      // Initial iteration
+
+// STABILIZATION COEFF. 
+real cc1p=4;
+int  dim=2;  //Dimension
+int  l=2;    //Interpolation order
+int gamma=2; //Time accuracy
+real cc1=cc1p^2*l^4;
+real cc2=sqrt(cc1);
+
+// INITIALIZATION
+XhxQh [u1,u2,p];   		// Vectorial solution at time n+1 	
+
+XhxQh [rhs1,rhs2,rhs3]; // RHS
+
+Xh 	  vort,velmag,ut; 	// Vorticity, velocity magnitude and tangential velocity on cylinder to compute drag coefficient
+
+Xh    uscal1,uscal2;	// Scalar solution
+
+Qh    pscal;			
+
+Xh    umean1,umean2,velmagMean; // Mean fields
+
+real Fd,Cd;				// Drag force and coefficient
+real Fl,Cl;				// Lift force and coefficient
+real PD;				// Pressure difference
+
+// DEFINITION VARIATIONAL FORMULATION
+Xh up1,up2;    // u^{n}
+Xh upp1,upp2;  // u^{n-1}
+real a0,a1,a2; // Parameters for BDF fomulation
+real b0,b1;    // Parameters for extrapolation
+
+
+//INTERP. MATRIX
+matrix IPh;
+{	
+	matrix Idh;
+	{
+		Xh1dc fAux1dc=1.;
+		Idh = fAux1dc[];
+	}
+	matrix PIg = interpolate(Xh1,Xh1dc); 
+	matrix IPg = interpolate(Xh1dc,Xh1); 
+	matrix IPPIg = IPg*PIg;
+	IPh = Idh + (-1.)*IPPIg;
+}
+
+//INTERP. MATRIX FOR STABILIZATION
+int[int] cs2=[2];
+matrix Dxp = interpolate(Xh1dc,XhxQh,U2Vc=cs2,op=1);
+matrix Dyp = interpolate(Xh1dc,XhxQh,U2Vc=cs2,op=2);
+
+matrix DDx = IPh*Dxp;
+matrix DDy = IPh*Dyp;
+
+// TIME LOOP DEPEND ON THE PARAMETER
+
+int  samplingRate=5;
+
+real Tsteady=7.;             // Time to reach a periodic-in-time (statistically steady) state
+int  steadyState=Tsteady/dt; // # Iterations to reach a periodic-in-time (statistically steady) state 
+//int  firstPer=steadyState+166; // # Iterations to reach a first period of snapshot data 
+
+//Discretizacion para el termino de smagorinsky
+Xh ugorron,vgorron,normfro;
+
+ugorron = 2*up1-upp2;
+vgorron = 2*up2-upp2;
+
+varf  NS ([u1,u2,p],[v1,v2,q])=
+	int2d(Th)(
+		  a0*dtt*(u1*v1+u2*v2)
+		+ nu*(Grad(u1)'*Grad(v1)+Grad(u2)'*Grad(v2))
+		+ ((Cs*h)^2)*(mod(ugorron,vgorron)*(Grad(u1)'*Grad(v1)+Grad(u2)'*Grad(v2)))
+		+b0*(([up1,up2]'*Grad(u1))*v1+([up1,up2]'*Grad(u2))*v2)
+		+b1*(([upp1,upp2]'*Grad(u1))*v1+([upp1,upp2]'*Grad(u2))*v2)
+		
+		- p*div(v1,v2)
+		//+ tauc*div(u1,u2)*div(v1,v2) // grad-div stab.
+		+ q*div(u1,u2))
+		-int2d(Th)(a1*dtt*(up1*v1+up2*v2) + a2*dtt*(upp1*v1+upp2*v2))
+;
+
+// TIME RESOLUTION: 1st Step - BDF1 ; next steps - BDF2
+//a0=1.; a1=-1.; a2=0.; b0=1.; b1=0.;  // Semi-implicit BDF1
+a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
+
+
+// SNAPSHOTS DIVIDIMOS 5 MATRICES PARA CADA NUMERO REYNOLDS DIFERENTE
+int snap;
+int nSnapt = 200; // # Snapshots tiempo para cada parametro 
+int nSnap=1000; // # Snapshots totales
+real [int,int] Au(Xh.ndof,nSnap),Av(Xh.ndof,nSnap),Ap(Qh.ndof,nSnap),NU(Xh.ndof,nSnap);
+real[int,int] Au1(Xh.ndof,nSnapt),Av1(Xh.ndof,nSnapt),Ap1(Xh.ndof,nSnapt),nuSnap(Xh.ndof,nSnapt);
+real[int,int] Au2(Xh.ndof,nSnapt),Av2(Xh.ndof,nSnapt),Ap2(Xh.ndof,nSnapt),nuSnap2(Xh.ndof,nSnapt);
+real[int,int] Au3(Xh.ndof,nSnapt),Av3(Xh.ndof,nSnapt),Ap3(Xh.ndof,nSnapt),nuSnap3(Xh.ndof,nSnapt);
+real[int,int] Au4(Xh.ndof,nSnapt),Av4(Xh.ndof,nSnapt),Ap4(Xh.ndof,nSnapt),nuSnap4(Xh.ndof,nSnapt);
+real[int,int] Au5(Xh.ndof,nSnapt),Av5(Xh.ndof,nSnapt),Ap5(Xh.ndof,nSnapt),nuSnap5(Xh.ndof,nSnapt);
+
+
+//Tomas snapshots Re = 100
+if(mpirank==0){
+
+//Segundo Numero Reynolds  Re = 100;
+real [int,int] Au1(Xh.ndof,nSnapt),Av1(Xh.ndof,nSnapt),Ap1(Qh.ndof,nSnapt),nuSnap(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 1.5; //Max inlet velocity corresponding to Re=125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	//MATRIX GRAD-PRES. STAB.
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au1(:,snap)=uscal1[];
+		Av1(:,snap)=uscal2[];
+		Ap1(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au1(:,i)=Au1(:,i)-umean1[];
+    Av1(:,i)=Av1(:,i)-umean2[];
+}
+    
+ofstream outputus1("Data/Snapshots/uSnap.txt"); outputus1<<Au1;
+ofstream outputvs1("Data/Snapshots/vSnap.txt"); outputvs1<<Av1;
+ofstream outputps1("Data/Snapshots/pSnap.txt"); outputps1<<Ap1;
+ofstream outputum1("Data/Snapshots/umean.txt"); outputum1<<umean1[];
+ofstream outputvm1("Data/Snapshots/vmean.txt"); outputvm1<<umean2[];
+ofstream outputnu1("Data/Snapshots/nuSnap.txt"); outputnu1 << nuSnap;
+
+cout << Um << endl;
+}
+
+//Tomas snapshots Re = 125
+if(mpirank==1){
+
+//Segundo Numero Reynolds  Re = 125;
+real [int,int] Au2(Xh.ndof,nSnapt),Av2(Xh.ndof,nSnapt),Ap2(Qh.ndof,nSnapt),nuSnap2(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 1.875; //Max inlet velocity corresponding to Re=125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//MATRIX GRAD-PRES. STAB.
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au2(:,snap)=uscal1[];
+		Av2(:,snap)=uscal2[];
+		Ap2(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap2(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au2(:,i)=Au2(:,i)-umean1[];
+    Av2(:,i)=Av2(:,i)-umean2[];
+}
+     
+ofstream outputus2("Data/Snapshots/uSnap2.txt"); outputus2<<Au2;
+ofstream outputvs2("Data/Snapshots/vSnap2.txt"); outputvs2<<Av2;
+ofstream outputps2("Data/Snapshots/pSnap2.txt"); outputps2<<Ap2;
+ofstream outputum2("Data/Snapshots/umean2.txt"); outputum2<<umean1[];
+ofstream outputvm2("Data/Snapshots/vmean2.txt"); outputvm2<<umean2[];
+ofstream outputnu2("Data/Snapshots/nuSnap2.txt"); outputnu2 << nuSnap2;
+
+cout << Um << endl;
+}
+
+
+//Tomas snapshots Re = 150
+if(mpirank==2){
+//Tercer Numero Reynolds  Re = 150;
+real [int,int] Au3(Xh.ndof,nSnapt),Av3(Xh.ndof,nSnapt),Ap3 (Qh.ndof,nSnapt),nuSnap3(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 2.25; //Max inlet velocity corresponding to Re=125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//MATRIX GRAD-PRES. STAB.
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au3(:,snap)=uscal1[];
+		Av3(:,snap)=uscal2[];
+		Ap3(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap3(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au3(:,i)=Au3(:,i)-umean1[];
+    Av3(:,i)=Av3(:,i)-umean2[];
+}
+   
+ofstream outputus3("Data/Snapshots/uSnap3.txt"); outputus3<<Au3;
+ofstream outputvs3("Data/Snapshots/vSnap3.txt"); outputvs3<<Av3;
+ofstream outputps3("Data/Snapshots/pSnap3.txt"); outputps3<<Ap3;
+ofstream outputum3("Data/Snapshots/umean3.txt"); outputum3<<umean1[];
+ofstream outputvm3("Data/Snapshots/vmean3.txt"); outputvm3<<umean2[];
+ofstream outputnu3("Data/Snapshots/nuSnap3.txt"); outputnu3<<nuSnap3;
+
+cout << Um << endl;
+
+}
+
+
+//Tomas snapshots Re = 175
+if(mpirank==3){
+
+
+//Cuarto Numero Reynolds  Re = 175;
+real [int,int] Au4(Xh.ndof,nSnapt),Av4(Xh.ndof,nSnapt),Ap4(Qh.ndof,nSnapt),nuSnap4(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 2.625; //Max inlet velocity corresponding to Re=125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//MATRIX GRAD-PRES. STAB.
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au4(:,snap)=uscal1[];
+		Av4(:,snap)=uscal2[];
+		Ap4(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap4(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au4(:,i)=Au4(:,i)-umean1[];
+    Av4(:,i)=Av4(:,i)-umean2[];
+}
+     
+ofstream outputus4("Data/Snapshots/uSnap4.txt"); outputus4<<Au4;
+ofstream outputvs4("Data/Snapshots/vSnap4.txt"); outputvs4<<Av4;
+ofstream outputps4("Data/Snapshots/pSnap4.txt"); outputps4<<Ap4;
+ofstream outputum4("Data/Snapshots/umean4.txt"); outputum4<<umean1[];
+ofstream outputvm4("Data/Snapshots/vmean4.txt"); outputvm4<<umean2[];
+ofstream outputnu4("Data/Snapshots/nuSnap4.txt"); outputnu4<<nuSnap4;
+
+cout << Um << endl;
+
+
+}
+
+//Tomas snapshots Re = 200
+if(mpirank==4){
+
+//Quinto Numero Reynolds  Re = 200;
+real [int,int] Au5(Xh.ndof,nSnapt),Av5(Xh.ndof,nSnapt),Ap5(Qh.ndof,nSnapt),nuSnap5(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 3; //Max inlet velocity corresponding to Re=125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//MATRIX GRAD-PRES. STAB.
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au5(:,snap)=uscal1[];
+		Av5(:,snap)=uscal2[];
+		Ap5(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap5(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au5(:,i)=Au5(:,i)-umean1[];
+    Av5(:,i)=Av5(:,i)-umean2[];
+}
+    
+ofstream outputus5("Data/Snapshots/uSnap5.txt"); outputus5<<Au5;
+ofstream outputvs5("Data/Snapshots/vSnap5.txt"); outputvs5<<Av5;
+ofstream outputps5("Data/Snapshots/pSnap5.txt"); outputps5<<Ap5;
+ofstream outputum5("Data/Snapshots/umean5.txt"); outputum5<<umean1[];
+ofstream outputvm5("Data/Snapshots/vmean5.txt"); outputvm5<<umean2[];
+ofstream outputnu5("Data/Snapshots/nuSnap5.txt"); outputnu5<<nuSnap5;
+
+cout << Um << endl;
+
+}
+
+//Tomas snapshots Re = 187.5
+if(mpirank==5){
+
+//Sexto Numero Reynolds intermedio de 175 y 200  Re = 187.5;
+real [int,int] Au6(Xh.ndof,nSnapt),Av6(Xh.ndof,nSnapt),Ap6(Qh.ndof,nSnapt),nuSnap6(Xh.ndof,nSnapt);
+ snap=0;
+
+
+
+
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+snap = 0;
+Um = 2.8125;
+
+	for (it=0; it<nit; it++) //BUCLE TIEMPO 
+{
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	//MATRIX GRAD-PRES. STAB.
+	//DEFINIR UBAR Y TAUM PORQUE CAMBIAN EN BUCLE
+	Ubar = 2*Um/3;
+	taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + DD + Aux;
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+	
+	//plot([u1,u2],cmm="velocity iteration"+it,value=1);
+  	
+	 //SAVING SNAPSHOTS CADA 5 ITERACIONES UNA VEZ QUE HAN LLEGADO A 7s
+	if (it>=steadyState && it%samplingRate==0)
+	{
+		uscal1=u1;
+		uscal2=u2;
+		pscal=p;
+		Au6(:,snap)=uscal1[];
+		Av6(:,snap)=uscal2[];
+		Ap6(:,snap)=pscal[];
+        umean1[] += uscal1[];
+		umean2[] += uscal2[];
+		//Tomar los snapshots del periodo de la norma frobenius 
+		Xh ugn,vgn;
+		ugn = 2*up1-upp1;
+		vgn = 2*up2-upp2;
+	
+		normfro = mod(ugn,vgn);
+		nuSnap6(:,snap) = normfro[]; 
+		snap+=1;	
+	}
+	
+	
+} 
+
+
+//OBTENER LA MEDIA
+
+
+umean1[]=umean1[]/nSnapt;
+umean2[]=umean2[]/nSnapt;
+
+
+// SAVE SNAPSHOTS QUITANDOLE LA MEDIA
+
+for (int i=0;i<nSnapt;i++)
+{
+	Au6(:,i)=Au6(:,i)-umean1[];
+    Av6(:,i)=Av6(:,i)-umean2[];
+}
+    
+ofstream outputus6("Data/Snapshots/uSnap6.txt"); outputus6<<Au6;
+ofstream outputvs6("Data/Snapshots/vSnap6.txt"); outputvs6<<Av6;
+ofstream outputps6("Data/Snapshots/pSnap6.txt"); outputps6<<Ap6;
+ofstream outputum6("Data/Snapshots/umean6.txt"); outputum6<<umean1[];
+ofstream outputvm6("Data/Snapshots/vmean6.txt"); outputvm6<<umean2[];
+ofstream outputnu6("Data/Snapshots/nuSnap6.txt"); outputnu6<<nuSnap6;
+
+cout << Um << endl;
+
+}
+
+
+
+//Juntamos todas las matrices de snapshots separadas y formamos la matriz de snapshots comun
+
+
+//Diferentes  datos de los procesadores los pasamos a globales
+
+mpiBarrier(mpiCommWorld);
+real[int,int] Au1L(Xh.ndof,nSnapt),Av1L(Xh.ndof,nSnapt),Ap1L(Xh.ndof,nSnapt),nuSnap1L(Xh.ndof,nSnapt);
+real[int,int] Au2L(Xh.ndof,nSnapt),Av2L(Xh.ndof,nSnapt),Ap2L(Xh.ndof,nSnapt),nuSnap2L(Xh.ndof,nSnapt);
+real[int,int] Au3L(Xh.ndof,nSnapt),Av3L(Xh.ndof,nSnapt),Ap3L(Xh.ndof,nSnapt),nuSnap3L(Xh.ndof,nSnapt);
+real[int,int] Au4L(Xh.ndof,nSnapt),Av4L(Xh.ndof,nSnapt),Ap4L(Xh.ndof,nSnapt),nuSnap4L(Xh.ndof,nSnapt);
+real[int,int] Au5L(Xh.ndof,nSnapt),Av5L(Xh.ndof,nSnapt),Ap5L(Xh.ndof,nSnapt),nuSnap5L(Xh.ndof,nSnapt);
+
+mpiAllReduce(Au1,Au1L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Av1,Av1L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Ap1,Ap1L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Au2,Au2L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Av2,Av2L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Ap2,Ap2L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Au3,Au3L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Av3,Av3L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Ap3,Ap3L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Au4,Au4L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Av4,Av4L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Ap4,Ap4L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Au5,Au5L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Av5,Av5L,mpiCommWorld,mpiSUM);
+mpiAllReduce(Ap5,Ap5L,mpiCommWorld,mpiSUM);
+mpiAllReduce(nuSnap,nuSnap1L,mpiCommWorld,mpiSUM);
+mpiAllReduce(nuSnap2,nuSnap2L,mpiCommWorld,mpiSUM);
+mpiAllReduce(nuSnap3,nuSnap3L,mpiCommWorld,mpiSUM);
+mpiAllReduce(nuSnap4,nuSnap4L,mpiCommWorld,mpiSUM);
+mpiAllReduce(nuSnap5,nuSnap5L,mpiCommWorld,mpiSUM);
+//Juntar todas las matrices en una unica
+
+for(int i = 0;i<200;i++){
+	//Primera componente de la velocidad
+	Au(:,i) = Au1L(:,i);
+	Au(:,i+200) = Au2L(:,i);
+	Au(:,i+400) = Au3L(:,i);
+	Au(:,i+600) = Au4L(:,i);
+	Au(:,i+800) = Au5L(:,i); 
+	//Segunda componente de la velocidad 
+	Av(:,i) = Av1L(:,i);
+	Av(:,i+200) = Av2L(:,i);
+	Av(:,i+400) = Av3L(:,i);
+	Av(:,i+600) = Av4L(:,i);
+	Av(:,i+800) = Av5L(:,i); 
+	//Presion
+	Ap(:,i) = Ap1L(:,i);
+	Ap(:,i+200) = Ap2L(:,i);
+	Ap(:,i+400) = Ap3L(:,i);
+	Ap(:,i+600) = Ap4L(:,i);
+	Ap(:,i+800) = Ap5L(:,i);
+	//Smagorinsky term 
+	NU(:,i) = nuSnap1L(:,i);
+	NU(:,i+200) = nuSnap2L(:,i);
+	NU(:,i+400) = nuSnap3L(:,i);
+	NU(:,i+600) = nuSnap4L(:,i);
+	NU(:,i+800) = nuSnap5L(:,i);
+}
+
+//EXTRAEMOS LAS MATRICES DE SNAPSHOTS
+
+ofstream outputustotal("Data/Snapshots_total/uSnaptotal.txt"); outputustotal<<Au;
+ofstream outputvstotal("Data/Snapshots_total/vSnaptotal.txt"); outputvstotal<<Av;
+ofstream outputpstotal("Data/Snapshots_total/pSnaptotal.txt"); outputpstotal<<Ap;
+ofstream outputnutotal("Data/Snapshots_total/nuSnaptotal.txt"); outputnutotal<<NU;
+
+
