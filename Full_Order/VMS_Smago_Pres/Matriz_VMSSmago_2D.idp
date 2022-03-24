@@ -11,7 +11,7 @@ Gr=MOD(uEF);
 
 Vh3P1dc [Levf,LevfY,LevfP];
 VhP2 Levaux; //en principio no lo necesito
-
+Vh3P2 [Lev, LevY, LevP] = [Lev1, Lev2, Levaux];
 
 varf FVSmago([uu1,uu2,pun],[v1,v2,qun])=int2d(Th)((CS*hTriangle)^2*Gr*(uu1*v1+uu2*v2));
 varf FVSmagob([uu1,uu2,pun],[v1,v2,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*(Levf*v1+LevfY*v2));

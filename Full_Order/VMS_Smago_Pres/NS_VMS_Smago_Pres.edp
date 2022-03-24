@@ -44,8 +44,9 @@ include "FE_VMS_LPS_2D.idp"
 
 // Dibujamos la solucion, con levantamiento
 
-Vh3P2 [uEFL, uEFLY, uEFLP];
-uEFL[]=uEF[]+Lev[];
+VhP2 uEFL, uEFLY;
+uEFL = uEF + Lev1;
+uEFLY = uEFY + Lev2; 
 
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
-plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+plot(uEFP, cmm="FE pres para Re="+Reynolds);

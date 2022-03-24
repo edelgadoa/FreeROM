@@ -9,11 +9,11 @@ real nu=1./Reynolds;
 varf FVFija([uu,uuY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(uu*v+uuY*vY)
 									-Div(v)*uP + Div(uu)*vP)
 									+int2d(Th)(nu*GradUGradV(uu,v))
-									+int2d(Th)(UGradVW(uu,Lev,v)) + int2d(Th)(UGradVW(Lev, uu, v))
+									+int2d(Th)(ugradvw(uu, uuY,Lev1, Lev2,v, vY)) + int2d(Th)(ugradvw(Lev1, Lev2, uu,  uuY, v, vY))
 									+int2d(Th)(epspen*uP*vP)
 									//Segundo miembro
-									-int2d(Th)(UGradVW(Lev,Lev,v)) 
-									-int2d(Th)(nu*GradUGradV(Lev,v))
+									-int2d(Th)(ugradvw(Lev1, Lev2, Lev1, Lev2, v, vY)) 
+									-int2d(Th)(nu*gradugradv(Lev1, Lev2, v, vY))
 									+on(1,2,3,4, uu=0., uuY=0.); 
 
 //							

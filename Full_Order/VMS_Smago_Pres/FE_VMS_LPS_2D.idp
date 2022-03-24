@@ -19,8 +19,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
-	uprevL = uEF + Lev;
-	uprevLY = uEFY + LevY;
+	uprevL = uEF + Lev1;
+	uprevLY = uEFY + Lev2;
 
 	{
 		VhP2 udcAux;
@@ -44,7 +44,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix Smago;
 	real[int] bSmago(Vh3P2.ndof);
 	
-	include "Matriz_Smago_2D.idp"
+	include "Matriz_VMSSmago_2D.idp"
 	
 
 	// incluimos la matriz de estabilizacion LPS de la presion
