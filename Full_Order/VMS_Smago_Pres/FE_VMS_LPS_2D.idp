@@ -12,7 +12,10 @@ include "Levantamiento.idp"
 matrix MFija;
 real[int] bFija(Vh3P2.ndof);
 
+
 include "Matrices_fijas_NS_2D.idp"
+
+
 
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
@@ -52,7 +55,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix LPSpres;
 	
 	include "Matriz_LPS_Pres_2D.idp"
-	
+
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
@@ -74,8 +77,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	uEF[]=MFinal^-1*bFinal;
 
-	plot([uEF, uEFY],wait=1);
-	plot(uEFP, wait=1);
 	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY;

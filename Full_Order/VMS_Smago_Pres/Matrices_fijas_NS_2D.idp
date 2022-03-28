@@ -7,7 +7,7 @@ real nu=1./Reynolds;
 // Construimos las matrices fijas de EF
 
 varf FVFija([uu,uuY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(uu*v + uuY*vY))
-								   - int2d(Th)(Div(v)*uP + Div(uu)*vP)
+								   + int2d(Th)(Div(uu)*vP - Div(v)*uP)
 								   + int2d(Th)(nu*GradUGradV(uu,v))
 								   + int2d(Th)(UGradVW(uu,Lev,v)) + int2d(Th)(UGradVW(Lev, uu, v))
 								   + int2d(Th)(epspen*uP*vP)
