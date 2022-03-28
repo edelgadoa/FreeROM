@@ -6,8 +6,8 @@
 
 func G = 1*(y>=1);
 
-VhP2 Lev1 = G;
-VhP2 Lev2 = 0.;
+Vh3P2 [Lev, LevY, LevP];
+VhP2 GP2 = G;
+VhP2 GzeroP2 = 0.;
 
-plot([Lev1, Lev2]);
-// [Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+[Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];

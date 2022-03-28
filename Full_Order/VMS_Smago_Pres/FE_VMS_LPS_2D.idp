@@ -19,9 +19,10 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
-	uprevL = uEF + Lev1;
-	uprevLY = uEFY + Lev2;
-
+	uprevL = uEF + Lev;
+	uprevLY = uEFY + LevY;
+	
+	
 	{
 		VhP2 udcAux;
 		udcAux[] = IPhP2P1*uprevL[];
@@ -72,7 +73,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uEFp[]=uEF[];
 	
 	uEF[]=MFinal^-1*bFinal;
-	
+
 	plot([uEF, uEFY],wait=1);
 	plot(uEFP, wait=1);
 	

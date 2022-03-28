@@ -22,17 +22,12 @@ include "../../Mallas/CuadradoNxNy.idp"
 // Definimos los espacios de EF y de los EF globales
 include "FE_Spaces_NoStab_VP_2D.idp"
 
-Vh3P2 [u1, u2, p];
-VhP1dc u1dx, u1dy, u2dx, u2dy; 
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
-
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
 include "Parametros_2D.idp"
 
-<<<<<<< HEAD
 Reynolds = 1000;
 
 
@@ -49,11 +44,8 @@ include "FE_VMS_LPS_2D.idp"
 
 // Dibujamos la solucion, con levantamiento
 
-VhP2 uEFL, uEFLY;
-uEFL = uEF + Lev1;
-uEFLY = uEFY + Lev2; 
+Vh3P2 [uEFL, uEFLY, uEFLP];
+uEFL[]=uEF[] + Lev[];
 
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
-plot(uEFP, cmm="FE pres para Re="+Reynolds);
-=======
->>>>>>> parent of 744071c (Codigo de EF VMS-LPS)
+plot(uEFLP, cmm="FE pres para Re="+Reynolds);
