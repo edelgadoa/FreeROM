@@ -4,10 +4,11 @@
 
 // Programa para definir el levantamiento de frontera
 
-func G = 1*(y>=1);
+func G = 1*(z>=1);
 
-Vh3P2 [Lev, LevY, LevP];
+Vh4P2 [Lev, LevY, LevZ, LevP];
 VhP2 GP2 = G;
 VhP2 GzeroP2 = 0.;
+Vhp1 GzeroP1 = 0.; //NO NECESARIO CUANDO FUNCIONE CON EF ESTABLE
 
-[Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+[Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP1];

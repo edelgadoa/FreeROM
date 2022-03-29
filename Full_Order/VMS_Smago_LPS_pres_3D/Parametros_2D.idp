@@ -4,6 +4,14 @@
 
 // Parametros a usar durante la ejecucion del codigo
 
+// Parametros del PETSC
+int petsc = 1; //Para usar el paralelo = 1
+
+load "PETSc";
+Mat MatAVP,MatAVel;
+int[int] mapVP, mapVel;
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
 
 // Parametros del modelo VMS-Smago con LPS en la presion
 real CS = 0.1; // Smago
@@ -14,7 +22,7 @@ real cc2=sqrt(cc1);
 
 VhP0 mk,tKcod,tKTcod,tau;
 
-varf med(unused,v)=int2d(Th)(1.*v);
+varf med(unused,v)=intN(Th)(1.*v);
 real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk); 
 

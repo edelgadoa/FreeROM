@@ -20,21 +20,28 @@ include "Matrices_fijas_NS_2D.idp"
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
-	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
+	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
 	uprevLY = uEFY + LevY;
-	
+	uprevLZ = uEFZ + LevZ;
 	
 	{
 		VhP2 udcAux;
 		udcAux[] = IPhP2P1*uprevL[];
 		uEFdX[] = DXP2*udcAux[];
 		uEFdY[] = DYP2*udcAux[];
+		uEFdZ[] = DZP2udcAux[];
 
 		udcAux[] = IPhP2P1*uprevLY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
+		uEFYdZ[] = DZP2udcAux[];
+		
+		udcAux[] = IPhP2P1*uprevLZ[];
+		uEFZdX[] = DXP2*udcAux[];
+		uEFZdY[] = DYP2*udcAux[];
+		uEFZdZ[] = DZP2udcAux[];
 	
 	}
 	

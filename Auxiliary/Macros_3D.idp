@@ -42,3 +42,21 @@ macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
 macro MOD(U) (sqrt(U#dX^2 + U#dY^2 + U#dZ^2 + 
 				   U#YdX^2 + U#YdY^2 + U#YdZ^2 +
 				   U#ZdX^2 + U#ZdY^2 + U#ZdZ^2)) //EOM
+macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+
+// MACROS DE LA DIMENSION 3
+macro intN() int3d // EOM             // three-dimensional integral
+macro intN1() int2d // EOM            // two-dimensional integral
+
+//// MACROS DEL PARALELO
+macro pause() mpiBarrier(mpiCommWorld)// EOM
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}
+//EOM
