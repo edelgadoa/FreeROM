@@ -18,8 +18,8 @@ macro mod(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //EOM
 // Si usamos vectores velocidad U,V,W en 2D con U=[U, UY], V=[V, VY], W=[W, WY]
 // Las derivadas de U son UdX, UdY, UYdX y UYdY, si se quiere usar en versión vectorial (notacion mas especifica)
 macro Div(U) (dx(U) + dy(U#Y)) //EOM
-macro GradUGradV(U,V) (dx(U)*dx(V)+dy(U)*dy(V)+dx(U#Y)*dx(V#Y)+dy(U#Y)*dy(V#Y))//EOM
-macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)],[U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y))//EOM
+macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
 macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
 macro UGradT(U,temp) ([U,U#Y]'*Grad(temp)) //EOM
 macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
