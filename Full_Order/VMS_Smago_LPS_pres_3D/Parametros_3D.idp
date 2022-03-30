@@ -4,14 +4,29 @@
 
 // Parametros a usar durante la ejecucion del codigo
 
+
 // Parametros del PETSC
 int petsc = 1; //Para usar el paralelo = 1
 
-load "PETSc";
-Mat MatAVP,MatAVel;
-int[int] mapVP, mapVel;
-string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
 
+if(petsc){
+	load "PETSc";
+	
+	Mat MatAVh4P2;
+	int[int] mapVh4P2;
+	string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+	
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	buildDmesh(ThL);
+	mapVh4P2=restrict(Vh4P2L,Vh4P2,myN2o);  
+	{
+		macro def(i) [i, iY, iZ, iP] //
+		macro init(i) [i,i,i,i] // EOM
+		createMat(ThL,MatAVh4P2,Vh4P2);
+	}
+	
+}
 
 // Parametros del modelo VMS-Smago con LPS en la presion
 real CS = 0.1; // Smago

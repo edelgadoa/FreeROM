@@ -9,6 +9,7 @@
 // Codigo para resolver el problema 3D de EF de VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres 
 
+verbosity=0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -17,7 +18,7 @@ load "iovtk"
 include "../../Auxiliary/Macros_3D.idp"
 
 // Creamos la malla
-include "../../Mallas/CuaboNxNyNZ.idp"
+include "../../Mallas/CuboNxNyNZ.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
@@ -45,10 +46,11 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 include "FE_VMS_LPS_2D.idp"
 
+
 // Dibujamos la solucion, con levantamiento
 
 Vh3P2 [uEFL, uEFLY, uEFLP];
 uEFL[]=uEF[] + Lev[];
 
-plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+plot([uEFL, uEFLY, uEFLZ], cmm="FE vel para Re="+Reynolds);
 plot(uEFLP, cmm="FE pres para Re="+Reynolds);

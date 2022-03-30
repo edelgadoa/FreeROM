@@ -5,15 +5,15 @@
 
 
 // Incluimos el levantamiento
-include "Levantamiento.idp"
+include "Levantamiento_3D.idp"
 
 
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
-real[int] bFija(Vh3P2.ndof);
+real[int] bFija(Vh4P2.ndof);
 
 
-include "Matrices_fijas_NS_2D.idp"
+include "Matrices_fijas_NS_3D.idp"
 
 
 
@@ -47,51 +47,53 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
-	real[int] bNS(Vh3P2.ndof);
+	real[int] bNS(Vh4P2.ndof);
 	
-	include "Matrices_variables_NS_2D.idp"
+	include "Matrices_variables_NS_3D.idp"
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
-	real[int] bSmago(Vh3P2.ndof);
+	real[int] bSmago(Vh4P2.ndof);
 	
-	include "Matriz_VMSSmago_2D.idp"
+	include "Matriz_VMSSmago_3D.idp"
 	
-
+	/*
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
 	
 	include "Matriz_LPS_Pres_2D.idp"
-
+	*/
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
-	real[int] bFinal(Vh3P2.ndof);
+	real[int] bFinal(Vh4P2.ndof);
 	
 	MFinal = MFija;
 	MFinal += MNS;
 	MFinal += Smago;
-	MFinal += LPSpres;
+	// MFinal += LPSpres;
 	
 	bFinal = bFija;
 	bFinal += bNS;
 	bFinal += bSmago;
 	
-	set(MFinal, solver=sparsesolver);
+	solvesystem(Mfinal, bFinal, uEF, Vh4P2);
 	
-	Vh3P2 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
+	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[]=uEF[];
 	
 	uEF[]=MFinal^-1*bFinal;
 
 	
 	// Calculamos el error cometido (en velocidad)
-	VhP2 errEF, errEFY;
+	VhP2 errEF, errEFY, errEFZ;
 	errEF = uEF - uEFp;
 	errEFY = uEF - uEFpY;
+	errEFZ = uEF - uEFpZ;
 	
-	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
-	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEF]) + int2d(Th)(GradUGradV(uEF, uEF)));
+	real ERRORabs = sqrt(int2d(Th)(UporV(errEF,errEF)) + int2d(Th)(GradUGradV(errEF,errEF)));
+	ERROR = ERRORabs / sqrt(int2d(Th)(UporV(uEF,uEF)) + int2d(Th)(GradUGradV(uEF, uEF)));
 
 
 }
+

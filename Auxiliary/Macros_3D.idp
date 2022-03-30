@@ -48,8 +48,23 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 macro intN() int3d // EOM             // three-dimensional integral
 macro intN1() int2d // EOM            // two-dimensional integral
 
+
+
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
+
+macro solvesystem(A,b,u,Vh)
+{
+	Vh#L [u#L, u#YL, u#ZL, u#PL];
+	MatA#Vh = A;
+	set(MatA#Vh,sparams=sparamsv);
+	u#L[]=MatA#Vh^-1*b;
+	//plotMPI(ThL, defVel(u#L), PVel, defVel, real, cmm = "Sol L");
+	reduceSolution(u#L,u,MatA#Vh.D,map#Vh);
+	//plot(defVel(u),value=1,wait=1,cmm="Sol G");
+}
+// EOM
+
 
 macro reduceSolution(uL,u,D,map)
 {
