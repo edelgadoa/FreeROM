@@ -51,9 +51,9 @@ VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
 
-// Primera iteración
-real Reynolds = vReynolds(0); //Tomamos el primer valor del parametro aleatorio
-		
+// Primera iteración //Tomamos el primer valor del parametro aleatorio
+muEIM(0) = vReynolds(0); //Almacenamos el valor de Reynolds escogido
+
 BEIM = MOD(BV[0]);
 
 Tmax(0)=BEIM[].imax;
@@ -66,13 +66,14 @@ ofstream BaseEIMFILE(/Bases_EIM/"Base_" + Reynolds + ".txt");
 BEIM>>BaseEIMFILE;
 
 for (int i=1; i<Mmax; i++){
+	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);
+	
+	include "EIMgreedy.idp";
 
-		include "EIMgreedy.idp";
-		
-		if(ErrMax(i-1)<epsG){
-			break;
-		}
-		
+	if(ErrMax(i-1)<epsG){
+		break;
+	}
+	
 }
 
 

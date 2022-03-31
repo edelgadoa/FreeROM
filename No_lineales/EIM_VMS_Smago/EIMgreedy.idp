@@ -40,4 +40,10 @@ for (int imu=0; imu<nSnapshots; imu++){
 	
 }
 
-//// Almacenamos la base elegida
+
+// Almacenamos la base escogida
+BEIM = MOD(BV[vReynolds(Errorit.imax)]); // Tomo la base donde se encuentra el Reynolds con mayor error
+ofstream BaseEIMFILE(/Bases_EIM/"Base_" + vReynolds(Errorit.imax) + ".txt");
+BEIM>>BaseEIMFILE;
+
+muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	
