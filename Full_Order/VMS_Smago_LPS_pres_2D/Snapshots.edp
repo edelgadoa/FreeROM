@@ -53,22 +53,29 @@ VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CO
 VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
+VhP2 SnapX, SnapY;
+VhP1 SnapP;
 
 for (int i=0; i<nSnapshots; i++){
 
 	Reynolds = vReynolds(i);
+	cout<<"---------------Reynolds = "<< Reynolds<<" -----------------"<<endl;
 	include "FE_VMS_LPS_2D.idp"
+
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapP = uEFP;
 	
 	// Guardamos el snapshot -> TODO hacerlo con la funcion write
 
-	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt",append);
-	SnapshotVX<<uEF<<endl;
+	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt");
+	SnapshotVX<<SnapX[]<<endl;
 
-	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt",append);
-	SnapshotVY<<uEFY<<endl;
+	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt");
+	SnapshotVY<<SnapY[]<<endl;
 
-	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt",append);
-	SnapshotP<<uEFP<<endl;
+	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt");
+	SnapshotP<<SnapP[]<<endl;
 	
 	// Dibujamos la solucion, con levantamiento
 
