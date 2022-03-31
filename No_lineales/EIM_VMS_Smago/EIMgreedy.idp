@@ -1,0 +1,43 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa que obtiene el valor del parametro en cada iteracion del GREEDY para EIM
+
+// Definimos la matriz del sistema que resolveremos para calcular el EIM en cada iteracion
+real [int,int] BMi(i,i);
+BMi = BM(0:i-1,0:i-1);
+
+
+
+pause; //Hacemos el siguiente for en paralelo
+for (int imu=0; imu<nSnapshots; imu++){
+	if (mpirank==imu%mpisize){
+		gEIM = MOD(BV[imu]);
+	
+		real [int] bEIM(i),sigmai(i);
+		for (int j=0; j<i; j++){
+			beim(j) = gEIM[](Tmax(j));
+		}
+	
+		real[int,int] Binv = BMi^-1; 
+
+		sigmai = Bm^-1*beim;
+		
+		for (int j=0;j<i;j++){
+			IgEIM[] += sigmai(j)*BEIM[j][];
+		}
+		
+		VhP1dc Linf=abs(gEIM-Ig); 
+		
+		ErroritL(eim)=Linf[].max/gEIM[].max;
+	}
+	mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
+	pause;
+	
+	ErrorMaxEIM(i-1)=Errorit.max;
+	muEIM(i)=vReynolds(Errs.imax);
+	
+}
+
+//// Almacenamos la base elegida

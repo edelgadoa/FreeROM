@@ -1,0 +1,78 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
+
+// Cargamos librerias
+load "lapack"
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_2D.idp"
+
+// Creamos la matriz
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
+
+// Incluimos el levantamiento
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
+
+
+//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+int nSnapshots; // numero de Snapshots que voy a querer calcular 
+real[int] vReynolds(nSnapshots);
+
+VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
+VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
+VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVYdX(nSnapshots), BVYdY(nSnapshots); //las calculo TODAS de una vez
+
+
+
+include "Load_Snapshots_EIM.idp"
+		
+// Defino las variables para el EIM
+int Mmax = 83; //numero maximo de bases del EIM
+real[int] Tmax(Mmax), muEIM(Mmax); //Donde almaceno los puntos magicos y los valores de parámetros que voy escogiendo
+real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa del EIM
+real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
+
+
+VhP1dc BEIM; // Donde almaceno las bases EIM
+VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+
+
+// COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
+
+// Primera iteración
+real Reynolds = vReynolds(0); //Tomamos el primer valor del parametro aleatorio
+		
+BEIM = MOD(BV[0]);
+
+Tmax(0)=BEIM[].imax;
+BEIM =/ BEIM[].max;
+
+BM(0,0)=BEIM[](Tmax(i));
+
+// Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
+ofstream BaseEIMFILE(/Bases_EIM/"Base_" + Reynolds + ".txt");
+BEIM>>BaseEIMFILE;
+
+for (int i=1; i<Mmax; i++){
+
+		include "EIMgreedy.idp";
+		
+		if(ErrMax(i-1)<epsG){
+			break;
+		}
+		
+}
+
+

@@ -33,9 +33,6 @@ include "Parametros_2D.idp"
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
-real Remin = 1000;
-real Remax = 5100;
-
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
@@ -59,7 +56,7 @@ VhP1 SnapP;
 for (int i=0; i<nSnapshots; i++){
 
 	Reynolds = vReynolds(i);
-	cout<<"---------------Reynolds = "<< Reynolds<<" -----------------"<<endl;
+	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
 	include "FE_VMS_LPS_2D.idp"
 
 	SnapX = uEF;
