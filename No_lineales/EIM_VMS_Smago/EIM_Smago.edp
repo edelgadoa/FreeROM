@@ -70,7 +70,7 @@ BaseEIMFILE<<BEIM[0][]<<endl;
 for (int i=1; i<Mmax; i++){
 	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);
 	
-	include "EIMgreedy.idp";
+	include "EIMgreedy_Smago.idp";
 
 	if(ErrMax(i-1)<epsG){
 		M = i;

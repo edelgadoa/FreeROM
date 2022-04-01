@@ -34,6 +34,18 @@ VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
 VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
 VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVYdX(nSnapshots), BVYdY(nSnapshots); //las calculo TODAS de una vez
 
+// Definimos las cantidades que usaremos para el segundo miembro del EIM
+VhP0 tKcod,tKTcod,tau,mk;
+VhP1dc UXdX,UXdY,UYdX,UYdY;	
+VhP2 UX,Uy;
+
+varf med(unused,v)=int2d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk);
+
+varf tauK(unused,v)=int2d(Th)((UX^2+UY^2)*v);
+varf tauKT(unused,v)=int2d(Th)((UdX^2+UdY^2+UYdx^2+UYdY^2)*v);
+
 
 
 include "Load_Snapshots_EIM.idp"
@@ -55,12 +67,18 @@ VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 // Primera iteración //Tomamos el primer valor del parametro aleatorio
 muEIM(0) = vReynolds(0); //Almacenamos el valor de Reynolds escogido
 
-BEIM[0] = MOD(BV[0]);
+UX = BVX[0]; UY = BVY[0];
+UXdX = BVdX[0]; UXdY = BVdY[0]; UYdX = BVYdX[0]; UYdY = BVYdY[0]; 
 
-Tmax(0)=BEIM[0][].imax;
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+BEIM[0] = ((cc1*(1./vReynolds(0)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+Tmax(0) = BEIM[0][].imax;
 BEIM[0] =/ BEIM[0][].max;
 
-BM(0,0)=BEIM[0][](Tmax(i));
+BM(0,0) = BEIM[0][](Tmax(i));
 
 // Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
 ofstream BaseEIMFILE("/Bases_EIM/Base_" + Reynolds + ".txt");
@@ -70,7 +88,7 @@ BaseEIMFILE<<BEIM[0][]<<endl;
 for (int i=1; i<Mmax; i++){
 	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);
 	
-	include "EIMgreedy.idp";
+	include "EIMgreedy_LPS.idp";
 
 	if(ErrMax(i-1)<epsG){
 		M = i;
