@@ -1,0 +1,30 @@
+#!/bin/bash
+#echo 'Introducza la maquina, opciones: anoni, mac'
+#read maquina
+echo 'Numero de procesadores:'
+read NP
+#echo 'Programa: '
+#read ficheroedp
+
+#nameedp="$ficheroedp.edp"
+verbosity=0
+
+#case $maquina in
+#anoni)
+	rm freefem++.pref 
+#	dirmpi=$HOME/ff++4.8/bin
+    	ff-mpirun -np $NP ./NS_VMS_Smago_Pres.edp
+#	;;
+#mac)
+#	cp ../auxiliary/pref/freefem++mac.pref ./freefem++.pref
+#	dirseq=$HOME/FreeFem-sources/src/nw
+#	dirmpi=$HOME/FreeFem-sources/src/mpi
+#	mpirun -oversubscribe -np $NP $dirmpi/FreeFem++-mpi -v $verbosity ./$nameedp -glut $dirseq/ffglut
+#	;;
+#maca)
+#	cp ../auxiliary/pref/freefem++maca.pref ./freefem++.pref
+#	dirseq=$HOME/FreeFem-sources/src/nw
+#	dirmpi=$HOME/FreeFem-sources/src/mpi
+#	mpirun -oversubscribe -np $NP $dirmpi/FreeFem++-mpi -v $verbosity ./$nameedp -glut $dirseq/ffglut
+#	;;
+#esac

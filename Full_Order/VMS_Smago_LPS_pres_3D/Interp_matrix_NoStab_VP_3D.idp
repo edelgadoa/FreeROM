@@ -24,7 +24,7 @@ matrix IPhP2P1, IPh4P24P1, IPhP1dcP1;
 {
 		matrix IdP2,Id4P2,IdP1dc,IdP1; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
 		{
-			VhP2 faux2=1.;
+			VhP2L faux2=1.;
 			VhP1dc faux1=1.;
 			IdP2 = faux2[];
 			IdP1dc = faux1[];

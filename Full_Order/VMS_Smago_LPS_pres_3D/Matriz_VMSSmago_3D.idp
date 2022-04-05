@@ -12,13 +12,12 @@ Gr=MOD(uEF); //Aunque parezca que el gradiente se calcula de la solucion sin lev
 Vh4P1dc [Levf,LevfY,LevfZ,LevfP];
 VhP2 Levaux; //en principio no lo necesito
 
-
-varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=int2d(Th)((CS*hTriangle)^2*Gr*UporV(uu,v));
-varf FVSmagob([un1,un2,un3,pun],[v,vY,vZ,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*UporV(Levf,v));
+varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=intN(ThL)((CS*hTriangle)^2*Gr*UporV(uu,v));
+varf FVSmagob([un1,un2,un3,pun],[v,vY,vZ,qun])=-intN(ThL)((CS*hTriangle)^2*Gr*UporV(Levf,v));
 
 	
-matrix M=FVSmago(Vh4P1dc,Vh4P1dc);
-real[int] bSx(Vh4P2.ndof), bSy(Vh4P2.ndof);
+matrix M=FVSmago(Vh4P1dcL,Vh4P1dcL);
+real[int] bSx(Vh4P2L.ndof), bSy(Vh4P2L.ndof);
 
 matrix DXX,DYY;
 {
@@ -29,7 +28,7 @@ matrix DXX,DYY;
 	DXX=DXX*Maux;
 	
 	Levf[]=Maux*Lev[]; //seg miembro x
-	real[int] bS=FVSmagob(0,Vh4P1dc);
+	real[int] bS=FVSmagob(0,Vh4P1dcL);
 	bSx=(Maux')*bS;
 	
 	//COMPONENTE Y
@@ -38,7 +37,7 @@ matrix DXX,DYY;
 	DYY=DYY*Maux;
 	
 	Levf[]=Maux*Lev[]; //seg miembro y
-	bS=FVSmagob(0,Vh4P1dc);
+	bS=FVSmagob(0,Vh4P1dcL);
 	bSy=(Maux')*bS;
 }
 	

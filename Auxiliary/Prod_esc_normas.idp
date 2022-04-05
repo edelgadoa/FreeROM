@@ -1,0 +1,25 @@
+///////////////
+// FreeROM 
+///////////////
+
+
+// Programa con funciones para calcular normas y productos escalares de vectores
+
+// Producto escalar general
+func real innerprodX(real[int] &u, real[int] &v, matrix &X){
+	real[int] aux = X*v;
+	real result = u'*aux;
+	return result;
+}
+
+func real normX(real[int] &u, matrix &X){
+	real result = innerprod(u,u,X);
+	return sqrt(result);
+}
+
+func real normL2(real[int] &u){
+	varf L2(u,v)(u'*v);
+	matrix X = L2(VhP2, VhP2);
+	real result = innerprod(u,u,X);
+	return sqrt(result);
+}
