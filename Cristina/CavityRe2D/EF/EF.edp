@@ -7,7 +7,7 @@ IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
 
 infoparam;
 
-write("Output.txt","Computing the EF solutions with "+mpisize+" processors for Re=",0,1);
+write("Output.txt","Computing the EF solutions with " + mpisize + " processors for Re=",0,1);
 write("Output.txt",vRe,1,1);
 readTh(NN);
 // plot(Th);

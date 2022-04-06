@@ -1,4 +1,4 @@
-load "UMFPACK64"
+//load "UMFPACK64"
 
 macro Grad(u) [dx(u), dy(u)]//
 macro div(u1,u2) (dx(u1)+dy(u2))//
@@ -194,8 +194,9 @@ Spres=DDxx+DDyy;
 	bNS=bNS+bSy;
 	bNS=bNS+bNSf;
 	
+	cout<<bSy<<endl;
 	
-	set(Afinal,solver=UMFPACK);
+	set(Afinal,solver=sparsesolver);
 	u1[]=Afinal^-1*bNS;
 	
 	VhP2 uuu1,uuu2;

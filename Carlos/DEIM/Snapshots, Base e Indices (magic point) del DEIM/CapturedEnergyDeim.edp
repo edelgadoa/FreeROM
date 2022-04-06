@@ -1,0 +1,28 @@
+//Captured energy
+include "DatosNVDeim.edp"
+real[int] EP(m2),EV(m2),CapturedEnergyp(35),CapturedEnergyv(35);
+
+ifstream file("eigenvaluesDeim.txt");
+file >> EP;
+
+
+real sumap,sumav;
+sumap = 0.;
+for(int i = 0;i<m2;i++){
+	sumap += EP(i);
+}
+real aux,aux2,auxp,auxv;
+for(int r = 1;r<36;r++){
+	aux = 0.;
+	for(int i =0;i<r;i++){
+		aux += EP(i);}
+	
+		auxp = aux/sumap;
+		CapturedEnergyp(r-1) = 100*auxp;
+}
+
+ofstream ff("CapturedEnergyDeim.txt");
+for(int i = 0;i<35;i++){
+	ff << CapturedEnergyp(i) << endl;
+}
+

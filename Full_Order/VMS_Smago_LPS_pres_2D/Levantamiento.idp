@@ -1,0 +1,13 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa para definir el levantamiento de frontera
+
+func G = 1*(y>=1);
+
+Vh3P2 [Lev, LevY, LevP];
+VhP2 GP2 = G;
+VhP2 GzeroP2 = 0.;
+
+[Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];

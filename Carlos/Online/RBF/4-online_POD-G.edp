@@ -1,0 +1,560 @@
+// Author: Samuele Rubino - 07/04/2020
+/*
+This script solves the online phase of a POD-G-ROM for a 2D laminar unsteady flow around a circular cylinder.
+*/
+
+// ONLINE PARAMETERS
+int  rU = 9;	   // rU <= d=min{dU,dP}=dP=23 (Number of online vel. basis)
+int  rP = rU;	   // rP <= d=min{dU,dP}=dP=23 (Number of online pres. basis)
+int  rNu = 80;     // Number of online viscosity basis
+real t  = 7.;	   // Initial time
+real dt = 2.e-3;   // Online time step
+real dtt= 1./dt;   // Inverse of time step
+real T  = 9.;      // Final time
+int nit = (T-t)/dt;// # Iterations
+real nu = 1.e-3;   // Kinematic viscosity
+real Um= 2.625;       //Max vel inlet (eligiendo asi para que parametro estamos resolviendo el problema)
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,nSnap,dU,dP,dNu,nSnapt; //ndof, nSnap, dU, dP are, respectively, the number of FE space dof, snapshots, dimension of ensemble of velocity, pressure snapshots
+nSnapt = 200;
+
+
+mesh Th=readmesh("Data/Mesh.msh"); // Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU); 			   // Velocity FE space
+fespace Qh(Th,PkP); 			   // Pressure FE space
+
+
+
+Xh meanu,meanv,meanu2,meanv2,meanu1,meanv1;
+
+
+
+//Caso en el que tomamos un parametro que no estaba en los snapshots
+/*
+ifstream introumean("Data/Snapshots/umean_350_nu.txt");    // Importing umean field
+introumean>>meanu1[];
+
+ifstream introvmean("Data/Snapshots/vmean_350_nu.txt");    // Importing vmean field
+introvmean>>meanv1[];
+
+ifstream introumean2("Data/Snapshots/umean_400_nu.txt");    // Importing umean field
+introumean2>>meanu2[];
+
+ifstream introvmean2("Data/Snapshots/vmean_400_nu.txt");    // Importing vmean field
+introvmean2>>meanv2[];
+
+meanu = meanu1/2 + meanu2/2;
+meanv = meanv1/2 + meanv2/2;
+
+*/
+
+//Caso en el que tomamos paramatros de nuestro snapshots
+
+
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv[];
+
+
+
+ifstream introSNAPu("Data/Snapshots/uSnap4.txt");    // Importing u Snapshots
+introSNAPu>>ndof;introSNAPu>>nSnap;
+real[int,int] Snapu2(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPu>>Snapu2(i,j);}}
+real[int,int] Snapu(ndof,nSnapt);
+Snapu = Snapu2(0:ndof-1,0:nSnapt-1);
+
+
+ifstream introSNAPv("Data/Snapshots/vSnap4.txt");    // Importing v Snapshots
+introSNAPv>>ndof;introSNAPv>>nSnap;
+real[int,int] Snapv2(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPv>>Snapv2(i,j);}}
+real[int,int] Snapv(ndof,nSnapt);
+Snapv = Snapv2(0:ndof-1,0:nSnapt-1);
+
+
+ifstream introSNAPp("Data/Snapshots/pSnap4.txt");    // Importing p Snapshots
+introSNAPp>>ndof;introSNAPp>>nSnap;
+real[int,int] Snapp2(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPp>>Snapp2(i,j);}}
+real[int,int] Snapp(ndof,nSnapt);
+Snapp = Snapp2(0:ndof-1,0:nSnapt-1);
+
+ifstream introSNAPnu("Data/Snapshots/nuSnap4.txt");    // Importing nu Snapshots
+introSNAPnu>>ndof;introSNAPnu>>nSnap;
+real[int,int] Snapnu2(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPnu>>Snapnu2(i,j);}}
+real[int,int] Snapnu(ndof,nSnapt);
+Snapnu = Snapnu2(0:ndof-1,0:nSnapt-1);
+
+
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODp("Data/PODbasis/pressure/BasePODpressure.txt"); // Importing p POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+ifstream introPODnu("Data/PODbasis/viscosity/BasePODviscosity.txt"); // Importing nu POD basis
+introPODnu>>ndof;introPODnu>>dNu;
+real[int,int] Phinu(ndof,dNu);
+for(int i=0;i<ndof;i++){for(int j=0;j<dNu;j++){introPODnu>>Phinu(i,j);}}
+
+// Retaining first rU, rP POD modes for the online velocity, pressure POD basis and first rU, rP initial time velocity, pressure POD coefficients
+real[int,int] rPhiu(ndof,rU); real[int,int] rPhiv(ndof,rU);	
+rPhiu=Phiu(0:ndof-1,0:rU-1);  rPhiv=Phiv(0:ndof-1,0:rU-1);
+
+real[int,int] rPhip(ndof,rP);
+rPhip=Phip(0:ndof-1,0:rP-1);
+
+real[int,int] rPhinu(ndof,rNu);
+rPhinu = Phinu(0:ndof-1,0:rNu-1);
+
+real[int] aiUp(rU),aiUpp(rU),aiPp(rP);
+
+//------------------------------------------------------------------------------
+// INITIAL CONDITION
+//------------------------------------------------------------------------------
+Xh uPODGin,vPODGin,modeu,modev,velmagPODGin,uhin,vhin;
+Qh pPODGin,modep,phin;
+
+uPODGin=meanu;
+vPODGin=meanv;
+pPODGin=0.;
+
+uhin[]=Snapu(:,0);
+vhin[]=Snapv(:,0);
+phin[]=Snapp(:,0);
+	
+for(int i=0;i<rU;i++)
+{	
+	modeu[]=rPhiu(:,i);
+	modev[]=rPhiv(:,i);
+	aiUp(i)=int2d(Th)(modeu*uhin+modev*vhin); // Compute aU^{0} from L2-projection of u_{h}^{0}
+	uPODGin[]+=aiUp(i)*modeu[];
+	vPODGin[]+=aiUp(i)*modev[]; 
+}
+aiUpp=aiUp;
+
+for(int i=0;i<rP;i++)
+{	
+	modep[]=rPhip(:,i);
+	aiPp(i)=int2d(Th)(modep*phin); 			  // Compute aP^{0} from L2-projection of p_{h}^{0}
+	pPODGin[]+=aiPp(i)*modep[];
+}
+
+velmagPODGin = sqrt(uPODGin^2 + vPODGin^2);	
+plot(velmagPODGin,fill=1,cmm="Velocity magnitude POD-G-ROM, t = "+t);// Plot of initial POD-G-ROM vel. mag.
+//plot(pPODGin,fill=1,cmm="Pressure POD-G-ROM, t = "+t);// Plot of initial POD-G-ROM pres.
+		
+real EkinPODG = 0.5*int2d(Th)(uPODGin^2 + vPODGin^2);
+//cout << "Time = " << t << ",\t Kinetic energy = " << EkinPODG << endl;
+real EkinSnap;
+
+////////////////////////////////////////////////////////////////////////////////
+// READING DATA FROM OFFLINE PHASE
+////////////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// WEIGHT MATRIX ASSOCIATED TO GAUSS FUNCTIONS 
+//------------------------------------------------------------------------------
+
+ifstream introWeight("Data/MatrixOff/Samu/Weight.txt");
+introWeight>>nSnap;introWeight>>dNu;real[int,int] Weight(nSnap,dNu);
+for(int i=0;i<nSnap;i++){for(int j=0;j<dNu;j++){introWeight>>Weight(i,j);}}
+real[int,int] rWeight(nSnap,rNu); rWeight = Weight(0:nSnap-1,0:rNu-1);
+matrix MWeight = rWeight;
+
+//------------------------------------------------------------------------------
+// MASS MATRIX
+//------------------------------------------------------------------------------
+ifstream introM("Data/MatrixOff/Samu/Reynolds_175/M.txt");
+introM>>dU;introM>>dU;real[int,int] M(dU,dU);
+for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introM>>M(i,j);}}
+real[int,int] rM(rU,rU); rM=M(0:rU-1,0:rU-1);
+matrix MM=rM;
+
+//------------------------------------------------------------------------------
+// STIFFNESS MATRIX
+//------------------------------------------------------------------------------
+ifstream introA("Data/MatrixOff/Samu/Reynolds_175/A.txt");
+introA>>dU;introA>>dU;real[int,int] A(dU,dU);
+for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introA>>A(i,j);}}
+real[int,int] rA(rU,rU); rA=A(0:rU-1,0:rU-1);
+matrix AM=rA;
+
+//------------------------------------------------------------------------------
+// STAB. MATRIX (LPS pressure gradient)
+//------------------------------------------------------------------------------
+ifstream intropgProjh("Data/MatrixOff/Samu/Reynolds_175/pgProjh.txt");
+intropgProjh>>dP;intropgProjh>>dP;real[int,int] pgProjh(dP,dP);
+for(int i=0;i<dP;i++){for(int j=0;j<dP;j++){intropgProjh>>pgProjh(i,j);}}
+real[int,int] rpgProjh(rP,rP); rpgProjh=pgProjh(0:rP-1,0:rP-1);
+matrix pgProjhM=rpgProjh;
+ 
+//------------------------------------------------------------------------------
+// CONVECTION MATRIX ASSOCIATED TO THE MEAN FLOW
+//------------------------------------------------------------------------------
+ifstream introB1("Data/MatrixOff/Samu/Reynolds_175/B1.txt");
+introB1>>dU;introB1>>dU;
+real[int,int] B1(dU,dU);
+for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introB1>>B1(i,j);}}
+real[int,int] rB1(rU,rU); rB1=B1(0:rU-1,0:rU-1);
+matrix B1M=rB1; 
+ 
+//------------------------------------------------------------------------------
+// CONVECTION TRILINEAR TENSOR
+//------------------------------------------------------------------------------
+ifstream introC("Data/MatrixOff/Samu/C.txt");
+introC>>dU;real[int,int][int] C(dU);
+for(int i=0;i<dU;i++)
+{
+	introC>>dU;introC>>dU;real[int,int] aux(dU,dU);
+	for(int k=0;k<dU;k++){for(int j=0;j<dU;j++){introC>>aux(k,j);}}
+	C[i]=aux(0:dU-1,0:dU-1);
+}
+real[int,int][int] rC(rU);
+for(int i=0;i<rU;i++)
+{ 
+	rC[i]=C[i](0:rU-1,0:rU-1);
+}
+
+//------------------------------------------------------------------------------
+// DIV. MATRIX
+//------------------------------------------------------------------------------
+ifstream introP("Data/MatrixOff/Samu/Reynolds_175/P.txt");
+introP>>dP;introP>>dU;real[int,int] P(dP,dU);
+for(int i=0;i<dP;i++){for(int j=0;j<dU;j++){introP>>P(i,j);}}
+real[int,int] rPr(rP,rU); rPr=P(0:rP-1,0:rU-1);
+matrix PM=rPr;
+ 
+
+//------------------------------------------------------------------------------
+// VISCOSITY TRILINEAR TENSOR
+//------------------------------------------------------------------------------
+
+ifstream introD("Data/MatrixOff/Samu/D.txt");
+introD>>dNu;real[int,int][int] D(dNu);
+for(int i=0;i<dNu;i++)
+{
+	introD>>dU;introD>>dU;real[int,int] auxD(dU,dU);
+	for(int k=0;k<dU;k++){for(int j=0;j<dU;j++){introD>>auxD(k,j);}}
+	D[i]=auxD(0:dU-1,0:dU-1);
+}
+real[int,int][int] rD(rNu);
+for(int i=0;i<rNu;i++)
+{ 
+	rD[i]=D[i](0:rU-1,0:rU-1);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Right Hand Side
+////////////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// RHS CONVECTION MATRIX ASSOCIATED TO THE MEAN FLOW
+//------------------------------------------------------------------------------
+ifstream introB2("Data/MatrixOff/Samu/Reynolds_175/B2.txt");
+introB2>>dU;introB2>>dU;real[int,int] B2(dU,dU);
+for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introB2>>B2(i,j);}}
+real[int,int] rB2(rU,rU);rB2=B2(0:rU-1,0:rU-1);
+matrix B2M=rB2;
+
+//------------------------------------------------------------------------------
+// RHS VECTORS ASSOCIATED TO THE MEAN FLOW
+//------------------------------------------------------------------------------
+ifstream introvb1("Data/MatrixOff/Samu/Reynolds_175/vb1.txt");
+introvb1>>dU;real[int] vb1(rU);
+for(int i=0;i<rU;i++){introvb1>>vb1(i);}
+
+ifstream introvb2("Data/MatrixOff/Samu/Reynolds_175/vb2.txt");
+introvb2>>dU;real[int] vb2(rU);
+for(int i=0;i<rU;i++){introvb2>>vb2(i);}
+
+ifstream introvp("Data/MatrixOff/Samu/Reynolds_175/vp.txt");
+introvp>>dP;real[int] vp(rP);
+for(int i=0;i<rP;i++){introvp>>vp(i);}
+
+
+
+//------------------------------------------------------------------------------
+// RHS VISCOSITY MATRIX ASSOCIATED TO THE MEAN FLOW 
+//------------------------------------------------------------------------------
+
+ifstream introD2("Data/MatrixOff/Samu/Reynolds_175/D2.txt");
+introD2>>dU;introD2>>dNu;real[int,int] D2(dU,dNu);
+for(int i=0;i<dU;i++){for(int j=0;j<dNu;j++){introD2>>D2(i,j);}}
+real[int,int] rD2(rU,rNu);rD2=D2(0:rU-1,0:rNu-1);
+matrix D2M=rD2;
+
+cout<< "Reading phase complete" << endl;
+////////////////////////////////////////////////////////////////////////////////
+// END OF READING
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// STARTING ONLINE PHASE
+////////////////////////////////////////////////////////////////////////////////
+
+// BDF PARAMETERS
+//real a0=1., a1=-1., a2=0., b0=1., b1=0.; 	// Semi-implicit BDF1
+
+real a0=1.5, a1=-2., a2=0.5, b0=2., b1=-1.; // Semi-implicit BDF2
+
+// LPS MATRIX
+real epsilonPG=1.;  
+matrix epsPQ=epsilonPG*pgProjhM; // LPS pressure gradient
+
+
+
+
+// LHS MATRIX
+matrix dttM=dtt*MM; //dttM=dtt*Id;
+matrix LM=a0*dttM+nu*AM+B1M;
+matrix PD=(-1.)*(PM');
+
+// RHS MATRIX
+matrix NM  = (-a1)*dttM+(-b0)*B2M;
+matrix NPM = (-a2)*dttM+(-b1)*B2M;
+
+// RHS VECTOR
+real[int] vr1(rU),vr2(rU),vr3(rU),vr4(rU),vr(rU),vrp(rP);
+vr1=-nu*vb1;
+vr2=-vb2;
+vr3=vr1+vr2;
+vr4=vr3;
+vrp=-vp;
+
+// POD-G-ROM SYSTEM
+Xh uPODG,vPODG,velmagPODG;
+Qh pPODG;
+real[int] ai(rU),aj(rU),ak(rU),aiU(rU),al(rP),aiP(rP),aiUP(rU+rP),aix(rU+rP); // RHS
+real[int,int] upNSNi(rU,rU),uppNSNi(rU,rU); // Non-linear convective term
+
+real Ekindiff,Ekindiffrel; // Ekin error
+real tol=1.e-3;
+
+
+Xh uSnap,vSnap;
+uSnap=meanu;
+vSnap=meanv;
+uSnap[]+=Snapu(:,0);
+vSnap[]+=Snapv(:,0);
+EkinSnap = 0.5*int2d(Th)(uSnap^2 + vSnap^2);
+Ekindiff = EkinPODG-EkinSnap;
+Ekindiffrel = Ekindiff/EkinSnap;
+cout << "Time = " << t << ",\t Kinetic energy diff. = " << Ekindiff << endl;		
+
+ofstream outEkinDiff("Data/r8/EkinDiff_175.txt");
+ofstream outEkinDiffrel("Data/r8/EkinDiffrel_175.txt");
+
+outEkinDiffrel << abs(Ekindiffrel) << endl;
+outEkinDiff << abs(Ekindiff) << endl;
+
+// POD-G-ROM time coefficients
+int samplingRate=5;
+real ntimeCo=1+nit; // number of PODG time coefficients
+real [int,int] aiPODG(ntimeCo,rU+rP);
+
+for(int i=0;i<rU;i++)
+{	
+	aiPODG(0,i)=aiUp(i);
+}		
+
+for(int i=rU;i<rU+rP;i++)
+{	
+	aiPODG(0,i)=aiPp(i-rU);
+}
+
+//---------------------------------------------------------------
+// CARTESIAN PRODUCT SET
+//---------------------------------------------------------------
+
+real[int] PMM(5),TI(nSnapt),PMnorm(5),TInorm(nSnapt),xmutaux(2);
+
+for(int i=0;i<5;i++){
+	PMM(i) = 1.5 + 0.375*(i);
+}
+for(int i = 0;i<5;i++){
+	PMnorm(i) = (PMM(i)-1.5)/(3-1.5);
+}
+for(int i=0;i<nSnapt;i++){
+	TI(i) = 7 + 1.e-2*(i);
+}
+for(int i = 0;i<nSnapt;i++){
+	TInorm(i) = (TI(i)-7)/(8.99-7);
+}
+
+real[int,int] Xmut(2,nSnap);
+int cont = 0;
+for(int i = 0;i<5;i++){
+	for(int j = 0;j<nSnapt;j++){
+		Xmut(:,cont) = [PMnorm(i),TInorm(j)];
+		cont += 1;}
+	}
+
+
+	func real gauss(real r){
+		//return r^2*log(r+1);
+	 	if( 1- r >= 0){
+		 return 	 (1 -2*r); }
+		 else{
+		return 	 0;}
+	}
+
+
+int index;
+//------------------------
+// TIME LOOP
+//-------------------------
+real cpu=clock();   	   	
+for (int it=1; it<nit ; it++)
+{
+	uPODG=meanu;
+	vPODG=meanv;
+	pPODG=0.;  
+	
+	uSnap=meanu;
+	vSnap=meanv;
+	
+	uppNSNi=0.; // init convective term
+	upNSNi =0.; 
+	
+	//---------------------------------------------------------------------------
+	// Viscosity part
+	//---------------------------------------------------------------------------
+	
+	
+	//Construction of the coefficient vector g
+	//Time instance in the online rom and its evaluation on the gaussian function 
+	
+	real[int] g(rNu),MGauss(nSnap),aux(2),zonline(2);
+	zonline(0) = (Um-1.5)/(3-1.5);
+	zonline(1) = ((7 + (it*dt))-7)/(8.99-7);
+	for(int j = 0;j<nSnap;j++){
+		aux = zonline - Xmut(:,j);
+		MGauss(j) = gauss(aux.l2);
+	}
+	
+	//Calculate the coefficient g
+	
+	for(int i = 0;i<rNu;i++){
+		g(i) = rWeight(:,i)'*MGauss; 
+	}
+	
+	
+	//Calculate the multiplication of the coefficient g and the viscosity mean matrix
+	real[int] vr5(rU);
+	vr5 = rD2*g;
+	vr = vr4 -vr5;
+	//vr = vr4;
+	//Calculate the multiplication of the trilinear tensor viscosity with g
+	real[int,int] DD(rU,rU),DDt(rU,rU);
+	DD = 0;
+	for(int i = 0;i<rNu;i++)
+	{ 
+		DD += rD[i]*g(i);
+	
+	}
+	matrix MDD = DD;
+	//---------------------------------------------------------------------------
+	// Right hand side
+	//---------------------------------------------------------------------------
+	ai = NM*aiUp;   // Time dependent RHS
+	aj = NPM*aiUpp;
+	ak = ai + aj;
+	aiU = ak + vr;  // RHS U
+	aiUP=[aiU,vrp]; // RHS UP
+		
+	//---------------------------------------------------------------------------
+	// Left hand side
+	//---------------------------------------------------------------------------
+	
+	// Non-linear convective term
+	for(int i=0;i<rU;i++)	
+	{
+		real[int,int] uNSNI(rU,rU);
+		uNSNI=rC[i];
+		upNSNi(i,:)=uNSNI*aiUp;
+		uppNSNi(i,:)=uNSNI*aiUpp;
+	}
+
+	matrix CMp=upNSNi;
+	matrix CMpp=uppNSNi;
+	matrix LMfin=LM+b0*CMp+b1*CMpp+MDD;
+	matrix LHSMfin=[[LMfin,PD],[PM,epsPQ]]; // LPS pressure gradient
+	
+	set(LHSMfin,solver=UMFPACK);
+	aix = LHSMfin^-1 * aiUP;
+	
+	// POD-G-ROM VEL. SOLUTION
+	for(int i=0;i<rU;i++)
+	{	
+		modeu[]=rPhiu(:,i);
+		modev[]=rPhiv(:,i);
+		uPODG[]+=aix(i)*modeu[];
+		vPODG[]+=aix(i)*modev[];
+	}	
+
+	// POD-G-ROM SOLUTION
+	for(int i=0;i<rP;i++)
+	{	
+		modep[]=rPhip(:,i); 
+		pPODG[]+=aix(i+rU)*modep[];
+	}	
+	
+	
+	t += dt;
+	index+=1;
+  	
+  	for(int i=0;i<rU+rP;i++)
+  	{	
+		aiPODG(index,i)=aix(i);
+	}
+	
+	if (it%samplingRate==0)
+  	{	
+		
+		uSnap[]+=Snapu(:,it/samplingRate);
+		vSnap[]+=Snapv(:,it/samplingRate);
+  		velmagPODG = sqrt(uPODG^2 + vPODG^2);
+		plot(velmagPODG,fill=1,cmm="Velocity magnitude POD-G-ROM, t = "+t);// Plot of POD-G-ROM vel. mag.
+		//plot(pPODG,fill=1,cmm="Pressure POD-G-ROM, t = "+t);// Plot of POD-G-ROM pres.
+	
+		EkinPODG = 0.5*int2d(Th)(uPODG^2 + vPODG^2);
+		EkinSnap = 0.5*int2d(Th)(uSnap^2 + vSnap^2);
+		Ekindiff = EkinPODG-EkinSnap;
+		Ekindiffrel = Ekindiff/EkinSnap;
+		
+		cout << "Time = " << t << ",\t Kinetic energy diff. = " << Ekindiff << endl;
+		
+		outEkinDiff << abs(Ekindiff) << endl;
+		outEkinDiffrel << abs(Ekindiffrel) << endl;
+  	}
+  	
+	// UPDATE
+	aiUpp = aiUp;
+	aiUp  = aix(0:rU-1);
+	aiPp  = aix(rU:rU+rP-1);
+}
+cout << "CPU time = " << clock()-cpu << endl;
+
+//------------Export data--------------------
+ofstream outputaiPODGU("Data/r8/PODGtimeCoU_175.txt");	outputaiPODGU<<aiPODG(0:ntimeCo-1,0:rU-1);
+ofstream outputaiPODGP("Data/r8/PODGtimeCoP_175.txt");	outputaiPODGP<<aiPODG(0:ntimeCo-1,rU:rU+rP-1);

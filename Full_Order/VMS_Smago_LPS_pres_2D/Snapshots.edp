@@ -1,0 +1,87 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_2D.idp"
+// include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+
+// Creamos la matriz
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "Parametros_2D.idp"
+
+//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
+real[int] vReynolds(nSnapshots);
+
+for(int i=0; i<nSnapshots; i++){
+	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
+}
+
+// Guardamos en un archivo el numero de Snapshots que vamos a calcular -- Puede ser que se cambie
+ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt");
+nSnapshotFILE<<nSnapshots<<endl;	
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+VhP2 SnapX, SnapY;
+VhP1 SnapP;
+
+for (int i=0; i<nSnapshots; i++){
+
+	Reynolds = vReynolds(i);
+	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
+	include "FE_VMS_LPS_2D.idp"
+
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapP = uEFP;
+	
+	// Guardamos el snapshot -> TODO hacerlo con la funcion write
+
+	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt");
+	SnapshotVX<<SnapX[]<<endl;
+
+	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt");
+	SnapshotVY<<SnapY[]<<endl;
+
+	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt");
+	SnapshotP<<SnapP[]<<endl;
+	
+	// Dibujamos la solucion, con levantamiento
+
+	Vh3P2 [uEFL, uEFLY, uEFLP];
+	uEFL[]=uEF[] + Lev[];
+
+	plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+	plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+	
+	//
+
+}

@@ -4,7 +4,7 @@ include "../auxiliary/macros.idp";
 
 infoparam;
 readTh(NN);
-plot(Th);
+plot(ThL);
 
 
 write("Output.txt","Computing the lift for velocity...",0,1);

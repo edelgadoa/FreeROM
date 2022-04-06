@@ -1,0 +1,37 @@
+///////////////
+// FreeROM 
+///////////////
+
+ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt") // TODO: Hacerlo mediante la funcion read
+nSnapshotFILE>>nSnapshots;
+
+for(int i=0; i<nSnapshots; i++){
+	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
+
+
+	ifstream SnapshotVXFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt")
+	ifstream SnapshotVYFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt")
+	ifstream SnapshotPFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt")
+
+	// Cargamos los Snapshots 
+	
+	SnapshotVXFILE>>BVX[i][];
+	BVX[i] = BVX[i] + Lev;
+	
+	SnapshotVYFILE>>BVY[i][];
+	BVY[i] = BVY[i] + LevY;
+	
+	SnapshotPFILE>>BP[i][];
+
+	{
+		VhP2 udcAux;
+		udcAux[] = IPhP2P1*BVX[i][];
+		BVdX[i][] = DXP2*udcAux[];
+		BVdY[i][] = DYP2*udcAux[];
+
+		udcAux[] = IPhP2P1*BVY[i][];
+		BVYdX[i][] = DXP2*udcAux[];
+		BVYdY[i][] = DYP2*udcAux[];
+
+	}
+}

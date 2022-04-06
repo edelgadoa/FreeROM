@@ -1,0 +1,338 @@
+// Author: Samuele Rubino - 07/04/2020
+/*
+This script tests the POD-G-ROM reconstruction for a 2D laminar unsteady flow around a circular cylinder.
+*/
+
+// MACRO DEFINITION
+macro Grad(u)  [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+
+// GEOMETRICAL PARAMETERS
+real D    = 0.1;  // Cylinder diameter
+real xCyl = 0.2;  // Cylinder center x-position
+real yCyl = 0.2;  // Cylinder center y-position
+
+// PHYSICAL PARAMETERS
+real nu  = 1.e-3; // Kinematic viscosity
+
+// INFLOW CONDITION
+real Um  = 2.625; 			 // Max inlet velocity
+real Ubar= 2*Um/3; 			 // \int_{\Gamma_in} Uin / \int_{\Gamma_in} =1
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+int ndof,nSnap,dU,dP,r; // ndof, nSnap, dU, dP and r are, respectively, the number of FE space dof, snapshots, dimension of ensemble of velocity, pressure snapshots, and number of online POD basis 
+
+int ntimeCo; // number of PODG time coefficients
+
+mesh Th=readmesh("Data/Mesh.msh");// Importing mesh
+func PkU=P2;
+func PkP=P2;
+fespace Xh(Th,PkU);					   // Velocity FE space
+fespace Qh(Th,PkP); 		   		   // Pressure FE space
+fespace XhxQh(Th,[PkU,PkU,PkP]); 	   // VelocityPressure FE product space
+cout << "------------------------------" << endl;
+
+// TIME SETUP FOR NUMERICAL SIMULATION
+real dton = 2.e-3;   // Online time step
+real dtton = 1./dton; // Inverse of online time step
+
+XhxQh [rhs1,rhs2,rhs3]; 			   // RHS
+
+Xh meanu,meanv,meanu1,meanv1,meanu2,meanv2,meanucomprobacion,meanvcomprobacion;
+
+
+//MEAN FOR PARAMETERS NOT INCLUDE IN THE SNAPSHOTS
+
+//Caso en el que tomamos un parametro que no estaba en los snapshots
+
+/*
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu1[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv1[];
+
+ifstream introumean2("Data/Snapshots/umean5.txt");    // Importing umean field
+introumean2>>meanu2[];
+
+ifstream introvmean2("Data/Snapshots/vmean5.txt");    // Importing vmean field
+introvmean2>>meanv2[];
+
+
+meanu = meanu1/2 + meanu2/2;
+meanv = meanv1/2 + meanv2/2;
+*/
+
+//Caso en el que tomamos paramatros de nuestro snapshots
+
+
+
+
+//MEAN TO COMPARE 
+ifstream introumean("Data/Snapshots/umean4.txt");    // Importing umean field
+introumean>>meanu[];
+
+ifstream introvmean("Data/Snapshots/vmean4.txt");    // Importing vmean field
+introvmean>>meanv[];
+
+//SNAPSHOTS 
+ifstream introumeancomprobacion("Data/Snapshots/umean4.txt");    // Importing umean field to compare
+introumeancomprobacion>>meanucomprobacion[];
+
+ifstream introvmeancomprobacion("Data/Snapshots/vmean4.txt");    // Importing vmean field to compare
+introvmeancomprobacion>>meanvcomprobacion[];
+
+ifstream introSNAPu("Data/Snapshots/uSnap4.txt"); // Importing u Snapshots
+introSNAPu>>ndof;introSNAPu>>nSnap;
+real[int,int] Snapu(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPu>>Snapu(i,j);}}
+
+ifstream introSNAPv("Data/Snapshots/vSnap4.txt"); // Importing v Snapshots
+introSNAPv>>ndof;introSNAPv>>nSnap;
+real[int,int] Snapv(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPv>>Snapv(i,j);}}
+
+ifstream introSNAPp("Data/Snapshots/pSnap4.txt");  // Importing p Snapshots
+introSNAPp>>ndof;introSNAPp>>nSnap;
+real[int,int] Snapp(ndof,nSnap);
+for(int i=0;i<ndof;i++){for(int j=0;j<nSnap;j++){introSNAPp>>Snapp(i,j);}}
+
+ifstream introPODGtU("Data/r8/viscosity-extrapolate/PODGtimeCoU_175.txt");// Importing time POD-G-ROM velocity coefficients
+introPODGtU>>ntimeCo;introPODGtU>>r;
+real[int,int] rAU(ntimeCo,r);
+for(int i=0;i<ntimeCo;i++){for(int j=0;j<r;j++){introPODGtU>>rAU(i,j);}}
+
+ifstream introPODGtP("Data/r8/viscosity-extrapolate/PODGtimeCoP_175.txt");// Importing time POD-G-ROM pressure coefficients
+introPODGtP>>ntimeCo;introPODGtP>>r;
+real[int,int] rAP(ntimeCo,r);
+for(int i=0;i<ntimeCo;i++){for(int j=0;j<r;j++){introPODGtP>>rAP(i,j);}}
+
+/*
+// Save first 5 time POD-G-ROM velocity/pressure coefficients (r\in [1,5])
+ofstream outaUPODG1("Data/r8/aUPODG1.txt");
+ofstream outaUPODG2("Data/r8/aUPODG2.txt");
+ofstream outaUPODG3("Data/r8/aUPODG3.txt");
+ofstream outaUPODG4("Data/r8/aUPODG4.txt");
+ofstream outaUPODG5("Data/r8/aUPODG5.txt");
+ofstream outaPPODG1("Data/r8/aPPODG1.txt");
+ofstream outaPPODG2("Data/r8/aPPODG2.txt");
+ofstream outaPPODG3("Data/r8/aPPODG3.txt");
+ofstream outaPPODG4("Data/r8/aPPODG4.txt");
+ofstream outaPPODG5("Data/r8/aPPODG5.txt");
+for(int i=0;i<ntimeCo;i++)
+{
+	outaUPODG1 << rAU(i,0) << endl;
+	outaUPODG2 << rAU(i,1) << endl;
+	outaUPODG3 << rAU(i,2) << endl;
+	outaUPODG4 << rAU(i,3) << endl;
+	outaUPODG5 << rAU(i,4) << endl;
+	outaPPODG1 << rAP(i,0) << endl;
+	outaPPODG2 << rAP(i,1) << endl;
+	outaPPODG3 << rAP(i,2) << endl;
+	outaPPODG4 << rAP(i,3) << endl;
+	outaPPODG5 << rAP(i,4) << endl;
+}
+*/
+ifstream introPODu("Data/PODbasis/velocity/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("Data/PODbasis/velocity/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODp("Data/PODbasis/pressure/BasePODpressure.txt"); // Importing p POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+// Retaining first r POD modes for the online POD basis
+real[int,int] rPhiu(ndof,r);	real[int,int] rPhiv(ndof,r);
+rPhiu=Phiu(0:ndof-1,0:r-1);		rPhiv=Phiv(0:ndof-1,0:r-1);
+real[int,int] rPhip(ndof,r);
+rPhip=Phip(0:ndof-1,0:r-1);
+
+////////////////////////////////////////////////////////////////////////////////
+// END OF READING
+////////////////////////////////////////////////////////////////////////////////
+
+//==============================================================================
+// TEST : POD-G-ROM reconstruction
+//==============================================================================
+real dt=2.e-3;   			 // dt Snapshots = dton (Online time step)
+real t=7.;       			 // Initial time
+real dtt=1./dt; 			 // Inverse of time step Snapshots
+real L2diffU,L2diffUproj; // L2 error velocity
+real L2diffP,L2diffPproj; // L2 error pressure
+real L2diffUrel,L2diffUprojrel; // L2 error velocity relative
+real L2diffPrel,L2diffPprojrel; // L2 error pressure relative
+
+Xh uSnap,vSnap,uPODG,vPODG,modeu,modev,velmagPODG;
+Xh uSnapProj,vSnapProj;
+Qh pSnap,pPODG,modep;
+Qh pSnapProj;
+
+ofstream outL2diffU("Data/r8/viscosity-extrapolate/L2diffUPODG_187.txt");
+ofstream outL2diffP("Data/r8/viscosity-extrapolate/L2diffPPODG_187.txt");
+
+//ofstream outL2diffUproj("Data/r8/L2diffUPODGproj_15s_150.txt");
+//ofstream outL2diffPproj("Data/r8/L2diffPPODGproj_15s_150.txt");
+
+ofstream outL2diffUrel("Data/r8/viscosity-extrapolate/L2diffUPODGrel_187.txt");
+ofstream outL2diffPrel("Data/r8/viscosity-extrapolate/L2diffPPODGrel_187.txt");
+
+//ofstream outL2diffUprojrel("Data/r8/L2diffUPODGprojrel_15s_150.txt");
+//ofstream outL2diffPprojrel("Data/r8/L2diffPPODGprojrel_15s_150.txt");
+
+// INITIALIZE PRESSURE DIFFERENCE, DRAG AND LIFT COEFFICIENTS (cf. Schafer&Turek96)
+real FdPODG,CdPODG;	// Drag force and coefficient
+real FlPODG,ClPODG;	// Lift force and coefficient
+real PDPODG;		// Pressure difference
+
+// TEST FUNCTIONS for DRAG/LIFT COEFFICIENTS
+Xh vd1=0,vd2=0;
+Xh vl1=0,vl2=0;
+
+varf vGammaCyl(u,v) = on(1,u=1);real[int] onGammaCyl=vGammaCyl(0,Xh);
+real vd1g=1.;
+vd1[] = onGammaCyl ? vd1g : vd1[]; // enforcing the boundary condition for vd1 just on cylinder
+
+real vl2g=1.;
+vl2[] = onGammaCyl ? vl2g : vl2[]; // enforcing the boundary condition for vl2 just on cylinder
+
+// TIME RESOLUTION: 1st Step - BDF1 ; next steps - BDF2
+real a0,a1,a2; // Parameters for BDF fomulation
+real b0,b1;    // Parameters for extrapolation
+//a0=1.; a1=-1.; a2=0.; b0=1.; b1=0.;  // Semi-implicit BDF1
+a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
+
+ofstream outCdPODG("Data/r8/viscosity-extrapolate/DragCoefPODG_187.txt");
+ofstream outClPODG("Data/r8/viscosity-extrapolate/LiftCoefPODG_187.txt");
+ofstream outPDPODG("Data/r8/viscosity-extrapolate/PresDiffPODG_187.txt");
+
+Xh	upPODG,vpPODG,uppPODG,vppPODG;
+
+// INITIALIZE KINETIC ENERGY, MEAN PRESSURE AND STRONG/WEAK DIVERGENCE
+real EkinPODG,EkinSnap,diffEkin; // Kinetic energy
+real StrongDivPODG,StrongDivSnap,diffWStr,diffWDiv; // Strong/Weak divergence
+varf divPODG([unused1,unused2,unused3],[rhs1,rhs2,rhs3])=int2d(Th)(div(uPODG,vPODG)*rhs3);
+ofstream outEkinPODG("Data/r8/viscosity-extrapolate/EkinPODG_187.txt");
+ofstream outStrongDivPODG("Data/r8/viscosity-extrapolate/StrongDivPODG_187.txt");
+ofstream outWeakDivPODG("Data/r8/viscosity-extrapolate/WeakDivPODG_187.txt");
+
+// TIME LOOP
+int  samplingRate=5;
+int index=0;
+for(int j=0;j<ntimeCo-1;j++)
+{
+	uPODG=meanu;
+	vPODG=meanv;
+	pPODG=0.;
+	
+	for(int k=0;k<r;k++)
+	{
+		modeu[]=rPhiu(:,k);
+		modev[]=rPhiv(:,k);
+		modep[]=rPhip(:,k);
+		uPODG[]+=rAU(j,k)*modeu[];
+		vPODG[]+=rAU(j,k)*modev[];
+		pPODG[]+=rAP(j,k)*modep[];
+	}
+	
+	
+	if (j%samplingRate==0)
+  	{
+  		
+		uSnap=meanucomprobacion;
+		vSnap=meanvcomprobacion;
+		pSnap=0.;
+	
+		uSnapProj=meanucomprobacion;
+		vSnapProj=meanvcomprobacion;
+		pSnapProj=0.;
+	
+		uSnap[]+=Snapu(:,j/samplingRate);
+		vSnap[]+=Snapv(:,j/samplingRate);
+		pSnap[]+=Snapp(:,j/samplingRate);
+		
+		for(int k=0;k<r;k++)
+		{
+			modeu[]=rPhiu(:,k);
+			modev[]=rPhiv(:,k);
+			modep[]=rPhip(:,k);
+			uSnapProj[]+=int2d(Th)(modeu*uSnap+modev*vSnap)*modeu[];
+			vSnapProj[]+=int2d(Th)(modeu*uSnap+modev*vSnap)*modev[];
+			pSnapProj[]+=int2d(Th)(modep*pSnap)*modep[];
+		}		
+		
+		/////// POD-G-ROM: TEST/VALIDATION SECTION for DRAG and LIFT COEFFICIENTS (cf. Schafer&Turek96)//////////////////////////////
+		FdPODG=int2d(Th)(a0*dtt*(uPODG*vd1+vPODG*vd2)+a1*dtt*(upPODG*vd1+vpPODG*vd2)+a2*dtt*(uppPODG*vd1+vppPODG*vd2)
+				+ nu*(Grad(uPODG)'*Grad(vd1)+Grad(vPODG)'*Grad(vd2))
+				+b0*(([upPODG,vpPODG]'*Grad(uPODG))*vd1+([upPODG,vpPODG]'*Grad(vPODG))*vd2)
+				+b1*(([uppPODG,vppPODG]'*Grad(uPODG))*vd1+([uppPODG,vppPODG]'*Grad(vPODG))*vd2)
+		    	- pPODG*div(vd1,vd2)
+				);
+		
+		FlPODG=int2d(Th)(a0*dtt*(uPODG*vl1+vPODG*vl2)+a1*dtt*(upPODG*vl1+vpPODG*vl2)+a2*dtt*(uppPODG*vl1+vppPODG*vl2)
+				+ nu*(Grad(uPODG)'*Grad(vl1)+Grad(vPODG)'*Grad(vl2))
+				+b0*(([upPODG,vpPODG]'*Grad(uPODG))*vl1+([upPODG,vpPODG]'*Grad(vPODG))*vl2)
+				+b1*(([uppPODG,vppPODG]'*Grad(uPODG))*vl1+([uppPODG,vppPODG]'*Grad(vPODG))*vl2)
+		    	- pPODG*div(vl1,vl2)
+				);
+		  	 	
+		CdPODG=-2*FdPODG/(D*Ubar^2);
+		ClPODG=-2*FlPODG/(D*Ubar^2);
+		PDPODG=pPODG(xCyl-D/2,yCyl)-pPODG(xCyl+D/2,yCyl);
+				
+		/////// POD-G-ROM: TEST/VALIDATION SECTION for KINETIC ENERGY, MEAN PRESSURE and STRONG/WEAK DIVERGENCE//////////////////////////////		
+		EkinPODG = 0.5*int2d(Th)(uPODG^2 + vPODG^2);
+		StrongDivPODG = sqrt(int2d(Th)(div(uPODG,vPODG)^2));
+		real [int] divVectPODG=divPODG(0,XhxQh);
+		divVectPODG = abs(divVectPODG);	
+		///////////////////////////////////////////////////////////////
+		
+		
+		/////// POD-G-ROM: TEST/VALIDATION SECTION for L2L2 ERROR AND L2 ERROR //////////////////////////////	
+		L2diffU=int2d(Th)((uSnap-uPODG)^2 + (vSnap-vPODG)^2);
+		L2diffP=int2d(Th)((pSnap-pPODG)^2);
+		
+		
+		
+		L2diffUrel = L2diffU/(int2d(Th)((uSnap)^2 + (vSnap)^2));
+		L2diffPrel = L2diffP/(int2d(Th)((pSnap)^2));
+		
+		
+		outL2diffU << L2diffU << endl;	
+		outL2diffP << L2diffP << endl;
+
+		
+		outL2diffUrel << sqrt(L2diffUrel) << endl;	
+		outL2diffPrel << sqrt(L2diffPrel) << endl;
+
+			
+		outCdPODG << CdPODG << endl;
+		outClPODG << ClPODG << endl;
+		outPDPODG << PDPODG << endl;
+		outEkinPODG << EkinPODG << endl;
+		outStrongDivPODG << StrongDivPODG << endl;
+		outWeakDivPODG << divVectPODG.max << endl;
+	
+		velmagPODG = sqrt(uPODG^2 + vPODG^2);
+		
+		plot(velmagPODG,fill=1,cmm="Velocity magnitude POD-G-ROM, t = "+t);// Plot of POD-G-ROM reconstructed vel. mag.
+		//plot(pPODG,fill=1,cmm="Pressure POD-G-ROM, t = "+t);// Plot of POD-G-ROM reconstructed pres.
+		index+=1;
+		//cout << L2diffUrel << endl;
+	}
+	
+	uppPODG=upPODG;
+	vppPODG=vpPODG;
+	upPODG=uPODG;
+	vpPODG=vPODG;					
+	
+	t+=dt;		
+}

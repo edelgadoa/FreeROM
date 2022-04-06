@@ -1,0 +1,32 @@
+load "lapack"
+include "DatosNVDeim.edp"
+include "MalladoNVDeim.edp"
+include "PlanteaNVDeim.edp"
+
+real[int,int] SnapDeim(grv,m2);
+
+ifstream file("SnapDeim.txt");
+file >> SnapDeim;
+
+
+
+
+//Creamos la matriz de correlacion para la velocidad
+Xh vv1,vv2,vv3,vv4,uvp,uvp2;
+real[int,int] Ccf(m2,m2);
+varf MassMu(u,v) = int2d(Th)(u*v);
+matrix Mass = MassMu(Xh,Xh);
+for(int i = 0;i<m2;i++){
+	vv1[] = SnapDeim(:,i);
+	uvp[] = Mass*vv1[];
+	for(int j = 0;j<m2;j++){
+		vv3[] = SnapDeim(:,j);
+		Ccf(i,j) = vv3[]'*uvp[];
+		Ccf(i,j) = Ccf(i,j)/m2;
+		}
+}
+
+ofstream ff("Correlacionf.txt");
+ff << Ccf;
+
+
