@@ -1,0 +1,13 @@
+#!/bin/bash
+NP=2
+# caso=serie
+caso=paralel
+
+case $caso in
+serie)
+	FreeFem++ cavity_stokes.edp
+	;;
+paralel)
+	ff-mpirun -np 2 cavity_stokes_paralel.edp -glut ffglut
+	;;
+esac
