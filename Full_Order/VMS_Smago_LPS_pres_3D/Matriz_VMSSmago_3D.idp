@@ -9,38 +9,52 @@
 Gr=MOD(uEF); //Aunque parezca que el gradiente se calcula de la solucion sin levantamiento, lo hace ya con el levantamiento, por como he definido uEFXdX, uEFXdY, etc.
 
 
-Vh4P1dc [Levf,LevfY,LevfZ,LevfP];
-VhP2 Levaux; //en principio no lo necesito
+Vh4P1dcL [LevfL,LevfLY,LevfLZ,LevfLP];
+Vh4P2L [LevL,LevLY,LevLZ,LevLP];
+LevL[]=Lev[];
+
 
 varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=intN(ThL)((CS*hTriangle)^2*Gr*UporV(uu,v));
-varf FVSmagob([un1,un2,un3,pun],[v,vY,vZ,qun])=-intN(ThL)((CS*hTriangle)^2*Gr*UporV(Levf,v));
+varf FVSmagob([un1,un2,un3,pun],[v,vY,vZ,qun])=-intN(ThL)((CS*hTriangle)^2*Gr*UporV(LevfL,v));
 
 	
-matrix M=FVSmago(Vh4P1dcL,Vh4P1dcL);
-real[int] bSx(Vh4P2L.ndof), bSy(Vh4P2L.ndof);
+matrix M = FVSmago(Vh4P1dcL,Vh4P1dcL);
+real[int] bSx(Vh4P2L.ndof), bSy(Vh4P2L.ndof), bSz(Vh4P2L.ndof);
 
-matrix DXX,DYY;
+matrix DXX,DYY,DZZ;
+
+
 {
 	matrix Maux; 
-	//COMPONENTE X
-	Maux=DX4P2*IPh4P24P1;
+	//COMPONENTE X 
+	Maux=DX4P2L*IPh4P24P1L;
 	DXX=(Maux')*M;
 	DXX=DXX*Maux;
 	
-	Levf[]=Maux*Lev[]; //seg miembro x
+	LevfL[]=Maux*LevL[]; //seg miembro x
 	real[int] bS=FVSmagob(0,Vh4P1dcL);
 	bSx=(Maux')*bS;
 	
 	//COMPONENTE Y
-	Maux=DY4P2*IPh4P24P1;
+	Maux=DY4P2L*IPh4P24P1L;
 	DYY=(Maux')*M;
 	DYY=DYY*Maux;
 	
-	Levf[]=Maux*Lev[]; //seg miembro y
+	LevfL[]=Maux*LevL[]; //seg miembro y
 	bS=FVSmagob(0,Vh4P1dcL);
 	bSy=(Maux')*bS;
+	
+	//COMPONENTE Z
+	Maux=DZ4P2L*IPh4P24P1L;
+	DZZ=(Maux')*M;
+	DZZ=DZZ*Maux;
+	
+	LevfL[]=Maux*LevL[]; //seg miembro Z
+	bS=FVSmagob(0,Vh4P1dcL);
+	bSz=(Maux')*bS;
 }
 	
-Smago = DXX + DYY;
+Smago = DXX + DYY + DZZ;
 bSmago = bSx + bSy;
+bSmago += bSz;
 

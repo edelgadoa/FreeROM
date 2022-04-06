@@ -19,7 +19,7 @@ include "Matrices_fijas_NS_3D.idp"
 
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
-	
+	cout<<"Iteracion: "<<ii<<endl;
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
@@ -55,7 +55,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix Smago;
 	real[int] bSmago(Vh4P2L.ndof);
 	
-	//include "Matriz_VMSSmago_3D.idp"
+	include "Matriz_VMSSmago_3D.idp"
 	
 	/*
 	// incluimos la matriz de estabilizacion LPS de la presion
@@ -82,7 +82,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[]=uEF[];
-	medit([uEF, uEFY, uEFZ]);
+
 
 	
 	// Calculamos el error cometido (en velocidad)

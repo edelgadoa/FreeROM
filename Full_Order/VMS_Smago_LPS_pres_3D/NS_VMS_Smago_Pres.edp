@@ -9,7 +9,7 @@
 // Codigo para resolver el problema 3D de EF de VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres 
 
-//verbosity=0;
+verbosity=0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -28,11 +28,12 @@ real techo = 2; //para las condiciones de contorno
 // Definimos los espacios de EF y de los EF locales
 include "FE_Spaces_NoStab_VP_3D.idp"
 
-// Definimos las matrices de interpolacion y derivacion
-include "Interp_matrix_NoStab_VP_3D.idp"
-
 // Definimos los parametros a usar
 include "Parametros_3D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_3D.idp"
+include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
 Reynolds = 1000;
 
