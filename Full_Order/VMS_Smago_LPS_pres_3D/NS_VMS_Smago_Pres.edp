@@ -35,7 +35,7 @@ include "Parametros_3D.idp"
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
-Reynolds = 1000;
+Reynolds = 3545;
 
 
 /////////////////////////////////////////////
@@ -55,5 +55,5 @@ include "FE_VMS_LPS_3D.idp"
 Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
 uEFL[]=uEF[] + Lev[];
 
-plot([uEFL, uEFLY, uEFLZ], cmm="FE vel para Re="+Reynolds);
-plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+int[int] fforder=[1,1,1,1];
+savevtk("VMS_Smago.vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
