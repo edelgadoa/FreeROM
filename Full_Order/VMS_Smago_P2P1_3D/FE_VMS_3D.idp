@@ -1,0 +1,93 @@
+///////////////
+// FreeROM 
+///////////////
+
+
+
+// Incluimos el levantamiento
+include "Levantamiento_3D.idp"
+
+
+// Defininimos la matriz y segundo miembro fijos
+matrix MFija;
+real[int] bFija(Vh4P2L.ndof);
+
+
+include "Matrices_fijas_NS_3D.idp"
+
+
+
+// Comenzamos el bucle iterativo para resolver el problema de EF
+for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
+	
+	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
+	
+	uprevL = uEF + Lev;
+	uprevLY = uEFY + LevY;
+	uprevLZ = uEFZ + LevZ;
+	
+	{
+		VhP2 udcAux;
+		udcAux[] = IPhP2P1*uprevL[];
+		uEFdX[] = DXP2*udcAux[];
+		uEFdY[] = DYP2*udcAux[];
+		uEFdZ[] = DZP2*udcAux[];
+
+		udcAux[] = IPhP2P1*uprevLY[];
+		uEFYdX[] = DXP2*udcAux[];
+		uEFYdY[] = DYP2*udcAux[];
+		uEFYdZ[] = DZP2*udcAux[];
+		
+		udcAux[] = IPhP2P1*uprevLZ[];
+		uEFZdX[] = DXP2*udcAux[];
+		uEFZdY[] = DYP2*udcAux[];
+		uEFZdZ[] = DZP2*udcAux[];
+	
+	}
+	
+	// incluimos la matriz del término de convección y segundo miembro término temporal
+	matrix MNS;
+	real[int] bNS(Vh4P2L.ndof);
+	
+	include "Matrices_variables_NS_3D.idp"
+	
+	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
+	matrix Smago;
+	real[int] bSmago(Vh4P2L.ndof);
+	
+	include "Matriz_VMSSmago_3D.idp"
+	
+	
+	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
+	matrix MFinal;
+	real[int] bFinal(Vh4P2L.ndof);
+	
+	MFinal = MFija;
+	MFinal += MNS;
+	MFinal += Smago;
+	// MFinal += LPSpres;
+	
+	bFinal = bFija;
+	bFinal += bNS;
+	bFinal += bSmago;
+	
+	uEF[]=0;
+	solvesystem(MFinal, bFinal, uEF);
+	
+	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+	uEFp[]=uEF[];
+
+
+	
+	// Calculamos el error cometido (en velocidad)
+	VhP2 errEF, errEFY, errEFZ;
+	errEF = uEF - uEFp;
+	errEFY = uEF - uEFpY;
+	errEFZ = uEF - uEFpZ;
+	
+	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
+	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
+
+
+}
+
