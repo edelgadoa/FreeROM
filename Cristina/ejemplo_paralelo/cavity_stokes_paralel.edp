@@ -1,0 +1,90 @@
+// ff-mpirun -np 2 cavity_stokes_paralel.edp -glut ffglut
+// mpirun -np 2 FreeFem++-mpi cavity_stokes_paralel.edp -glut ffglut
+
+macro dimension() 2 // EOM
+include "macro_ddm.idp";
+
+// Parameter definition
+real epspen=1.e-8;
+real Re=1500.;
+
+// Macro definition
+macro defu(u) [u,u#Y,u#P] // EOM
+macro gradgrad(u,v) (dx(u)*dx(v)+dy(u)*dy(v)+dx(u#Y)*dx(v#Y)+dy(u#Y)*dy(v#Y))// EOM
+macro div(u)(dx(u) + dy(u#Y))// EOM
+
+// Mesh creation
+meshN Th;
+fespace Vh(Th,[P2,P2,P1]);
+int walls = 1,top = 2;
+int NN = 50;
+{
+	real x01 = 0., x11 = 1., y01 = 0., y11 = 1.;
+	int [int] icase = [walls,walls,top,walls];
+	Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],label = icase, flags=3);
+}
+
+/////////////////////////////////////////////////////////////////////////////////
+
+load "PETSc";
+Mat MatA;
+int[int] map;
+string sparamsv="-pc_type lu -pc_factor_mat_solver_type mumps";
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}//EOM
+NewMacro solvesystem(A,b,u)
+{
+	VhL defu(u#L);
+	MatA = A;
+	set(MatA,sparams=sparamsv);
+	u#L[]=MatA^-1*b;
+	reduceSolution(u#L,u,MatA.D,map);
+}EndMacro
+meshN ThL;
+fespace VhL(ThL,[P2,P2,P1]);
+// Local mesh generation
+{
+	ThL = Th;
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	buildDmesh(ThL);
+	map=restrict(VhL,Vh,myN2o);
+	macro def(i) defu(i) // EOM
+	macro init(i) [i,i,i] // EOM
+	createMat(ThL,MatA,[P2,P2,P1]);
+}
+plot(ThL);
+
+/////////////////////////////////////////////////////////////////////////////////
+
+// Problem definition, change Th by ThL and Vh by VhL
+Vh defu(u);
+matrix A;
+real [int] b(VhL.ndof);
+{
+	varf a(defu(u),defu(v))=intN(ThL)(
+							1./Re*gradgrad(u,v)
+							-uP*div(v)
+							+vP*div(u)
+							+uP*vP*epspen
+							)
+							+on(top,u=1,uY=0)
+							+on(walls,u=0,uY=0)
+							;
+	A=a(VhL,VhL);
+	b=a(0,VhL);
+}
+
+// Resolution
+solvesystem(A,b,u);
+
+plot([u,uY]);
+plot(uP,fill=1);
+
+///////////////////////////////////////////////////////////////////////////////////
