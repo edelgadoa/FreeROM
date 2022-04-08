@@ -28,7 +28,10 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots; // numero de Snapshots que voy a querer calcular 
+ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt"); // TODO: Hacerlo mediante la funcion read
+nSnapshotFILE>>nSnapshots;
 real[int] vReynolds(nSnapshots);
+
 
 VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
 VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
@@ -37,6 +40,7 @@ VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVYdX(nSnapshots), BVYdY(nSnapsh
 
 
 include "Load_Snapshots_EIM.idp"
+
 		
 // Defino las variables para el EIM
 int Mmax = 83; //numero maximo de bases del EIM
@@ -55,15 +59,15 @@ VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 // Primera iteración //Tomamos el primer valor del parametro aleatorio
 muEIM(0) = vReynolds(0); //Almacenamos el valor de Reynolds escogido
 
-BEIM[0] = MOD(BV[0]);
+BEIM[0] = mod(BVdX[0], BVdY[0], BVYdX[0], BVYdY[0]);
 
-Tmax(0)=BEIM[0][].imax;
-BEIM[0] =/ BEIM[0][].max;
+Tmax(0) = BEIM[0][].imax;
+BEIM[0][] /= BEIM[0][].max;
 
-BM(0,0)=BEIM[0][](Tmax(i));
+BM(0,0) = BEIM[0][](Tmax(0));
 
 // Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
-ofstream BaseEIMFILE("/Bases_EIM/Base_" + Reynolds + ".txt");
+ofstream BaseEIMFILE("Bases_EIM/Base_EIM_" + vReynolds(0) + ".txt");
 BaseEIMFILE<<BEIM[0][]<<endl;
 
 // Hacemos el greedy para calcular todas las bases del EIM
@@ -72,7 +76,7 @@ for (int i=1; i<Mmax; i++){
 	
 	include "EIMgreedy_Smago.idp";
 
-	if(ErrMax(i-1)<epsG){
+	if(ErrorMaxEIM(i-1)<epsEIM){
 		M = i;
 		break;
 	}
@@ -82,20 +86,21 @@ for (int i=1; i<Mmax; i++){
 // Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
 real[int] muEIMF(M);
 muEIMF = muEIM(0:M-1);
-ofstream muFILE("/Bases_EIM/muEIM_Smago.txt")
-MatrizFile<<muEIMF<<endl;
+ofstream muFILE("Bases_EIM/muEIM_Smago.txt");
+muFILE<<muEIMF<<endl;
 
-ofstream MatrizFile("/Bases_EIM/MatrizEIM_Smago.txt")
+ofstream MatrizFile("Bases_EIM/MatrizEIM_Smago.txt");
 real[int, int] BFinal(M,M);
 BFinal = BM(0:M-1,0:M-1);
+MatrizFile<<BFinal<<endl;
 
 real[int] TM(M);
 TM = Tmax(0:M-1);
-ofstream TmaxFILE("/Bases_EIM/TintEIM_Smago.txt")
+ofstream TmaxFILE("Bases_EIM/TintEIM_Smago.txt");
 TmaxFILE<<TM<<endl;
 
 real[int] ErrorEIM(M);
 ErrorEIM=ErrorMaxEIM(0:M-1);
-ofstream ErrorFILE("/Bases_EIM/ErrorEIM_Smago.txt")
+ofstream ErrorFILE("Bases_EIM/ErrorEIM_Smago.txt");
 ErrorFILE<<ErrorEIM<<endl;
 

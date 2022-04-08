@@ -71,7 +71,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal += bNS;
 	bFinal += bSmago;
 	
-	uEF[]=0;
+	// uEF[]=0;
 	solvesystem(MFinal, bFinal, uEF);
 	
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
