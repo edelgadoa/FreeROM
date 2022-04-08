@@ -16,7 +16,6 @@ for (int imu=0; imu<nSnapshots; imu++){
 	//if (mpirank==imu%mpisize){
 		gEIM = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
 		
-		bEIM = 0;
 		for (int j=0; j<i; j++){
 			bEIM(j) = gEIM[](Tmax(j));
 		}

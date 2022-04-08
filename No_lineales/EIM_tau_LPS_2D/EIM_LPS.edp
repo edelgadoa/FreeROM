@@ -28,23 +28,25 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots; // numero de Snapshots que voy a querer calcular 
+ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt"); // TODO: Hacerlo mediante la funcion read
+nSnapshotFILE>>nSnapshots;
 real[int] vReynolds(nSnapshots);
 
 VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
-VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
+// VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
 VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVYdX(nSnapshots), BVYdY(nSnapshots); //las calculo TODAS de una vez
 
 // Definimos las cantidades que usaremos para el segundo miembro del EIM
-VhP0 tKcod,tKTcod,tau,mk;
+//VhP0 tKcod,tKTcod,tau,mk;
 VhP1dc UXdX,UXdY,UYdX,UYdY;	
-VhP2 UX,Uy;
+VhP2 UX,UY;
 
-varf med(unused,v)=int2d(Th)(1.*v);
-real[int] medk=med(0,VhP0);
-mk[]=sqrt(medk);
+// varf med(unused,v)=int2d(Th)(1.*v);
+// real[int] medk=med(0,VhP0);
+// mk[]=sqrt(medk);
 
 varf tauK(unused,v)=int2d(Th)((UX^2+UY^2)*v);
-varf tauKT(unused,v)=int2d(Th)((UdX^2+UdY^2+UYdx^2+UYdY^2)*v);
+varf tauKT(unused,v)=int2d(Th)((UXdX^2+UXdY^2+UYdX^2+UYdY^2)*v);
 
 
 
@@ -58,8 +60,8 @@ real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa de
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
 
 
-VhP1dc[int] BEIM(Mmax); // Donde almaceno las bases EIM
-VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+VhP0[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP0 gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
@@ -73,15 +75,20 @@ UXdX = BVdX[0]; UXdY = BVdY[0]; UYdX = BVYdX[0]; UYdY = BVYdY[0];
 real[int] tK=tauK(0,VhP0);
 real[int] tKT=tauKT(0,VhP0);
 
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+
 BEIM[0] = ((cc1*(1./vReynolds(0)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+plot(BEIM[0]);
 
 Tmax(0) = BEIM[0][].imax;
-BEIM[0] =/ BEIM[0][].max;
+BEIM[0][] /= BEIM[0][].max;
 
-BM(0,0) = BEIM[0][](Tmax(i));
+BM(0,0) = BEIM[0][](Tmax(0));
 
 // Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
-ofstream BaseEIMFILE("/Bases_EIM/Base_" + Reynolds + ".txt");
+ofstream BaseEIMFILE("Bases_EIM/Base_" + vReynolds(0) + ".txt");
 BaseEIMFILE<<BEIM[0][]<<endl;
 
 // Hacemos el greedy para calcular todas las bases del EIM
@@ -90,7 +97,7 @@ for (int i=1; i<Mmax; i++){
 	
 	include "EIMgreedy_LPS.idp";
 
-	if(ErrMax(i-1)<epsG){
+	if(ErrorMaxEIM(i-1)<epsEIM){
 		M = i;
 		break;
 	}
@@ -100,20 +107,21 @@ for (int i=1; i<Mmax; i++){
 // Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
 real[int] muEIMF(M);
 muEIMF = muEIM(0:M-1);
-ofstream muFILE("/Bases_EIM/muEIM_Smago.txt")
-MatrizFile<<muEIMF<<endl;
+ofstream muFILE("Bases_EIM/muEIM_LPS.txt");
+muFILE<<muEIMF<<endl;
 
-ofstream MatrizFile("/Bases_EIM/MatrizEIM_Smago.txt")
+ofstream MatrizFile("Bases_EIM/MatrizEIM_LPS.txt");
 real[int, int] BFinal(M,M);
 BFinal = BM(0:M-1,0:M-1);
+MatrizFile<<BFinal<<endl;
 
 real[int] TM(M);
 TM = Tmax(0:M-1);
-ofstream TmaxFILE("/Bases_EIM/TintEIM_Smago.txt")
+ofstream TmaxFILE("Bases_EIM/TintEIM_LPS.txt");
 TmaxFILE<<TM<<endl;
 
 real[int] ErrorEIM(M);
 ErrorEIM=ErrorMaxEIM(0:M-1);
-ofstream ErrorFILE("/Bases_EIM/ErrorEIM_Smago.txt")
+ofstream ErrorFILE("Bases_EIM/ErrorEIM_LPS.txt");
 ErrorFILE<<ErrorEIM<<endl;
 
