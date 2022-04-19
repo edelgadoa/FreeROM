@@ -51,7 +51,7 @@ VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 VhP2 SnapX, SnapY;
-VhP1 SnapP;
+VhP2 SnapP;
 
 for (int i=0; i<nSnapshots; i++){
 
