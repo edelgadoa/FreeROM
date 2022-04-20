@@ -30,7 +30,7 @@ matrix IPhP2P1L, IPh4P24P1L, IPhP1dcP1L;
 			IdP1dcL = faux1[];
             VhP1L fauxp1 = 1.;
             IdP1L = fauxp1[];
-			Id4P2L=[[IdP2L, 0, 0, 0],[0, IdP2L, 0, 0],[0, 0, IdP2L, 0],[0, 0, 0, IdP1L]]; //CAMBIAR A P2 CUANDO FUNCIONE CON EF ESTABLE
+			Id4P2L=[[IdP2L, 0, 0, 0],[0, IdP2L, 0, 0],[0, 0, IdP2L, 0],[0, 0, 0, IdP2L]]; 
 		}
 		
 		matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc

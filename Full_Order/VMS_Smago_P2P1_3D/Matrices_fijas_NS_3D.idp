@@ -16,6 +16,7 @@ varf FVFija([uu,uuY,uuZ,uP],[v,vY,vZ,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v))
 								   	   	  - intN(ThL)(Antisimetric(Lev,Lev,v)
 								          + nu*GradUGradV(Lev,v))
 								          + on(1,2, uu=0., uuY=0., uuZ=0.); 
+										  
 
 //							
 

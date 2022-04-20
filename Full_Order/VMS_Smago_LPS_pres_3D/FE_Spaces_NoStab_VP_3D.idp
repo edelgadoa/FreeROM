@@ -11,7 +11,7 @@
 
 
 //EF GLOBALES
-fespace Vh4P2(Th, [P2, P2, P2, P1]); //CAMBIAR A P2 CUANDO FUNCIONE PARA EF ESTABLE
+fespace Vh4P2(Th, [P2, P2, P2, P2]); 
 fespace Vh4P1(Th, [P1, P1, P1, P1]);
 fespace Vh4P1dc(Th, [P1dc, P1dc, P1dc, P1dc]); // En 3D el P1dc lo hacemos equivalente al P1b, por simplicidad, mantenemos la misma notacion de P1dc que en 2D
 fespace VhP0(Th, P0); 
@@ -20,7 +20,7 @@ fespace VhP1(Th, P1);
 fespace VhP2(Th, P2);
 
 //EF LOCALES 
-fespace Vh4P2L(ThL, [P2, P2, P2, P1]); //CAMBIAR A P2 CUANDO FUNCIONE PARA EF ESTABLE
+fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
 fespace Vh4P1L(ThL, [P1, P1, P1, P1]);
 fespace Vh4P1dcL(ThL, [P1dc, P1dc, P1dc, P1dc]); // En 3D el P1dc lo hacemos equivalente al P1b, por simplicidad, mantenemos la misma notacion de P1dc que en 2D
 fespace VhP0L(ThL, P0); 

@@ -26,6 +26,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uprevLY = uEFY + LevY;
 	uprevLZ = uEFZ + LevZ;
 	
+	if (ii%20==0){
+		int[int] fforder=[1,1,1,1];
+		savevtk("NSL"+ii+".vtu", Th, [uprevL, uprevLY, uprevLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
+	}
+	
 	{
 		VhP2 udcAux;
 		udcAux[] = IPhP2P1*uprevL[];
@@ -41,8 +46,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 		udcAux[] = IPhP2P1*uprevLZ[];
 		uEFZdX[] = DXP2*udcAux[];
 		uEFZdY[] = DYP2*udcAux[];
-		uEFZdZ[] = DZP2*udcAux[];
-	
+		uEFZdZ[] = DZP2*udcAux[];	
 	}
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
@@ -71,19 +75,17 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal += bNS;
 	bFinal += bSmago;
 	
-	// uEF[]=0;
-	solvesystem(MFinal, bFinal, uEF);
 	
-	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+	// Actualizamos la solución
 	uEFp[]=uEF[];
+	solvesystem(MFinal, bFinal, uEF);
 
 
-	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY, errEFZ;
 	errEF = uEF - uEFp;
-	errEFY = uEF - uEFpY;
-	errEFZ = uEF - uEFpZ;
+	errEFY = uEFY - uEFpY;
+	errEFZ = uEFZ - uEFpZ;
 	
 	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
