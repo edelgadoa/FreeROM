@@ -23,7 +23,7 @@ if(petsc){
 	{
 		macro def(i) [i, iY, iZ, iP] //
 		macro init(i) [i, i, i, i] // EOM
-		createMat(ThL, MatAVh4P2, [P2, P2, P2, P1]); //CAMBIAR A P2 CUANDO META ESTAB EN PRESION
+		createMat(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
 	}	
 }
 
