@@ -21,18 +21,18 @@ tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 varf termPres(pp,q) = int2d(Th)(tau*pp*q);
 
 
-matrix TermP = termPres(VhP1dc,VhP1dc);
+matrix TermP = termPres(VhP1dcL,VhP1dcL);
 
 matrix DDxx;
 {
-	DDxx = TermP * IPhD4X4P2; 
-	DDxx = IPhD4X4P2' * DDxx;
+	DDxx = TermP * IPhD4X4P2L; 
+	DDxx = IPhD4X4P2L' * DDxx;
 }
 
 matrix DDyy;
 {
-	DDyy = TermP * IPhD4Y4P2; 
-	DDyy = IPhD4Y4P2' * DDyy;
+	DDyy = TermP * IPhD4Y4P2L; 
+	DDyy = IPhD4Y4P2L' * DDyy;
 }
 
 LPSpres = DDxx + DDyy;
