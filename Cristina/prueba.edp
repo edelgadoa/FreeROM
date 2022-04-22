@@ -1,0 +1,78 @@
+include "read.idp";
+include "write.idp";
+
+//// Escalar ////
+write("text.txt","hola",0,0);
+readscalar("text.txt",string,text,1);
+write("int.txt",1,0,0);
+readscalar("int.txt",int,n,1);
+write("real.txt",pi,0,0);
+readscalar("real.txt",real,t,1);
+write("complex.txt",pi+pi*1i,0,0);
+readscalar("complex.txt",complex,r,1);
+
+//// Vectores ////
+cout << "-------------------------------------------------------" << endl;
+int[int] vectorint=[1,2,3,4,5,6,7];
+write("intint.txt",vectorint,0,0);
+readvector("intint.txt",int,vectorint2,1);
+real[int] vectorreal=[pi,1./3.,1.e-4];
+write("realint.txt",vectorreal,0,0);
+readvector("realint.txt",real,vectorreal2,1);
+complex[int] vectorcomplex=[1+1.*1i,2+1.*1i,3+1.*1i];
+write("complexint.txt",vectorcomplex,0,0);
+readvector("complexint.txt",complex,vectorcomplex2,1);
+
+//// Matrices llenas ////
+cout << "-------------------------------------------------------" << endl;
+int[int,int] matrixfint=[[0,1,2],[3,4,5],[6,7,8]];
+write("intintint.txt",matrixfint,0,0);
+readmatrix("intintint.txt",int,matrixfint2,1);
+real[int,int] matrixfreal=[[1./3,pi,3./2],[4./3,1.e-4,pi*2.],[8./3,pi/3.,2./3]];
+write("realintint.txt",matrixfreal,0,0);
+readmatrix("realintint.txt",real,matrixfreal2,1);
+complex[int,int] matrixfcomplex=[[1.+1.*1i,2.+1.*1i,3.+1.*1i],[pi+1.*1i,2+pi*1i,3+pi*1i],[8./3,pi/3.,2./3]];
+write("complexintint.txt",matrixfcomplex,0,0);
+readmatrix("complexintint.txt",complex,matrixfcomplex2,1);
+
+//// Matrices sparse ////
+cout << "-------------------------------------------------------" << endl;
+matrix matrixreal=matrixfreal2;
+write("matrixreal.txt",matrixreal,0,0);
+readsparse("matrixreal.txt",real,matrixreal2,1);
+matrix <complex> matrixcomplex=matrixfcomplex;
+write("matrixcomplex.txt",matrixcomplex,0,0);
+readsparse("matrixcomplex.txt",complex,matrixcomplex2,1);
+
+//// Tensores ////
+cout << "-------------------------------------------------------" << endl;
+int[int,int][int] tensorint(4);
+tensorint[0]=matrixfint(0:2,0:2);
+matrixfint+=10;
+tensorint[1]=matrixfint(0:2,0:2);
+matrixfint+=10;
+tensorint[2]=matrixfint(0:2,0:2);
+matrixfint+=10;
+tensorint[3]=matrixfint(0:2,0:2);
+write("intintintint.txt",tensorint,0,0);
+readtensor("intintintint.txt",int,tensorint2,1);
+real[int,int][int] tensorreal(4);
+tensorreal[0]=matrixfreal(0:2,0:2);
+matrixfreal+=10.;
+tensorreal[1]=matrixfreal(0:2,0:2);
+matrixfreal+=10.;
+tensorreal[2]=matrixfreal(0:2,0:2);
+matrixfreal+=10.;
+tensorreal[3]=matrixfreal(0:2,0:2);
+write("realintintint.txt",tensorreal,0,0);
+readtensor("realintintint.txt",real,tensorreal2,1);
+complex[int,int][int] tensorcomplex(4);
+tensorcomplex[0]=matrixfcomplex(0:2,0:2);
+matrixfcomplex+=10.+10.*1i;
+tensorcomplex[1]=matrixfcomplex(0:2,0:2);
+matrixfcomplex+=10.+10.*1i;
+tensorcomplex[2]=matrixfcomplex(0:2,0:2);
+matrixfcomplex+=10.+10.*1i;
+tensorcomplex[3]=matrixfcomplex(0:2,0:2);
+write("complexintintint.txt",tensorcomplex,0,0);
+readtensor("complexintintint.txt",complex,tensorcomplex2,1);
