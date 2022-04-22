@@ -37,9 +37,11 @@ for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
 
-// Guardamos en un archivo el numero de Snapshots que vamos a calcular -- Puede ser que se cambie
-ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt");
-nSnapshotFILE<<nSnapshots<<endl;	
+// Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
+{
+	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
+	nSnapshotFILE<<vReynolds<<endl;	
+}
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//

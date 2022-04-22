@@ -1,0 +1,9 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+
+VhP2 uEF, uEFY; // Serán las soluciones para el mu_fijo
+
+if 

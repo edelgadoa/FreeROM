@@ -1,0 +1,16 @@
+func search_snapshot(string &dir, string &comp, real &Re)
+{
+	ifstream File_snapshot;
+	string archivo = dir+comp+Re;
+	File_snapshot.open(archivo);
+	
+	if (File_snapshot){
+		cout<<"Existe"<<endl;
+	}
+	else
+	}
+
+
+
+
+}

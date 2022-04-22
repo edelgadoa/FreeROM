@@ -16,7 +16,7 @@ load "iovtk"
 // Cargamos macros
 include "../../Auxiliary/Macros_2D.idp"
 
-// Creamos la matriz
+// Creamos la malla
 include "../../Mallas/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF y de los EF globales
