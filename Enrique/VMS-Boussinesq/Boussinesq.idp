@@ -1,0 +1,234 @@
+///////////////////////////////////
+//COMIENZA EL ARCHIVO ORIGINAL
+//////////////////////////////////
+int nIterations=2000;
+real epsError = 1.e-10;
+
+
+
+//Vh3P2 [u1,u2,p]; //u_0 inicial para el método de Euler que resuelva las N-Stokes es la sol del pb de Stokes
+
+
+
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+////Matriz fija 
+
+varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+				int2d(Th)((1./dt)*(uu1*v1+uu2*v2+tt*zt))
+			   -int2d(Th)(div(v1,v2)*pp)+int2d(Th)(div(uu1,uu2)*q)
+			   +int2d(Th)(Pr*GradGrad(uu1,uu2,v1,v2))
+			   +int2d(Th)(Grad(tt)'*Grad(zt))
+			   +int2d(Th)(1e-8*pp*q)
+			   -int2d(Th)(Pr*Ra*tt*v2)
+			   //Segundo miembro
+			   +int2d(Th)(Pr*Ra*G*v2)
+			   -int2d(Th)(Grad(G)'*Grad(zt))
+			   +on(1,2,3,4, uu1=0., uu2=0.)
+			   +on(4, tt=0.)+on(2, tt=0.);
+			    
+
+//							
+matrix AvNS;
+
+AvNS=vNS(Vh4P2,Vh4P2);
+
+real[int] bNSf=vNS(0,Vh4P2);
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+Vh4P2 [u1,u2,t,p];//=[1.,1.,0.,1.];
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+
+VhP2 u1tmp,u2tmp;
+{
+	u1tmp=u1;
+	u2tmp=u2;
+}
+
+VhP2 udcAux;
+VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,Gr;
+
+udcAux[] = IPh*u1tmp[];
+u1dcX[]  = DXun*udcAux[];		
+u1dcY[]  = DYun*udcAux[];
+	 
+udcAux[] = IPh*u2tmp[];
+u2dcX[]  = DXun*udcAux[];
+u2dcY[]  = DYun*udcAux[];
+
+Gr=moddc(u1dcX,u1dcY,u2dcX,u2dcY);
+
+real mediap;
+real cpu0=clock();
+real time;
+for (int ii=0; ii<=nIterations && (iterrelative1 > epsError) ; ii++) {
+//	cout << endl;
+//	cout << "------------------------------------" << endl;	
+//	cout << "Starting iteration number " << ii << endl;	
+//	cout << "------------------------------------" << endl;	
+time+=dt;
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	varf vNSb([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+			 int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+			+int2d(Th)(([u1,u2]'*Grad(tt))*zt)
+			//Seg miembro
+			+int2d(Th)((1./dt)*(u1*v1+u2*v2+t*zt))
+	   		-int2d(Th)(([u1,u2]'*Grad(G))*zt)
+			;
+						
+	matrix AvNSb=vNSb(Vh4P2,Vh4P2);
+	
+////////////////////////////////////
+////MATRIZ SMAGORINSKY VEL FILTRADA
+////////////////////////////////////
+
+varf VMSSma([u1l,u2l,unusedTT,unusedpp],[v1l,v2l,zl,ql]) = 
+		int2d(Th)(((CS*hTriangle)^2)*Gr*(u1l*v1l+u2l*v2l));
+						
+										
+matrix M = VMSSma(Vh4P1dc,Vh4P1dc);
+					
+matrix Sma;
+matrix DXX;
+matrix DYY;
+
+	{
+		matrix Maux;
+
+		Maux = DX3*I4P2;
+		DXX  = (Maux')*M;
+		DXX  = DXX*Maux;
+	
+		Maux = DY3*I4P2;
+		DYY  = (Maux')*M;
+		DYY  = DYY*Maux;
+	
+	}
+Sma = DXX + DYY;
+
+////////////////////////////////////
+////MATRIZ SMAGORINSKY TEMP FILTRADA
+////////////////////////////////////
+Vh4P1dc [Gfv1,Gfv2,GfT,Gfp];
+VhP2 Gfaux;
+VhP1 Gpaux;
+Vh4P2 [GG1,GG2,GGT,GGP]=[Gfaux,Gfaux,G,Gpaux]; //Levantamiento temperatura
+
+varf VMSSmaT([un1l,un2l,TT,unusedpp],[v1l,v2l,zl,ql]) = 
+		int2d(Th)((1./Pr)*((CS*hTriangle)^2)*Gr*(TT*zl))
+	   -int2d(Th)((1./Pr)*((CS*hTriangle)^2)*Gr*(GfT*zl));
+		//FALTA SEGUNDO MIEMBRO DEL LEVANTAMIENTO DE LA TEMPERATURA
+						
+										
+matrix MT = VMSSmaT(Vh4P1dc,Vh4P1dc);
+					
+matrix SmaT;
+matrix DXXT;
+matrix DYYT;
+real[int] bTx(Vh4P2.ndof),bTy(Vh4P2.ndof);
+
+
+	{
+		matrix Maux;
+
+		Maux = DX3*I4P2;
+		DXXT  = (Maux')*MT;
+		DXXT  = DXXT*Maux;
+		Gfv1[]=Maux*GG1[];
+		real[int] bTs=VMSSmaT(0,Vh4P1dc);
+		bTx=(Maux')*bTs;
+	
+		Maux = DY3*I4P2;
+		DYYT  = (Maux')*MT;
+		DYYT  = DYYT*Maux;
+		Gfv1[]=Maux*GG1[];
+		bTs=VMSSmaT(0,Vh4P1dc);
+		bTy=(Maux')*bTs;
+	
+	}
+SmaT = DXXT + DYYT;
+
+
+
+/////////////////////////////
+//MATRIZ FINAL
+////////////////////////////
+	
+	matrix Afinal;
+	Afinal=AvNSb+AvNS;
+	Afinal=Afinal+Sma;
+	Afinal=Afinal+SmaT;
+	
+	real [int] bNS=vNSb(0,Vh4P2);
+	bNS+=bNSf;
+	bNS+=bTx;
+	bNS+=bTy;
+	set(Afinal,solver=UMFPACK);
+	u1[]=Afinal^-1*bNS;
+	
+	//Pintamos la solucion de cada iteracion
+	
+//	VhP2 TEMP=t+G;
+	
+//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
+	
+    VhP2 eu1,eu2;
+	eu1=u1-u1tmp;
+	eu2=u2-u2tmp;
+	
+	
+	//Inicio calculo normas
+	itercontrol1 = sqrt(int2d(Th)(GradGrad(eu1,eu2,eu1,eu2)));  		    	 
+    real itertmp1 = sqrt(int2d(Th)(GradGrad(u1,u2,u1,u2))); 
+	
+	iterrelative1 = itercontrol1;///itertmp1;	
+
+//
+//	cout << "------------------------------------" << endl;	
+//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+	//ACTUALIZ.
+	u1tmp=u1;
+	u2tmp=u2;
+						
+	udcAux[] = IPh*u1tmp[];
+	u1dcX[]  = DXun*udcAux[];		
+	u1dcY[]  = DYun*udcAux[];
+	 
+	udcAux[] = IPh*u2tmp[];
+	u2dcX[]  = DXun*udcAux[];
+	u2dcY[]  = DYun*udcAux[];
+	
+	Gr=moddc(u1dcX,u1dcY,u2dcX,u2dcY);
+
+} 
+
+cpu0=-cpu0+clock();
+cout<<"Tiempo FE:"<<cpu0<<endl;
+
+
+//gradU=sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2);
+
+VhP2 T=t+G;
+
+cout<<"media pres: "<<int2d(Th)(p)<<endl;
+//plot([u1,u2],cmm="Velocidades para Ra= "+Ra,value=1);
+//plot(p,cmm="Presion para Ra= "+Ra);
+plot(T,cmm="Temperatura para Ra= "+Ra);
+plot(u1,cmm="Velocidad x para Ra="+Ra);
+plot(u2,cmm="Velocidad y para Ra="+Ra);
+
+

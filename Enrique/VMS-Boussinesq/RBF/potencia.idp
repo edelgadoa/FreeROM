@@ -1,0 +1,108 @@
+{
+	Ra=vRaI(I);
+	include "Boussinesq.idp"; //Resuelvo el pb de EF
+	plot([u1,u2],p,cmm= "vel-pres Ra="+Ra);
+	VhP2 tG=t+G;
+	
+	plot(tG,cmm="temp Ra="+Ra);
+	
+	varf davel([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+					 int2d(Th)(Pr*GradGrad(uu1,uu2,v1,v2)) 
+					+int2d(Th)(div(uu1,uu2)*q)
+					-int2d(Th)(div(v1,v2)*pp) 
+					
+					+int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+					+int2d(Th)(UgradV(uu1,uu2,u1,u2)'*[v1,v2])
+					
+//					+int2d(Th)((CS*hTriangle)^2*mod(UU1,UU2)*GradGrad(uu1,uu2,v1,v2))
+//					+int2d(Th)(((CS*hTriangle)^2/mod(UU1,UU2))
+//								*GradGrad(UU1,UU2,uu1,uu2)*GradGrad(UU1,UU2,v1,v2))
+
+					+int2d(Th)(([uu1,uu2]'*Grad(t))*zt)
+					+int2d(Th)(([uu1,uu2]'*Grad(G))*zt)
+					+int2d(Th)(([u1,u2]'*Grad(tt))*zt)
+					
+					-int2d(Th)(Ra*Pr*tt*v2)
+					//-int2d(Th)(Ra*Pr*G*v2)
+					+int2d(Th)(Grad(tt)'*Grad(zt))
+					//+int2d(Th)(Grad(G)'*Grad(zt))
+					//+int2d(Th)(epspen*pp*q)
+					+on(1,2,3,4, uu1=0,uu2=0)
+					+on(2,tt=0)+on(4,tt=0)
+					;
+	
+	varf damult([uu1,uu2,tt,pp],[v1,v2,zt,q])=int2d(Th)(q)+on(1,2,3,4, uu1=0,uu2=0)
+														   +on(2,tt=0)+on(4,tt=0)
+														   ;
+	
+								
+	matrix Fv=davel(Vh4P2,Vh4P2);
+//	[II,JI,CI]=Fv;
+//	real[int] cc(CI.n);
+//	for (int gf=0;gf<CI.n;gf++){
+//		cc(gf)= (CI(gf)>10^10) ? 0 : 1;
+//	} 
+//	CI=CI.*cc;
+//	Fv=[II,JI,CI];
+	real[int] Fm=damult(0,Vh4P2);
+//	Fm=Fm.*b;
+	matrix F=[[Fv, Fm],
+			  [Fm',1]];
+
+
+	matrix Ft=F';
+	
+
+	set(F,solver=sparsesolver);
+	set(Ft,solver=sparsesolver);
+
+    real epsl=1e-6; //Test de parada para el metodo de la potencia.
+	real[int] uk(Vh4P2.ndof+1),uk1(Vh4P2.ndof+1);
+	uk1=u1[];
+	//real P=10^50;
+	//cout<<uk1.n<<endl;
+	real errl=10;
+	real lambdak,lambdak1=1;
+	for (int il=0;il<5000;il++){
+	
+		if (errl<epsl){
+			//cout<<lambdak1<<endl;
+			break;
+		}
+		else{
+			//cout<<errl<<endl;
+			uk=uk1/uk1.l2;
+			real [int] w1(Vh4P2.ndof+1),w2(Vh4P2.ndof+1),w3(Vh4P2.ndof+1),
+					   w4(Vh4P2.ndof),w5(Vh4P2.ndof);
+			
+			//X-norm:
+			w1=X*uk;
+			w2=F^-1*w1;
+			w3=X*w2;
+			uk1=Ft^-1*w3;
+			//uk1-=P*uk;
+			//Natural norm:
+//			w1=F*uk;
+//			w2=X^-1*w1;
+//			w3=Ft*w2;
+//			w4=Fbt^-1*w3;
+//			w5=X*w4;
+//			uk1=Fb^-1*w5;
+			lambdak=lambdak1;
+			real[int] phik1(Vh4P2.ndof+1),phik(Vh4P2.ndof+1);
+//			w1=X*uk1;
+//			w2=Ft^-1*w1;
+//			w3=X*w2;
+			phik1=uk1;//F^-1*w3;
+			phik=uk;//uk1;
+			lambdak1=phik1.sum/phik.sum;//(phik'*phik1)/(phik'*phik);
+		//	cout<<lambdak1<<endl;
+			errl=abs(lambdak-lambdak1)/abs(lambdak);
+			//cout<<1./lambdak1<<endl;
+
+		}
+	}
+	real lambdamin=1./(lambdak1);
+	betaI(I)=sqrt(lambdamin);
+	cout<<"-----"<<Ra<<"------"<<lambdamin<<endl;
+}

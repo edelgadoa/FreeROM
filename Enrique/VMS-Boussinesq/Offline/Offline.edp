@@ -1,0 +1,1009 @@
+load "UMFPACK64"
+load "lapack"
+load "iovtk"
+
+
+int[int] fforder=[1,1,1]; // 0 save a cell value, 1 save point value
+
+
+
+include "betas.idp"
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+//Constantes varias
+real CS=0.1;
+real betamub,romub;
+mesh Th=square(50,50,flags=3);
+//mesh Th=readmesh("CavThRF.msh");
+plot(Th);
+//Valor \mu fijo para el producto escalar
+real Rafijo=1.e3; 
+
+////////////////////////////////
+//Constantes ///////////////////
+///////////////////////////////
+real Ra; //Declaración del parámetro
+real Pr=0.71; //Air
+real dt=1.e-2;
+
+int nbases=50;
+int N=nbases; //Numero de bases final
+real epspen=1.e-8;
+int qfo=10;
+
+real[int] RAbest(nbases),ResMax(nbases-1),TaunMax(nbases-1); //vRelog(nlog+1);
+real[int] ibest(nbases);
+
+RAbest(0)=Rafijo;  //número máximo de bases que queremos hallar
+
+//////////////////////////////////////////////////////////
+//Resolvemos para hallar el primer elemento de la base////
+//////////////////////////////////////////////////////////
+
+//Definimos los espacios de EF
+fespace Vh4P2(Th,[P2,P2,P2,P1]);
+fespace Vh4P1(Th,[P1,P1,P1,P0]);
+fespace Vh4P1dc(Th,[P1dc,P1dc,P1dc,P0]); 
+fespace VhP0(Th,P0); 
+fespace VhP1dc(Th,P1dc);
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+
+//INTERP. MATRIX
+matrix DX3,DY3;
+{
+	matrix DXYZ3u1,DXYZ3u2,DXYZ3p,DXYZ3T;
+	
+	int[int] c0 = [0,-1,-1,-1];
+	int[int] c1 = [-1,1,-1,-1];
+	int[int] c2 = [-1,-1,2,-1];
+	int[int] c3 = [-1,-1,-1,3];
+	
+	DXYZ3u1 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c0,op=1);
+	DXYZ3u2 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c1,op=1);
+	DXYZ3p  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c2,op=1);
+	DXYZ3T  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c3,op=1);
+	DX3     = DXYZ3u1 + DXYZ3u2 + DXYZ3p + DXYZ3T;
+	
+	DXYZ3u1 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c0,op=2);
+	DXYZ3u2 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c1,op=2);
+	DXYZ3p  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c2,op=2);
+	DXYZ3T  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c3,op=2);
+	DY3     = DXYZ3u1 + DXYZ3u2 + DXYZ3p + DXYZ3T;
+}
+
+matrix IPh,I4P2;
+{	
+	matrix Id1,Id2;
+	matrix Id4;
+	{
+		VhP2 fAux2 = 1.;
+		VhP1 fAux1 = 1.;
+		Id2 = fAux2[];
+		Id1 = fAux1[];
+		Id4 = [[Id2,0,0,0],[0,Id2,0,0],[0,0,Id2,0],[0,0,0,Id1]];
+	}
+	
+	matrix PI = interpolate(VhP1,VhP2); 
+	matrix IP = interpolate(VhP2,VhP1); 
+	matrix IPPI = IP*PI;
+	IPh = Id2 + (-1.)*IPPI;
+		
+	matrix PI4 = interpolate(Vh4P1,Vh4P2); 
+	matrix IP4 = interpolate(Vh4P2,Vh4P1); 
+	matrix IPPI4 = IP4*PI4;
+	I4P2 = Id4 + (-1.)*IPPI4;
+}
+
+
+matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+
+VhP0 htri=hTriangle;
+real hT=htri[].max; //El máximo de los diámetros de la malla
+
+cout<<"Max h de la malla: "<<hT<<endl;
+
+varf CC([un1,un2,unt,unp],[vvel1,vvel2,vtemp,vpres])=on(1,2,3,4, un1=1,un2=1)
+													+on(2,4, unt=1); 
+real[int] cc=CC(0,Vh4P2);
+for (int gf=0;gf<Vh4P2.ndof;gf++){
+		 cc(gf)= (cc(gf)>10^10) ? 0 : 1;
+	} 
+
+
+//////////////////////////////////////////////////////////////////////////////	
+		
+VhP2 G=1-x; //Levantamiento para la temperatura	
+VhP2 GF;
+
+GF[]=IPh*G[];
+
+
+int sols=101;
+
+VhP2[int] us1(sols),us2(sols),tss(sols);
+VhP1[int] pss(sols);
+ifstream Solu("Boussv1VT.txt");
+Solu>>sols;
+ifstream Solv("Boussv2VT.txt");
+Solv>>sols;
+ifstream Solp("BousspVT.txt");
+Solp>>sols;
+ifstream Solt("BousstVT.txt");
+Solt>>sols;
+for (int i=0;i<sols;i++){
+	Solu>>us1[i][];
+	Solv>>us2[i][];
+	Solp>>pss[i][];
+	Solt>>tss[i][];
+}
+
+//////////////////////////////////////////
+////DEFINICION DE LOS ESPACIOS DE BR//////
+//////////////////////////////////////////
+
+VhP1[int] Bpres(nbases);
+
+VhP2[int] Bvel1(nbases);
+VhP2[int] Bvel2(nbases);
+
+VhP2[int] Bsup1(nbases);
+VhP2[int] Bsup2(nbases);
+
+VhP2[int] Btemp(nbases);
+
+VhP2[int] Fvel1(nbases),Fvel2(nbases);
+VhP2[int] Fsup1(nbases),Fsup2(nbases);
+
+VhP1dc[int] Fv1dx(nbases),Fv1dy(nbases);
+VhP1dc[int] Fv2dx(nbases),Fv2dy(nbases);
+
+VhP1dc[int] Fs1dx(nbases),Fs1dy(nbases);
+VhP1dc[int] Fs2dx(nbases),Fs2dy(nbases);
+
+VhP2[int] Ftemp(nbases);
+
+
+
+/////////////////////////////////////////////
+////////Cargo los archivos del EIM
+ifstream EIM("BaseGL42.txt");
+int mbases;
+EIM>>mbases;
+
+VhP1dc[int] W(mbases); 
+for (int i=0;i<mbases;i++){
+	EIM>>W[i][];
+}
+
+ifstream MatrixBinf("MatrixBM42.txt");
+int ibinf,jbinf;
+MatrixBinf>>ibinf;
+MatrixBinf>>jbinf;
+real [int,int] Binf(ibinf,jbinf);
+for(int i=0;i<ibinf;i++){
+	for (int j=0;j<jbinf;j++){
+		MatrixBinf>>Binf(i,j);
+	}
+}
+
+matrix Binfm=Binf;
+set(Binfm,solver=sparsesolver);
+
+ifstream PuntosT("Tint42.txt");
+int ntint;
+PuntosT>>ntint;
+real[int] Tint(ntint);
+for (int i=0;i<ntint;i++){
+	PuntosT>>Tint(i);
+}
+
+
+
+
+///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////
+/////Cargo los datos del RBF
+ifstream BetaI("BetamuI.txt");
+int nbetas;
+BetaI>>nbetas;
+real[int] BetamubI(nbetas);
+for(int i=0;i<nbetas;i++){
+BetaI>>BetamubI(i);
+}
+
+ifstream muI("vRaI.txt");
+int nmuj;
+muI>>nmuj;
+real[int] muj(nmuj);
+for(int i=0;i<nmuj;i++){
+muI>>muj(i);
+}
+
+ifstream GammaI("gammaI.txt");
+int ngamma;
+GammaI>>ngamma;
+real[int] gamma0(ngamma);
+for (int i=0;i<ngamma;i++){
+GammaI>>gamma0(i);
+}
+////////////////////////////////////////////////////////////////
+////Definicion del array de matrices del gradiente en los tj
+real[int,int][int] GradTj(mbases);
+
+for (int i=0;i<mbases;i++){
+	real[int,int] Aux(4,2*nbases);
+	Aux=0;
+	GradTj[i]=Aux(0:3,0:2*nbases-1); //Aqui solo inicializo
+}
+
+////DEFINICION DE LAS MATRICES Y SEGUNDOS MIEMBROS PARA RESOLVER EL PB FIJO
+real [int,int] GradV(4*nbases,4*nbases),DivP(4*nbases,4*nbases),GradT(4*nbases,4*nbases),
+			   Flot(4*nbases,4*nbases), MdtV(4*nbases,4*nbases), MdtT(4*nbases,4*nbases),
+			   Pen(4*nbases,4*nbases),bConvT(2*nbases,4*nbases),bSmagoT(mbases,4*nbases);  
+real [int] bGradT(4*nbases),bFlot(4*nbases);
+                                                       
+
+////DEFINICION DE LAS MATRICES Y SEGUNDOS MIEMBROS PARA RESOLVER EL PB DE LAS BASES TEMPORAL
+real[int,int][int] ConvV(2*nbases),ConvT(2*nbases),SmagoV(mbases),SmagoT(mbases);
+
+for (int k=0;k<2*nbases;k++){
+	real[int,int] aux(4*nbases,4*nbases);
+	aux=0; //aseguro que sean nulos
+	ConvV[k]=aux(0:4*nbases-1,0:4*nbases-1);
+	ConvT[k]=aux(0:4*nbases-1,0:4*nbases-1);
+}
+for (int k=0;k<mbases;k++){
+	real[int,int] aux(4*nbases,4*nbases);
+	aux=0; //aseguro que sean nulos
+	SmagoV[k]=aux(0:4*nbases-1,0:4*nbases-1);
+	SmagoT[k]=aux(0:4*nbases-1,0:4*nbases-1);
+}
+
+
+
+//Aseguro que las matrices y seg miembros sean nulos
+GradV=0;
+DivP=0;
+GradT=0;
+Flot=0;
+MdtV=0;
+MdtT=0;
+bGradT=0;
+bFlot=0;
+bConvT=0;
+Pen=0;
+
+real ErrBR=10;
+real epsGreedy=1e-4; //Para que el error relativo sea del orden de 10^-6
+VhP2 U1N,U2N;
+
+
+
+////////////////////////////
+////CALCULO DE BASES////////
+////////////////////////////
+VhP2 u1,u2,t;
+VhP1 p; 
+
+VhP2 vel1,vel2,temp;
+VhP1 pres;
+
+cout<<"---Calulo de la constante de Inyeccion de Sobolev---"<<endl;
+include "Sovolev.idp";
+
+cout<<"START GREEDY ALGORITHM"<<endl;
+for (int i=0; i<nbases; i++){
+	if(i==0){
+		Ra=Rafijo;
+		VhP2 u1N,u2N,tN;
+		VhP1 pN;
+		include "Boussinesq.idp"
+//
+//		u1N=us1[0];
+//		u2N=us2[0];
+//		tN=tss[0];
+//		pN=pss[0];
+//		
+		u1N=u1;
+		u2N=u2;
+		tN=t;
+		pN=p;
+
+		
+		vel1=u1N;
+		vel2=u2N;
+		temp=tN;
+		pres=pN;//[]/sqrt(int2d(Th)(pN^2));
+		
+		VhP2 TN=tN+G;
+		plot(u1N,cmm="Vel1 FE, Ra="+Ra,value=1);
+		plot(u2N,cmm="Vel2 FE, Ra="+Ra,value=1);
+		plot(TN,cmm="Temp FE, Ra="+Ra,value=1);
+		plot(pres,cmm="Pres FE, Ra="+Ra,value=1);
+		
+		VhP1 Proyp;
+	
+		for (int j=0;j<i;j++){
+			real pesc=int2d(Th,qforder=qfo)(Bpres[j]*pN);
+			Proyp[]+=pesc*Bpres[j][];
+		}
+		
+		pN[]-=Proyp[];
+		real nl2=int2d(Th)(pN*pN);
+		pN[]/=nl2^0.5;
+		
+		
+		Bpres[i][]=pN[];
+
+	
+		Vh2P2 [U1,U2];//,vv1,vv2;
+
+		//Construyo los supremizadores
+			varf Sup(UU1,UU2,vv1,vv2)=int2d(Th)(GradGrad(UU1,UU2,vv1,vv2))
+									 -int2d(Th)(Bpres[i]*div(vv1,vv2))
+									 +on(1,2,3,4,UU1=0,UU2=0) 
+									 //Para el enriquecimiento de la base
+								     ;
+						
+
+		matrix Tp=Sup(Vh2P2,Vh2P2,solver=sparsesolver);
+		real[int] btp=Sup(0,Vh2P2);
+
+		//set(Tp, solver=sparsesolver);
+
+		U1[]=Tp^-1*btp;
+		VhP2 V1,V2;
+		V1=U1;
+		V2=U2;
+		//plot([V1,V2]);
+		
+		//-------------//
+	
+		VhP2 proy1,proy2;
+		for (int j=0;j<i;j++){
+			real pesc=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],u1N,u2N));
+			proy1[]+=pesc*Bvel1[j][];
+			proy2[]+=pesc*Bvel2[j][];
+		}
+		
+		
+		u1N[]-=proy1[];
+		u2N[]-=proy2[];
+	
+		real nh1=int2d(Th)(GradGrad(u1N,u2N,u1N,u2N));
+		u1N[]/=nh1^0.5;
+		u2N[]/=nh1^0.5;
+		
+	
+		Bvel1[i][]=u1N[];
+		Bvel2[i][]=u2N[];
+		
+		
+//		Bv1dx[i][]=DXun*u1N[];
+//		Bv1dy[i][]=DYun*u1N[];
+//		Bv2dx[i][]=DXun*u2N[];
+//		Bv2dy[i][]=DYun*u2N[];
+		
+		//---------------//
+		
+		proy1=0;
+		proy2=0;
+	
+//		for (int j=0;j<=i;j++){
+//			real pesc=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],V1,V2));
+//			proy1[]+=pesc*Bvel1[j][];
+//			proy2[]+=pesc*Bvel2[j][];
+//		}
+
+		for (int j=0;j<i;j++){
+			real pesc=int2d(Th)(GradGrad(Bsup1[j],Bsup2[j],V1,V2));
+			proy1[]+=pesc*Bsup1[j][];
+			proy2[]+=pesc*Bsup2[j][];
+		}
+		
+		V1[]-=proy1[];
+		V2[]-=proy2[];
+		
+		
+		nh1=int2d(Th)(GradGrad(V1,V2,V1,V2));
+		
+		V1[]/=nh1^0.5;
+		V2[]/=nh1^0.5;
+		
+	
+		Bsup1[i][]=V1[];
+		Bsup2[i][]=V2[];
+		
+		//plot([V1,V2]);
+		
+		Fvel1[i][]=IPh*Bvel1[i][];
+		Fvel2[i][]=IPh*Bvel2[i][];
+		Fsup1[i][]=IPh*Bsup1[i][];
+		Fsup2[i][]=IPh*Bsup2[i][];
+		
+		Fv1dx[i][]=DXun*Fvel1[i][];
+		Fv1dy[i][]=DYun*Fvel1[i][];
+		Fv2dx[i][]=DXun*Fvel2[i][];
+		Fv2dy[i][]=DYun*Fvel2[i][];
+		
+		Fs1dx[i][]=DXun*Fsup1[i][];
+		Fs1dy[i][]=DYun*Fsup1[i][];
+		Fs2dx[i][]=DXun*Fsup2[i][];
+		Fs2dy[i][]=DYun*Fsup2[i][];
+		
+		
+		
+		for (int k1=0;k1<mbases;k1++){
+		real[int,int] Dtk=GradTj[k1];
+		Dtk(0,2*i)=Fv1dx[i][](Tint(k1));
+		Dtk(1,2*i)=Fv1dy[i][](Tint(k1));
+		Dtk(2,2*i)=Fv2dx[i][](Tint(k1));
+		Dtk(3,2*i)=Fv2dy[i][](Tint(k1));
+		
+		Dtk(0,2*i+1)=Fs1dx[i][](Tint(k1));
+		Dtk(1,2*i+1)=Fs1dy[i][](Tint(k1));
+		Dtk(2,2*i+1)=Fs2dx[i][](Tint(k1));
+		Dtk(3,2*i+1)=Fs2dy[i][](Tint(k1));
+		
+		GradTj[k1]=Dtk;
+		}
+		
+		VhP2 Proyt;
+	
+		for (int j=0;j<i;j++){
+			real pesc=int2d(Th)(Grad(Btemp[j])'*Grad(tN));
+			Proyt[]+=pesc*Btemp[j][];
+		}
+	
+		tN[]-=Proyt[];
+		nl2=int2d(Th)(Grad(tN)'*Grad(tN));
+		tN[]/=nl2^0.5;
+
+		
+		Btemp[i][]=tN[];
+		
+		Ftemp[i][]=IPh*Btemp[i][];
+
+		{
+		ofstream fVN("VNH.txt",append);
+		fVN<<Bvel1[i][]<<endl;
+		fVN<<Bvel2[i][]<<endl;
+		fVN<<Bsup1[i][]<<endl;
+		fVN<<Bsup2[i][]<<endl;
+		fVN<<Btemp[i][]<<endl;
+		fVN<<Bpres[i][]<<endl;
+		}
+
+	}
+	else{
+
+///////////////////////////////////////////////////////
+//Comienzo el Algoritmo Greedy para añadir mas bases///
+///////////////////////////////////////////////////////
+		cout<<"ERR="<<ErrBR<<endl;
+		cout<<ResMax<<endl;
+		
+		include "GreedyBoussinesq.idp";
+		
+		
+		if (ErrBR<epsGreedy){
+			N=i;
+			cout<<"fin, nbases="<<N<<endl;
+			break;
+		}
+		else{
+			
+			Ra=RAbest(i);
+			cout<<Ra<<"---i best: "<<ibest(i)<<endl; 
+			
+			include "Boussinesq.idp";
+		
+			VhP2 u1N,u2N,tN;
+			VhP1 pN;
+			
+			u1N=u1;
+			u2N=u2;
+			tN=t;
+			pN=p;
+			
+			vel1=u1;
+			vel2=u2;
+			temp=t;
+			pres=p;
+			
+			VhP2 TN=tN+G;
+			plot(TN,cmm="Temp Ra="+Ra,value=1);
+			
+			VhP1 Proyp;
+			
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(Bpres[j]*pN);
+				Proyp[]+=pesc*Bpres[j][];
+			}
+			pN[]-=Proyp[];
+			real nl2=int2d(Th)(pN*pN);
+			pN[]/=nl2^0.5;
+			
+			//Doble ortonormalizacion
+			Proyp=0;
+			
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(Bpres[j]*pN);
+				Proyp[]+=pesc*Bpres[j][];
+			}
+			pN[]-=Proyp[];
+			nl2=int2d(Th)(pN*pN);
+			pN[]/=nl2^0.5;
+			
+			Bpres[i][]=pN[];
+			//////---------------------//////
+			
+			Vh2P2 [U1,U2];//,vv1,vv2;
+		
+			
+			varf Sup(UU1,UU2,vv1,vv2)=int2d(Th)(GradGrad(UU1,UU2,vv1,vv2))
+									 -int2d(Th)(pres*div(vv1,vv2))
+									 +on(1,2,3,4,UU1=0,UU2=0) 
+									 //Para el enriquecimiento de la base
+								     ;
+			
+			matrix Tp=Sup(Vh2P2,Vh2P2);
+			real[int] btp=Sup(0,Vh2P2);
+		
+			set(Tp, solver=sparsesolver);
+		
+			U1[]=Tp^-1*btp;
+			VhP2 V1,V2;
+			V1=U1;
+			V2=U2;
+		
+		
+			//-------------//
+			
+			VhP2 proy1,proy2;
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],u1N,u2N));
+				proy1[]+=pesc*Bvel1[j][];
+				proy2[]+=pesc*Bvel2[j][];
+			}
+
+			
+			u1N[]-=proy1[];
+			u2N[]-=proy2[];
+		
+			real nh1=int2d(Th)(GradGrad(u1N,u2N,u1N,u2N));
+			u1N[]/=nh1^0.5;
+			u2N[]/=nh1^0.5;
+			
+			//Doble ortonormalizacion
+			proy1=0; proy2=0;
+						for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],u1N,u2N));
+				proy1[]+=pesc*Bvel1[j][];
+				proy2[]+=pesc*Bvel2[j][];
+			}
+
+			
+			u1N[]-=proy1[];
+			u2N[]-=proy2[];
+		
+			nh1=int2d(Th)(GradGrad(u1N,u2N,u1N,u2N));
+			u1N[]/=nh1^0.5;
+			u2N[]/=nh1^0.5;
+		
+			Bvel1[i][]=u1N[];
+			Bvel2[i][]=u2N[];
+			
+			
+	//		Bv1dx[i][]=DXun*u1N[];
+	//		Bv1dy[i][]=DYun*u1N[];
+	//		Bv2dx[i][]=DXun*u2N[];
+	//		Bv2dy[i][]=DYun*u2N[];
+		
+			//---------------//
+			
+			proy1=0; proy2=0;
+		
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(GradGrad(Bsup1[j],Bsup2[j],V1,V2));
+				proy1[]+=pesc*Bsup1[j][];
+				proy2[]+=pesc*Bsup2[j][];
+			}
+			
+			V1[]-=proy1[];
+			V2[]-=proy2[];
+			
+			
+			nh1=int2d(Th)(GradGrad(V1,V2,V1,V2));
+			
+			V1[]/=nh1^0.5;
+			V2[]/=nh1^0.5;
+			//Doble ortonormalizacion
+			proy1=0; proy2=0;
+		
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(GradGrad(Bsup1[j],Bsup2[j],V1,V2));
+				proy1[]+=pesc*Bsup1[j][];
+				proy2[]+=pesc*Bsup2[j][];
+			}
+			
+			V1[]-=proy1[];
+			V2[]-=proy2[];
+			
+			
+			nh1=int2d(Th)(GradGrad(V1,V2,V1,V2));
+			
+			V1[]/=nh1^0.5;
+			V2[]/=nh1^0.5;
+			
+		
+			Bsup1[i][]=V1[];
+			Bsup2[i][]=V2[];
+			
+			
+			Fvel1[i][]=IPh*Bvel1[i][];
+			Fvel2[i][]=IPh*Bvel2[i][];
+			Fsup1[i][]=IPh*Bsup1[i][];
+			Fsup2[i][]=IPh*Bsup2[i][];
+			
+			Fv1dx[i][]=DXun*Fvel1[i][];
+			Fv1dy[i][]=DYun*Fvel1[i][];
+			Fv2dx[i][]=DXun*Fvel2[i][];
+			Fv2dy[i][]=DYun*Fvel2[i][];
+			
+			Fs1dx[i][]=DXun*Fsup1[i][];
+			Fs1dy[i][]=DYun*Fsup1[i][];
+			Fs2dx[i][]=DXun*Fsup2[i][];
+			Fs2dy[i][]=DYun*Fsup2[i][];
+	//		
+			for (int k1=0;k1<mbases;k1++){
+				real[int,int] Dtk=GradTj[k1];
+				Dtk(0,2*i)=Fv1dx[i][](Tint(k1));
+				Dtk(1,2*i)=Fv1dy[i][](Tint(k1));
+				Dtk(2,2*i)=Fv2dx[i][](Tint(k1));
+				Dtk(3,2*i)=Fv2dy[i][](Tint(k1));
+			
+				Dtk(0,2*i+1)=Fs1dx[i][](Tint(k1));
+				Dtk(1,2*i+1)=Fs1dy[i][](Tint(k1));
+				Dtk(2,2*i+1)=Fs2dx[i][](Tint(k1));
+				Dtk(3,2*i+1)=Fs2dy[i][](Tint(k1));
+			
+				GradTj[k1]=Dtk;
+			}
+	
+			VhP2 Proyt;
+	
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(Grad(Btemp[j])'*Grad(tN));
+				Proyt[]+=pesc*Btemp[j][];
+			}
+	
+			tN[]-=Proyt[];
+			nl2=int2d(Th)(Grad(tN)'*Grad(tN));
+			tN[]/=nl2^0.5;
+			///Doble ortonormalizacion
+			Proyt=0;
+			for (int j=0;j<i;j++){
+				real pesc=int2d(Th)(Grad(Btemp[j])'*Grad(tN));
+				Proyt[]+=pesc*Btemp[j][];
+			}
+	
+			tN[]-=Proyt[];
+			nl2=int2d(Th)(Grad(tN)'*Grad(tN));
+			tN[]/=nl2^0.5;
+	
+			Btemp[i][]=tN[];
+			
+			Ftemp[i][]=IPh*Btemp[i][];
+			
+			{
+				ofstream fVN("VNH.txt",append);
+				fVN<<Bvel1[i][]<<endl;
+				fVN<<Bvel2[i][]<<endl;
+				fVN<<Bsup1[i][]<<endl;
+				fVN<<Bsup2[i][]<<endl;
+				fVN<<Btemp[i][]<<endl;
+				fVN<<Bpres[i][]<<endl;
+			}
+		}
+	
+	}
+
+
+	for (int j=0;j<=i; j++){
+
+
+		
+		GradV(2*i,2*j)=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],Bvel1[i],Bvel2[i]));
+		GradV(2*i+1,2*j)=int2d(Th)(GradGrad(Bvel1[j],Bvel2[j],Bsup1[i],Bsup2[i]));
+		GradV(2*i,2*j+1)=int2d(Th)(GradGrad(Bsup1[j],Bsup2[j],Bvel1[i],Bvel2[i]));
+		GradV(2*i+1,2*j+1)=int2d(Th)(GradGrad(Bsup1[j],Bsup2[j],Bsup1[i],Bsup2[i]));
+		
+		GradT(i+2*nbases,j+2*nbases)=int2d(Th)(Grad(Btemp[j])'*Grad(Btemp[i]));
+		
+		Flot(2*i,2*nbases+j)=-int2d(Th)(Btemp[j]*Bvel2[i]);
+		Flot(2*i+1,2*nbases+j)=-int2d(Th)(Btemp[j]*Bsup2[i]);
+		
+		DivP(i+3*nbases,2*j)=int2d(Th)(Bpres[i]*div(Bvel1[j],Bvel2[j]));
+		DivP(i+3*nbases,2*j+1)=int2d(Th)(Bpres[i]*div(Bsup1[j],Bsup2[j]));
+		
+		Pen(i+3*nbases,j+3*nbases)=int2d(Th)(epspen*Bpres[j]*Bpres[i]);
+		
+		MdtV(2*i,2*j)=int2d(Th)(Bvel1[i]*Bvel1[j]+Bvel2[i]*Bvel2[j]);
+		MdtV(2*i+1,2*j)=int2d(Th)(Bsup1[i]*Bvel1[j]+Bsup2[i]*Bvel2[j]);
+		MdtV(2*i,2*j+1)=int2d(Th)(Bvel1[i]*Bsup1[j]+Bvel2[i]*Bsup2[j]);
+		MdtV(2*i+1,2*j+1)=int2d(Th)(Bsup1[i]*Bsup1[j]+Bsup2[i]*Bsup2[j]);
+		
+		MdtT(i+2*nbases,j+2*nbases)=int2d(Th)(Btemp[j]*Btemp[i]);
+		
+		bConvT(2*j,i+2*nbases)=-int2d(Th)(([Bvel1[j],Bvel2[j]]'*Grad(G))*Btemp[i]);
+		bConvT(2*j+1,i+2*nbases)=-int2d(Th)(([Bsup1[j],Bsup2[j]]'*Grad(G))*Btemp[i]);
+		
+		for (int s=0;s<mbases;s++){
+
+			real [int,int] Sint=SmagoV[s],Sintt=SmagoT[s];
+			Sint(2*i,2*j)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fvel1[j],Fvel2[j],Fvel1[i],Fvel2[i]));
+			Sint(2*i+1,2*j)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fvel1[j],Fvel2[j],Fsup1[i],Fsup2[i]));
+			Sint(2*i,2*j+1)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fsup1[j],Fsup2[j],Fvel1[i],Fvel2[i]));
+			Sint(2*i+1,2*j+1)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fsup1[j],Fsup2[j],Fsup1[i],Fsup2[i]));
+			
+			Sintt(2*nbases+i,2*nbases+j)=int2d(Th)((1./Pr)*((CS*hTriangle)^2)*W[s]
+							*(dx(Ftemp[j])*dx(Ftemp[i])+dy(Ftemp[j])*dy(Ftemp[i])));
+			if (j<i){
+				Sint(2*j,2*i)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fvel1[i],Fvel2[i],Fvel1[j],Fvel2[j]));
+				Sint(2*j+1,2*i)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fvel1[i],Fvel2[i],Fsup1[j],Fsup2[j]));
+				Sint(2*j,2*i+1)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fsup1[i],Fsup2[i],Fvel1[j],Fvel2[j]));
+				Sint(2*j+1,2*i+1)=int2d(Th)(((CS*hTriangle)^2)*W[s]
+							*GradGrad(Fsup1[i],Fsup2[i],Fsup1[j],Fsup2[j]));
+				
+				Sintt(2*nbases+j,2*nbases+i)=int2d(Th)((1./Pr)*((CS*hTriangle)^2)*W[s]
+							*(dx(Ftemp[i])*dx(Ftemp[j])+dy(Ftemp[i])*dy(Ftemp[j])));	
+			}
+			
+			SmagoV[s]=Sint;
+			SmagoT[s]=Sintt;
+		}
+		
+		for (int s=0;s<=i;s++){
+			real [int,int] CVintu(4*nbases,4*nbases),CVintv(4*nbases,4*nbases),
+						   CTintu(4*nbases,4*nbases),CTintv(4*nbases,4*nbases);
+			
+			CVintu=ConvV[2*s];   //aquí van las vel
+			CVintv=ConvV[2*s+1]; //aquí van los sup
+			
+			CTintu=ConvT[2*s];	 //vel
+			CTintv=ConvT[2*s+1]; //sup
+			
+			CVintu(2*i,2*j)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[j],Bvel2[j])'
+										*[Bvel1[i],Bvel2[i]]);
+			CVintv(2*i,2*j)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[j],Bvel2[j])'
+										*[Bvel1[i],Bvel2[i]]);
+			
+			CVintu(2*i,2*j+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[j],Bsup2[j])'
+										*[Bvel1[i],Bvel2[i]]);
+			CVintv(2*i,2*j+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[j],Bsup2[j])'
+										*[Bvel1[i],Bvel2[i]]);
+			
+			CVintu(2*i+1,2*j)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[j],Bvel2[j])'
+										*[Bsup1[i],Bsup2[i]]);
+			CVintv(2*i+1,2*j)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[j],Bvel2[j])'
+										*[Bsup1[i],Bsup2[i]]);
+			
+			CVintu(2*i+1,2*j+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[j],Bsup2[j])'
+										*[Bsup1[i],Bsup2[i]]);
+			CVintv(2*i+1,2*j+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[j],Bsup2[j])'
+										*[Bsup1[i],Bsup2[i]]);
+			//----//
+			CTintu(i+2*nbases,j+2*nbases)=int2d(Th)(([Bvel1[s],Bvel2[s]]'*Grad(Btemp[j]))
+										*Btemp[i]);
+			CTintv(i+2*nbases,j+2*nbases)=int2d(Th)(([Bsup1[s],Bsup2[s]]'*Grad(Btemp[j]))
+										*Btemp[i]);		
+			
+			if(j<i){ 
+				
+				CVintu(2*j,2*i)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[i],Bvel2[i])'
+										*[Bvel1[j],Bvel2[j]]); 
+				CVintv(2*j,2*i)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[i],Bvel2[i])'
+										*[Bvel1[j],Bvel2[j]]);
+				
+				CVintu(2*j,2*i+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[i],Bsup2[i])'
+										*[Bvel1[j],Bvel2[j]]); 
+				CVintv(2*j,2*i+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[i],Bsup2[i])'
+										*[Bvel1[j],Bvel2[j]]);
+				
+				CVintu(2*j+1,2*i)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[i],Bvel2[i])'
+										*[Bsup1[j],Bsup2[j]]);
+				CVintv(2*j+1,2*i)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[i],Bvel2[i])'
+										*[Bsup1[j],Bsup2[j]]);
+				
+				CVintu(2*j+1,2*i+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[i],Bsup2[i])'
+										*[Bsup1[j],Bsup2[j]]);
+				CVintv(2*j+1,2*i+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[i],Bsup2[i])'
+										*[Bsup1[j],Bsup2[j]]);
+				//----//
+			CTintu(j+2*nbases,i+2*nbases)=int2d(Th)(([Bvel1[s],Bvel2[s]]'*Grad(Btemp[i]))
+														*Btemp[j]);
+			CTintv(j+2*nbases,i+2*nbases)=int2d(Th)(([Bsup1[s],Bsup2[s]]'*Grad(Btemp[i]))
+														*Btemp[j]);	
+			}
+		
+			if(s==i && (j!=i)){
+		
+				for (int k=0;k<s;k++){
+					CVintu(2*k,2*j)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[j],Bvel2[j])'
+												*[Bvel1[k],Bvel2[k]]);
+					CVintv(2*k,2*j)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[j],Bvel2[j])'
+												*[Bvel1[k],Bvel2[k]]);
+					
+					CVintu(2*k,2*j+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[j],Bsup2[j])'
+												*[Bvel1[k],Bvel2[k]]);
+					CVintv(2*k,2*j+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[j],Bsup2[j])'
+												*[Bvel1[k],Bvel2[k]]);
+					
+					CVintu(2*k+1,2*j)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bvel1[j],Bvel2[j])'
+												*[Bsup1[k],Bsup2[k]]);
+					CVintv(2*k+1,2*j)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bvel1[j],Bvel2[j])'
+												*[Bsup1[k],Bsup2[k]]);
+					
+				CVintu(2*k+1,2*j+1)=int2d(Th)(UgradV(Bvel1[s],Bvel2[s],Bsup1[j],Bsup2[j])'
+												*[Bsup1[k],Bsup2[k]]);
+				CVintv(2*k+1,2*j+1)=int2d(Th)(UgradV(Bsup1[s],Bsup2[s],Bsup1[j],Bsup2[j])'
+												*[Bsup1[k],Bsup2[k]]);
+					//----//
+				CTintu(k+2*nbases,j+2*nbases)=int2d(Th)(([Bvel1[s],Bvel2[s]]'
+														*Grad(Btemp[j]))*Btemp[k]);
+				CTintv(k+2*nbases,j+2*nbases)=int2d(Th)(([Bsup1[s],Bsup2[s]]'
+														*Grad(Btemp[j]))*Btemp[k]);
+				}	
+			}	
+			
+			ConvV[2*s]=CVintu;
+			ConvV[2*s+1]=CVintv;
+				
+			ConvT[2*s]=CTintu;
+			ConvT[2*s+1]=CTintv;
+		}
+		
+		if(j<i){
+		
+			GradV(2*j,2*i)=int2d(Th)(GradGrad(Bvel1[i],Bvel2[i],Bvel1[j],Bvel2[j]));
+			GradV(2*j+1,2*i)=int2d(Th)(GradGrad(Bvel1[i],Bvel2[i],Bsup1[j],Bsup2[j]));
+			GradV(2*j,2*i+1)=int2d(Th)(GradGrad(Bsup1[i],Bsup2[i],Bvel1[j],Bvel2[j]));
+			GradV(2*j+1,2*i+1)=int2d(Th)(GradGrad(Bsup1[i],Bsup2[i],Bsup1[j],Bsup2[j]));			
+			GradT(2*nbases+j,2*nbases+i)=int2d(Th)(Grad(Btemp[i])'*Grad(Btemp[j]));
+			
+			Flot(2*j,2*nbases+i)=-int2d(Th)(Btemp[i]*Bvel2[j]);
+			Flot(2*j+1,2*nbases+i)=-int2d(Th)(Btemp[i]*Bsup2[j]);
+			
+			DivP(j+3*nbases,2*i)=int2d(Th)(Bpres[j]*div(Bvel1[i],Bvel2[i])); 
+			DivP(j+3*nbases,2*i+1)=int2d(Th)(Bpres[j]*div(Bsup1[i],Bsup2[i]));
+			
+			Pen(j+3*nbases,i+3*nbases)=int2d(Th)(epspen*Bpres[i]*Bpres[j]);
+			
+			MdtV(2*j,2*i)=int2d(Th)(Bvel1[j]*Bvel1[i]+Bvel2[j]*Bvel2[i]);
+			MdtV(2*j+1,2*i)=int2d(Th)(Bsup1[j]*Bvel1[i]+Bsup2[j]*Bvel2[i]);
+			MdtV(2*j,2*i+1)=int2d(Th)(Bvel1[j]*Bsup1[i]+Bvel2[j]*Bsup2[i]);
+			MdtV(2*j+1,2*i+1)=int2d(Th)(Bsup1[j]*Bsup1[i]+Bsup2[j]*Bsup2[i]);
+			
+			MdtT(j+2*nbases,i+2*nbases)=int2d(Th)(Btemp[i]*Btemp[j]);
+			
+			bConvT(2*i,j+2*nbases)=-int2d(Th)(([Bvel1[i],Bvel2[i]]'*Grad(G))*Btemp[j]);
+			bConvT(2*i+1,j+2*nbases)=-int2d(Th)(([Bsup1[i],Bsup2[i]]'*Grad(G))*Btemp[j]);
+		}
+	}
+	//ACTUALIZACION SEGUNDO MIEMBRO
+	bGradT(i+2*nbases)=-int2d(Th)(Grad(G)'*Grad(Btemp[i]));
+				   
+	bFlot(2*i)=int2d(Th)(G*Bvel2[i]); 
+	bFlot(2*i+1)=int2d(Th)(G*Bsup2[i]);
+	
+	for (int s=0;s<mbases;s++){
+		bSmagoT(s,2*nbases+i)=-int2d(Th)((1./Pr)*((CS*hTriangle)^2)*W[s]
+							*(dx(GF)*dx(Ftemp[i])+dy(GF)*dy(Ftemp[i])));
+	}
+	
+
+
+	cout<<"-----------------------FIN ITERACION "<<i<<"---------------------------"<<endl;
+
+}
+
+real[int,int][int] CNV(2*N),CNT(2*N),SNV(mbases),SNT(mbases),GTjN(mbases);
+real[int,int] ANV(4*N,4*N),ANT(4*N,4*N),BN(4*N,4*N),FN(4*N,4*N),DTNV(4*N,4*N), 
+		      DTNT(4*N,4*N),EN(4*N,4*N), bCNT(4*N,4*N),bSNT(mbases,4*N);
+real[int] baTN(4*N),bfN(4*N);
+
+
+for (int s=0;s<2*N;s++){
+	real [int,int] cint(4*N,4*N),aux(4*nbases,4*nbases);
+	aux=ConvV[s];
+	cint=aux(0:4*N-1,0:4*N-1);
+	CNV[s]=cint(0:4*N-1,0:4*N-1);
+}
+for (int s=0;s<2*N;s++){
+	real [int,int] cint(4*N,4*N),aux(4*nbases,4*nbases);
+	aux=ConvT[s];
+	cint=aux(2*nbases-2*N:2*nbases+N-1,2*nbases-2*N:2*nbases+N-1);
+	CNT[s]=cint(0:4*N-1,0:4*N-1);
+}
+for (int s=0;s<mbases;s++){
+	real [int,int] sint(4*N,4*N),aux(4*nbases,4*nbases);
+	aux=SmagoV[s];
+	sint=aux(0:4*N-1,0:4*N-1);
+	SNV[s]=sint(0:4*N-1,0:4*N-1);
+}
+for (int s=0;s<mbases;s++){
+	real [int,int] sint(4*N,4*N),aux(4*nbases,4*nbases);
+	aux=SmagoT[s];
+	sint=aux(2*nbases-2*N:2*nbases+N-1,2*nbases-2*N:2*nbases+N-1);
+	SNT[s]=sint(0:4*N-1,0:4*N-1);
+}
+for (int s=0;s<mbases;s++){
+	real [int,int] GTjint(4,2*N),aux(4,2*nbases);
+	aux=GradTj[s];
+	GTjint=aux(0:3,0:2*N-1);
+	GTjN[s]=GTjint(0:3,0:2*N-1);
+}
+
+
+ANV=GradV(0:4*N-1,0:4*N-1);
+ANT=GradT(2*nbases-2*N:2*nbases+N-1,2*nbases-2*N:2*nbases+N-1);
+BN=DivP(3*nbases-3*N:3*nbases+N-1,0:4*N-1);
+FN=Flot(0:4*N-1,2*nbases-2*N:2*nbases+2*N-1);
+DTNV=MdtV(0:4*N-1,0:4*N-1);
+DTNT=MdtT(2*nbases-2*N:2*nbases+2*N-1,2*nbases-2*N:2*nbases+2*N-1);
+EN=Pen(3*nbases-3*N:3*nbases+N-1,3*nbases-3*N:3*nbases+N-1);
+bCNT=bConvT(0:4*N-1,2*nbases-2*N:2*nbases+2*N-1);
+bSNT=bSmagoT(0:mbases-1,2*nbases-2*N:2*nbases+2*N-1);
+
+baTN=bGradT(2*nbases-2*N:2*nbases+2*N-1);
+bfN=bFlot(0:4*N-1);
+
+
+
+real[int] RAfin(N),Resfin(N),Taufin(N);
+RAfin=RAbest(0:N-1);
+Resfin=ResMax(0:N-1);
+Taufin=TaunMax(0:N-1);
+
+ofstream fmm("MatrixRB.txt",append);
+fmm<<ANV<<endl;
+fmm<<ANT<<endl;
+fmm<<BN<<endl;
+fmm<<FN<<endl;
+fmm<<DTNV<<endl;
+fmm<<DTNT<<endl;
+fmm<<EN<<endl;
+fmm<<bCNT<<endl;
+fmm<<bSNT<<endl;
+ofstream fmconv("MatrixC.txt",append);
+fmconv<<CNV<<endl;
+fmconv<<CNT<<endl;
+ofstream fmsmago("MatrixS.txt",append);
+fmsmago<<SNV<<endl;
+fmsmago<<SNT<<endl;
+ofstream fmeim("MatrixGrad.txt",append);
+fmeim<<GTjN<<endl;
+ofstream fmsm("SegMRB.txt",append);
+fmsm<<baTN<<endl;
+fmsm<<bfN<<endl;
+ofstream fmm2("Rebest.txt",append);
+fmm2<<RAfin<<endl;
+fmm2<<Resfin<<endl;
+fmm2<<Taufin<<endl;
+

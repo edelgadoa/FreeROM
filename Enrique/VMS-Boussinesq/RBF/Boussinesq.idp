@@ -1,0 +1,234 @@
+load "UMFPACK64"
+
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+
+//real Pr=0.71; //Prandlt aire
+//real Ra=10^7; //Rayleigh 
+mesh Th=square(50,50,flags=3);
+//plot (Th,wait=1);
+real dt=max(2.e3/Ra,1.e-2);
+//cout<<"deltat= "<<dt<<endl;
+//////////////////////////////////////////////////////////
+//Resolvemos para hallar el primer elemento de la base////
+//////////////////////////////////////////////////////////
+
+//fespace Vh4P2(Th,[P2,P2,P2,P1]);
+//fespace Vh3P1(Th,[P1,P1,P1]);
+//fespace Vh3P1dc(Th,[P1dc,P1dc,P1dc]); 
+//fespace VhP0(Th,P0); 
+//fespace VhP1dc(Th,P1dc);
+//fespace VhP1(Th,P1);
+//fespace VhP2(Th,P2);
+//fespace Vh2P2(Th,[P2,P2]);
+
+//matrix IPh,IPh3,IPh1;
+//{
+//		matrix IdP2,Id3P2,IdP1dc;
+//		{
+//			VhP2 faux2=1.;
+//			VhP1dc faux1=1.;
+//			IdP2 = faux2[];
+//			IdP1dc = faux1[];
+//			Id3P2=[[IdP2,0,0],[0,IdP2,0],[0,0,IdP2]];
+//		}
+//		
+//		matrix PIg = interpolate(VhP1,VhP1dc); 
+//		matrix IPg = interpolate(VhP1dc,VhP1); 
+//		matrix IPPIg = IPg*PIg;
+//		IPh1 = IdP1dc + (-1.)*IPPIg;
+//		
+//		matrix PI=interpolate(VhP1,VhP2);
+//		matrix IP=interpolate(VhP2,VhP1);
+//		matrix IPPI=IP*PI;
+//		IPh=IdP2+(-1.)*IPPI;  // (Id-πh) P2->P1->P2, una componente de vel
+//		
+//		matrix PI3=interpolate(Vh3P1,Vh3P2);
+//		matrix IP3=interpolate(Vh3P2,Vh3P1);
+//		matrix IPPI3=IP3*PI3;
+//		IPh3=Id3P2+(-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2; dos vel + pres (sin filtrar la p)
+//}	
+//
+//
+//
+//matrix DX3,DY3; //P2->P1dc en las 3 componentes (Se usa en la matriz Smago)
+//{
+//	matrix Du1,Du2,Dp;
+//	int[int] c0=[0,-1,-1];
+//	int[int] c1=[-1,1,-1];
+//	int[int] c2=[-1,-1,2];
+//	
+//	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
+//	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
+//	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=1);
+//	DX3=Du1+Du2+Dp;
+//	
+//	Du1=interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=2);
+//	Du2=interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=2);
+//	Dp =interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=2);
+//	DY3=Du1+Du2+Dp;
+//	
+//}
+//
+//	
+//
+//int[int] cs=[2];
+//matrix DDPx=interpolate(VhP1dc,Vh3P2,U2Vc=cs,op=1);
+//matrix DDPy=interpolate(VhP1dc,Vh3P2,U2Vc=cs,op=2);
+//
+//matrix DDx=IPh1*DDPx;
+//matrix DDy=IPh1*DDPy;
+//
+//matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+//matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+//
+//matrix DpX = IPh1*DXun;
+//matrix DpY = IPh1*DYun;
+//
+
+VhP0 hk=hTriangle;
+real hT=hk[].max; //El máximo de los diámetros de la malla
+
+///////////////////////////////////
+//COMIENZA EL ARCHIVO ORIGINAL
+//////////////////////////////////
+int nIterations=2000;
+real epsError = 1.e-10;
+
+
+
+//Vh3P2 [u1,u2,p]; //u_0 inicial para el método de Euler que resuelva las N-Stokes es la sol del pb de Stokes
+
+
+VhP2 G=1-x; //Levantamiento para la temperatura	
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+////Matriz fija (Casi igual que la de stokes)
+
+varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+				int2d(Th)((1./dt)*(uu1*v1+uu2*v2+tt*zt))
+			   -int2d(Th)(div(v1,v2)*pp)+int2d(Th)(div(uu1,uu2)*q)
+			   +int2d(Th)(Pr*GradGrad(uu1,uu2,v1,v2))
+			   +int2d(Th)(Grad(tt)'*Grad(zt))
+			   +int2d(Th)(epspen*pp*q)
+			   -int2d(Th)(Pr*Ra*tt*v2)
+			   //Segundo miembro
+			   +int2d(Th)(Pr*Ra*G*v2)
+			   -int2d(Th)(Grad(G)'*Grad(zt))
+			   +on(1,2,3,4, uu1=0., uu2=0.)
+			   +on(4, tt=0.)+on(2, tt=0.);
+			    
+
+//							
+matrix AvNS;
+
+AvNS=vNS(Vh4P2,Vh4P2);
+
+real[int] bNSf=vNS(0,Vh4P2);
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+Vh4P2 [u1,u2,t,p];
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+real mediap;
+real cpu0=clock();
+real time;
+for (int ii=0; ii<=nIterations && (iterrelative1 > epsError) ; ii++) {
+//	cout << endl;
+//	cout << "------------------------------------" << endl;	
+//	cout << "Starting iteration number " << ii << endl;	
+//	cout << "------------------------------------" << endl;	
+time+=dt;
+//////////////////////////	
+//Matriz de Smagorinsky
+/////////////////////////
+//Vh3P1dc [G1p,G2p,Gpprev];
+	
+Vh4P2 [u1prev,u2prev,tprev,pprev];
+u1prev[]=u1[];
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	varf vNSb([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+			 int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+			+int2d(Th)(([u1,u2]'*Grad(tt))*zt)
+			//Seg miembro
+			+int2d(Th)((1./dt)*(u1*v1+u2*v2+t*zt))
+	   		-int2d(Th)(([u1,u2]'*Grad(G))*zt)
+			;
+						
+	matrix AvNSb=vNSb(Vh4P2,Vh4P2);
+
+
+/////////////////////////////
+//MATRIZ FINAL
+////////////////////////////
+	
+	matrix Afinal;
+	Afinal=AvNSb;
+	Afinal=Afinal+AvNS;
+	
+	real [int] bNS=vNSb(0,Vh4P2);
+	bNS=bNS+bNSf;
+	set(Afinal,solver=UMFPACK);
+	u1[]=Afinal^-1*bNS;
+	
+	//Pintamos la solucion de cada iteracion
+	
+//	VhP2 TEMP=t+G;
+	
+//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
+	
+    VhP2 eu1,eu2;
+	eu1=u1-u1prev;
+	eu2=u2-u2prev;
+
+	
+	//Inicio calculo normas
+	itercontrol1 = sqrt(int2d(Th)([eu1,eu2]'*[eu1,eu2])+int2d(Th)(GradGrad(eu1,eu2,eu1,eu2)));  		    	 
+    real itertmp1 = sqrt(int2d(Th)([u1,u2]'*[u1,u2])+int2d(Th)(GradGrad(u1,u2,u1,u2))); 
+	
+	iterrelative1 = itercontrol1/itertmp1;	
+
+//
+//	cout << "------------------------------------" << endl;	
+//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+
+} 
+
+cpu0=-cpu0+clock();
+cout<<"Tiempo FE:"<<cpu0<<endl;
+
+
+//gradU=sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2);
+
+VhP2 T=t+G;
+
+cout<<"media pres: "<<int2d(Th)(p)<<endl;
+//plot([u1,u2],cmm="Velocidades para Ra= "+Ra,value=1);
+//plot(p,cmm="Presion para Ra= "+Ra);
+//plot(T,cmm="Temperatura para Ra= "+Ra);
+//plot(u1,cmm="Velocidad x para Ra="+Ra);
+//plot(u2,cmm="Velocidad y para Ra="+Ra);
+
+
