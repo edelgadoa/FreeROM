@@ -1,0 +1,572 @@
+///////////////////////////////////////////////////////////////
+/////////CAVIDAD BOUSSINESQ+SMAGO CON B.R./////////////////////
+///////////////////////////////////////////////////////////////
+load "UMFPACK64"
+mesh Th=square(50,50,flags=3);
+
+int[int] fforder=[1,1,1];
+
+load "iovtk"
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u2))^2+(dx(u2))^2+(dy(u1))^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //
+
+
+//Cargo el vector con los valores mu de las bases
+ifstream Nb("Rabest.txt");
+int nbases;
+Nb>>nbases;
+
+
+ifstream RE("Rabest.txt");
+real [int] REbest(nbases);
+RE>>REbest;
+//RE>>M;
+
+real Pr=0.71; //Air
+
+//Cargo las funciones de base
+ifstream Fbase("VNH.txt");
+
+fespace Vh4P2(Th,[P2,P2,P2,P1]);
+fespace Vh4P1(Th,[P1,P1,P1,P0]);
+fespace Vh4P1dc(Th,[P1dc,P1dc,P1dc,P0]); 
+fespace VhP0(Th,P0); 
+fespace VhP1dc(Th,P1dc);
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+
+
+
+//INTERP. MATRIX
+matrix DX3,DY3;
+{
+	matrix DXYZ3u1,DXYZ3u2,DXYZ3p,DXYZ3T;
+	
+	int[int] c0 = [0,-1,-1,-1];
+	int[int] c1 = [-1,1,-1,-1];
+	int[int] c2 = [-1,-1,2,-1];
+	int[int] c3 = [-1,-1,-1,3];
+	
+	DXYZ3u1 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c0,op=1);
+	DXYZ3u2 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c1,op=1);
+	DXYZ3p  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c2,op=1);
+	DXYZ3T  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c3,op=1);
+	DX3     = DXYZ3u1 + DXYZ3u2 + DXYZ3p + DXYZ3T;
+	
+	DXYZ3u1 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c0,op=2);
+	DXYZ3u2 = interpolate(Vh4P1dc,Vh4P2,U2Vc=c1,op=2);
+	DXYZ3p  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c2,op=2);
+	DXYZ3T  = interpolate(Vh4P1dc,Vh4P2,U2Vc=c3,op=2);
+	DY3     = DXYZ3u1 + DXYZ3u2 + DXYZ3p + DXYZ3T;
+}
+
+matrix IPh,I4P2;
+{	
+	matrix Id1,Id2;
+	matrix Id4;
+	{
+		VhP2 fAux2 = 1.;
+		VhP1 fAux1 = 1.;
+		Id2 = fAux2[];
+		Id1 = fAux1[];
+		Id4 = [[Id2,0,0,0],[0,Id2,0,0],[0,0,Id2,0],[0,0,0,Id1]];
+	}
+	
+	matrix PI = interpolate(VhP1,VhP2); 
+	matrix IP = interpolate(VhP2,VhP1); 
+	matrix IPPI = IP*PI;
+	IPh = Id2 + (-1.)*IPPI;
+		
+	matrix PI4 = interpolate(Vh4P1,Vh4P2); 
+	matrix IP4 = interpolate(Vh4P2,Vh4P1); 
+	matrix IPPI4 = IP4*PI4;
+	I4P2 = Id4 + (-1.)*IPPI4;
+}
+
+
+matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+
+//Constantes varias
+real CS=0.1;
+
+
+real epspen=1e-8;
+
+VhP2 G=1-x; //Levantamiento para la temperatura	
+
+/////////////////////////////////////////////
+////////Cargo los archivos del EIM
+ifstream EIM("BaseGL42.txt");
+int mbases;
+EIM>>mbases;
+
+VhP1dc[int] W(mbases); 
+for (int i=0;i<mbases;i++){
+	EIM>>W[i][];
+}
+
+ifstream MatrixBinf("MatrixBM42.txt");
+int ibinf,jbinf;
+MatrixBinf>>ibinf;
+MatrixBinf>>jbinf;
+real [int,int] Binf(ibinf,jbinf);
+for(int i=0;i<ibinf;i++){
+	for (int j=0;j<jbinf;j++){
+		MatrixBinf>>Binf(i,j);
+	}
+}
+
+matrix Binfm=Binf;
+set(Binfm,solver=sparsesolver);
+
+ifstream PuntosT("Tint42.txt");
+int ntint;
+PuntosT>>ntint;
+real[int] Tint(ntint);
+for (int i=0;i<ntint;i++){
+	PuntosT>>Tint(i);
+}
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+
+VhP2 [int] Bvel1(nbases),Bvel2(nbases),Bsup1(nbases),Bsup2(nbases);
+VhP2 [int] Btemp(nbases);
+VhP1 [int] Bpres(nbases);
+
+
+VhP2[int] Fvel1(nbases),Fvel2(nbases);
+VhP2[int] Fsup1(nbases),Fsup2(nbases);
+
+VhP1dc[int] Fv1dx(nbases),Fv1dy(nbases);
+VhP1dc[int] Fv2dx(nbases),Fv2dy(nbases);
+
+VhP1dc[int] Fs1dx(nbases),Fs1dy(nbases);
+VhP1dc[int] Fs2dx(nbases),Fs2dy(nbases);
+
+VhP2[int] Ftemp(nbases);
+
+for (int i=0;i<nbases;i++){
+	Fbase>>Bvel1[i][];
+	Fbase>>Bvel2[i][];
+	Fbase>>Bsup1[i][];
+	Fbase>>Bsup2[i][];
+	Fbase>>Btemp[i][];
+	Fbase>>Bpres[i][];
+}
+
+real[int,int] MBv1(VhP2.ndof,2*nbases),MBv2(VhP2.ndof,2*nbases),
+		      MBt(VhP2.ndof,nbases),MBp(VhP1.ndof,nbases);
+		  
+for (int i=0;i<nbases;i++){
+	MBv1(:,2*i)=Bvel1[i][];
+	MBv1(:,2*i+1)=Bsup1[i][];
+	MBv2(:,2*i)=Bvel2[i][];
+	MBv2(:,2*i+1)=Bsup2[i][];
+	MBt(:,i)=Btemp[i][];
+	MBp(:,i)=Bpres[i][];	
+}
+
+//Cargo los segundos miembros del sistema de BR
+ifstream SEG("SegMRB.txt");
+real [int] baTN(4*nbases),bfN(4*nbases);
+SEG>>baTN;
+SEG>>bfN;
+
+
+
+//Cargo las Matrices del sistema
+ifstream MatrixRB("MatrixRB.txt");
+
+real[int,int] ANVi(4*nbases,4*nbases),ANTi(4*nbases,4*nbases),
+			  BNi(4*nbases,4*nbases),FNi(4*nbases,4*nbases),
+			  DTNVi(4*nbases,4*nbases),DTNTi(4*nbases,4*nbases),
+			  ENi(4*nbases,4*nbases),
+			  bCNTi(4*nbases,4*nbases),bSNTi(mbases,4*nbases),
+			  ////////////////////////////////////////////////
+			  CNVi(4*nbases,4*nbases),CNTi(4*nbases,4*nbases),
+			  SNVi(4*nbases,4*nbases),SNTi(4*nbases,4*nbases);
+
+//Cargo los tensores del sistema
+real[int,int][int] CNV(2*nbases),CNT(2*nbases),SNV(mbases),SNT(mbases),GTjN(mbases);
+
+
+int i,j,s;
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>ANVi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>ANTi(ik,jk);
+	}
+}
+
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>BNi(ik,jk);
+	}
+}
+
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>FNi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+		MatrixRB>>DTNVi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+	MatrixRB>>DTNTi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+	MatrixRB>>ENi(ik,jk);
+	}
+}
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+	MatrixRB>>bCNTi(ik,jk);
+	}
+}
+
+
+MatrixRB>>i;
+MatrixRB>>j;
+for (int ik=0;ik<i;ik++){
+	for (int jk=0;jk<j;jk++){
+	MatrixRB>>bSNTi(ik,jk);
+	}
+}
+
+
+
+ifstream MatrixC("MatrixC.txt");
+MatrixC>>s;
+for (int is=0;is<s;is++){
+	MatrixC>>i;
+	MatrixC>>j;
+	real[int,int] auxC(4*nbases,4*nbases);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixC>>auxC(ik,jk);
+		}
+	}
+	CNV[is]=auxC(0:4*nbases-1,0:4*nbases-1);
+}
+
+MatrixC>>s;
+for (int is=0;is<s;is++){
+	MatrixC>>i;
+	MatrixC>>j;
+	real[int,int] auxC(4*nbases,4*nbases);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixC>>auxC(ik,jk);
+		}
+	}
+	CNT[is]=auxC(0:4*nbases-1,0:4*nbases-1);
+}
+
+
+ifstream MatrixS("MatrixS.txt");
+MatrixS>>s;
+for (int is=0;is<s;is++){
+	MatrixS>>i;
+	MatrixS>>j;
+	real[int,int] auxS(4*nbases,4*nbases);
+	for(int ik=0;ik<i;ik++){
+		for(int jk=0;jk<j;jk++){
+			MatrixS>>auxS(ik,jk);
+		}
+	}
+	SNV[is]=auxS(0:4*nbases-1,0:4*nbases-1);
+}
+
+MatrixS>>s;
+for (int is=0;is<s;is++){
+	MatrixS>>i;
+	MatrixS>>j;
+	real[int,int] auxS(4*nbases,4*nbases);
+	for(int ik=0;ik<i;ik++){
+		for(int jk=0;jk<j;jk++){
+			MatrixS>>auxS(ik,jk);
+		}
+	}
+	SNT[is]=auxS(0:4*nbases-1,0:4*nbases-1);
+}
+
+
+ifstream MatrixG("MatrixGrad.txt");
+MatrixG>>s;
+for (int is=0;is<s;is++){
+	MatrixG>>i;
+	MatrixG>>j;
+	real[int,int] auxG(4,2*nbases);
+	for (int ik=0;ik<i;ik++){
+		for (int jk=0;jk<j;jk++){
+			MatrixG>>auxG(ik,jk);
+		}
+	}
+	GTjN[is]=auxG(0:3,0:2*nbases-1);
+}
+
+
+//Paso las matrices llenas a matrices Sparse
+matrix ANV,ANT,BN,BNt,FN,DTNV,DTNT,EN;
+ANV=ANVi;
+ANT=ANTi;
+BN=BNi;
+BNt=-BN';
+FN=FNi;
+DTNV=DTNVi;
+DTNT=DTNTi;
+EN=ENi;
+
+int sols=101;
+VhP2[int] us1(sols),us2(sols),tss(sols);
+VhP1[int] pss(sols);
+ifstream Solu("Boussv1VT.txt");
+ifstream Solv("Boussv2VT.txt");
+ifstream Solt("BousstVT.txt");
+ifstream Solp("BousspVT.txt");
+Solu>>sols;
+Solv>>sols;
+Solt>>sols;
+Solp>>sols;
+
+for (int i=0;i<sols;i++){
+	Solu>>us1[i][];
+	Solv>>us2[i][];
+	Solt>>tss[i][];
+	Solp>>pss[i][];
+}
+
+
+//plot([us1,us2]);
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+///////         START THE ONLINE PHASE            ////////////
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+
+
+real[int] Rai(sols);
+
+for (int i=0;i<sols;i++){
+	Rai(i)=10^(3+i*(1.)/50);
+}
+
+real dt=1e-2;
+int nIt=10000;
+real epserr=1.e-10;
+
+real[int] errV(sols), errVR(sols);
+
+for (int iN=0;iN<sols;iN++){ 
+////////////////////////////////////////////////////////////
+//Ahora calculo BR:
+real TRB=clock();
+real Ra=Rai(iN);
+//matriz y segundo miembro fijos
+matrix MN=Pr*ANV + ANT + BN + BNt + Pr*Ra*FN + EN + (1./dt)*DTNV
+ + (1./dt)*DTNT;
+
+real [int] bN=baTN+Pr*Ra*bfN;
+		   
+
+real [int] uN(4*nbases),uNp(4*nbases);
+uN=0;
+uNp=0;
+real errN=10;
+int RBit=0;
+//Comienzo la resolucion del problema reducido
+for(int iN=0; iN<nIt && (errN>epserr); iN++){
+	RBit++;
+	CNVi=0;
+	CNTi=0;
+	SNVi=0;
+	SNTi=0;
+
+	///Matriz de conveccion
+	for (int is=0;is<2*nbases;is++){
+		real [int,int] CNVint(4*nbases,4*nbases),CNTint(4*nbases,4*nbases);		
+		CNVint=CNV[is];
+		CNVi+=uN(is)*CNVint;
+		
+		CNTint=CNT[is];
+		CNTi+=uN(is)*CNTint;
+
+	}
+
+	matrix CV=CNVi;
+	matrix CT=CNTi;
+
+
+	//Matriz Smagorinsky (EIM)
+	real[int] segmB(mbases),sigmal(mbases),gradun(4),un(2*nbases);
+	un=uN(0:2*nbases-1);
+	for(int is=0;is<mbases;is++){
+		real[int,int] Gradi(4,2*nbases);
+		Gradi=GTjN[is];
+		gradun=Gradi*un;
+		segmB(is)=sqrt(gradun'*gradun);
+	}
+		
+	sigmal=Binfm^-1*segmB;
+	
+	for (int is=0;is<mbases;is++){
+		real [int,int] SNVint(4*nbases,4*nbases),SNTint(4*nbases,4*nbases);			  
+		SNVint=SNV[is];
+		SNVi+=sigmal(is)*SNVint;
+			
+		SNTint=SNT[is];
+		SNTi+=sigmal(is)*SNTint;
+	}
+	
+	matrix SV=SNVi;
+	matrix ST=SNTi;
+	
+
+	//Segundos miembros
+	real [int] bDTV(4*nbases),bDTT(4*nbases),bCT(4*nbases),bST(4*nbases);
+	bDTV=0;
+	bDTT=0;
+	bCT=0;
+	bST=0;
+
+	for (int is=0;is<2*nbases;is++){
+		real[int] bDTVint(4*nbases),bCTint(4*nbases);
+		bDTVint=DTNVi(is,:);
+		bDTV+=uN(is)*bDTVint;
+			
+		bCTint=bCNTi(is,:);
+		bCT+=uN(is)*bCTint;			
+	}
+
+	for (int is=0;is<nbases;is++){
+		real[int] bDTTint(4*nbases);
+		bDTTint=DTNTi(2*nbases+is,:);
+		bDTT+=uN(2*nbases+is)*bDTTint;
+	}
+
+	for (int is=0;is<mbases;is++){
+		real[int] bSTint(4*nbases);
+		bSTint=bSNTi(is,:);
+		bST+=sigmal(is)*bSTint;
+	}	
+	
+		
+	
+	matrix Mfin=MN+CV+CT+SV+ST;
+	
+	real [int] bfin=bN;
+	
+	bfin+=(1./dt)*bDTV;
+	bfin+=(1./dt)*bDTT;
+	bfin+=bCT;
+	bfin+=bST;
+
+	set(Mfin,solver=UMFPACK);
+	uNp=uN; //la solucion del paso anterior.
+	uN=Mfin^-1*bfin;
+
+
+	real [int] uerr(2*nbases);
+	real [int] uNv(2*nbases),uNvp(2*nbases);
+	uNv=uN(0:2*nbases-1);
+	uNvp=uNp(0:2*nbases-1);
+	uerr=uNv-uNvp;
+	errN=uerr.l2;
+
+}
+
+//Construyo la solucion reducida obtenida
+VhP2 uN1,uN2,tN;
+VhP1 pN;
+
+real[int] ubNv=uN(0:2*nbases-1);
+real[int] ubNt=uN(2*nbases:3*nbases-1);
+real[int] ubNp=uN(3*nbases:4*nbases-1);
+
+uN1[]=MBv1*ubNv;
+uN2[]=MBv2*ubNv;
+tN[]=MBt*ubNt;
+pN[]=MBp*ubNp;
+
+//for (int kn=0;kn<nbases;kn++){
+//	uN1=uN1+uN(2*kn)*Bvel1[kn]+uN(2*kn+1)*Bsup1[kn];
+//	uN2=uN2+uN(2*kn)*Bvel2[kn]+uN(2*kn+1)*Bsup2[kn];
+//	tN=tN+uN(2*nbases+kn)*Btemp[kn];
+//	pN=pN+uN(3*nbases+kn)*Bpres[kn];
+//}
+
+VhP2 tNG;
+
+tNG=tN+G;
+
+TRB=clock()-TRB;
+
+plot(tNG,value=1,cmm="BR con Ra="+Ra);
+plot([uN1,uN2],pN,value=1,cmm="BR con Ra="+Ra);
+//plot(pN,value=1,wait=1,cmm="BR con Re="+Re,ps="BRp.ps");
+
+VhP2 errN1,errN2,errtN;
+VhP1 errpN;
+
+errN1=abs(us1[iN]-uN1);
+errN2=abs(us2[iN]-uN2);
+errpN=abs(pss[iN]-pN);
+errtN=abs(tss[iN]-tN);
+
+real errBRvel=int2d(Th)(GradGrad(errN1,errN2,errN1,errN2));
+real errBRvelR=int2d(Th)(GradGrad(us1[iN],us2[iN],us1[iN],us2[iN]));
+real errBRtem=int2d(Th)(Grad(errtN)'*Grad(errtN));
+real errBRtemR=int2d(Th)(Grad(tss[iN])'*Grad(tss[iN]));
+real errBRpres=int2d(Th)(errpN^2);
+real errBRpresR=int2d(Th)(pss[iN]^2);
+
+
+errV(iN)=sqrt(errBRvel+errBRpres+errBRtem);
+errVR(iN)=errV(iN)/sqrt(errBRvelR+errBRpresR+errBRtemR);
+
+cout<<errV(iN)<<endl;
+
+}
+
+cout<<"ErrV"<<errV<<endl;
+cout<<"ErrVR"<<errVR<<endl;

@@ -1,0 +1,200 @@
+
+macro grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt(dx(u1)^2+dy(u1)^2+dx(u2)^2+dy(u2)^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+//Constantes varias
+real CS=0.1;
+
+
+
+int mbases=100,M;
+real[int] mum(mbases);  //Aqui almaceno los mu que voy escogiendo, 
+						//luego ya los ordenare en cada iteracion pues el orden va
+						//cambiando...
+mum+=1000; 
+
+real[int] Tmax(mbases+1); //donde almaceno los maximos
+
+real [int,int] BM(mbases+1,mbases+1); //matriz del sistema EIM
+BM=0;
+
+//Test de parada del algoritmo Greedy
+real epsG=5.e-3; //Para que el error maximo cometido este en torno a 5e-4.
+
+//Valores del rango del parametro
+real Ramin=1.e3; 
+real Ramax=1.e5;
+real Raopt; //Este sera el Reynolds que me da el maximo del funcional
+
+
+real Ra;
+
+real ni=mbases*1.; //n-1 de valores de parametros que tomo (Numero de divisiones del intervalo) 
+int hm=100;
+real [int] vRaim(ni+1),vRaimh(hm+1); //Vector con los valores de los parametros
+
+for (int ig=0; ig<=ni; ig++){
+	vRaim(ig)=10^(3+ig*(1.)/50);
+}
+
+//for (int ig=0; ig<=hm; ig++){
+//	vRaimh(ig)=10^(3+ig*(1.)/50);;
+//}
+
+cout<<vRaimh<<endl;
+
+mesh Th=square(50,50,flags=3);
+
+
+//Defino los espacios de elementos finitos, y las funciones a resolver;
+fespace Vh4P2(Th,[P2,P2,P2,P1]);
+fespace Vh4P1(Th,[P1,P1,P1,P0]);
+fespace Vh4P1dc(Th,[P1dc,P1dc,P1dc,P0]); 
+fespace VhP0(Th,P0); 
+fespace VhP1dc(Th,P1dc);
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+
+matrix IPh;
+{	
+	matrix Id2;
+	{
+		VhP2 fAux2 = 1.;
+		Id2 = fAux2[];
+	}
+	
+	matrix PI = interpolate(VhP1,VhP2); 
+	matrix IP = interpolate(VhP2,VhP1); 
+	matrix IPPI = IP*PI;
+	IPh = Id2 + (-1.)*IPPI;
+}
+
+matrix DXun=interpolate(VhP1dc,VhP2,op=1);
+matrix DYun=interpolate(VhP1dc,VhP2,op=2);
+
+	
+VhP1dc g,dg;
+
+VhP2[int] u1(ni+1),u2(ni+1);
+ifstream bu1("Boussv1VT.txt");
+ifstream bu2("Boussv2VT.txt");
+bu1>>M;
+bu2>>M;
+for(int i=0;i<=hm;i++){
+	bu1>>u1[i][];
+	bu2>>u2[i][];
+}
+M=0;
+
+
+plot([u1[0],u2[0]]);
+VhP1dc[int] W(mbases+1),WL(mbases+1);
+
+real[int] ErrMax(mbases+1),RAim(mbases+1),Rai(mbases+1);
+//////////////////////////////////////////////////////
+//  COMENZAMOS CON EL BUCLE PRINCIPAL PARA CALCULAR //
+//     LAS FUNCIONES DEL ESPACIO DE INTERPOLACION   //
+//////////////////////////////////////////////////////
+
+
+for (int i=0;i<=mbases;i++){
+	if (i==0){
+		
+		Raopt=vRaim(i); //El primer mu lo tomo aleatorio.
+		cout<<"Ra: "<<Raopt<<", ";
+		VhP1dc dxu1,dyu1,dxu2,dyu2;	
+		VhP2 uaux;
+		uaux[]=IPh*u1[i][];
+		dxu1[]=DXun*uaux[];
+		dyu1[]=DYun*uaux[];
+		
+		uaux[]=IPh*u2[i][];
+		dxu2[]=DXun*uaux[];
+		dyu2[]=DYun*uaux[];
+		
+		
+		g=moddc(dxu1,dyu1,dxu2,dyu2);
+		
+		
+		W[0]=g; //residuals
+		
+		Tmax(0)=W[0][].imax;
+		WL[0]=W[0]/W[0][].max;
+		BM(0,0)=WL[0][](Tmax(i));
+		
+	}
+	else{
+		include "EIMgreedy.idp";
+		if(ErrMax(i-1)<epsG){
+			M=i;
+			cout<<"mbases="<<M<<endl;
+			break;
+		}
+		else{
+		cout<<ErrMax<<endl;
+		Raopt=RAim(i);
+		cout<<"Ra: "<<Raopt<<", ";
+		
+		VhP1dc dxu1,dyu1,dxu2,dyu2;
+		cout<<"Rai(i)="<<Rai(i)<<endl;
+		
+		VhP2 uaux;
+		uaux[]=IPh*u1[Rai(i)][];
+		dxu1[]=DXun*uaux[];
+		dyu1[]=DYun*uaux[];
+		
+		uaux[]=IPh*u2[Rai(i)][];
+		dxu2[]=DXun*uaux[];
+		dyu2[]=DYun*uaux[];
+
+		g=moddc(dxu1,dyu1,dxu2,dyu2);
+		real[int,int] Bi(i,i);
+		Bi=BM(0:i-1,0:i-1);
+		real [int] xii(i),sigmai(i);
+		for (int j=0;j<i;j++){
+			xii(j)=g[](Tmax(j));
+		}
+		matrix B;
+		B=Bi;
+		set(B,solver=sparsesolver);
+		sigmai=B^-1*xii;
+		W[i]=g; //residuals
+		for (int j=0;j<i;j++){
+			W[i]=W[i]-sigmai(j)*WL[j];
+		}
+		VhP1dc AW;
+		AW=abs(W[i]);
+		Tmax(i)=AW[].imax;
+		WL[i]=W[i]/W[i][](Tmax(i));
+		for (int j=0;j<=i;j++){
+			BM(i,j)=WL[j][](Tmax(i));
+		}
+	}
+	}
+}
+
+
+
+ofstream BaseGL("BaseGL"+M+".txt",append);
+BaseGL<<M<<endl;
+for (int i=0;i<M;i++){
+BaseGL<<WL[i][]<<endl;
+}	
+
+real [int,int] BMfin(M,M);
+BMfin=BM(0:M-1,0:M-1);
+ofstream MatrixB("MatrixBM"+M+".txt");
+MatrixB<<BMfin<<endl;
+
+real [int] TM(M);
+TM=Tmax(0:M-1);
+ofstream Tmaxs("Tint"+M+".txt");
+Tmaxs<<TM<<endl;
+
+cout<<ErrMax(0:M)<<endl;
+
