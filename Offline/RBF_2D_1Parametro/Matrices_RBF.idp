@@ -3,7 +3,14 @@
 ///////////////
 
 // Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+ifstream ReadSnapshots("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
+int nSnapshots;
+ReadSnapshots>>nSnapshots;
+real[int] ReSnapshots(nSnapshots);
+ReadSnapshots>>ReSnapshots;
+cout<<ReSnapshots<<endl;
 
-VhP2 uEF, uEFY; // Serán las soluciones para el mu_fijo
+//VhP2 uEF, uEFY; // Serán las soluciones para el Re_fijo
 
-if 
+//if (search(ReSta,Refijo,1.e-9)==-1){
+//	cout<<"ok"<<endl;}

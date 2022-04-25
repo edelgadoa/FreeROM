@@ -51,7 +51,7 @@ for(int i=0; i<Nfine; i++){
 }
 
 //Calculo los valores de beta_h para cada uno de los valores de vReI y la matriz del producto escalar (mu_barra)
-real mufijo = 1000;
+real Refijo = 1000;
 matrix Fb,Fbt,X;
 
 include "Matrices_RBF.idp" 
