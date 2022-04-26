@@ -3,11 +3,6 @@
 ///////////////
 
 
-
-// Incluimos el levantamiento
-include "Levantamiento.idp"
-
-
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
 real[int] bFija(Vh3P2.ndof);

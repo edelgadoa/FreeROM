@@ -28,6 +28,9 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 // Definimos los parametros a usar
 include "Parametros_2D.idp"
 
+// Incluimos el levantamiento
+include "Levantamiento.idp"
+
 Reynolds = 1000;
 
 
