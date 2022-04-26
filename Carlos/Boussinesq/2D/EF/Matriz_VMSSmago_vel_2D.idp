@@ -1,0 +1,33 @@
+////////////////
+// FreeROM
+///////////////
+
+	
+////////////////////////////////////
+////MATRIZ SMAGORINSKY VEL FILTRADA
+////////////////////////////////////
+
+
+varf VMSSma([u1l,u2l,unusedTT,unusedpp],[v1l,v2l,zl,ql]) = 
+		int2d(Th)(((CS*hTriangle)^2)*Gr*(u1l*v1l+u2l*v2l));
+						
+										
+matrix M = VMSSma(Vh4P1dc,Vh4P1dc);
+					
+matrix Sma;
+matrix DXX;
+matrix DYY;
+
+	{
+		matrix Maux;
+
+		Maux = DX4P2*IPh4P24P1;
+		DXX  = (Maux')*M;
+		DXX  = DXX*Maux;
+	
+		Maux = DY4P2*IPh4P24P1;
+		DYY  = (Maux')*M;
+		DYY  = DYY*Maux;
+	
+	}
+Sma = DXX + DYY;

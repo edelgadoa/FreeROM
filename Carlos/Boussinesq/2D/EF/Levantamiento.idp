@@ -1,0 +1,11 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa para definir el levantamiento de frontera de la temperatura 
+
+VhP2 G = 1-x; //Levantamiento para la temperatura 
+Vh4P1dc [Gfv1,Gfv2,GfT,Gfp];
+VhP2 Gfaux;
+VhP1 Gpaux;
+Vh4P2 [GG1,GG2,GGT,GGP]=[Gfaux,Gfaux,G,Gpaux]; //Levantamiento temperatura

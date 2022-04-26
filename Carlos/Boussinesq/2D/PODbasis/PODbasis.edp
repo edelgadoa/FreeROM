@@ -1,0 +1,351 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+//Codigo para obtener la base POD de la presion y de la velocidad
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+////////////////////
+//Cargamos datos y construimos la matriz total de snapshots
+///////////////////
+
+//Número de snapshots que tomamos
+int nSnapshots = ni+1;
+//Intervalo de Rayleigh
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+	//vRa(i)=10^(3+i*(1.)/50);
+}
+real Rayleigh;
+
+VhP2 SnapUX,SnapUY,SnapP,SnapT;
+VhP1dc SnapVis;
+
+real[int,int] Avx(VhP2.ndof,nSnapshots),Avy(VhP2.ndof,nSnapshots),Ap(VhP2.ndof,nSnapshots),At(VhP2.ndof,nSnapshots),Avis(VhP1dc.ndof,nSnapshots);
+for(int i = 0;i<nSnapshots;i++)
+{
+	Rayleigh = vRa(i);
+	
+	ifstream SnapshotsVX("../Data/Snapshots/Vx_" + Rayleigh + ".txt");
+	SnapshotsVX >> SnapUX[];
+	
+	ifstream SnapshotsVY("../Data/Snapshots/Vy_" + Rayleigh + ".txt");
+	SnapshotsVY >> SnapUY[];
+	
+	ifstream SnapshotsP("../Data/Snapshots/P_" + Rayleigh + ".txt");
+	SnapshotsP >> SnapP[];
+	
+	ifstream SnapshotsT("../Data/Snapshots/T_" + Rayleigh + ".txt");
+	SnapshotsT >> SnapT[];
+	
+	ifstream SnapshotsVis("../Data/Snapshots/Vis_" + Rayleigh + ".txt");
+	SnapshotsVis >> SnapVis[];
+	
+	Avx(:,i) = SnapUX[];
+	Avy(:,i) = SnapUY[];
+	Ap(:,i) = SnapP[];
+	At(:,i) = SnapT[];
+	Avis(:,i) = SnapVis[];
+
+}
+
+//////////////////////////////////
+//Construimos las matrices de correlacion 
+/////////////////////////////////
+
+real[int,int] KU(nSnapshots,nSnapshots),KP(nSnapshots,nSnapshots),KT(nSnapshots,nSnapshots),KVis(nSnapshots,nSnapshots);
+
+matrix prod;
+{
+	varf a(u,v)= 
+	intN(Th)(u*v);
+	prod = a(VhP2,VhP2);
+}
+
+matrix prodvis;
+{
+	varf a(u,v)=
+	intN(Th)(u*v);
+	prodvis = a(VhP1dc,VhP1dc);
+}
+
+real[int,int] KUL = KU, KPL = KP, KTL = KT, KVisL=KVis;
+for(int i=0;i<nSnapshots;i++)
+{
+
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxU1 = prod*Avx(:,i);
+		real[int] auxU2 = prod*Avy(:,i);
+		real[int] auxP =  prod*Ap(:,i);
+		real[int] auxT =  prod*At(:,i);
+		real[int] auxVis = prodvis*Avis(:,i);
+		
+		for(int j=i;j<nSnapshots;j++)
+		{
+			KUL(i,j) = (Avx(:,j)'*auxU1 + Avy(:,j)'*auxU2)/nSnapshots;
+			KPL(i,j) = (Ap(:,j)'*auxP)/nSnapshots;
+			KTL(i,j) = (At(:,j)'*auxT)/nSnapshots;
+			KVisL(i,j) = (Avis(:,j)'*auxVis)/nSnapshots;
+			if(i!=j){KUL(j,i) = KUL(i,j); KPL(j,i)=KPL(i,j); KTL(j,i) = KTL(i,j); KVisL(j,i)=KVisL(i,j);}
+		}
+	
+	}
+
+}
+
+mpiAllReduce(KUL,KU,mpiCommWorld,mpiSUM);
+mpiAllReduce(KPL,KP,mpiCommWorld,mpiSUM);
+mpiAllReduce(KTL,KT,mpiCommWorld,mpiSUM);
+mpiAllReduce(KVisL,KVis,mpiCommWorld,mpiSUM);
+
+
+///////////////
+//SVD
+//////////////
+
+real[int,int] UU(nSnapshots,nSnapshots),VU(nSnapshots,nSnapshots),UP(nSnapshots,nSnapshots),VP(nSnapshots,nSnapshots),UT(nSnapshots,nSnapshots),VT(nSnapshots,nSnapshots),UVis(nSnapshots,nSnapshots),VVis(nSnapshots,nSnapshots);
+real[int] SU(nSnapshots),SP(nSnapshots),ST(nSnapshots),SVis(nSnapshots); // Eigenvalues vector
+
+dgesdd(KU,UU,SU,VU);
+dgesdd(KP,UP,SP,VP);
+dgesdd(KT,UT,ST,VT);
+dgesdd(KVis,UVis,SVis,VVis);
+
+int dU; // dU = dimension ensemble of velocity snapshots 
+int dP; // dP = dimension ensemble of pressure snapshots 
+int dT; // dT = dimension ensemble of temperature snapshots
+int dVis; // dVis = dimension ensemble of turbulence viscosity snapshots
+
+
+real tol=1.e-7; // tolerance
+
+for(int i=0;i<nSnapshots;i++)
+{
+	if (SU(i)<tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueU = " << SU(i) << endl; }	
+	dU=i+1;
+}
+if(mpirank==0){cout<< " Dimension ensemble of velocity snapshots = " << dU << endl;}	
+
+for(int i=0;i<nSnapshots;i++)
+{
+	if (SP(i)<tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueP = " << SP(i) << endl;} 	
+	dP=i+1;
+}
+if(mpirank==0){cout<< " Dimension ensemble of pressure snapshots = " << dP << endl;} 	
+
+for(int i=0;i<nSnapshots;i++)
+{
+	if (ST(i)<tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueT = " << ST(i) << endl; }	
+	dT=i+1;
+}
+if(mpirank==0){cout<< " Dimension ensemble of temperature snapshots = " << dT << endl;} 	
+
+for(int i=0;i<nSnapshots;i++)
+{
+	if (SVis(i)<tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueVis = " << SVis(i) << endl;} 	
+	dVis=i+1;
+}
+if(mpirank==0){cout<< " Dimension ensemble of viscosity snapshots = " << dVis << endl;}	
+
+////////////////////////////////
+//Construct the POD basis
+///////////////////////////////
+real[int,int] Viu(VhP2.ndof,dU),Viv(VhP2.ndof,dU),aiU(nSnapshots,dU),Vip(VhP2.ndof,dP),aiP(nSnapshots,dP); 
+real[int,int] Vit(VhP2.ndof,dT),aiT(nSnapshots,dT),Vivis(VhP1dc.ndof,dVis),aiVis(nSnapshots,dVis);
+real trapu,trapv,trapp,trapt,trapvis; // Variables to make the time integration
+VhP2 modeu,modeuold,modev,modevold,velmagPOD,modep,modepold,modet,modetold;
+VhP1dc modevis,modevisold;
+
+
+//Velocity POD basis
+int[int] Order=[1];
+
+for(int k=0;k<dU;k++)
+{
+	for(int i=0;i<VhP2.ndof;i++)
+	{
+		trapu=0.;	trapv=0.;
+		for(int j=0;j<nSnapshots;j++)
+		{	
+			trapu+=Avx(i,j)*UU(j,k);			
+			trapv+=Avy(i,j)*UU(j,k);			
+			aiU(j,k)=sqrt(SU(k)*nSnapshots)*UU(j,k);
+		}
+		Viu(i,k)=trapu/sqrt(SU(k)*nSnapshots);
+		Viv(i,k)=trapv/sqrt(SU(k)*nSnapshots); 		
+	}
+	modeu[]=Viu(:,k);	
+  	modev[]=Viv(:,k);
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modeu*modeuold+modev*modevold);
+	orthon=int2d(Th)(modeu*modeu+modev*modev);
+	
+	/*
+	// H1-POD basis
+	orthog=int2d(Th)(Grad(modeu)'*Grad(modeuold)+Grad(modev)'*Grad(modevold));
+	orthon=int2d(Th)(Grad(modeu)'*Grad(modeu)+Grad(modev)'*Grad(modev));
+	*/
+	if(mpirank==0){cout << "-------------------------------------------" << endl;
+	cout << "Vel. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Vel. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
+	
+	velmagPOD=sqrt(modeu^2+modev^2);
+	
+	plot(velmagPOD,fill=1,cmm="Velocity magnitude, POD mode n. "+(k+1));// Plot of POD modes velocity magnitude		
+	savevtk("../Data/PODbasis/PostProc/modeU_"+(k+1)+".vtk",Th,velmagPOD,dataname="velPOD",order=Order);//,bin=Bin)
+	modeuold=modeu;
+	modevold=modev;
+} 
+//------------Export data---------------------
+ofstream outputaiU("../Data/PODbasis/PODtimeCoU.txt");		outputaiU<<aiU;
+ofstream outputbu("../Data/PODbasis/BasePODvelocity1.txt");	outputbu<<Viu;
+ofstream outputbv("../Data/PODbasis/BasePODvelocity2.txt");	outputbv<<Viv;
+
+
+
+
+//Pressure POD basis
+
+
+for(int k=0;k<dP;k++)
+{
+	for(int i=0;i<VhP2.ndof;i++)
+	{
+		trapp=0.;
+		for(int j=0;j<nSnapshots;j++)
+		{	
+			trapp+=Ap(i,j)*UP(j,k);			
+			aiP(j,k)=sqrt(SP(k)*nSnapshots)*UP(j,k);
+		}
+		Vip(i,k)=trapp/sqrt(SP(k)*nSnapshots);
+	}
+	modep[]=Vip(:,k);	
+  	real orthog,orthon;
+  	
+	// L2-POD basis
+	orthog=int2d(Th)(modep*modepold);
+	orthon=int2d(Th)(modep*modep);
+	
+	/*
+	// H1-POD basis
+	orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+	orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+	*/
+	if(mpirank==0){cout << "-------------------------------------------" << endl;
+	cout << "Pres. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+	cout << "Pres. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
+		
+	plot(modep,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
+	savevtk("../Data/PODbasis/PostProc/modeP_"+(k+1)+".vtk",Th,modep,dataname="presPOD",order=Order);
+	modepold=modep;
+} 
+ofstream outputaiP("../Data/PODbasis/PODtimeCoP.txt");		outputaiP<<aiP;
+ofstream outputbp("../Data/PODbasis/BasePODpressure.txt");	outputbp<<Vip;
+
+
+
+//Temperature POD basis
+
+
+
+	for(int k=0;k<dT;k++)
+	{
+		for(int i=0;i<VhP2.ndof;i++)
+		{
+			trapt=0.;
+			for(int j=0;j<nSnapshots;j++)
+			{	
+				trapt+=At(i,j)*UT(j,k);			
+				aiT(j,k)=sqrt(ST(k)*nSnapshots)*UT(j,k);
+			}
+			Vit(i,k)=trapt/sqrt(ST(k)*nSnapshots);
+		}
+		modet[]=Vit(:,k);	
+	  	real orthog,orthon;
+  	
+		// L2-POD basis
+		orthog=int2d(Th)(modet*modetold);
+		orthon=int2d(Th)(modet*modet);
+	
+		/*
+		// H1-POD basis
+		orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+		orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+		*/
+		if(mpirank==0){
+		cout << "-------------------------------------------" << endl;
+		cout << "Temp. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+		cout << "Temp. Mode n. " << k+1 << ", orthon. = " << orthon << endl;
+	}
+		
+		//plot(modet,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
+		savevtk("../Data/PODbasis/PostProc/modeT_"+(k+1)+".vtk",Th,modet,dataname="tempPOD",order=Order);
+		modetold=modet;
+	} 
+	ofstream outputaiT("../Data/PODbasis/PODtimeCoT.txt");		outputaiT<<aiT;
+	ofstream outputbt("../Data/PODbasis/BasePODtemperature.txt");	outputbt<<Vit;
+
+
+
+	//POD basis viscosity
+
+	for(int k=0;k<dVis;k++)
+	{
+		for(int i=0;i<VhP1dc.ndof;i++)
+		{
+			trapvis=0.;
+			for(int j=0;j<nSnapshots;j++)
+			{	
+				trapvis+=Avis(i,j)*UVis(j,k);			
+				aiVis(j,k)=sqrt(SVis(k)*nSnapshots)*UVis(j,k);
+			}
+			Vivis(i,k)=trapvis/sqrt(SVis(k)*nSnapshots);
+		}
+		modevis[]=Vivis(:,k);	
+	  	real orthog,orthon;
+  	
+		// L2-POD basis
+		orthog=int2d(Th)(modevis*modevisold);
+		orthon=int2d(Th)(modevis*modevis);
+	
+		/*
+		// H1-POD basis
+		orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+		orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+		*/
+		if(mpirank==0){cout << "-------------------------------------------" << endl;
+		cout << "Vis. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+		cout << "Vis. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
+		
+		//plot(modep,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
+		savevtk("../Data/PODbasis/PostProc/modeVis_"+(k+1)+".vtk",Th,modevis,dataname="visPOD",order=Order);
+		modevisold=modevis;
+	} 
+	ofstream outputaiVis("../Data/PODbasis/PODtimeCoVis.txt");		outputaiVis<<aiVis;
+	ofstream outputbvis("../Data/PODbasis/BasePODviscosity.txt");	outputbvis<<Vivis;
+
+
+
+

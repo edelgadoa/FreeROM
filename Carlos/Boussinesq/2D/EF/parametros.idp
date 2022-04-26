@@ -1,0 +1,29 @@
+
+VhP0 mk,tKcod,tKTcod,tau;
+
+
+varf med(unused,v)=int2d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk); 
+
+//Constantes varias
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+
+real Pr=0.71; //Prandlt aire
+
+real dt=1.e-2;
+real epspen=1e-8;
+
+real Ramin=1.e3;
+real Ramax=1.e5;
+
+
+int ni=100;
+
+
+int nIterations=2000;
+real epsError = 1.e-10;
+
