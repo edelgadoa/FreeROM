@@ -73,7 +73,7 @@ cout<<vRaI<<endl;
 
 //Defino la matriz para el producto escalar mu barra
 
-varf bound([uu1,uu2,tt,pp],[v1,v2,zt,q])=on(1,2,3,4, uu1=0,uu2=0)+on(2,4,tt=0);
+varf bound([uu1,uu2,tt,pp],[v1,v2,zt,q]) = on(1,2,3,4, uu1=0,uu2=0) + on(2,4,tt=0);
 
 int[int] II(1),JI(1);
 real[int] CI(1);

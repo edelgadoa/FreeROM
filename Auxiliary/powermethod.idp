@@ -111,7 +111,7 @@ func real[int] powermethodRBF(matrix & A,matrix & B)
 		err=abs(lambda1-lambda0)/abs(lambda1);
 		v0=v1;
 		lambda0=lambda1;
-		cout << "lambda0: " << lambda0 << ", err: " << err << endl;
+		//cout << "lambda0: " << lambda0 << ", err: " << err << endl;
 		if(ii==4999)cout << "max iteration achieved" << endl;
 	}
 	real[int] result(A.n+1);
@@ -140,7 +140,7 @@ func real[int] powermethodRBF(matrix & A,matrix & B,real[int] & init)
 		err=abs(lambda1-lambda0)/abs(lambda1);
 		v0=v1;
 		lambda0=lambda1;
-		cout << "lambda0: " << lambda0 << ", err: " << err << endl;
+		// cout << "lambda0: " << lambda0 << ", err: " << err << endl;
 		if(ii==4999)cout << "max iteration achieved" << endl;
 	}
 	real[int] result(A.n+1);

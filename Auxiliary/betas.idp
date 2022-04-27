@@ -1,0 +1,249 @@
+func real fnorma(real[int] & mui, real[int] & muj){
+	real[int] aux = mui-muj;
+	return aux.l2;
+}
+
+func real fnorma(real & mui, real & muj){
+	real[int] aux = abs(mui-muj);
+	return aux.l2;
+}
+
+func real derfnorma(real[int] & mui, real[int] & muj){
+	real[int] aaux = mui-muj;
+}
+
+func real radialfunction(real & r){
+	real result = r^2*log(r+1.);
+	return result;
+}
+
+func real DERradialfunction(real & r){
+	real result = (2*log(r+1)+r/(r+1)); //Faltaría un r en r/(r+1) que irá multiplicado después
+	return result;
+}
+
+func real DER2radialfunction(real & r){
+	real result = 2*log(r+1) + 4*r/(r+1) - r^2/(r+1)^2;
+	return result;
+}
+
+func real gneg(real &s){
+	real val;
+	if (s>0) val=1;
+	else val=10000*exp(-s);
+	return val;
+}
+///////////////////////////////////////////////
+// CASO PARTICULAR DE UN ÚNICO PARÁMETRO 
+///////////////////////////////////////////////
+func real fbeta(real[int] & gamma, real[int] & muj,real & mu){   
+	//en teoria gamma.n=2+muj.n!!
+	int nj=muj.n; 
+	real val=gamma(nj+1);
+	val+=gamma(nj)*mu;
+	for (int i=0;i<nj;i++){
+		real r = fnorma(mu,muj(i));	
+		val += gamma(i)*radialfunction(r);
+	}
+	return val;
+}	
+
+func real derbeta(real[int] & gamma,real[int] & muj,real & mu){
+	int nj = muj.n;
+	int np = 1;
+	real[int] w=gamma(nj:nj+np-1);
+	for (int i=0;i<nj;i++)
+	{
+		real[int] mumuj = mu-muj(i);
+		real r = fnorma(mu,muj(i));
+		w += gamma(i)*DERradialfunction(r)*mumuj;
+	}
+	real val=w.l2;
+	return val;
+}
+
+func real der2beta(real[int] &gamma, real [int] &muj, real &mu){	
+	int nj=muj.n;
+	real val;
+	for (int i=0;i<nj;i++){
+		real r=fnorma(mu,muj(i)); //||\mu-\mu_j||
+		// val += gamma(i)*(4*log(r+1)+5*r/(r+1)-r^2/(r+1)^2); // Comprobado VERSION DE CRISTINA
+		val += gamma(i)*DER2radialfunction(r); 
+	}
+	return val;
+}
+
+func real[int,int] matrixRBF(real[int] & DI){
+	int nj=DI.n;
+	int np=1;
+	real[int,int] Blbeta(nj+np+1,nj+np+1);
+	Blbeta=0;
+	//Primera parte de la matriz!
+	for (int i=0;i<nj;i++){
+		for (int jj=0;jj<nj;jj++){
+			real r=fnorma(DI(i),DI(i));
+			Blbeta(i,jj)=radialfunction(r);
+		}
+		Blbeta(i,nj:nj+np-1)=DI(i);
+		Blbeta(i,nj+np)=1;
+		Blbeta(nj:nj+np-1,i)=DI(i);
+		Blbeta(nj+np,i)=1;
+	}
+	return Blbeta;
+}
+
+
+func real[int] fgamma(real[int] & betas,real[int] & DI){
+	int nj=DI.n;
+	int np=1;
+	real[int] lbeta(nj+np+1);
+	lbeta=0; //las TRES ultimas componentes son 0! (las correspond. a w_1^1,w_1^2 y w_0)
+	for (int i=0;i<nj;i++)lbeta(i)=betas(i);
+	real[int,int] Blbeta=matrixRBF(DI);//(RBFcont+numparam+1,RBFcont+numparam+1);
+	
+	real[int] gamma(nj+np+1);
+	real[int,int] Blbetainv=Blbeta^-1;
+	gamma=Blbetainv*lbeta;
+	return gamma;
+}
+
+
+func real fhadapt(real[int] &muj, real mu){
+	real[int] dist(muj.n); //vector con las distancias
+	for (int i=0; i<muj.n; i++){
+		dist(i)=abs(mu-muj(i));
+	}
+	return dist.min;
+}
+
+
+func real[int] calculocriterion(real[int] & DI,real[int] & Disc,real[int] & gamma,real[int] & beta){
+	int nj = DI.n;
+	int nDisc = Disc.n;
+	real[int] fh(nDisc),C(nDisc);
+	for (int k=0;k<nDisc;k++)fh(k)=fhadapt(DI,Disc(k));
+	real fhmax = fh.max; //el maximo de las distancias 
+	for (int k=0;k<nDisc;k++)
+	{
+		C(k) = (abs(derbeta(gamma,DI,Disc(k)))+1.e-6)
+			  *(abs(der2beta(gamma,DI,Disc(k)))+1.e-6)
+			  *(fh(k)/fhmax)^2*gneg(beta(k));
+	}
+	return C;
+}
+
+
+
+
+
+
+///////////////////////////////////////////////
+// FUNCIONES PARA MÁS DE UN PARÁMETRO 
+///////////////////////////////////////////////
+
+
+func real fbeta(real[int] & gamma,real[int,int] & muj,real[int] & mu){   
+	int nj=muj.m; //numero de valores de parametros 	
+	int np=muj.n;
+	real val=gamma(nj+np);   //w_0 ---> ultimo valor de gamma
+	real[int] w=gamma(nj:nj+np-1);
+	val+=w'*mu;
+	for (int i=0;i<nj;i++){
+		real r=fnorma(mu,muj(:,i));	
+		val+=gamma(i)*radialfunction(r);
+	}
+	return val;
+}	
+
+func real derbeta(real[int] & gamma,real[int,int] & muj,real[int] & mu){
+	int nj=muj.m;
+	int np=muj.n;
+	real[int] w=gamma(nj:nj+np-1);
+	for (int i=0;i<nj;i++)
+	{
+		real[int] mumuj=mu-muj(:,i);
+		real r=fnorma(mu,muj(:,i));
+		w+=gamma(i)*(2*log(r+1)+r/(r+1))*mumuj;
+	}
+	real val=w.l2;
+	return val;
+}
+
+func real der2beta(real[int] &gamma, real [int,int] &muj, real[int] &mu){	
+	int nj=muj.m;
+	real val;
+	for (int i=0;i<nj;i++){
+		real r=fnorma(mu,muj(:,i)); //||\mu-\mu_j||
+		// val += gamma(i)*(4*log(r+1)+5*r/(r+1)-r^2/(r+1)^2); // Comprobado VERSION DE CRISTINA
+		val += gamma(i)*(2*log(r+1) + 4*r/(r+1) - r^2/(r+1)^2); 
+	}
+	return val;
+}
+
+
+
+func real fhadapt(real[int,int] &muj, real[int] mu){
+	real[int] dist(muj.m); //vector con las distancias
+	for (int i=0; i<muj.m; i++){
+		dist(i)=fnorma(mu,muj(:,i));
+	}
+	return dist.min;
+}
+
+func real[int,int] matrixRBF(real[int,int] & DI){
+	int nj=DI.m;
+	int np=DI.n;
+	real[int,int] Blbeta(nj+np+1,nj+np+1);
+	Blbeta=0;
+	//Primera parte de la matriz!
+	for (int i=0;i<nj;i++)
+	{
+		for (int jj=0;jj<nj;jj++)
+		{
+			real r=fnorma(DI(:,i),DI(:,jj));
+			Blbeta(i,jj)=radialfunction(r);
+		}
+		Blbeta(i,nj:nj+np-1)=DI(:,i);
+		Blbeta(i,nj+np)=1;
+		Blbeta(nj:nj+np-1,i)=DI(:,i);
+		Blbeta(nj+np,i)=1;
+	}
+	return Blbeta;
+}
+
+
+
+
+func real[int] fgamma(real[int] & betas,real[int,int] & DI){
+	int nj=DI.m;
+	int np=DI.n;
+	real[int] lbeta(nj+np+1);
+	lbeta=0; //las TRES ultimas componentes son 0! (las correspond. a w_1^1,w_1^2 y w_0)
+	for (int i=0;i<nj;i++)lbeta(i)=betas(i);
+	real[int,int] Blbeta=matrixRBF(DI);//(RBFcont+numparam+1,RBFcont+numparam+1);
+	
+	real[int] gamma(nj+np+1);
+	load "lapack";
+	real[int,int] Blbetainv=Blbeta^-1;
+	gamma=Blbetainv*lbeta;
+	return gamma;
+}
+
+
+
+func real[int] calculocriterion(real[int,int] & DI,real[int,int] & Disc,real[int] & gamma,real[int] & beta){
+	int nj=DI.m;
+	int np=DI.n;
+	int nDisc=Disc.m;
+	real[int] fh(nDisc),C(nDisc);
+	for (int k=0;k<nDisc;k++)fh(k)=fhadapt(DI,Disc(0:np-1,k));
+	real fhmax=fh.max; //el maximo de las distancias 
+	for (int k=0;k<nDisc;k++)
+	{
+		C(k)=(abs(derbeta(gamma,DI,Disc(0:np-1,k)))+1.e-6)
+			*(abs(der2beta(gamma,DI,Disc(0:np-1,k)))+1.e-6)
+			*(fh(k)/fhmax)^2*gneg(beta(k));
+	}
+	return C;
+}
+
