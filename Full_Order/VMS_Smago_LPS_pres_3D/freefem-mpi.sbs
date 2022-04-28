@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --time=24:00:00
+#SBATCH --ntasks=32
+#SBATCH --mem-per-cpu=4G
+
+module load freefem/4.9
+
+rm *.pref
+name=Snapshots
+caso=3
+#PlaneML2D_BDF2
+# mkdir ${SLURM_JOB_ID}
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" -case $caso > "terminal${SLURM_JOB_ID}.txt"
