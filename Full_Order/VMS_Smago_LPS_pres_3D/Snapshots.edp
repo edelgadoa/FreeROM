@@ -66,7 +66,7 @@ VhP2 SnapP;
 for (int i=0; i<nSnapshots; i++){
 
 	Reynolds = vReynolds(i);
-	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
+	//cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
 	include "FE_VMS_LPS_3D.idp"
 
 	SnapX = uEF;
