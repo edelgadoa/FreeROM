@@ -54,6 +54,7 @@ matrix DXX,DYY,DZZ;
 	bS=FVSmagob(0,Vh4P1dcL);
 	bSz=(Maux')*bS;
 }
+
 	
 Smago = DXX + DYY + DZZ;
 bSmago = bSx + bSy;

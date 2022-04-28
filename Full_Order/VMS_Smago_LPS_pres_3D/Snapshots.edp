@@ -8,7 +8,7 @@
 
 // Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres 
-
+verbosity=0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -26,16 +26,19 @@ real techo = 2; //para las condiciones de contorno
 // Definimos los espacios de EF
 include "FE_Spaces_NoStab_VP_3D.idp"
 
+// Definimos los parametros a usar
+include "Parametros_3D.idp"
+
+
+// Incluimos el levantamiento
+include "Levantamiento_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
-// Definimos los parametros a usar
-include "Parametros_3D.idp"
 
-// Incluimos el levantamiento
-include "Levantamiento_3D.idp"
+
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 

@@ -4,9 +4,6 @@
 
 
 
-// Incluimos el levantamiento
-include "Levantamiento_3D.idp"
-
 
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
@@ -26,10 +23,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uprevLY = uEFY + LevY;
 	uprevLZ = uEFZ + LevZ;
 	
-	if (ii%20==0){
-		int[int] fforder=[1,1,1,1];
-		savevtk("NSL"+ii+".vtu", Th, [uprevL, uprevLY, uprevLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
-	}
 	
 	{
 		VhP2 udcAux;

@@ -35,6 +35,11 @@ include "Parametros_3D.idp"
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
+
+// Incluimos el levantamiento
+include "Levantamiento_3D.idp"
+
+
 Reynolds = 3545;
 
 
