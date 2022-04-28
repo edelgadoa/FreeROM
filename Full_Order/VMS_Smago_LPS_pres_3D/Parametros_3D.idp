@@ -59,4 +59,6 @@ real epsEIM = 1e-5;
 
 // Parametros mu
 real Reynolds; // Esto es perceptible de cambiarlo
+real Remin;
+real Remax;
 

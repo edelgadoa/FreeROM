@@ -14,11 +14,14 @@
 load "iovtk" 
 
 // Cargamos macros y funciones i/o
-include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/Macros_3D.idp"
 // include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
 
-// Creamos la matriz
-include "../../Mallas/CuadradoNxNy.idp"
+// Creamos la malla
+include "../../Mallas/CuboNxNyNZ.idp"
+
+real paredes = 1;
+real techo = 2; //para las condiciones de contorno
 
 // Definimos los espacios de EF
 include "FE_Spaces_NoStab_VP_3D.idp"
@@ -32,7 +35,7 @@ include "Interp_matrix_NoStab_VP_3D_Local.idp"
 include "Parametros_3D.idp"
 
 // Incluimos el levantamiento
-include "Levantamiento.idp"
+include "Levantamiento_3D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
@@ -55,12 +58,13 @@ for(int i=0; i<nSnapshots; i++){
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
 
-Vh3P2 [uEF, uEFY, uEFP]; 
-VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
+Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-VhP2 SnapX, SnapY;
+VhP2 SnapX, SnapY, SnapZ;
 VhP2 SnapP;
 
 for (int i=0; i<nSnapshots; i++){
@@ -73,6 +77,7 @@ for (int i=0; i<nSnapshots; i++){
 
 	SnapX = uEF;
 	SnapY = uEFY;
+	SnapZ = uEFZ;
 	SnapP = uEFP;
 	
 	// Guardamos el snapshot -> TODO hacerlo con la funcion write
@@ -82,6 +87,9 @@ for (int i=0; i<nSnapshots; i++){
 
 	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt");
 	SnapshotVY<<SnapY[]<<endl;
+	
+	ofstream SnapshotVZ("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt");
+	SnapshotVZ<<SnapZ[]<<endl;
 
 	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt");
 	SnapshotP<<SnapP[]<<endl;	

@@ -13,7 +13,7 @@ verbosity=0
 #anoni)
 	rm freefem++.pref 
 #	dirmpi=$HOME/ff++4.8/bin
-    	ff-mpirun -np $NP ./NS_VMS_Smago_Pres.edp
+    	ff-mpirun -np $NP ./Snapshots.edp
 #	;;
 #mac)
 #	cp ../auxiliary/pref/freefem++mac.pref ./freefem++.pref
