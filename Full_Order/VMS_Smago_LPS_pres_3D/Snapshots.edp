@@ -1,0 +1,86 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_2D.idp"
+// include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+
+// Creamos la matriz
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_3D.idp"
+
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_3D.idp"
+include "Interp_matrix_NoStab_VP_3D_Local.idp"
+
+// Definimos los parametros a usar
+include "Parametros_3D.idp"
+
+// Incluimos el levantamiento
+include "Levantamiento.idp"
+
+//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
+real[int] vReynolds(nSnapshots);
+
+
+Remin = 1000;
+Remax = 5100;
+for(int i=0; i<nSnapshots; i++){
+	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
+}
+
+// Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
+{
+	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt");
+	nSnapshotFILE<<vReynolds<<endl;	
+}
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+VhP2 SnapX, SnapY;
+VhP2 SnapP;
+
+for (int i=0; i<nSnapshots; i++){
+
+	Reynolds = vReynolds(i);
+	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
+	include "FE_VMS_LPS_3D.idp"
+
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapP = uEFP;
+	
+	// Guardamos el snapshot -> TODO hacerlo con la funcion write
+
+	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt");
+	SnapshotVX<<SnapX[]<<endl;
+
+	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt");
+	SnapshotVY<<SnapY[]<<endl;
+
+	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt");
+	SnapshotP<<SnapP[]<<endl;	
+}
