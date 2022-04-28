@@ -18,7 +18,7 @@ include "../../Auxiliary/Macros_3D.idp"
 // include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
 
 // Creamos la malla
-include "../../Mallas/CuboNxNyNZ.idp"
+include "../../Mallas/CuboNxNyNz.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
