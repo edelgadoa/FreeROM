@@ -51,6 +51,7 @@ for(int i=0; i<Ninitpoints; i++){
 	vmuI(i)=Remin+i*(Remax-Remin)/(Ninitpoints-1);
 }
 
+cout<<vmuI<<endl;
 
 for(int i=0; i<Nfine; i++){
 	vmufine(i)=Remin+i*(Remax-Remin)/(Nfine-1);

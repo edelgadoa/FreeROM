@@ -15,7 +15,6 @@ if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 	VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 	
-	Reynolds = Refijo;
 	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 	
 	SnapX = uEF + Lev;
@@ -36,7 +35,6 @@ else{
 	
 	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];
 	
-
 }
 
 // Calculo las derivadas de la solucion CON LEVANTAMIENTO
@@ -52,7 +50,7 @@ Vh3P1dc [uEFf, uEFfY, uEFfP];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Calculo la matriz correspondiente a la Derivada direccional del operador fijo
-varf DerA([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)(1./Reynolds * GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))
+varf DerA([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)( (1./Reynolds)*GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))// +epspen*uuP*vP)
 									 + on (1,2,3,4, uu=0, uuY=0); 
 matrix DA = DerA(Vh3P2, Vh3P2);
 
@@ -114,7 +112,6 @@ matrix Fvb = DA + DXMS + DYMS + DXP + DYP;
 varf damultb([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)(vP); 
 
 real[int] Fmb=damultb(0,Vh3P2);
-
 
 Fb = [[Fvb, Fmb],[Fmb', 1]];
 											 
