@@ -114,21 +114,21 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	// Actualizamos Betak para calcular el error cometido
 	{
 		real[int] gammai(k+1+1+1);
-		real[int] vmuIi=vmuI(0:k);
-		gammai=fgamma(betaI,vmuIi);
+		real[int] vmuIi = vmuI(0:k);
+		gammai = fgamma(betaI,vmuIi);
 		for (int j=0;j<Nfine;j++)Betak1(j)=fbeta(gammai,vmuIi,vmufine(j));
 		for (int j=0;j<k+1+1+1;j++)gamma(j)=gammai(j);
 	}
 	// Calculo del error en cada iteracion
 	real[int] Errbeta(Nfine);
-	Errbeta=Betak1-Betak;
-	Errbeta=abs(Errbeta);
-	errorRBF=Errbeta.max;//Errbeta.l2/Betak.l2; //norma infinito
-	Betak=Betak1;
+	Errbeta = Betak1-Betak;
+	Errbeta = abs(Errbeta);
+	errorRBF = Errbeta.max;//Errbeta.l2/Betak.l2; //norma infinito
+	Betak = Betak1;
 	if(errorRBF<RBFeps && Betak.min>0)
 	{
 		RBFcontador=k+1;
-		write("Betak.txt",Betak,0,0);
+		write("Betak.txt", Betak, 0, 0);
 		break; //test de parada, asegurando que es positivo todo
 	}
 }
