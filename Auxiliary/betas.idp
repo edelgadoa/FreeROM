@@ -4,8 +4,8 @@ func real fnorma(real[int] & mui, real[int] & muj){
 }
 
 func real fnorma(real & mui, real & muj){
-	real[int] aux = abs(mui-muj);
-	return aux.l2;
+	real aux = abs(mui-muj);
+	return aux;
 }
 
 func real derfnorma(real[int] & mui, real[int] & muj){
@@ -48,18 +48,16 @@ func real fbeta(real[int] & gamma, real[int] & muj,real & mu){
 	return val;
 }	
 
-func real derbeta(real[int] & gamma,real[int] & muj,real & mu){
+func real derbeta(real[int] &gamma, real[int] &muj, real &mu){
 	int nj = muj.n;
-	int np = 1;
-	real[int] w=gamma(nj:nj+np-1);
+	real w=gamma(nj);
 	for (int i=0;i<nj;i++)
 	{
-		real[int] mumuj = mu-muj(i);
+		real mumuj = mu-muj(i);
 		real r = fnorma(mu,muj(i));
 		w += gamma(i)*DERradialfunction(r)*mumuj;
 	}
-	real val=w.l2;
-	return val;
+	return w;
 }
 
 func real der2beta(real[int] &gamma, real [int] &muj, real &mu){	
@@ -67,13 +65,13 @@ func real der2beta(real[int] &gamma, real [int] &muj, real &mu){
 	real val;
 	for (int i=0;i<nj;i++){
 		real r=fnorma(mu,muj(i)); //||\mu-\mu_j||
-		// val += gamma(i)*(4*log(r+1)+5*r/(r+1)-r^2/(r+1)^2); // Comprobado VERSION DE CRISTINA
+		// val += gamma(i)*(4*log(r+1)+5*r/(r+1)-r^2/(r+1)^2); // Comprobado (VERSION DE CRISTINA)
 		val += gamma(i)*DER2radialfunction(r); 
 	}
 	return val;
 }
 
-func real[int,int] matrixRBF(real[int] & DI){
+func real[int,int] matrixRBF(real[int] & DI){ //DI es el vector con los \mu calculados
 	int nj=DI.n;
 	int np=1;
 	real[int,int] Blbeta(nj+np+1,nj+np+1);
@@ -81,7 +79,7 @@ func real[int,int] matrixRBF(real[int] & DI){
 	//Primera parte de la matriz!
 	for (int i=0;i<nj;i++){
 		for (int jj=0;jj<nj;jj++){
-			real r=fnorma(DI(i),DI(i));
+			real r=fnorma(DI(i),DI(jj));
 			Blbeta(i,jj)=radialfunction(r);
 		}
 		Blbeta(i,nj:nj+np-1)=DI(i);
@@ -100,7 +98,6 @@ func real[int] fgamma(real[int] & betas,real[int] & DI){
 	lbeta=0; //las TRES ultimas componentes son 0! (las correspond. a w_1^1,w_1^2 y w_0)
 	for (int i=0;i<nj;i++)lbeta(i)=betas(i);
 	real[int,int] Blbeta=matrixRBF(DI);//(RBFcont+numparam+1,RBFcont+numparam+1);
-	
 	real[int] gamma(nj+np+1);
 	real[int,int] Blbetainv=Blbeta^-1;
 	gamma=Blbetainv*lbeta;
@@ -117,7 +114,7 @@ func real fhadapt(real[int] &muj, real mu){
 }
 
 
-func real[int] calculocriterion(real[int] & DI,real[int] & Disc,real[int] & gamma,real[int] & beta){
+func real[int] calculocriterion(real[int] &DI, real[int] &Disc, real[int] &gamma,real[int] &beta){
 	int nj = DI.n;
 	int nDisc = Disc.n;
 	real[int] fh(nDisc),C(nDisc);
@@ -125,8 +122,8 @@ func real[int] calculocriterion(real[int] & DI,real[int] & Disc,real[int] & gamm
 	real fhmax = fh.max; //el maximo de las distancias 
 	for (int k=0;k<nDisc;k++)
 	{
-		C(k) = (abs(derbeta(gamma,DI,Disc(k)))+1.e-6)
-			  *(abs(der2beta(gamma,DI,Disc(k)))+1.e-6)
+		C(k) = (abs(derbeta(gamma, DI, Disc(k))) + 1.e-6)
+			  *(abs(der2beta(gamma, DI, Disc(k))) + 1.e-6)
 			  *(fh(k)/fhmax)^2*gneg(beta(k));
 	}
 	return C;
