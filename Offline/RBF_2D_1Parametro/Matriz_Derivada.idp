@@ -3,6 +3,7 @@
 ///////////////
 
 // Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+/////////////////////////////////////////////////////////////////////////////////////////
 readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
 
 Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo

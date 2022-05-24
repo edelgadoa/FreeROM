@@ -76,10 +76,10 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY;
 	errEF = uEF - uEFp;
-	errEFY = uEF - uEFpY;
+	errEFY = uEFY - uEFpY;
 	
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
-	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEF]) + int2d(Th)(GradUGradV(uEF, uEF)));
+	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
 
 
 }

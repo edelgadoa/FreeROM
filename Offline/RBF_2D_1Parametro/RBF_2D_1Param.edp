@@ -128,7 +128,7 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	Betak = Betak1;
 	if(errorRBF<RBFeps && Betak.min>0)
 	{
-		RBFcontador=k+1;
+		RBFcontador = k+1;
 		write("RBF.txt", gamma0(0:RBFcontador + 2), 1, 0);
 		write("RBF.txt", vReI(0:RBFcontador), 1, 0);
 		write("RBF.txt", betaI(0:RBFcontador), 1, 0);
