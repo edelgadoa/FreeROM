@@ -10,7 +10,7 @@ real[int] bFija(Vh3P2.ndof);
 
 include "Matrices_fijas_NS_2D.idp"
 
-
+ERROR = 10;
 
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
@@ -80,6 +80,5 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
-
 
 }
