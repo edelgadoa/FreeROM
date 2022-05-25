@@ -15,12 +15,13 @@ if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 
 	VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 	
 	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 	ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 	
-	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 	write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 	
 	SnapX = uEF;

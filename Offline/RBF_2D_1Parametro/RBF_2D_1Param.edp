@@ -34,7 +34,6 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
 // Incluimos el levantamiento
 include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
-write("RBF.txt", " ", 0, 0); // Inicializamos el RBF.txt
 
 ////////////////////////////////////////////////////////////////
 // Definimos parámetros propios del RBF
@@ -129,9 +128,9 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	if(errorRBF<RBFeps && Betak.min>0)
 	{
 		RBFcontador = k+1;
-		write("RBF.txt", gamma(0:RBFcontador + 2), 1, 0);
-		write("RBF.txt", vmuI(0:RBFcontador), 1, 0);
-		write("RBF.txt", betaI(0:RBFcontador), 1, 0);
+		write("BetaMuI.txt", betaI(0:RBFcontador), 1, 0);
+		write("vMuI.txt", vmuI(0:RBFcontador), 1, 0);
+		write("gammaI.txt", gamma(0:RBFcontador + 2), 1, 0);
 		write("Betak.txt", Betak, 0, 0);
 		break; //test de parada, asegurando que es positivo todo
 	}

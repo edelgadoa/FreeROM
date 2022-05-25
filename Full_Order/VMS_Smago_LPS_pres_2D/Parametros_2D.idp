@@ -19,6 +19,14 @@ real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk); 
 
 
+//Construyo el vector que bloqueará el residuo de SMAGO
+varf CC([un1,un2,unp],[vvel1,vvel2,vpres]) = on(1,2,3,4, un1=1,un2=1); 
+
+real[int] cc = CC(0,Vh3P2);
+for (int gf=0; gf<Vh3P2.ndof; gf++){
+	cc(gf) = (cc(gf)>10^10) ? 0 : 1;
+} 
+
 // Parametros para el problema de EF
 real dt = 1;
 real epspen = 1e-8;

@@ -2,3 +2,83 @@
 // FreeROM 
 /////////////// 
 
+/////////////////////////////////////////
+/////////// FASE OFFLINE ////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+/////////// NO SUPREMIZER ///////////////
+/////////////////////////////////////////
+
+// Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/IO.idp" //HAY QUE EJECUTAR ESTE CÓDIGO EN PARALELO, LAS MATRICES SERÁN ALMACENADAS EN PARALELO
+
+// Creamos la matriz
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
+
+// Incluimos el levantamiento
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
+
+//Definicion de Constantes y variables varias
+int Nbases = 30; 
+
+real[int] MUbest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
+
+
+//////////////////////////////////////////
+////DEFINICION DE LOS ESPACIOS DE BR//////
+//////////////////////////////////////////
+
+VhP2[int] BaseP(Nbases);
+
+VhP2[int] BaseV(Nbases);
+VhP2[int] BaseVY(Nbases);
+
+VhP2[int] FV(Nbases),FVY(Nbases);
+
+VhP1dc[int] FdxP(Nbases), FdyP(Nbases);
+
+VhP1dc[int] FdxV(Nbases),FdyV(Nbases);
+VhP1dc[int] FdxVY(Nbases),FdyVY(Nbases);
+
+/////////////////////////////////////////
+readvector("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
+readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
+
+int Mbases = muEIM.n;
+int Taubases = muEIMTau.n;
+
+VhP1dc[int] EIMTau(Taubases);
+VhP1dc[int] EIMSmago(Mbases);
+
+// Cargo los elementos del EIM (tanto para Smago como para LPS)
+include "EIM_Data.idp"
+
+// Cargo los datos del RBF
+readvector("../RBF_2D_1Parametro/BetaMuI.txt", real, BetaI, 0);
+readvector("../RBF_2D_1Parametro/vMuI.txt", real, muI, 0);
+readvector("../RBF_2D_1Parametro/gammaI.txt", real, gammaI, 0);
+
+// Inicializo las matrices para la fase offline
+include "Allocate_matrices.idp"
+
+// Calculo la constante de Sobolev
+include "../../Auxiliary/Sobolev.idp"
+
+// Comenzamos con el Algoritmo Greedy
+
