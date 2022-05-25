@@ -1,0 +1,11 @@
+------------- PARAMETERS INFO ----------
+Number of proccesors: 2
+Geometrical: 
+ - NN=13
+ 
+Physical: 
+ - Reynold=3000
+ - dt=1
+ - epspen=1e-06
+ - epsEF=1e-11
+ 
