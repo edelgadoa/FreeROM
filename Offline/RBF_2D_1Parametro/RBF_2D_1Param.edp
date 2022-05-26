@@ -60,7 +60,6 @@ for(int i=0; i<Nfine; i++){
 
 
 // Calculo los valores de beta_h para cada uno de los valores de vReI y la matriz del producto escalar (mu_barra)
-real Refijo = 1000;
 matrix Fb, X;
 
 {include "Matriz_prodesc_RBF.idp"}
@@ -127,7 +126,7 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	Betak = Betak1;
 	if(errorRBF<RBFeps && Betak.min>0)
 	{
-		RBFcontador = k+1;
+		RBFcontador = k;
 		write("BetaMuI.txt", betaI(0:RBFcontador), 1, 0);
 		write("vMuI.txt", vmuI(0:RBFcontador), 1, 0);
 		write("gammaI.txt", gamma(0:RBFcontador + 2), 1, 0);

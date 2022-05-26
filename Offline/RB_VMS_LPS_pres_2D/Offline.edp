@@ -17,6 +17,7 @@ load "iovtk"
 
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/search.idp"
 include "../../Auxiliary/IO.idp" //HAY QUE EJECUTAR ESTE CÓDIGO EN PARALELO, LAS MATRICES SERÁN ALMACENADAS EN PARALELO
 
 // Creamos la matriz
@@ -68,6 +69,7 @@ VhP1dc[int] EIMSmago(Mbases);
 
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
+
 
 // Cargo los datos del RBF
 readvector("../RBF_2D_1Parametro/BetaMuI.txt", real, BetaI, 0);

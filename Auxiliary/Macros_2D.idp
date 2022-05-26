@@ -24,3 +24,4 @@ macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
 macro UGradT(U,temp) ([U,U#Y]'*Grad(temp)) //EOM
 macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
 macro MOD(U) (sqrt(U#dX^2+U#dY^2+U#YdX^2+U#YdY^2)) //EOM
+macro UporV(U,V) (U*V + U#Y*V#Y) //EOM

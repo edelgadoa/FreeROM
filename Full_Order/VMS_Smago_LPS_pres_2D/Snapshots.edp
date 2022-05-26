@@ -60,36 +60,41 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 VhP2 SnapX, SnapY;
 VhP2 SnapP;
+readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
 
 for (int i=0; i<nSnapshots; i++){
-
 	Reynolds = vReynolds(i);
 	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
-	include "FE_VMS_LPS_2D.idp"
-
-	SnapX = uEF;
-	SnapY = uEFY;
-	SnapP = uEFP;
 	
-	// Guardamos el snapshot -> TODO hacerlo con la funcion write
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		
+		include "FE_VMS_LPS_2D.idp"
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+		
+		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+		
+		SnapX = uEF;
+		SnapY = uEFY;
+		SnapP = uEFP;
 
-	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt");
-	SnapshotVX<<SnapX[]<<endl;
 
-	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt");
-	SnapshotVY<<SnapY[]<<endl;
+		// Guardamos los snapshots 
+		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+		write("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
 
-	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt");
-	SnapshotP<<SnapP[]<<endl;
-	
-	// Dibujamos la solucion, con levantamiento
+		// Dibujamos la solucion, con levantamiento
 
-	Vh3P2 [uEFL, uEFLY, uEFLP];
-	uEFL[]= uEF[] + Lev[];
+		Vh3P2 [uEFL, uEFLY, uEFLP];
+		uEFL[]= uEF[] + Lev[];
 
-	plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
-	plot(uEFLP, cmm="FE pres para Re="+Reynolds);
-	
-	//
+		plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+		plot(uEFLP, cmm="FE pres para Re="+Reynolds);
 
+		//
+	}
+	// Si ya está calculado, no hace nada
 }
