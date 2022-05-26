@@ -4,5 +4,4 @@ echo 'Numero de procesadores:'
 read NP
 
 verbosity=0
-rm freefem++.pref 
 ff-mpirun -np $NP ./Snapshots.edp

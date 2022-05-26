@@ -15,7 +15,8 @@ load "iovtk"
 
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_2D.idp"
-// include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../../Auxiliary/search.idp"
 
 // Creamos la matriz
 include "../../Mallas/CuadradoNxNy.idp"
@@ -44,10 +45,11 @@ for(int i=0; i<nSnapshots; i++){
 }
 
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
-{
-	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
-	nSnapshotFILE<<vReynolds<<endl;	
-}
+// {
+// 	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
+// 	nSnapshotFILE<<vReynolds<<endl;
+// }
+// Esto lo he quitado, porque debo ir añadiendo a medida que los voy calculando
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
