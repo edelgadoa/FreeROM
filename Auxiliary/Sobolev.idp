@@ -92,8 +92,8 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 {
 	zuk = UporV(u0,u0);
 	zuk[] /= sqrt(int2d(Th)(zuk^2));
-	// {real normL2=intN(Th)(zuk^2);
-	// cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
+//	 {real normL2=int2d(Th)(zuk^2);
+//	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
 	varf prodzu([uu,uuY],[v,vY])=int2d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh2P2, Vh2P2);
