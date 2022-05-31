@@ -58,7 +58,7 @@ VhP2[int] BaseP(Nbases);
 VhP2[int] BaseV(Nbases);
 VhP2[int] BaseVY(Nbases);
 
-VhP2[int] FV(Nbases),FVY(Nbases);
+VhP2[int] FBaseV(Nbases),FBaseVY(Nbases);
 
 VhP1dc[int] FdxP(Nbases), FdyP(Nbases);
 
@@ -171,9 +171,22 @@ for (int i=0; i<Nbases; i++){
 	
 	include "GramSchmidt.idp"
 	
+	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseVY(:,i) = BaseVY[i][];
 	MBaseP(:,i) = BaseP[i][];
 
-
+	// Actualizo las soluciones filtradas
+	FBaseV[i][] = IPhP2P1*BaseV[i][]; FBaseVY[i][] = IPhP2P1*BaseVY[i][];
+	
+	FdxV[i][] = DXP2*FBaseV[i][]; FdyV[i][] = DYP2*FBaseV[i][];
+	FdxVY[i][] = DXP2*FBaseVY[i][]; FdyVY[i][] = DYP2*FBaseVY[i][];
+	
+	FdxP[i][] = IPhDXP2*BaseP[i][]; FdxP[i][] = IPhDYP2*BaseP[i][];
+	
+	// Construyo las matrices
+	include "MatricesOffline.idp"
+	
+	
+	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
 }
