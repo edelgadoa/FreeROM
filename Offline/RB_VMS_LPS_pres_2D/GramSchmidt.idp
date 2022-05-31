@@ -1,0 +1,66 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para calcular las bases ortonormalizadas -> TODO hacerlo más eficiente
+
+/////////////////////////////////////////////
+// Ortonormalizacion de la Presion
+VhP2 Proyp;
+for (int j=0;j<i;j++){
+	real pesc = int2d(Th)(BaseP[j]*BaseP[i]);
+	Proyp[] += pesc*BaseP[j][];
+}
+
+BaseP[i][] -= Proyp[];
+real nl2 = int2d(Th)(BaseP[i]^2);
+BaseP[i][] /= sqrt(nl2);
+
+//Doble ortonormalizacion
+Proyp=0;
+
+for (int j=0;j<i;j++){
+	real pesc = int2d(Th)(BaseP[j]*BaseP[i]);
+	Proyp[] += pesc*BaseP[j][];
+}
+
+BaseP[i][] -= Proyp[];
+nl2 = int2d(Th)(BaseP[i]^2);
+BaseP[i][] /= sqrt(nl2);
+
+////////////////////////////////////////////
+
+// Ortonormalizacion de la velocidad
+
+VhP2 ProyV, ProyVY;
+
+for (int j=0;j<i;j++){
+	
+	real pesc = int2d(Th)(gradugradv(BaseV[j],BaseVY[j],BaseV[i],BaseVY[i]));
+	ProyV[] += pesc*BaseV[j][];
+	ProyVY[] += pesc*BaseVY[j][];
+}
+
+BaseV[i][] -= ProyV[];
+BaseVY[i][] -= ProyVY[];
+
+real nh1 = int2d(Th)(gradugradv(BaseV[i],BaseVY[i],BaseV[i],BaseVY[i]));
+BaseV[i][] /= sqrt(nh1);
+BaseVY[i][] /= sqrt(nh1);
+//	
+
+//Doble ortonormalizacion
+ProyV = 0; ProyVY = 0;
+
+for (int j=0;j<i;j++){
+	real pesc = int2d(Th)(gradugradv(BaseV[j],BaseVY[j],BaseV[i],BaseVY[i]));
+	ProyV[] += pesc*BaseV[j][];
+	ProyVY[] += pesc*BaseVY[j][];
+}
+
+BaseV[i][] -= ProyV[];
+BaseVY[i][] -= ProyVY[];
+
+nh1 = int2d(Th)(gradugradv(BaseV[i],BaseVY[i],BaseV[i],BaseVY[i]));
+BaseV[i][] /= sqrt(nh1);
+BaseVY[i][] /= sqrt(nh1);

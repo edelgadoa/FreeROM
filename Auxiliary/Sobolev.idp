@@ -4,8 +4,6 @@
 
 include "powermethod.idp"
 
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
-
 VhP2 uF,uFY;
 VhP1dc uFdX, uFdY, uFYdX, uFYdY;
 VhP2 SnapX, SnapY, SnapP;
@@ -95,7 +93,7 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 //	 {real normL2=int2d(Th)(zuk^2);
 //	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
-	varf prodzu([uu,uuY],[v,vY])=int2d(Th)(zuk*UporV(uu,v));
+	varf prodzu([uu,uuY],[v,vY]) = int2d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh2P2, Vh2P2);
 	
 	real[int] autovec = powermethod(Zu,T);

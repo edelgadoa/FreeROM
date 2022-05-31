@@ -15,13 +15,16 @@
 // Cargamos librerias
 load "iovtk" 
 
-// Cargamos macros y funciones i/o
+
+// Creamos la Malla
+include "../../Mallas/CuadradoNxNy.idp"
+
+
+// Cargamos macros, funciones i/o
 include "../../Auxiliary/Macros_2D.idp"
 include "../../Auxiliary/search.idp"
 include "../../Auxiliary/IO.idp" //HAY QUE EJECUTAR ESTE CÓDIGO EN PARALELO, LAS MATRICES SERÁN ALMACENADAS EN PARALELO
 
-// Creamos la matriz
-include "../../Mallas/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
 include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
@@ -35,11 +38,16 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
 // Incluimos el levantamiento
 include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../../Auxiliary/Normas.idp"
+
 //Definicion de Constantes y variables varias
 int Nbases = 30; 
 
 real[int] MUbest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
+// Leo los valores de los parámetros para los cuales he calculado ya Snapshots
+readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
 
 //////////////////////////////////////////
 ////DEFINICION DE LOS ESPACIOS DE BR//////
@@ -57,6 +65,9 @@ VhP1dc[int] FdxP(Nbases), FdyP(Nbases);
 VhP1dc[int] FdxV(Nbases),FdyV(Nbases);
 VhP1dc[int] FdxVY(Nbases),FdyVY(Nbases);
 
+// Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
+real[int, int] MBaseV(VhP2.ndof, Nbases), MBaseVY(VhP2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+
 /////////////////////////////////////////
 readvector("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
 readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
@@ -64,8 +75,9 @@ readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/muEIM_LPS.txt", real, muE
 int Mbases = muEIM.n;
 int Taubases = muEIMTau.n;
 
-VhP1dc[int] EIMTau(Taubases);
 VhP1dc[int] EIMSmago(Mbases);
+VhP0[int] EIMTau(Taubases);
+
 
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
@@ -80,7 +92,88 @@ readvector("../RBF_2D_1Parametro/gammaI.txt", real, gammaI, 0);
 include "Allocate_matrices.idp"
 
 // Calculo la constante de Sobolev
-include "../../Auxiliary/Sobolev.idp"
+//include "../../Auxiliary/Sobolev.idp"
 
+/////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 
+Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+VhP2 uFijo, uFijoY; //Para la normaT
+VhP1dc uFijodX, uFijodY, uFijoYdX, uFijoYdY;
+
+Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+
+if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+	// Si no lo he calculado todavía, lo calculo
+	Reynolds = Refijo;
+	
+	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
+	
+	uFijo = uEF + Lev;
+	uFijoY = uEFY + LevY;
+}
+else{
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Refijo + ".txt", real, SolX, 0);
+	uFijo[] = SolX;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Refijo + ".txt", real, SolY, 0);
+	uFijoY[] = SolY;
+
+	uFijo = uFijo + Lev;
+	uFijoY = uFijoY + LevY;
+	
+}
+{
+	VhP2 udcAux;
+	udcAux[] = IPhP2P1*uFijo[];
+	uFijodX[] = DXP2*udcAux[]; uFijodY[] = DYP2*udcAux[];
+
+	udcAux[] = IPhP2P1*uFijoY[];
+	uFijodX[] = DXP2*udcAux[]; uFijoYdY[] = DYP2*udcAux[];
+}
+
+
+// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
+varf pescT ([uu, uuY], [v,vY]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+matrix MPescT = pescT(Vh2P2, Vh2P2);
+
+
+
+for (int i=0; i<Nbases; i++){
+	
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		// Si no lo he calculado todavía, lo calculo
+
+		include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
+		
+		BaseV[i][] = uEF;
+		BaseVY[i][] = uEFY;
+		BaseP[i][] = uEFP;
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+	
+		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
+	}
+	else{
+		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", real, SolX, 0);
+		BaseV[i][] = SolX;
+		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", real, SolY, 0);
+		BaseVY[i][] = SolY;
+		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", real, SolP, 0);
+		BaseP[i][] = SolP;		
+	
+	}
+	
+	include "GramSchmidt.idp"
+	
+	MBaseV(:,i) = BaseV[i][];
+	MBaseVY(:,i) = BaseVY[i][];
+	MBaseP(:,i) = BaseP[i][];
+
+
+}
