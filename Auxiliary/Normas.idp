@@ -15,7 +15,7 @@ func real innerprodL2(real[int] &u, real[int] &v){
 	varf norml2(uu, vv) = int2d(Th)(uu*vv);
 	matrix XL2 = norml2(VhP2, VhP2);
 	real result = innerprodX(u, v, XL2);
-	return sqrt(result);
+	return result;
 }
 
 
@@ -38,8 +38,8 @@ func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
 		Proy += Pesc*M(:,j);
 	}
 	u -= Proy;
-	u/=normX(u, X);
-	return u;
+	real[int] result = u / normX(u, X);
+	return result;
 }
 
 func real[int] OrtoL2(real[int] &u, real[int,int] &M){

@@ -2,65 +2,32 @@
 // FreeROM 
 /////////////// 
 
-// Código para calcular las bases ortonormalizadas -> TODO hacerlo más eficiente
+// Código para calcular las bases ortonormalizadas 
 
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
-VhP2 Proyp;
-for (int j=0;j<i;j++){
-	real pesc = int2d(Th)(BaseP[j]*BaseP[i]);
-	Proyp[] += pesc*BaseP[j][];
-}
 
-BaseP[i][] -= Proyp[];
-real nl2 = int2d(Th)(BaseP[i]^2);
-BaseP[i][] /= sqrt(nl2);
+real[int, int] MBasePint = MBaseP(0:VhP2.ndof-1, 0:i-1);
 
-//Doble ortonormalizacion
-Proyp=0;
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePint);
 
-for (int j=0;j<i;j++){
-	real pesc = int2d(Th)(BaseP[j]*BaseP[i]);
-	Proyp[] += pesc*BaseP[j][];
-}
-
-BaseP[i][] -= Proyp[];
-nl2 = int2d(Th)(BaseP[i]^2);
-BaseP[i][] /= sqrt(nl2);
+// Doble Ortonormalización
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePint);
 
 ////////////////////////////////////////////
 
 // Ortonormalizacion de la velocidad
+varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
+matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
 
-VhP2 ProyV, ProyVY;
 
-for (int j=0;j<i;j++){
-	
-	real pesc = int2d(Th)(gradugradv(BaseV[j],BaseVY[j],BaseV[i],BaseVY[i]));
-	ProyV[] += pesc*BaseV[j][];
-	ProyVY[] += pesc*BaseVY[j][];
-}
+//real[int,int] MBaseVint(Vh2P2.ndof, i), 
+real[int,int] MBaseVint = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
 
-BaseV[i][] -= ProyV[];
-BaseVY[i][] -= ProyVY[];
+//MBaseVint(VhP2.ndof:Vh2P2.ndof-1, 0:i-1) = MBaseVYint;
 
-real nh1 = int2d(Th)(gradugradv(BaseV[i],BaseVY[i],BaseV[i],BaseVY[i]));
-BaseV[i][] /= sqrt(nh1);
-BaseVY[i][] /= sqrt(nh1);
-//	
+BaseV[i][] = OrtoX(BaseV[i][], MBaseVint, MNormaVel);
 
-//Doble ortonormalizacion
-ProyV = 0; ProyVY = 0;
+// Doble Ortonormalización
+BaseV[i][] = OrtoX(BaseV[i][], MBaseVint, MNormaVel);
 
-for (int j=0;j<i;j++){
-	real pesc = int2d(Th)(gradugradv(BaseV[j],BaseVY[j],BaseV[i],BaseVY[i]));
-	ProyV[] += pesc*BaseV[j][];
-	ProyVY[] += pesc*BaseVY[j][];
-}
-
-BaseV[i][] -= ProyV[];
-BaseVY[i][] -= ProyVY[];
-
-nh1 = int2d(Th)(gradugradv(BaseV[i],BaseVY[i],BaseV[i],BaseVY[i]));
-BaseV[i][] /= sqrt(nh1);
-BaseVY[i][] /= sqrt(nh1);

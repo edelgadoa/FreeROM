@@ -54,9 +54,10 @@ readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapsh
 //////////////////////////////////////////
 
 VhP2[int] BaseP(Nbases);
+Vh2P2[int] [BaseV, BaseVY](Nbases);
 
-VhP2[int] BaseV(Nbases);
-VhP2[int] BaseVY(Nbases);
+VhP2[int] BaseVel(Nbases);
+VhP2[int] BaseVelY(Nbases);
 
 VhP2[int] FBaseV(Nbases),FBaseVY(Nbases);
 
@@ -149,9 +150,11 @@ for (int i=0; i<Nbases; i++){
 
 		include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
 		
-		BaseV[i][] = uEF;
-		BaseVY[i][] = uEFY;
+		BaseV[i][] = [uEF, uEFY];
 		BaseP[i][] = uEFP;
+		
+		BaseVel[i][] = uEF; BaseVelY[i][] = uEFY; // Para construir las funciones filtradas después
+
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -161,23 +164,24 @@ for (int i=0; i<Nbases; i++){
 	}
 	else{
 		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", real, SolX, 0);
-		BaseV[i][] = SolX;
+		BaseVel[i][] = SolX;
 		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", real, SolY, 0);
-		BaseVY[i][] = SolY;
+		BaseVelY[i][] = SolY;
 		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", real, SolP, 0);
 		BaseP[i][] = SolP;		
+		
+		BaseV[i][] = [BaseVel[i][], BaseVelY[i][]];
 	
 	}
 	
 	include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
-	MBaseV(:,i) = BaseV[i][];
-	MBaseVY(:,i) = BaseVY[i][];
+	MBaseV(:,i) = BaseVel[i][];
 	MBaseP(:,i) = BaseP[i][];
 
 	// Actualizo las soluciones filtradas
-	FBaseV[i][] = IPhP2P1*BaseV[i][]; FBaseVY[i][] = IPhP2P1*BaseVY[i][];
+	FBaseV[i][] = IPhP2P1*BaseVel[i][]; FBaseVY[i][] = IPhP2P1*BaseVelY[i][];
 	
 	FdxV[i][] = DXP2*FBaseV[i][]; FdyV[i][] = DYP2*FBaseV[i][];
 	FdxVY[i][] = DXP2*FBaseVY[i][]; FdyVY[i][] = DYP2*FBaseVY[i][];
