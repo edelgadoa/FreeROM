@@ -83,7 +83,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
 	
-	cout << ERRORabs << endl;
+	// cout << ERRORabs << endl;
 
 
 }
