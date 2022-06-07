@@ -1,0 +1,16 @@
+///////////////
+// FreeROM 
+/////////////// 
+load "msh3"
+load "gmsh"
+load "iovtk"
+
+
+//mesh3 Th = readmesh3("IEfluids.mesh"); 
+// mesh3 Th = readmesh3("IEfluids.msh");
+ mesh3 Th = vtkload3("IEfluids.vtk");
+// mesh3 Th = vtkload3("IEfluids.vtu");
+// mesh3 Th = gmshload3("IEfluids.msh"); 
+
+cout<<"Number of vertices: "<<Th.nv<<endl;
+cout<<"Vertice 26348: "<< Th(26348).x << " " << Th(26348).y << " " << Th(26348).z<< " "<<Th(246348).label<<endl;
