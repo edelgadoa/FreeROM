@@ -34,7 +34,7 @@ include "Parametros_2D.idp"
 include "Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 329; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 165; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 
@@ -46,7 +46,7 @@ for(int i=0; i<nSnapshots; i++){
 
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
 {
-	ofstream nSnapshotFILE("../Data/Snapshots/Snapshots_LPS_P2P1/Snapshots.txt");
+	ofstream nSnapshotFILE("../Data/Snapshots/Snapshots_Smago_P2P2/Snapshots.txt");
 	nSnapshotFILE<<vReynolds<<endl;	
 }
 
@@ -54,14 +54,14 @@ for(int i=0; i<nSnapshots; i++){
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
 
-Vh2P2P1 [uEF, uEFY, uEFP]; 
-//VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
 VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
-//VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 VhP2 SnapX, SnapY;
-VhP1 SnapP;
-//VhP1dc SnapVis;
+VhP2 SnapP;
+VhP1dc SnapVis;
 
 for (int i=0; i<nSnapshots; i++){
 	Reynolds = vReynolds(i);
@@ -72,29 +72,29 @@ for (int i=0; i<nSnapshots; i++){
 	SnapX = uEF;
 	SnapY = uEFY;
 	SnapP = uEFP;
-	//SnapVis = Gr;
+	SnapVis = Gr;
 	// Guardamos el snapshot -> TODO hacerlo con la funcion write
 
 	//Componente X de la velocidad
-	ofstream SnapshotVX("../Data/Snapshots/Snapshots_LPS_P2P1/Vx_" + Reynolds + ".txt");
+	ofstream SnapshotVX("../Data/Snapshots/Snapshots_Smago_P2P2/Vx_" + Reynolds + ".txt");
 	SnapshotVX<<SnapX[]<<endl;
 
 	//Componente Y de la velocidad
-	ofstream SnapshotVY("../Data/Snapshots/Snapshots_LPS_P2P1/Vy_" + Reynolds + ".txt");
+	ofstream SnapshotVY("../Data/Snapshots/Snapshots_Smago_P2P2/Vy_" + Reynolds + ".txt");
 	SnapshotVY<<SnapY[]<<endl;
 
 	//Presion
-	ofstream SnapshotP("../Data/Snapshots/Snapshots_LPS_P2P1/P_" + Reynolds + ".txt");
+	ofstream SnapshotP("../Data/Snapshots/Snapshots_Smago_P2P2/P_" + Reynolds + ".txt");
 	SnapshotP<<SnapP[]<<endl;
 	
-	/*
+	
 	//Viscosidad turbulenta
-	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_LPS/Vis_" + Reynolds + ".txt");
+	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_Smago_P2P2/Vis_" + Reynolds + ".txt");
 	SnapshotsVis << SnapVis[] << endl;
-	*/
+	
 	// Dibujamos la solucion, con levantamiento
 
-	Vh2P2P1 [uEFL, uEFLY, uEFLP];
+	Vh3P2 [uEFL, uEFLY, uEFLP];
 	uEFL[]= uEF[] + Lev[];
 
 	plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);

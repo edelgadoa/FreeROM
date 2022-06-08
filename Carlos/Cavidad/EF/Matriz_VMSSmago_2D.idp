@@ -5,21 +5,21 @@
 ///////////////////////////////////
 //Matriz SMAGORINSKY filtrada
 ///////////////////////////////////	
-
-Gr=MOD(uEF);
+macro mmod(u,v)  (sqrt(dx(u)^2 + dx(v)^2 + dy(u)^2 + dy(v)^2)) //
+Gr=mmod(uprevL,uprevLY);
 
 
 Vh3P1dc [Levf,LevfY,LevfP];
 VhP2 Levaux; //en principio no lo necesito
 
 
-varf FVSmago([uu1,uu2,pun],[v1,v2,qun])=int2d(Th)((CS*hTriangle)^2*Gr*(uu1*v1+uu2*v2));
-varf FVSmagob([uu1,uu2,pun],[v1,v2,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*(Levf*v1+LevfY*v2));
+varf FVSmago([uu1,uu2,pun],[v1,v2,qun])=int2d(Th)((CS*hTriangle)^2*Gr*(gradugradv(uu1,uu2,v1,v2)));
+varf FVSmagob([uu1,uu2,pun],[v1,v2,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*(gradugradv(GP2,GzeroP2,v1,v2)));
 
 	
-matrix M=FVSmago(Vh3P1dc,Vh3P1dc);
+matrix M=FVSmago(Vh3P2,Vh3P2);
 real[int] bSx(Vh3P2.ndof), bSy(Vh3P2.ndof);
-
+/*
 matrix DXX,DYY;
 {
 	matrix Maux; 
@@ -41,7 +41,7 @@ matrix DXX,DYY;
 	bS=FVSmagob(0,Vh3P1dc);
 	bSy=(Maux')*bS;
 }
-	
-Smago = DXX + DYY;
-bSmago = bSx + bSy;
+*/	
+Smago = M;
+bSmago = FVSmago(0,Vh3P2);
 

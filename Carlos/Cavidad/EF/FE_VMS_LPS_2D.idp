@@ -5,7 +5,7 @@
 
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
-real[int] bFija(Vh2P2P1.ndof);
+real[int] bFija(Vh3P2.ndof);
 
 
 include "Matrices_fijas_NS_2D.idp"
@@ -23,11 +23,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	/*
 	{
 		VhP2 udcAux;
-		udcAux[] = IPhP2P1*uprevL[];
+		udcAux[] = uprevL[];
 		uEFdX[] = DXP2*udcAux[];
 		uEFdY[] = DYP2*udcAux[];
 
-		udcAux[] = IPhP2P1*uprevLY[];
+		udcAux[] = uprevLY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
 	
@@ -36,17 +36,17 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
-	real[int] bNS(Vh2P2P1.ndof);
+	real[int] bNS(Vh3P2.ndof);
 	
 	include "Matrices_variables_NS_2D.idp"
 	
-	/*
+	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
 	real[int] bSmago(Vh3P2.ndof);
 	
 	include "Matriz_VMSSmago_2D.idp"
-	*/
+	
 
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
@@ -56,20 +56,20 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
-	real[int] bFinal(Vh2P2P1.ndof);
+	real[int] bFinal(Vh3P2.ndof);
 	
 	MFinal = MFija;
 	MFinal += MNS;
-	//MFinal += Smago;
+	MFinal += Smago;
 	MFinal += LPSpres;
 	
 	bFinal = bFija;
 	bFinal += bNS;
-	//bFinal += bSmago;
+	bFinal += bSmago;
 	
 	set(MFinal, solver=sparsesolver);
 	
-	Vh2P2P1 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
+	Vh3P2 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[]=uEF[];
 	
 	uEF[]=MFinal^-1*bFinal;

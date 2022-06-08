@@ -6,7 +6,7 @@
 
 func G = 1*(y>=1);
 
-Vh2P2P1 [Lev, LevY, LevP];
+Vh3P2 [Lev, LevY, LevP];
 VhP2 GP2 = G;
 VhP2 GzeroP2 = 0.;
 
