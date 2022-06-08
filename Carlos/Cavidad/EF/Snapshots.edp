@@ -99,7 +99,7 @@ for (int i=0; i<nSnapshots; i++){
 
 	plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 	plot(uEFLP, cmm="FE pres para Re="+Reynolds);
-	
+	plot(Gr,cmm="FE visc para Re="+Reynolds);
 	//
 	
 

@@ -11,7 +11,6 @@
 
 fespace Vh3P2(Th, [P2, P2, P2]);
 fespace Vh3P1(Th, [P1, P1, P1]);
-fespace Vh2P2P1 (Th, [P2,P2,P1]);
 fespace Vh3P0(Th, [P0, P0, P0]);
 fespace Vh3P1dc(Th, [P1dc, P1dc, P1dc]); 
 fespace VhP0(Th, P0); 

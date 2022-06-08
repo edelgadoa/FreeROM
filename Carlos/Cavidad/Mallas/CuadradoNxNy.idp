@@ -8,8 +8,8 @@
 mesh Th;
  
 {
-	int Nx = 50; // Numero de divisiones eje X
-	int Ny = 50; // Numero de divisiones eje Y
+	int Nx = 30; // Numero de divisiones eje X
+	int Ny = 30; // Numero de divisiones eje Y
 	int nflag = 0; 
 		// nflag = 0 --> Malla estandar (diagonal x-y=cte)
 		// nflag = 1 --> Malla tipo "Union flag" |x|

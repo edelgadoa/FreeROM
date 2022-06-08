@@ -23,11 +23,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	/*
 	{
 		VhP2 udcAux;
-		udcAux[] = uprevL[];
+		udcAux[] = IPhP2P1*uprevL[];
 		uEFdX[] = DXP2*udcAux[];
 		uEFdY[] = DYP2*udcAux[];
 
-		udcAux[] = uprevLY[];
+		udcAux[] = IPhP2P1*uprevLY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
 	
@@ -83,7 +83,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
 	
-	// cout << ERRORabs << endl;
+	cout << ERRORabs << endl;
 
 
 }

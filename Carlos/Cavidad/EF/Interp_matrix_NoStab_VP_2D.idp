@@ -64,10 +64,10 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1,IPh3P13P0,IPhP0P1;
 }
 
 // Matrices de derivadas	
-matrix DX3P2, DY3P2; // ∂x, ∂y 3P2 -> 3P1dc en las 3 componentes 
-matrix DXP2, DYP2;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
-matrix D1X3P2, D2X3P2, D3X3P2, D3X2P2P1; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
-matrix D1Y3P2, D2Y3P2, D3Y3P2, D3Y2P2P1; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix DX3P2, DY3P2, DX3P1,DY3P1; // ∂x, ∂y 3P2 -> 3P1dc en las 3 componentes 
+matrix DXP2, DYP2, DXP1, DYP1;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
+matrix D1X3P2, D2X3P2, D3X3P2, D3X3P1; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix D1Y3P2, D2Y3P2, D3Y3P2, D3Y3P1; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 
 {
 	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
@@ -103,13 +103,16 @@ matrix D1Y3P2, D2Y3P2, D3Y3P2, D3Y2P2P1; // ∂y 3P2 -> P1dc en la componente 1,
 	D3Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
 	
 	cs2=[2];
-	D3X2P2P1 = interpolate(VhP0,Vh2P2P1,U2Vc=cs2,op=1);
-	D3Y2P2P1 = interpolate(VhP0,Vh2P2P1,U2Vc=cs2,op=2);
+	D3X3P1 = interpolate(VhP0,Vh3P1,U2Vc=cs2,op=1);
+	D3Y3P1 = interpolate(VhP0,Vh3P1,U2Vc=cs2,op=2);
 	
 	////////////////////////////////////////////////////////
 	
 	DXP2 = interpolate(VhP1dc,VhP2,op=1);
 	DYP2 = interpolate(VhP1dc,VhP2,op=2);
+	
+	DXP1 = interpolate(VhP0,VhP1,op=1);
+	DYP1 = interpolate(VhP0,VhP1,op=2);
 
 }
 
@@ -117,13 +120,16 @@ matrix D1Y3P2, D2Y3P2, D3Y3P2, D3Y2P2P1; // ∂y 3P2 -> P1dc en la componente 1,
 matrix IPhD3X3P2 = IPhP1dcP1 * D3X3P2; // (I-πh) de ∂x componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD3Y3P2 = IPhP1dcP1 * D3Y3P2; // (I-πh) de ∂y componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
 
-matrix IPhD3X2P2P1 = IPhP0P1 * D3X2P2P1;
-matrix IPhD3Y2P2P1 = IPhP0P1 * D3Y2P2P1;
+matrix IPhD3X3P1 = IPhP0P1 * D3X3P1;
+matrix IPhD3Y3P1 = IPhP0P1 * D3Y3P1;
 
 //Matrices de derivada, con filtrado para una componente solo
 
 matrix IPhDXP2 = IPhP1dcP1*DXP2;
 matrix IPhDYP2 = IPhP1dcP1*DYP2;
+
+matrix IPhDXP1 = IPhP0P1*DXP1;
+matrix IPhDYP1 = IPhP0P1*DYP1;
 
 //Matrices de filtrado con derivada 
 matrix DXP2IPh = DXP2*IPhP2P1;
