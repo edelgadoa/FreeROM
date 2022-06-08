@@ -5,3 +5,5 @@
 *.fig
 *.DS_Store
 *.out
+*.mesh
+*.dat

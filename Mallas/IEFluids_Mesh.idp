@@ -46,9 +46,9 @@ mesh3 Th, ThL;
 	Th = Cube(Nxyz, Bxyz, Lxyz);
 	ThL = Th;
 } 
-//savevtk("./IEfluids.vtk", Th);
-//savevtk("./IEfluids.vtu", Th);
-savemesh(Th,"./IEfluids.mesh");
-//savemesh(Th,"./IEfluidsFF.msh");
-//savegmsh(Th, "./IEfluids");
+//savevtk("IEfluids.vtk", Th);
+//savevtk("IEfluids.vtu", Th);
+savemesh(Th,"IEfluids.mesh");
+//savemesh(Th,"IEfluidsFF.msh");
+//savegmsh(Th, "IEfluids");
 
