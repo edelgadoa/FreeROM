@@ -10,15 +10,10 @@ int[int] fforder=[1,1,1,1];
 include "IE2FF.idp"
 
 mesh3 Th = readmesh3("IEfluids.mesh"); 
-// mesh3 Th = readmesh3("IEfluids.msh");
-// mesh3 Th = vtkload3("IEfluids.vtk");
-// mesh3 Th = vtkload3("IEfluids.vtu");
-// mesh3 Th = gmshload3("IEfluids.msh"); 
 
 fespace VhP1(Th, P1);
 fespace Vh3P1(Th, [P1,P1,P1]);
 
-real[int][int] MeshIE(Th.nv), MeshIENew(Th.nv);
 
 ifstream ReadSnapshot("field.txt");
 int mx, my, mz;
@@ -33,7 +28,8 @@ for (int i=0; i<mx*my*mz; i++){
 	ReadSnapshot>>Vz(i);
 	ReadSnapshot>>Pp(i);
 }
-cout<<Vx<<endl;
+
+
 Pp = IE2FF(Pp, mx, my, mz);
 Vx = IE2FF(Vx, mx, my, mz);
 Vy = IE2FF(Vy, mx, my, mz);
@@ -50,40 +46,5 @@ Vzh[] = Vz;
 Ph[] = Pp;
 
 savevtk("IEfluidsSnapshot.vtu", Th, Ph, [VX, VY, VZ], dataname="Pressure Velocity", order=fforder);
-//
-// ifstream ReadMesh("grid.txt");
-// int mx, my, mz;
-// ReadMesh>>mx;
-// ReadMesh>>my;
-// ReadMesh>>mz;
-//
-// for (int i=0; i<mx*my*mz; i++){
-// 	real xx, yy, zz;
-// 	ReadMesh>>xx;
-// 	ReadMesh>>yy;
-// 	ReadMesh>>zz;
-// 	MeshIE[i] = [xx,yy,zz];
-// 	MeshIENew[i] = [0,0,0];
-// }
-//
-// ofstream WriteMesh("MallaIE.txt");
-// WriteMesh<<MeshIE<<endl;
 
 
-
-
-// MeshIENew = IE2FF(MeshIE, mx, my, mz);
-
-// int cont = 0;
-// for (int j=0; j<my; j++){
-// 	for (int i=0; i<mx; i++){
-// 		for (int k=0; k<mz; k++){
-// 			MeshIENew[cont] = MeshIE[i + mx*j + k*my*mx];
-// 			cont++;
-// 		}
-// 	}
-// }
-
-// int elemen = 928346;
-// cout<<"Malla IE: ("<<MeshIENew[elemen](0)<<", "<<MeshIENew[elemen](1)<<", "<<MeshIENew[elemen](2)<<")"<<endl;
-// cout<<"Malla FF: ("<<Th(elemen).x<<", "<<Th(elemen).y<<", "<<Th(elemen).z<<")"<<endl;
