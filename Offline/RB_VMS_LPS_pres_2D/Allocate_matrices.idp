@@ -64,6 +64,14 @@ PenRB = 0;
 ConvLevRB = 0;
 DTRB = 0;
 
+// Definicion de los segundos miembros
+real[int] bDiffRB(2*Nbases), bConvRB(2*Nbases), bDTRB(2*Nbases);			   
+real[int,int] bSmagoRB(Mbases, 2*Nbases);
+
+bDiffRB = 0;
+bConvRB = 0;
+bDTRB = 0;
+bSmagoRB = 0;
 
 
 // Definicion de Matrices y Tensores variables

@@ -12,25 +12,43 @@ include "Allocate_matrices_local.idp"
 int contFF = 0; // Contador para el paralelo
 for (int j=0; j<=i; j++){
 	if (mpirank==contFF%mpisize){
+		// Matrices
 		DiffRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], DiffPEM); 
 		DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
 		PenRBGL(i+Nbases, j+Nbases) = innerprodX(BaseP[j][], BaseP[i][], PenPEM);
+		ConvLevRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
+		DTRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], DTPEM);
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
 			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
-		}	
+			ConvLevRBL(j,i) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+			DTRBL(j,i) = DTRBL(i,j);
+		}
+	
+	for(s=0; s<i; s++){
+		VhP2 Baux = BaseVel[s], BauxY = BaseVelY[s];
+		varf ConvPE([uu, uuY], [v,vY]) = int2d(Th)(UgradVW(Baux,uu,v));
+		matrix ConvPEM = ConvPE(Vh2P2, Vh2P2);
+		
+		ConvRBL(j,i) = innerProd(BaseV[j][], BaseV[i][], ConvPEM);
+	}	
+			
 	}
 	contFF++;
 }
 pause;
+
 mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+
 DiffRB += DiffRBG;
 DivPRB += DivPRBG;
 PenRB += PenRBL;
-if (mpirank==0){
-	cout<<DivPRB<<endl;
-}
+ConvLevRB += ConvLevRBL;
+DTRB += DTRBL;
+

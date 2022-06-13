@@ -12,7 +12,7 @@ PenRBG = 0;
 ConvLevRBG = 0;
 DTRBG = 0;
 
-// Definicion de los segundos miembros Glovales
+// Definicion de los segundos miembros Globales
 real[int] bDiffRBG(2*Nbases), bConvRBG(2*Nbases), bDTRBG(2*Nbases);			   
 real[int,int] bSmagoRBG(Mbases, 2*Nbases);
 
