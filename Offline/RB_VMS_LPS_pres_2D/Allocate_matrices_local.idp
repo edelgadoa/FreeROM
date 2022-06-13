@@ -1,0 +1,41 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Definicion de las Matrices Reducidas fijas Globales para el cálculo en paralelo
+real[int,int] DiffRBG(2*Nbases, 2*Nbases), DivPRBG(2*Nbases, 2*Nbases), PenRBG(2*Nbases, 2*Nbases), 
+			  ConvLevRBG(2*Nbases, 2*Nbases), DTRBG(2*Nbases, 2*Nbases);
+			  
+DiffRBG = 0;
+DivPRBG = 0;
+PenRBG = 0;
+ConvLevRBG = 0;
+DTRBG = 0;
+
+// Definicion de los segundos miembros Glovales
+real[int] bDiffRBG(2*Nbases), bConvRBG(2*Nbases), bDTRBG(2*Nbases);			   
+real[int,int] bSmagoRBG(Mbases, 2*Nbases);
+
+bDiffRBG = 0;
+bConvRBG = 0;
+bDTRBG = 0;
+bSmagoRBG = 0;
+
+// Definicion de las Matrices Reducidas fijas locales para el cálculo en paralelo
+real[int,int] DiffRBL(2*Nbases, 2*Nbases), DivPRBL(2*Nbases, 2*Nbases), PenRBL(2*Nbases, 2*Nbases), 
+			  ConvLevRBL(2*Nbases, 2*Nbases), DTRBL(2*Nbases, 2*Nbases);
+			  
+DiffRBL = 0;
+DivPRBL = 0;
+PenRBL = 0;
+ConvLevRBL = 0;
+DTRBL = 0;
+
+// Definicion de los segundos miembros
+real[int] bDiffRBL(2*Nbases), bConvRBL(2*Nbases), bDTRBL(2*Nbases);			   
+real[int,int] bSmagoRBL(Mbases, 2*Nbases);
+
+bDiffRBL = 0;
+bConvRBL = 0;
+bDTRBL = 0;
+bSmagoRBL = 0;

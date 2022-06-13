@@ -15,7 +15,7 @@ fespace VhP1(Th, P1);
 fespace Vh3P1(Th, [P1,P1,P1]);
 
 
-ifstream ReadSnapshot("field.txt");
+ifstream ReadSnapshot("field.dat");
 int mx, my, mz;
 ReadSnapshot>>mx;
 ReadSnapshot>>my;

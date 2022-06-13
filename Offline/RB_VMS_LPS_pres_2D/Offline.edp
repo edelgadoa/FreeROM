@@ -141,7 +141,8 @@ else{
 varf pescT ([uu, uuY], [v,vY]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
 matrix MPescT = pescT(Vh2P2, Vh2P2);
 
-
+// Defino los diferentes productos escalares para construir las matrices reducidas
+include "Scalar_Product_Matrices.idp"
 
 for (int i=0; i<Nbases; i++){
 	

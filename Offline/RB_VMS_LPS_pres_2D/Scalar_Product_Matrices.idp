@@ -1,0 +1,18 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+varf DiffPE([uu,uuY], [v,vY]) = int2d(Th)(GradUGradV(uu,v));
+matrix DiffPEM = DiffPE(Vh2P2,Vh2P2);
+
+varf DivPPE([uu,uuY], [vP]) = int2d(Th)(Div(uu)*vP);
+matrix DivPPEM = DivPPE(Vh2P2, VhP2);
+
+varf PenPE(uP, vP) = int2d(Th)(epspen*uP*vP);
+matrix PenPEM = PenPE(VhP2, VhP2);
+
+varf ConvLevPE([uu,uuY], [v,vY]) = int2d(Th)(UGradVW(Lev, uu, v) + UGradVW(uu, Lev, v));
+matrix ConvLevPEM = ConvLevPE(Vh2P2, Vh2P2);
+
+varf DTPE([uu,uuY], [v,vY]) = int2d(Th)(UporV(uu,v));
+matrix DTPEM = DTPE(Vh2P2, Vh2P2);

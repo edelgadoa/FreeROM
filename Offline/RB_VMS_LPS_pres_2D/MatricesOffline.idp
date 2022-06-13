@@ -4,3 +4,33 @@
 
 // Código para construir EN PARALELO las matrices de base reducida
 
+// Inicializo las matrices locales para el paralelo
+include "Allocate_matrices_local.idp"
+
+
+// Comienzo el bucle de construccion de las matrices reducidas
+int contFF = 0; // Contador para el paralelo
+for (int j=0; j<=i; j++){
+	if (mpirank==contFF%mpisize){
+		DiffRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], DiffPEM); 
+		DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+		PenRBGL(i+Nbases, j+Nbases) = innerprodX(BaseP[j][], BaseP[i][], PenPEM);
+		
+		if (j<i){
+			DiffRBL(j,i) = DiffRBL(i,j);
+			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
+		}	
+	}
+	contFF++;
+}
+pause;
+mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+DiffRB += DiffRBG;
+DivPRB += DivPRBG;
+PenRB += PenRBL;
+if (mpirank==0){
+	cout<<DivPRB<<endl;
+}
