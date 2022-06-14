@@ -17,3 +17,4 @@ fespace VhP1dc(Th, P1dc);
 fespace VhP1(Th, P1);
 fespace VhP2(Th, P2);
 fespace Vh2P2(Th, [P2,P2]);
+fespace Vh2P1(Th, [P1,P1]);

@@ -189,6 +189,11 @@ for (int i=0; i<Nbases; i++){
 	
 	FdxP[i][] = IPhDXP2*BaseP[i][]; FdxP[i][] = IPhDYP2*BaseP[i][];
 	
+	
+	// Defino el nuevo producto escalar para la convección
+	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(ugradvw(BaseVel[i],BaseVelY[i],uu,uuY,v,vY));
+	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
+	
 	// Construyo las matrices
 	include "MatricesOffline.idp"
 	

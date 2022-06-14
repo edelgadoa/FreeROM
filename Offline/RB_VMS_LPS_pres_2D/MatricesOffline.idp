@@ -8,7 +8,7 @@
 include "Allocate_matrices_local.idp"
 
 
-// Comienzo el bucle de construccion de las matrices reducidas
+// Comienzo el bucle de construccion de las matrices reducidas fijas
 int contFF = 0; // Contador para el paralelo
 for (int j=0; j<=i; j++){
 	if (mpirank==contFF%mpisize){
@@ -51,4 +51,31 @@ DivPRB += DivPRBG;
 PenRB += PenRBL;
 ConvLevRB += ConvLevRBL;
 DTRB += DTRBL;
+
+// Comienzo el bucle para la construcción de los tensores
+
+// Conveccion
+contFF = 0;
+for (int s=0; s<Nbases; s++){
+	if (mpirank==contFF%mpisize){
+		for (j=0; j<i; j++){
+			ConvRBL[s](i,j) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+			if(j<i){
+				ConvRBL[s](j,i) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+			}
+			if (s==i && j!=i){
+				for (k=0; k<s; k++){
+					ConvRBL[s](k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
+				}
+			} 
+		}
+	}
+	contFF++;
+}
+pause;
+for (int s=0; s<Nbases; s++){
+	mpiAllReduce(ConvRBL[s], ConvRBG[s], mpiCommWorld, mpiSUM);
+	ConvRB[s] += ConvRBG;
+}
+
 

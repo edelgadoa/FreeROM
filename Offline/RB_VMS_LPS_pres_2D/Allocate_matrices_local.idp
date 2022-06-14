@@ -39,3 +39,7 @@ bDiffRBL = 0;
 bConvRBL = 0;
 bDTRBL = 0;
 bSmagoRBL = 0;
+
+// Definicion de Matrices y Tensores variables globales y locales
+real[int,int][int] ConvRBL(2*Nbases), SmagoRBL(Mbases), StabPRBL(Taubases);
+real[int,int][int] ConvRBG(2*Nbases), SmagoRBG(Mbases), StabPRBG(Taubases);
