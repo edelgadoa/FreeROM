@@ -13,8 +13,8 @@ Vh3P1dc [Levf,LevfY,LevfP];
 VhP2 Levaux; //en principio no lo necesito
 
 
-varf FVSmago([uu,uuY,pun],[v,vY,qun])=int2d(Th)((CS*hTriangle)^2*Gr*UPorV(uu,v));
-varf FVSmagob([uu,uuY,pun],[v,vY,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*UPorV(Levf,v));
+varf FVSmago([uu,uuY,pun],[v,vY,qun])=int2d(Th)((CS*hTriangle)^2*Gr*UporV(uu,v));
+varf FVSmagob([uu,uuY,pun],[v,vY,qun])=-int2d(Th)((CS*hTriangle)^2*Gr*UporV(Levf,v));
 
 	
 matrix M=FVSmago(Vh3P1dc,Vh3P1dc);

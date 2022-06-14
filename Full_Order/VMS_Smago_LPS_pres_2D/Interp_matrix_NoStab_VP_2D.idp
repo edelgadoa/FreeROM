@@ -19,7 +19,7 @@
 
 
 // Matrices de filtrado. 
-matrix IPhP2P1, IPh3P23P1, IPhP1dcP1;
+matrix IPhP2P1, IPh3P23P1, IPhP1dcP1, IPh2P22P1;
 
 {
 		matrix IdP2,Id3P2,IdP1dc,IdP1,Id2P2; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
@@ -57,15 +57,16 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1;
 
 // Matrices de derivadas	
 matrix DX3P2, DY3P2; // ∂x, ∂y 3P2 -> 3P1dc en las 3 componentes 
+matrix DX2P2, DY2P2; // ∂x, ∂y 3P2 -> 3P1dc en las 2 componentes de la velocidad
 matrix DXP2, DYP2;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
 matrix D1X3P2, D2X3P2, D3X3P2; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 matrix D1Y3P2, D2Y3P2, D3Y3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 
 {
 	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
-	int[int] c0=[0,-1,-1];
-	int[int] c1=[-1,1,-1];
-	int[int] c2=[-1,-1,2];
+	int[int] c0 = [0,-1,-1];
+	int[int] c1 = [-1,1,-1];
+	int[int] c2 = [-1,-1,2];
 	
 	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
 	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
@@ -79,16 +80,29 @@ matrix D1Y3P2, D2Y3P2, D3Y3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 
 	
 	DY3P2 = D1 + D2 + D3;
 	
+	matrix DD1, DD2; //Cada una de las componentes de EFX que derivo
+	int[int] c00 = [0, -1];
+	int[int] c11 = [-1, 1];
+	
+	DD1 = interpolate(Vh2P1dc,Vh2P2,U2Vc=c00,op=1);
+	DD2 = interpolate(Vh2P1dc,Vh2P2,U2Vc=c11,op=1);
+	
+	DX2P2 = DD1 + DD2;
+	
+	DD1 = interpolate(Vh2P1dc,Vh2P2,U2Vc=c00,op=2);
+	DD2 = interpolate(Vh2P1dc,Vh2P2,U2Vc=c11,op=2);
+	
+	DY2P2 = DD1 + DD2;
+	
 	/////////////////////////////////////////////////////////
 	
 	int[int] cs2=[0];
 	D1X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	D1Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	D1Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);	
 
 	cs2=[1];
 	D2X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
-
+	D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);	
 
 	cs2=[2];
 	D3X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);

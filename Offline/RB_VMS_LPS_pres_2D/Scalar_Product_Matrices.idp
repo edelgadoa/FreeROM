@@ -22,28 +22,28 @@ matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del gre
 matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
-	for int(s=0; s<Mbases; s++){
-		if(mpirank==contS%mpisize){
+	for (int s=0; s<Mbases; s++){
+		if(mpirank==contS%mpisize){. //ESTO ESTA MAL EN PARALELO, NO SUMO LAS MATRICES LOCALES. SI VEO QUE ES DIFICIL, LO HAGO EN SERIAL
 			// Matrices Smago
-			varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((Cs*hTriangle)^2*EIMSmago[s]*UPorV(uu,v));
-			matrix SPEM = SmagoPE(Vh2P2, Vh2P2);
+			varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
+			matrix SPEM = SmagoPE(Vh2P1dc, Vh2P1dc);
 			matrix FiltroX, FiltroY;
 			{
-				FiltroX = (DX3P2IPh') * SPEM;
+				FiltroX = (DX2P2IPh') * SPEM;
 				FiltroX = SPEM * DX2P2IPh;
-				FiltroY = (DY3P2IPh') * SPEM;
-				FiltroY = SPEM * DY2P2IPh
+				FiltroY = (DY2P2IPh') * SPEM;
+				FiltroY = SPEM * DY2P2IPh;
 			}
 			SmagoPEM[s] = FiltroX + FiltroY;
 		}
 		contS++;
 	}
 	contS = 0;
-	for int(s=0; s<Taubases; s++){
+	for (int s=0; s<Taubases; s++){
 		if(mpirank==contS%mpisize){
 			// Matrices LPS
 			varf StabPPE(p,q)=int2d(Th)(EIMTau[s]*p*q);
-			matrix SPPEM = StabPPE(VhP2, VhP2);
+			matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
 			matrix FiltroX, FiltroY;
 			{
 				FiltroX = SPPEM * IPhDXP2;
