@@ -1,0 +1,181 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+int ndof,dVis,dTau; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
+
+ifstream introPODvis("../Data/PODbasis/BasePODviscosity.txt"); // Importing p POD basis
+introPODvis>>ndof;introPODvis>>dVis;
+real[int,int] Phivis(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
+
+ifstream introPODtau("../Data/PODbasis/BasePODTau.txt"); // Importing p POD basis
+introPODtau>>ndof;introPODtau>>dTau;
+real[int,int] Phitau(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
+
+
+//Número de snapshots que tomamos
+int nSnapshots = ni+1;
+//Intervalo de Rayleigh
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+	//vRa(i)=10^(3+i*(1.)/50);
+}
+real Rayleigh;
+
+VhP1dc SnapVis;
+VhP0 SnapTau;
+
+real[int,int] Avis(VhP1dc.ndof,nSnapshots),Atau(VhP0.ndof,nSnapshots);
+for(int i = 0;i<nSnapshots;i++)
+{
+	Rayleigh = vRa(i);
+	
+	ifstream SnapshotsVis("../Data/Snapshots/Vis_" + Rayleigh + ".txt");
+	SnapshotsVis >> SnapVis[];
+	
+	ifstream SnapshotsTau("../Data/Snapshots/Tau_" + Rayleigh + ".txt");
+	SnapshotsTau >> SnapTau[];
+	
+	Avis(:,i) = SnapVis[];
+	Atau(:,i) = SnapTau[];
+
+}
+
+//////////////////////////////
+//RBF PROCEDURE
+/////////////////////////////
+
+//WEIGHT FUNCTIONS ASSOCIATED TO GAUSSIAN FUNCTIONS 
+real[int,int] Y(nSnapshots,dVis),Ytau(nSnapshots,dTau);
+
+real[int,int] YL = Y,YtauL = Ytau;
+YL=0;Y=0;YtauL=0;Ytau=0;
+
+matrix prodl2l2;
+{
+	varf a(u,v) = 
+	intN(Th)(v*u);
+	prodl2l2 = a(VhP1dc,VhP1dc);
+}
+
+matrix prodtau;
+{
+	varf a(u,v)=
+	intN(Th)(u*v);
+	prodtau = a(VhP0,VhP0);
+}
+
+for(int i = 0;i<nSnapshots;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] aux = prodl2l2*Avis(:,i);
+		real[int] auxtau = prodtau*Atau(:,i);
+		for(int j = 0;j<dVis;j++)
+		{
+			YL(i,j) = Phivis(:,j)'*aux;
+		}
+		for(int j=0;j<dTau;j++)
+		{
+			YtauL(i,j) = Phitau(:,j)'*auxtau;
+		}
+	}
+}
+
+
+
+mpiAllReduce(YL,Y,mpiCommWorld,mpiSUM);
+mpiAllReduce(YtauL,Ytau,mpiCommWorld,mpiSUM);
+
+ofstream outputY("../Data/Offline/RBF/Y.txt"); outputY << Y;
+ofstream outputYtau("../Data/Offline/RBF/Ytau.txt"); outputYtau << Ytau;
+
+//Construct the cartesian product but is only one set because we don't have time instance
+
+real[int] Xmu(nSnapshots);
+
+for(int i = 0;i<nSnapshots;i++)
+{
+ Xmu(i) = (vRa(i)-Ramin)/(Ramax-Ramin);	
+}
+
+/*
+	//RBF function 
+func real gauss(real r){
+ 	if( 1- r >= 0){
+	 return 	 (1 -2*r); }
+	 else{
+	return 	 0;}
+}
+*/
+func real gauss(real r)
+{
+	return r^2*log(r+1);
+}
+
+//DEFINE THE MATRIX OF THE GAUSSIAN FUNCTION AND THE CARTESIAN PRODUCT
+
+real[int,int] Agauss(nSnapshots,nSnapshots),Ainv(nSnapshots,nSnapshots),I(nSnapshots,nSnapshots);
+real aux;
+
+for(int i = 0;i<nSnapshots;i++){
+	for (int j = i;j<nSnapshots;j++){
+		aux = abs(Xmu(i) - Xmu(j));
+		Agauss(i,j) = gauss(aux);
+		Agauss(j,i) = Agauss(i,j);
+	}
+}
+
+if(mpirank==0){cout << Agauss << endl;}
+
+matrix MAgauss = Agauss;
+
+set(MAgauss, solver = sparsesolver);
+
+
+//RESOLVE THE LINEAR SYSTEM ASOCIATED TO THE dNu number of POD basis of the viscosity 
+
+real[int,int] Wgaus(nSnapshots,dVis),WgausTau(nSnapshots,dTau);
+for(int i = 0;i<dVis;i++){
+	Wgaus(:,i) = MAgauss^(-1)*Y(:,i);
+}
+for(int i = 0;i<dTau;i++){
+	WgausTau(:,i) = MAgauss^(-1)*Ytau(:,i);
+}
+
+ofstream outputWeight("../Data/Offline/RBF/Weight.txt"); outputWeight << Wgaus;
+ofstream outputWeightTau("../Data/Offline/RBF/WeightTau.txt"); outputWeightTau << WgausTau;

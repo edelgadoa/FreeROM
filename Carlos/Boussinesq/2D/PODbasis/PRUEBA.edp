@@ -1,0 +1,19 @@
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+real[int,int] Vit(VhP2.ndof,21);
+
+ifstream outputbt("../Data/PODbasis/BasePODpressure.txt");	outputbt>>Vit;
+
+VhP2 modep;
+
+for(int i = 0;i<5;i++){
+
+	modep[] = Vit(:,i);
+	plot(modep,wait=1,fill=1,value=1);}

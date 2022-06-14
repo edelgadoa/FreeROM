@@ -1,0 +1,158 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+/*
+macro dimension () 2//
+include "macro_ddm.idp"
+*/
+
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+int ndof,dTau; 
+
+ifstream introPODtau("../Data/PODbasis/PODbasis_LPS/BasePODtau.txt"); // Importing p POD basis
+introPODtau>>ndof;introPODtau>>dTau;
+real[int,int] Phitau(ndof,dTau);
+for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
+
+
+
+//Número de snapshots que tomamos
+int nSnapshots = ni+1;
+//Intervalo de Rayleigh
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+	//vRa(i)=10^(3+i*(1.)/50);
+}
+real Rayleigh;
+
+VhP0 SnapTau;
+
+
+real[int,int] Atau(VhP0.ndof,nSnapshots);
+for(int i = 0;i<nSnapshots;i++)
+{
+	Rayleigh = vRa(i);
+	
+	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS/Tau_" + Rayleigh + ".txt");
+	SnapshotsTau >> SnapTau[];
+	
+	
+	
+	Atau(:,i) = SnapTau[];
+}
+
+////////////////////////////////
+// DEIM ALGORITHM
+///////////////////////////////
+
+real[int] Itau(dTau);
+real indicetau,maxtau;
+
+//Inicializacion del algoritmo 
+VhP0 modetau1;
+
+
+modetau1[] = abs(Phitau(:,0));
+
+
+//Q inicial y el indice inicial 
+
+maxtau = modetau1[].max;
+
+//Viscosidad
+indicetau = 0;
+for(int i = 0;i<VhP0.ndof;i++)
+{
+	if(maxtau == abs(Phitau(i,0))) break;
+	indicetau += 1;
+}
+
+Itau(0) = indicetau;
+
+
+// PROCESO ITERATIVO 
+
+real[int] restau(VhP0.ndof),resauxtau(VhP0.ndof),pmItau(dTau),auxtau(VhP0.ndof);
+
+real[int,int] QItau(dTau,dTau);
+
+//Viscosidad 
+for(int i = 1;i<dTau;i++)
+{
+	real[int,int] Qtau(VhP0.ndof,i),QItau(i,i),multtau(VhP0.ndof,i),QIinvtau(i,i);
+	real[int] pmItau(i);
+	restau = 0.;
+	maxtau=0.;
+	QItau = 0.;
+	multtau=0.;
+	resauxtau=0.;
+	auxtau=0.;
+	Qtau = Phitau(0:(VhP0.ndof-1),0:(i-1));
+	//Construimos QI
+	for(int j = 0;j<i;j++)
+	{
+		QItau(j,:) = Qtau(Itau(j),:);
+	}
+	//Construir PM_I
+	for(int j = 0;j<i;j++)
+	{
+		pmItau(j) = Phitau(Itau(j),i);
+	}
+	//Calculamos el residuo 
+	QIinvtau = QItau^-1;
+	multtau = Qtau*QIinvtau;
+	resauxtau = multtau*pmItau;
+	restau = Phitau(:,i) - resauxtau;
+	//Calculmaos el maximo 
+	for(int j=0;j<VhP0.ndof;j++)
+	{
+		auxtau(j) = abs(restau(j));
+	}
+	maxtau = auxtau.max;
+	indicetau = 0;
+	for(int j = 0;j<VhP0.ndof;j++)
+	{
+		if(maxtau == auxtau(j)) break;
+		indicetau +=1;
+	}
+	Itau(i) = indicetau;
+}
+
+
+
+//------------Export data----------------
+
+ofstream outputItau("../Data/Offline/Deim/Itau.txt"); outputItau << Itau;
+
+
+
+

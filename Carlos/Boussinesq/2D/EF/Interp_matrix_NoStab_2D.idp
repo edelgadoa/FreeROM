@@ -50,7 +50,7 @@ matrix IPhP2P1, IPh4P24P1, IPhP1dcP1;
 }
 
 // Matrices de derivadas	
-matrix DX4P2, DY4P2; // ∂x, ∂y 3P2 -> 3P1dc en las 3 componentes 
+matrix DX4P2, DY4P2; // ∂x, ∂y 4P2 -> 4P1dc en las 4 componentes 
 matrix DXP2, DYP2;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
 matrix D1X4P2, D2X4P2, D3X4P2, D4X4P2; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 matrix D1Y4P2, D2Y4P2, D3Y4P2, D4Y4P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
@@ -109,4 +109,14 @@ matrix D1Y4P2, D2Y4P2, D3Y4P2, D4Y4P2; // ∂y 3P2 -> P1dc en la componente 1, 2
 // Matrices de derivada, con filtrado
 matrix IPhD4X4P2 = IPhP1dcP1 * D4X4P2; // (I-πh) de ∂x componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Y4P2 = IPhP1dcP1 * D4Y4P2; // (I-πh) de ∂y componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
+
+//Matrices de derivada, con filtrada para una componente solo
+
+matrix IPhDXP2 = IPhP1dcP1*DXP2;
+matrix IPhDYP2 = IPhP1dcP1*DYP2;
+
+//Matrices de filtrado con derivada 
+
+matrix DXP2IPh = DXP2*IPhP2P1;
+matrix DYP2IPh = DYP2*IPhP2P1;
 

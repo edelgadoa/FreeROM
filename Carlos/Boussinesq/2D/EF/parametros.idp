@@ -1,11 +1,12 @@
 
-VhP0 mk,tKcod,tKTcod,tau;
+VhP0 mk,tKcod,tKTcod,tau,h;
 
 
 varf med(unused,v)=int2d(Th)(1.*v);
 real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk); 
 
+h = hTriangle;
 //Constantes varias
 real CS=0.1;
 real cc1=16.;
@@ -15,6 +16,7 @@ real cc2=sqrt(cc1);
 real Pr=0.71; //Prandlt aire
 
 real dt=1.e-2;
+real dtt = 1./dt;
 real epspen=1e-8;
 
 real Ramin=1.e3;

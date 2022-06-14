@@ -1,0 +1,158 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+/*
+macro dimension () 2//
+include "macro_ddm.idp"
+*/
+
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+int ndof,dVis; 
+
+ifstream introPODvis("../Data/PODbasis/BasePODviscosity.txt"); // Importing p POD basis
+introPODvis>>ndof;introPODvis>>dVis;
+real[int,int] Phivis(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
+
+
+
+//Número de snapshots que tomamos
+int nSnapshots = ni+1;
+//Intervalo de Rayleigh
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+	//vRa(i)=10^(3+i*(1.)/50);
+}
+real Rayleigh;
+
+VhP1dc SnapVis;
+
+
+real[int,int] Avis(VhP1dc.ndof,nSnapshots);
+for(int i = 0;i<nSnapshots;i++)
+{
+	Rayleigh = vRa(i);
+	
+	ifstream SnapshotsVis("../Data/Snapshots/Vis_" + Rayleigh + ".txt");
+	SnapshotsVis >> SnapVis[];
+	
+	
+	
+	Avis(:,i) = SnapVis[];
+}
+
+////////////////////////////////
+// DEIM ALGORITHM
+///////////////////////////////
+
+real[int] Ivis(dVis);
+real indicevis,maxvis;
+
+//Inicializacion del algoritmo 
+VhP1dc modevis1;
+
+
+modevis1[] = abs(Phivis(:,0));
+
+
+//Q inicial y el indice inicial 
+
+maxvis = modevis1[].max;
+
+//Viscosidad
+indicevis = 0;
+for(int i = 0;i<VhP1dc.ndof;i++)
+{
+	if(maxvis == abs(Phivis(i,0))) break;
+	indicevis += 1;
+}
+
+Ivis(0) = indicevis;
+
+
+// PROCESO ITERATIVO 
+
+real[int] resvis(VhP1dc.ndof),resauxvis(VhP1dc.ndof),pmIvis(dVis),auxvis(VhP1dc.ndof);
+
+real[int,int] QIvis(dVis,dVis);
+
+//Viscosidad 
+for(int i = 1;i<dVis;i++)
+{
+	real[int,int] Qvis(VhP1dc.ndof,i),QIvis(i,i),multvis(VhP1dc.ndof,i),QIinvvis(i,i);
+	real[int] pmIvis(i);
+	resvis = 0.;
+	maxvis=0.;
+	QIvis = 0.;
+	multvis=0.;
+	resauxvis=0.;
+	auxvis=0.;
+	Qvis = Phivis(0:(VhP1dc.ndof-1),0:(i-1));
+	//Construimos QI
+	for(int j = 0;j<i;j++)
+	{
+		QIvis(j,:) = Qvis(Ivis(j),:);
+	}
+	//Construir PM_I
+	for(int j = 0;j<i;j++)
+	{
+		pmIvis(j) = Phivis(Ivis(j),i);
+	}
+	//Calculamos el residuo 
+	QIinvvis = QIvis^-1;
+	multvis = Qvis*QIinvvis;
+	resauxvis = multvis*pmIvis;
+	resvis = Phivis(:,i) - resauxvis;
+	//Calculmaos el maximo 
+	for(int j=0;j<VhP1dc.ndof;j++)
+	{
+		auxvis(j) = abs(resvis(j));
+	}
+	maxvis = auxvis.max;
+	indicevis = 0;
+	for(int j = 0;j<VhP1dc.ndof;j++)
+	{
+		if(maxvis == auxvis(j)) break;
+		indicevis +=1;
+	}
+	Ivis(i) = indicevis;
+}
+
+
+
+//------------Export data----------------
+
+ofstream outputIvis("../Data/Offline/Deim/Ivis.txt"); outputIvis << Ivis;
+
+
+
+

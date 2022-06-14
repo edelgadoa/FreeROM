@@ -35,32 +35,37 @@ real Rayleigh;
 
 VhP2 SnapUX,SnapUY,SnapP,SnapT;
 VhP1dc SnapVis;
+VhP0 SnapTau;
 
-real[int,int] Avx(VhP2.ndof,nSnapshots),Avy(VhP2.ndof,nSnapshots),Ap(VhP2.ndof,nSnapshots),At(VhP2.ndof,nSnapshots),Avis(VhP1dc.ndof,nSnapshots);
+real[int,int] Avx(VhP2.ndof,nSnapshots),Avy(VhP2.ndof,nSnapshots),Ap(VhP2.ndof,nSnapshots),At(VhP2.ndof,nSnapshots),Avis(VhP1dc.ndof,nSnapshots),Atau(VhP0.ndof,nSnapshots);
 for(int i = 0;i<nSnapshots;i++)
 {
 	Rayleigh = vRa(i);
 	
-	ifstream SnapshotsVX("../Data/Snapshots/Vx_" + Rayleigh + ".txt");
+	ifstream SnapshotsVX("../Data/Snapshots/Snapshots_LPS/Vx_" + Rayleigh + ".txt");
 	SnapshotsVX >> SnapUX[];
 	
-	ifstream SnapshotsVY("../Data/Snapshots/Vy_" + Rayleigh + ".txt");
+	ifstream SnapshotsVY("../Data/Snapshots/Snapshots_LPS/Vy_" + Rayleigh + ".txt");
 	SnapshotsVY >> SnapUY[];
 	
-	ifstream SnapshotsP("../Data/Snapshots/P_" + Rayleigh + ".txt");
+	ifstream SnapshotsP("../Data/Snapshots/Snapshots_LPS/P_" + Rayleigh + ".txt");
 	SnapshotsP >> SnapP[];
 	
-	ifstream SnapshotsT("../Data/Snapshots/T_" + Rayleigh + ".txt");
+	ifstream SnapshotsT("../Data/Snapshots/Snapshots_LPS/T_" + Rayleigh + ".txt");
 	SnapshotsT >> SnapT[];
 	
-	ifstream SnapshotsVis("../Data/Snapshots/Vis_" + Rayleigh + ".txt");
+	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_LPS/Vis_" + Rayleigh + ".txt");
 	SnapshotsVis >> SnapVis[];
+	
+	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS/Tau_" + Rayleigh + ".txt");
+	SnapshotsTau >> SnapTau[];
 	
 	Avx(:,i) = SnapUX[];
 	Avy(:,i) = SnapUY[];
 	Ap(:,i) = SnapP[];
 	At(:,i) = SnapT[];
 	Avis(:,i) = SnapVis[];
+	Atau(:,i) = SnapTau[];
 
 }
 
@@ -68,7 +73,7 @@ for(int i = 0;i<nSnapshots;i++)
 //Construimos las matrices de correlacion 
 /////////////////////////////////
 
-real[int,int] KU(nSnapshots,nSnapshots),KP(nSnapshots,nSnapshots),KT(nSnapshots,nSnapshots),KVis(nSnapshots,nSnapshots);
+real[int,int] KU(nSnapshots,nSnapshots),KP(nSnapshots,nSnapshots),KT(nSnapshots,nSnapshots),KVis(nSnapshots,nSnapshots),KTau(nSnapshots,nSnapshots);
 
 matrix prod;
 {
@@ -84,7 +89,14 @@ matrix prodvis;
 	prodvis = a(VhP1dc,VhP1dc);
 }
 
-real[int,int] KUL = KU, KPL = KP, KTL = KT, KVisL=KVis;
+matrix prodtau;
+{
+	varf a(u,v)=
+	intN(Th)(u*v);
+	prodtau = a(VhP0,VhP0);
+}
+
+real[int,int] KUL = KU, KPL = KP, KTL = KT, KVisL=KVis,KTauL=KTau;
 for(int i=0;i<nSnapshots;i++)
 {
 
@@ -95,6 +107,7 @@ for(int i=0;i<nSnapshots;i++)
 		real[int] auxP =  prod*Ap(:,i);
 		real[int] auxT =  prod*At(:,i);
 		real[int] auxVis = prodvis*Avis(:,i);
+		real[int] auxTau = prodtau*Atau(:,i);
 		
 		for(int j=i;j<nSnapshots;j++)
 		{
@@ -102,7 +115,8 @@ for(int i=0;i<nSnapshots;i++)
 			KPL(i,j) = (Ap(:,j)'*auxP)/nSnapshots;
 			KTL(i,j) = (At(:,j)'*auxT)/nSnapshots;
 			KVisL(i,j) = (Avis(:,j)'*auxVis)/nSnapshots;
-			if(i!=j){KUL(j,i) = KUL(i,j); KPL(j,i)=KPL(i,j); KTL(j,i) = KTL(i,j); KVisL(j,i)=KVisL(i,j);}
+			KTauL(i,j) = (Atau(:,j)'*auxTau)/nSnapshots;
+			if(i!=j){KUL(j,i) = KUL(i,j); KPL(j,i)=KPL(i,j); KTL(j,i) = KTL(i,j); KVisL(j,i)=KVisL(i,j); KTauL(j,i) = KTauL(i,j);}
 		}
 	
 	}
@@ -113,68 +127,102 @@ mpiAllReduce(KUL,KU,mpiCommWorld,mpiSUM);
 mpiAllReduce(KPL,KP,mpiCommWorld,mpiSUM);
 mpiAllReduce(KTL,KT,mpiCommWorld,mpiSUM);
 mpiAllReduce(KVisL,KVis,mpiCommWorld,mpiSUM);
+mpiAllReduce(KTauL,KTau,mpiCommWorld,mpiSUM);
+
 
 
 ///////////////
 //SVD
 //////////////
 
-real[int,int] UU(nSnapshots,nSnapshots),VU(nSnapshots,nSnapshots),UP(nSnapshots,nSnapshots),VP(nSnapshots,nSnapshots),UT(nSnapshots,nSnapshots),VT(nSnapshots,nSnapshots),UVis(nSnapshots,nSnapshots),VVis(nSnapshots,nSnapshots);
-real[int] SU(nSnapshots),SP(nSnapshots),ST(nSnapshots),SVis(nSnapshots); // Eigenvalues vector
+real[int,int] UU(nSnapshots,nSnapshots),VU(nSnapshots,nSnapshots),UP(nSnapshots,nSnapshots),VP(nSnapshots,nSnapshots),UT(nSnapshots,nSnapshots),VT(nSnapshots,nSnapshots),UVis(nSnapshots,nSnapshots),VVis(nSnapshots,nSnapshots),UTau(nSnapshots,nSnapshots),VTau(nSnapshots,nSnapshots);
+real[int] SU(nSnapshots),SP(nSnapshots),ST(nSnapshots),SVis(nSnapshots),STau(nSnapshots); // Eigenvalues vector
 
 dgesdd(KU,UU,SU,VU);
 dgesdd(KP,UP,SP,VP);
 dgesdd(KT,UT,ST,VT);
 dgesdd(KVis,UVis,SVis,VVis);
+dgesdd(KTau,UTau,STau,VTau);
+
 
 int dU; // dU = dimension ensemble of velocity snapshots 
 int dP; // dP = dimension ensemble of pressure snapshots 
 int dT; // dT = dimension ensemble of temperature snapshots
 int dVis; // dVis = dimension ensemble of turbulence viscosity snapshots
+int dTau; // dTau = dimension ensemble of coefficient for LPS pressure
 
+//Criterio para la dimension
 
-real tol=1.e-7; // tolerance
+real sumU,sumP,sumT,sumVis,sumTau;
 
+for(int i = 0;i<nSnapshots;i++)
+{
+	sumU += SU(i);
+	sumP += SP(i);
+	sumT += ST(i);
+	sumVis += SVis(i);
+	sumTau += STau(i);
+}
+
+real auxU,auxT,auxP,auxVis,auxTau;
+
+real tol=1-1.e-10; // tolerance
+auxU = 0.;auxT = 0.; auxP = 0.; auxVis=0.; auxTau = 0.;
 for(int i=0;i<nSnapshots;i++)
 {
-	if (SU(i)<tol) {break;}
-	if(mpirank==0){cout<< i+1 << " EigenvalueU = " << SU(i) << endl; }	
+	auxU += SU(i);
+	if ((auxU/sumU)>tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueU = " << auxU/sumU << endl; }	
 	dU=i+1;
 }
 if(mpirank==0){cout<< " Dimension ensemble of velocity snapshots = " << dU << endl;}	
 
 for(int i=0;i<nSnapshots;i++)
 {
-	if (SP(i)<tol) {break;}
-	if(mpirank==0){cout<< i+1 << " EigenvalueP = " << SP(i) << endl;} 	
+	auxP += SP(i);
+	if ((auxP/sumP)>tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueP = " << auxP/sumP << endl;} 	
 	dP=i+1;
 }
 if(mpirank==0){cout<< " Dimension ensemble of pressure snapshots = " << dP << endl;} 	
 
 for(int i=0;i<nSnapshots;i++)
 {
-	if (ST(i)<tol) {break;}
-	if(mpirank==0){cout<< i+1 << " EigenvalueT = " << ST(i) << endl; }	
+	auxT += ST(i);
+	if ((auxT/sumT)>tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueT = " << (auxT/sumT) << endl; }	
 	dT=i+1;
 }
 if(mpirank==0){cout<< " Dimension ensemble of temperature snapshots = " << dT << endl;} 	
 
 for(int i=0;i<nSnapshots;i++)
 {
-	if (SVis(i)<tol) {break;}
-	if(mpirank==0){cout<< i+1 << " EigenvalueVis = " << SVis(i) << endl;} 	
+	auxVis += SVis(i);
+	if ((auxVis/sumVis)>tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueVis = " << (auxVis/sumVis) << endl;} 	
 	dVis=i+1;
 }
 if(mpirank==0){cout<< " Dimension ensemble of viscosity snapshots = " << dVis << endl;}	
+
+
+for(int i=0;i<nSnapshots;i++)
+{
+	auxTau += STau(i);
+	if ((auxTau/sumTau)>tol) {break;}
+	if(mpirank==0){cout<< i+1 << " EigenvalueTau = " << (auxTau/sumTau)<< endl;} 	
+	dTau=i+1;
+}
+if(mpirank==0){cout<< " Dimension ensemble of tau snapshots = " << dTau << endl;}	
 
 ////////////////////////////////
 //Construct the POD basis
 ///////////////////////////////
 real[int,int] Viu(VhP2.ndof,dU),Viv(VhP2.ndof,dU),aiU(nSnapshots,dU),Vip(VhP2.ndof,dP),aiP(nSnapshots,dP); 
-real[int,int] Vit(VhP2.ndof,dT),aiT(nSnapshots,dT),Vivis(VhP1dc.ndof,dVis),aiVis(nSnapshots,dVis);
-real trapu,trapv,trapp,trapt,trapvis; // Variables to make the time integration
+real[int,int] Vit(VhP2.ndof,dT),aiT(nSnapshots,dT),Vivis(VhP1dc.ndof,dVis),aiVis(nSnapshots,dVis),Vitau(VhP0.ndof,dTau),aiTau(nSnapshots,dTau);
+real trapu,trapv,trapp,trapt,trapvis,traptau; // Variables to make the time integration
 VhP2 modeu,modeuold,modev,modevold,velmagPOD,modep,modepold,modet,modetold;
 VhP1dc modevis,modevisold;
+VhP0 modetau,modetauold;
 
 
 //Velocity POD basis
@@ -214,14 +262,14 @@ for(int k=0;k<dU;k++)
 	velmagPOD=sqrt(modeu^2+modev^2);
 	
 	plot(velmagPOD,fill=1,cmm="Velocity magnitude, POD mode n. "+(k+1));// Plot of POD modes velocity magnitude		
-	savevtk("../Data/PODbasis/PostProc/modeU_"+(k+1)+".vtk",Th,velmagPOD,dataname="velPOD",order=Order);//,bin=Bin)
+	savevtk("../Data/PODbasis/PODbasis_LPS/PostProc/modeU_"+(k+1)+".vtk",Th,velmagPOD,dataname="velPOD",order=Order);//,bin=Bin)
 	modeuold=modeu;
 	modevold=modev;
 } 
 //------------Export data---------------------
-ofstream outputaiU("../Data/PODbasis/PODtimeCoU.txt");		outputaiU<<aiU;
-ofstream outputbu("../Data/PODbasis/BasePODvelocity1.txt");	outputbu<<Viu;
-ofstream outputbv("../Data/PODbasis/BasePODvelocity2.txt");	outputbv<<Viv;
+ofstream outputaiU("../Data/PODbasis/PODbasis_LPS/PODtimeCoU.txt");		outputaiU<<aiU;
+ofstream outputbu("../Data/PODbasis/PODbasis_LPS/BasePODvelocity1.txt");	outputbu<<Viu;
+ofstream outputbv("../Data/PODbasis/PODbasis_LPS/BasePODvelocity2.txt");	outputbv<<Viv;
 
 
 
@@ -258,11 +306,11 @@ for(int k=0;k<dP;k++)
 	cout << "Pres. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
 		
 	plot(modep,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
-	savevtk("../Data/PODbasis/PostProc/modeP_"+(k+1)+".vtk",Th,modep,dataname="presPOD",order=Order);
+	savevtk("../Data/PODbasis/PODbasis_LPS/PostProc/modeP_"+(k+1)+".vtk",Th,modep,dataname="presPOD",order=Order);
 	modepold=modep;
 } 
-ofstream outputaiP("../Data/PODbasis/PODtimeCoP.txt");		outputaiP<<aiP;
-ofstream outputbp("../Data/PODbasis/BasePODpressure.txt");	outputbp<<Vip;
+ofstream outputaiP("../Data/PODbasis/PODbasis_LPS/PODtimeCoP.txt");		outputaiP<<aiP;
+ofstream outputbp("../Data/PODbasis/PODbasis_LPS/BasePODpressure.txt");	outputbp<<Vip;
 
 
 
@@ -301,11 +349,11 @@ ofstream outputbp("../Data/PODbasis/BasePODpressure.txt");	outputbp<<Vip;
 	}
 		
 		//plot(modet,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
-		savevtk("../Data/PODbasis/PostProc/modeT_"+(k+1)+".vtk",Th,modet,dataname="tempPOD",order=Order);
+		savevtk("../Data/PODbasis/PODbasis_LPS/PostProc/modeT_"+(k+1)+".vtk",Th,modet,dataname="tempPOD",order=Order);
 		modetold=modet;
 	} 
-	ofstream outputaiT("../Data/PODbasis/PODtimeCoT.txt");		outputaiT<<aiT;
-	ofstream outputbt("../Data/PODbasis/BasePODtemperature.txt");	outputbt<<Vit;
+	ofstream outputaiT("../Data/PODbasis/PODbasis_LPS/PODtimeCoT.txt");		outputaiT<<aiT;
+	ofstream outputbt("../Data/PODbasis/PODbasis_LPS/BasePODtemperature.txt");	outputbt<<Vit;
 
 
 
@@ -340,11 +388,50 @@ ofstream outputbp("../Data/PODbasis/BasePODpressure.txt");	outputbp<<Vip;
 		cout << "Vis. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
 		
 		//plot(modep,fill=1,cmm="Pressure, POD mode n. "+(k+1));// Plot of POD modes pressure	
-		savevtk("../Data/PODbasis/PostProc/modeVis_"+(k+1)+".vtk",Th,modevis,dataname="visPOD",order=Order);
+		savevtk("../Data/PODbasis/PODbasis_LPS/PostProc/modeVis_"+(k+1)+".vtk",Th,modevis,dataname="visPOD",order=Order);
 		modevisold=modevis;
 	} 
-	ofstream outputaiVis("../Data/PODbasis/PODtimeCoVis.txt");		outputaiVis<<aiVis;
-	ofstream outputbvis("../Data/PODbasis/BasePODviscosity.txt");	outputbvis<<Vivis;
+	ofstream outputaiVis("../Data/PODbasis/PODbasis_LPS/PODtimeCoVis.txt");		outputaiVis<<aiVis;
+	ofstream outputbvis("../Data/PODbasis/PODbasis_LPS/BasePODviscosity.txt");	outputbvis<<Vivis;
+
+
+
+	//POD basis tau
+
+	for(int k=0;k<dTau;k++)
+	{
+		for(int i=0;i<VhP0.ndof;i++)
+		{
+			traptau=0.;
+			for(int j=0;j<nSnapshots;j++)
+			{	
+				traptau+=Atau(i,j)*UTau(j,k);			
+				aiTau(j,k)=sqrt(STau(k)*nSnapshots)*UTau(j,k);
+			}
+			Vitau(i,k)=traptau/sqrt(STau(k)*nSnapshots);
+		}
+		modetau[]=Vitau(:,k);	
+	  	real orthog,orthon;
+  	
+		// L2-POD basis
+		orthog=int2d(Th)(modetau*modetauold);
+		orthon=int2d(Th)(modetau*modetau);
+	
+		/*
+		// H1-POD basis
+		orthog=int2d(Th)(Grad(modep)'*Grad(modepold));
+		orthon=int2d(Th)(Grad(modep)'*Grad(modep));
+		*/
+		if(mpirank==0){cout << "-------------------------------------------" << endl;
+		cout << "Tau. Mode n. " << k+1 << ", orthog. = " << orthog << endl;
+		cout << "Tau. Mode n. " << k+1 << ", orthon. = " << orthon << endl;}
+		
+		plot(modetau,fill=1,cmm="Coef Stab Pres, POD mode n. "+(k+1));// Plot of POD modes pressure	
+		savevtk("../Data/PODbasis/PODbasis_LPS/PostProc/modeTau_"+(k+1)+".vtk",Th,modetau,dataname="tauPOD",order=Order);
+		modetauold=modetau;
+	} 
+	ofstream outputaiTau("../Data/PODbasis/PODbasis_LPS/PODtimeCoTau.txt");		outputaiTau<<aiTau;
+	ofstream outputbtau("../Data/PODbasis/PODbasis_LPS/BasePODTau.txt");	outputbtau<<Vitau;
 
 
 

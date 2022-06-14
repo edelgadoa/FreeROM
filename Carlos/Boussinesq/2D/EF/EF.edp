@@ -43,12 +43,15 @@ for(int i=0;i<=ni;i++){
 }
 //cout<<vRa<<endl;
 
+
+
 ////////////////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad Boussinesq 2D//
 ///////////////////////////////////////////////////////
 
 VhP2 SnapUX,SnapUY,SnapT,SnapP;
 VhP1dc SnapVis;
+
 
 //BUCLE RESOLVER EL PROBLEMA
 
@@ -70,7 +73,11 @@ for (int i=0;i<=ni;i++)
 	
 	Vh4P2 [u1,u2,t,p]; //Solucion 
 	
-	u1[] = 0;
+	
+	//[u1,u2,t,p] = [UX,UY,t,p];
+	u1[]=1.;
+	
+	
 	
 	// Preliminares a la iteracion
 	real itercontrol1 = 2.*epsError + 1.;
@@ -155,13 +162,12 @@ for (int i=0;i<=ni;i++)
 		eu1=u1-u1tmp;
 		eu2=u2-u2tmp;
 	
-	
 		//Inicio calculo normas
 		itercontrol1 = sqrt(int2d(Th)(gradugradv(eu1,eu2,eu1,eu2)));  		    	 
 	    real itertmp1 = sqrt(int2d(Th)(gradugradv(u1,u2,u1,u2))); 
 	
 		iterrelative1 = itercontrol1;///itertmp1;	
-		
+		cout << itercontrol1 << endl;
 	//
 	//	cout << "------------------------------------" << endl;	
 	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
@@ -190,29 +196,32 @@ for (int i=0;i<=ni;i++)
 	//Guardamos los snapshots 
 	
 	//Componente X de la velocidad
-	ofstream SnapshotVX("../Data/Snapshots/Vx_" + Ra + ".txt");
+	ofstream SnapshotVX("../Data/Snapshots/Snapshots_106/Vx_" + Ra + ".txt");
 	SnapshotVX<<SnapUX[]<<endl;
 	//Componente Y de la velocidad
-	ofstream SnapshotVY("../Data/Snapshots/Vy_" + Ra + ".txt");
+	ofstream SnapshotVY("../Data/Snapshots/Snapshots_106/Vy_" + Ra + ".txt");
 	SnapshotVY<<SnapUY[]<<endl;
 	//Presion
-	ofstream SnapshotP("../Data/Snapshots/P_" + Ra + ".txt");
+	ofstream SnapshotP("../Data/Snapshots/Snapshots_106/P_" + Ra + ".txt");
 	SnapshotP<<SnapP[]<<endl;
 	//Temperatura
-	ofstream SnapshotT("../Data/Snapshots/T_" + Ra + ".txt");
+	ofstream SnapshotT("../Data/Snapshots/Snapshots_106/T_" + Ra + ".txt");
 	SnapshotT<<SnapT[]<<endl;
 	//Viscosidad turbulenta
-	ofstream SnapshotsVis("../Data/Snapshots/Vis_" + Ra + ".txt");
+	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_106/Vis_" + Ra + ".txt");
 	SnapshotsVis << SnapVis[] << endl;
+	//Coeficiente de estabilizacion de la presion 
+	ofstream SnapshotsTau("../Data/Snapshots/Snapshots_106/Tau_" + Ra + ".txt");
+	SnapshotsTau << tau[] << endl;
 	
 	
 	VhP2 T = t+G;
 	
-	plot(T,cmm="Temperatura para Ra= "+Ra,fill=1);
-	plot(u1,cmm="Velocidad x para Ra="+Ra,fill=1);
-	plot(u2,cmm="Velocidad y para Ra="+Ra,fill=1);
+	plot(T,cmm="Temperatura para Ra="+Ra,fill=1,value=1);
+	plot(u1,cmm="Velocidad x para Ra="+Ra,fill=1,value=1);
+	plot(u2,cmm="Velocidad y para Ra="+Ra,fill=1,value=1);
 	//plot([u1,u2],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
-	plot(p,cmm="Presion para Ra = "+Ra,fill=1);
+	plot(p,cmm="Presion para Ra = "+Ra,fill=1,value=1);
 	
 	
 	

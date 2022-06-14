@@ -1,0 +1,141 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+//Definimos las matrices de interpolacion
+include "../EF/Interp_matrix_NoStab_2D.idp"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+
+int ndof,dP,dTau; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
+
+ifstream introPODp("../Data/PODbasis/PODbasis_LPS/BasePODpressure.txt"); // Importing t POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+ifstream introPODtau("../Data/PODbasis/PODbasis_LPS/BasePODTau.txt"); // Importing t POD basis
+introPODtau>>ndof;introPODtau>>dTau;
+real[int,int] Phitau(ndof,dTau);
+for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
+
+// OFFLINE TENSOR LPS PRES
+
+
+real[int,int][int] DP(dTau);
+
+real[int,int] auxDP(dP,dP);
+
+//Initialization
+
+for(int i = 0;i<dTau;i++)
+{
+	auxDP=0.;
+	DP[i] = auxDP(0:dP-1,0:dP-1);
+}
+
+//Construct the derivative modes of pressure
+
+//Pressure
+real[int,int] xPhip(VhP1dc.ndof,dP),yPhip(VhP1dc.ndof,dP);
+VhP2 modep;
+for(int i = 0;i<dP;i++)
+{
+	modep[] = Phip(:,i);
+	xPhip(:,i) = IPhDXP2*modep[];
+	yPhip(:,i) = IPhDYP2*modep[];
+}
+
+
+
+//Tensor for LPS pressure
+
+matrix DPaux;
+VhP0 modetau;
+real[int,int] auxDPL = auxDP;
+for(int s=0;s<dTau;s++)
+{
+	auxDPL=0;auxDP=0;
+	modetau[] = Phitau(:,s);
+	varf a(p,q) = intN(Th)(modetau*p*q);
+	DPaux = a(VhP1dc,VhP1dc);
+	for(int i = 0;i<dP;i++)
+	{
+		if(mpirank==i%mpisize)
+		{
+			real[int] auxtensorTX = DPaux*xPhip(:,i);
+			real[int] auxtensorTY = DPaux*yPhip(:,i);
+		
+		for(int j = 0;j<dP;j++)
+		{
+			auxDPL(i,j) =
+			 (xPhip(:,j)'*auxtensorTX + yPhip(:,j)'*auxtensorTY);
+			 
+		}
+	}
+	}
+	mpiAllReduce(auxDPL,auxDP,mpiCommWorld,mpiSUM);
+	DP[s] = auxDP(0:dP-1,0:dP-1);
+}
+
+if(mpirank==0){
+cout << "Built Trilinear Tensor DP" << endl;		  
+}
+
+//Media presion
+
+matrix prodl2l2;
+{
+	varf a(p,q)=
+	intN(Th)(p*q);
+	prodl2l2 = a(VhP2,VhP2);
+}
+
+real[int,int] mediaP(dP,dP), mediaPL(dP,dP);
+mediaPL = 0.; mediaP = 0.;
+
+for(int i = 0;i<dP;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] aux = prodl2l2*Phip(:,i);
+		for(int j = 0;j<dP;j++)
+		{
+			mediaPL(i,j) = (1.e-8)*(Phip(:,j)'*aux);
+		}
+	}
+}
+
+mpiAllReduce(mediaPL,mediaP,mpiCommWorld,mpiSUM);
+
+//------------Export data----------------
+
+ofstream outputDP("../Data/Offline/Offline_LPS/MatrixOff/DP.txt");		outputDP<<DP;	
+ofstream outputmediaP("../Data/Offline/Offline_LPS/MatrixOff/mediaP.txt"); outputmediaP << mediaP;

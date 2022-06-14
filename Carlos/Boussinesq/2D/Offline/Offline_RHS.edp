@@ -1,0 +1,157 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+// Incluimos el levantamiento para la temperatura
+include "../EF/Levantamiento.idp"
+
+//Definimos las matrices de interpolacion
+include "../EF/Interp_matrix_NoStab_2D.idp"
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+int ndof,dU,dVis,dT; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
+
+ifstream introPODu("../Data/PODbasis/PODbasis_LPS/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("../Data/PODbasis/PODbasis_LPS/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODt("../Data/PODbasis/PODbasis_LPS/BasePODtemperature.txt"); // Importing t POD basis
+introPODt>>ndof;introPODt>>dT;
+real[int,int] Phit(ndof,dT);
+for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
+
+ifstream introPODvis("../Data/PODbasis/PODbasis_LPS/BasePODviscosity.txt"); // Importing p POD basis
+introPODvis>>ndof;introPODvis>>dVis;
+real[int,int] Phivis(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
+
+
+//RHS1 TERM 
+
+real[int] rhs1term(dU);
+
+real[int] rhs1termL = rhs1term;
+rhs1termL = 0.; rhs1term = 0.; 
+VhP2 modeui,modevi;
+
+for(int i = 0;i<dU;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+	 modevi[] = Phiv(:,i);
+	rhs1termL(i) = intN(Th)( G*modevi);
+	}
+}
+
+mpiAllReduce(rhs1termL,rhs1term,mpiCommWorld,mpiSUM);
+
+//RHS3 TERMS
+
+VhP2 modeti;
+
+real[int] rhs3term1(dT);
+
+real[int] rhs3term1L = rhs3term1;
+rhs3term1L = 0.; rhs3term1 = 0.; 
+for(int i = 0;i<dT;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		modeti[] = Phit(:,i);
+		rhs3term1L(i) = intN(Th)(Grad(G)'*Grad(modeti));
+	}
+}
+
+mpiAllReduce(rhs3term1L,rhs3term1,mpiCommWorld,mpiSUM);
+
+
+real[int,int] rhs3term2(dU,dT);
+
+matrix prodXG;
+{
+	varf a(u,t) = 
+	intN(Th)(u*dx(G)*t);
+	prodXG = a(VhP2,VhP2);
+}
+
+matrix prodYG;
+{
+	varf a(u,t) = 
+	intN(Th)(u*dy(G)*t);
+	prodYG = a(VhP2,VhP2);
+}
+
+real[int,int] rhs3term2L = rhs3term2;
+rhs3term2L = 0.; rhs3term2= 0; 
+
+for(int i = 0;i<dT;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxX = prodXG*Phit(:,i);
+		real[int] auxY = prodYG*Phit(:,i);
+		for(int j = 0;j<dT;j++)
+		{
+			rhs3term2L(i,j) = Phiu(:,j)'*auxX + Phiv(:,j)'*auxY;
+		}
+	}
+}
+mpiAllReduce(rhs3term2L,rhs3term2,mpiCommWorld,mpiSUM);
+
+
+
+real[int,int] xPhit(VhP1dc.ndof,dT),yPhit(VhP1dc.ndof,dT);
+VhP2 modet;
+for(int i = 0;i<dT;i++)
+{
+	modet[] = Phit(:,i);
+	xPhit(:,i) = DXP2IPh*modet[];
+	yPhit(:,i) = DYP2IPh*modet[];
+}
+
+VhP1dc GX,GY;
+GX[] = DXP2IPh*G[];
+GY[] = DYP2IPh*G[];
+
+
+
+
+
+//------------Export data----------------
+ofstream outputrhs1term("../Data/Offline/Offline_LPS/VectorOff/rhs1aux.txt"); outputrhs1term << rhs1term;
+ofstream outputrhs3term1("../Data/Offline/Offline_LPS/VectorOff/rhs3t1.txt"); outputrhs3term1 << rhs3term1;
+ofstream outputrhs3term2("../Data/Offline/Offline_LPS/VectorOff/rhs3t2.txt"); outputrhs3term2 << rhs3term2;

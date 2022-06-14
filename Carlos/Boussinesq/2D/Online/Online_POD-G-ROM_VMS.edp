@@ -1,0 +1,821 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS /// ONLINE PHASE 
+/////////////////////////////////////////
+
+
+
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+load "lapack"
+load "iovtk"
+//Cargamos las macros
+
+include "../Auxiliary/Macros_2D.idp"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+// Incluimos el levantamiento para la temperatura
+include "../EF/Levantamiento.idp"
+
+//Definimos las matrices de interpolacion
+include "../EF/Interp_matrix_NoStab_2D.idp"
+
+//ONLINE PARAMETERS 
+
+int rU = 7; // Number of online vel. basis
+int rP = 6; // Number of online pres. basis
+int rT = 7; //Number of online temp. basis
+int rVis = 10; // Number of online viscosity basis
+real Ra; //Rayleigh number 
+
+/////////////////////////////////////////////////////
+// READING DATA 
+////////////////////////////////////////////////////
+int ndof, nSnapshots, dU,dP,dT,dVis,dTau;
+
+//Número de snapshots que tomamos
+nSnapshots = ni+1;
+//Intervalo de Rayleigh
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+}
+real ira = ni;
+Ra = vRa(ira);
+real Rayleigh;
+VhP2 SnapUX,SnapUY,SnapP,SnapT;
+VhP1dc SnapVis;
+
+
+real[int,int] Avis(VhP1dc.ndof,nSnapshots); 
+real[int,int] Avx(VhP2.ndof,nSnapshots),Avy(VhP2.ndof,nSnapshots),Ap(VhP2.ndof,nSnapshots),At(VhP2.ndof,nSnapshots);
+for(int i = 0;i<nSnapshots;i++)
+{
+	Rayleigh = vRa(i);
+	
+	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_VMS/Vis_" + Rayleigh + ".txt");
+	SnapshotsVis >> SnapVis[];
+	
+	ifstream SnapshotsVX("../Data/Snapshots/Snapshots_VMS/Vx_" + Rayleigh + ".txt");
+	SnapshotsVX >> SnapUX[];
+	
+	ifstream SnapshotsVY("../Data/Snapshots/Snapshots_VMS/Vy_" + Rayleigh + ".txt");
+	SnapshotsVY >> SnapUY[];
+	
+	ifstream SnapshotsP("../Data/Snapshots/Snapshots_VMS/P_" + Rayleigh + ".txt");
+	SnapshotsP >> SnapP[];
+	
+	ifstream SnapshotsT("../Data/Snapshots/Snapshots_VMS/T_" + Rayleigh + ".txt");
+	SnapshotsT >> SnapT[];
+	
+	
+	Avx(:,i) = SnapUX[];
+	Avy(:,i) = SnapUY[];
+	Ap(:,i) = SnapP[];
+	At(:,i) = SnapT[];
+	Avis(:,i) = SnapVis[];
+
+}
+
+ifstream introPODu("../Data/PODbasis/PODbasis_VMS/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("../Data/PODbasis/PODbasis_VMS/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODvis("../Data/PODbasis/PODbasis_VMS/BasePODviscosity.txt"); // Importing p POD basis
+introPODvis>>ndof;introPODvis>>dVis;
+real[int,int] Phivis(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
+
+ifstream introPODt("../Data/PODbasis/PODbasis_VMS/BasePODtemperature.txt"); // Importing t POD basis
+introPODt>>ndof;introPODt>>dT;
+real[int,int] Phit(ndof,dT);
+for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
+
+ifstream introPODp("../Data/PODbasis/PODbasis_VMS/BasePODpressure.txt"); // Importing t POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+// Retaining first rU, rP, rTau, rT, rVis POD modes for the online velocity, pressure, temperature, viscosity, stab pres coef POD basis 
+
+
+real[int,int] rPhiu(VhP2.ndof,rU); real[int,int] rPhiv(VhP2.ndof,rU);	
+rPhiu=Phiu(0:VhP2.ndof-1,0:rU-1);  rPhiv=Phiv(0:VhP2.ndof-1,0:rU-1);
+
+real[int,int] rPhip(VhP2.ndof,rP);
+rPhip=Phip(0:VhP2.ndof-1,0:rP-1);
+
+real[int,int] rPhit(VhP2.ndof,rT);
+rPhit=Phit(0:VhP2.ndof-1,0:rT-1);
+
+real[int,int] rPhivis(VhP1dc.ndof,rVis);
+rPhivis = Phivis(0:VhP1dc.ndof-1,0:rVis-1);
+
+real[int] aiUp(rU),aiUpp(rU),aiPp(rP),aiTp(rT),aiVis(rVis); //,aiTau(rTau);
+
+
+
+//Base POD filtrada y derivada
+VhP2 uPODGin,vPODGin,modeu,modev,Snapuini,Snapvini,pPODGin,modep,Snappini,tPODGin,modet,Snaptini,velmagPODGin;
+VhP1dc Snapvis, visPODG,modevis;
+VhP0 Snaptau,tauPODG,modetau;
+
+VhP2 modeufil,modevfil;
+VhP1dc modeuX,modeuY,modevX,modevY;
+
+real[int,int] xPhiufil(VhP1dc.ndof,rU),yPhiufil(VhP1dc.ndof,rU),xPhivfil(VhP1dc.ndof,rU),yPhivfil(VhP1dc.ndof,rU);
+real[int,int] rPhiufil(VhP2.ndof,rU),rPhivfil(VhP2.ndof,rU);
+for(int i = 0;i<rU;i++)
+{
+	modeu[] = rPhiu(:,i); modev[] = rPhiv(:,i);
+	modeufil[] = IPhP2P1*modeu[]; modevfil[] = IPhP2P1*modev[];
+	modeuX[] = DXP2*modeufil[]; modeuY[] = DYP2*modeufil[]; 
+	modevX[] = DXP2*modevfil[]; modevY[] = DYP2*modevfil[];
+	rPhiufil(:,i) = modeufil[];
+	rPhivfil(:,i) = modevfil[];
+	xPhiufil(:,i) = modeuX[];
+	yPhiufil(:,i) = modeuY[];
+	xPhivfil(:,i) = modevX[];
+	yPhivfil(:,i) = modevY[];
+}
+
+
+//------------------------------------------------------------------------------
+// INITIAL CONDITION
+//------------------------------------------------------------------------------
+
+
+
+
+
+
+uPODGin = 0.;
+vPODGin = 0.;
+pPODGin = 0.;
+tPODGin = 0.;
+visPODG = 0.;
+tauPODG = 0.;
+
+
+Snapuini[] = Avx(:,ira);
+Snapvini[] = Avy(:,ira);
+Snappini[] = Ap(:,ira);
+Snaptini[] = At(:,ira);
+Snapvis[] = Avis(:,ira);
+
+
+
+
+for(int i = 0;i<rVis;i++)
+{
+	modevis[] = rPhivis(:,i);
+	aiVis(i) = int2d(Th)(modevis*Snapvis);  // Compute aP^{0} from L2-projection of p_{h}^{0}
+	visPODG[] += aiVis(i)*modevis[];
+}
+
+
+for(int i = 0;i<rU;i++)
+{
+	modeu[] = rPhiu(:,i);
+	modev[] = rPhiv(:,i);
+	aiUp(i) = int2d(Th)(modeu*Snapuini + modev*Snapvini);  // Compute aU^{0} from L2-projection of u_{h}^{0}
+	uPODGin[] += aiUp(i)*modeu[];
+	vPODGin[] += aiUp(i)*modev[];
+}
+
+
+for(int i = 0;i<rP;i++)
+{
+	modep[] = rPhip(:,i);
+	aiPp(i) = int2d(Th)(modep*Snappini);  // Compute aP^{0} from L2-projection of p_{h}^{0}
+	pPODGin[] += aiPp(i)*modep[];
+}
+
+for(int i =0;i<rT;i++)
+{
+	modet[] = rPhit(:,i);
+	aiTp(i) = int2d(Th)(modet*Snaptini);  // Compute aT^{0} from L2-projection of t_{h}^{0}
+	tPODGin[] += aiTp(i)*modet[];
+}
+
+
+/*
+plot(uPODGin,fill=1,value=1,cmm="POD-G-ROM initial velocity x component for Ra"+Ra);
+plot(vPODGin,fill=1,value=1,cmm="POD-G-ROM initial velocity y component for Ra"+Ra);
+plot(pPODGin,fill=1,value=1,cmm="POD-G-ROM initial pressure for Ra"+Ra);
+plot(tPODGin,fill=1,value=1,cmm="POD-G-ROM initial temperature for Ra"+Ra);
+*/
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING DATA FROM OFFLINE PHASE
+////////////////////////////////////////////////////////////////////////////////
+
+//------------------------------------------------------------------------------
+// MASS MATRIX and STIFFNESS MATRIX for velocity
+//------------------------------------------------------------------------------
+VhP2 modeui,modeuj,modevi,modevj;
+real[int,int] rM(rU,rU),rA(rU,rU);
+rM = 0.;rA=0.;
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		rM(i,j) = int2d(Th)(modeui*modeuj + modevi*modevj);
+		rA(i,j) = int2d(Th)(Grad(modeui)'*Grad(modeuj) + Grad(modevi)'*Grad(modevj));
+	}
+}
+
+matrix MM=rM;
+matrix AM = rA;
+
+//------------------------------------------------------------------------------
+// MASS MATRIX and STIFFNESS MATRIX for temperature
+//------------------------------------------------------------------------------
+VhP2 modeti,modetj;
+real[int,int] rMT(rT,rT),rAT(rT,rT);
+rMT = 0.;rAT=0.;
+for(int i = 0;i<rT;i++)
+{
+	modeti[] = rPhit(:,i);
+	for(int j = 0;j<rT;j++)
+	{
+		modetj[] = rPhit(:,j);
+		rMT(i,j) = int2d(Th)(modeti*modetj);
+		rAT(i,j) = int2d(Th)(Grad(modeti)'*Grad(modetj));
+	}
+}
+
+matrix MMT=rMT;
+matrix AMT = rAT;
+
+
+
+//------------------------------------------------------------------------------
+// DIV. MATRIX
+//------------------------------------------------------------------------------
+
+VhP2 modepj,modepi;
+real[int,int] divP(rP,rU);
+
+divP =0.;
+for(int i = 0;i<rP;i++)
+{
+	modepi[] = Phip(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = Phiu(:,j); modevj[] = Phiv(:,j);
+		divP(i,j) = int2d(Th)(div(modeuj,modevj)*modepi);
+	}
+
+}
+matrix divPM = divP;
+//------------------------------------------------------------------------------
+// CONVECTION TRILINEAR TENSOR for velocity
+//------------------------------------------------------------------------------
+
+
+
+real[int,int] [int] rC(rU);
+real[int,int] rCaux(rU,rU);
+rCaux=0.;
+
+for(int i = 0;i<rU;i++)
+{
+	rC[i] = rCaux(0:rU-1,0:rU-1);
+}
+
+VhP2 modeuk,modevk;
+
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		for(int k = 0;k<rU;k++)
+		{
+			modeuk[] = rPhiu(:,k); modevk[] = rPhiv(:,k);
+			rC[i](k,j) = int2d(Th)([modeui,modevi]'*Grad(modeuj)*modeuk + [modeui,modevi]'*Grad(modevj)*modevk);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// CONVECTION TRILINEAR TENSOR for temperature
+//------------------------------------------------------------------------------
+
+real[int,int][int] rCT(rU);
+real[int,int] rCauxT(rT,rT);
+rCauxT=0.;
+for(int i = 0;i<rU;i++)
+{
+	rCT[i] = rCauxT(0:rT-1,0:rT-1);
+}
+
+VhP2 modetk;
+
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	
+	for(int j = 0;j<rT;j++)
+	{
+		modetj[] = rPhit(:,j);
+		for(int k = 0;k<rT;k++)
+		{
+			modetk[] = rPhit(:,k);
+			rCT[i](k,j) = int2d(Th)([modeui,modevi]'*Grad(modetj)*modetk);
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// Matrix velocity and temperature
+//------------------------------------------------------------------------------
+
+real[int,int] rVT(rT,rU);
+rVT = 0.;
+
+for(int i = 0;i<rT;i++)
+{
+	modeti[] = rPhit(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		rVT(j,i) = int2d(Th)(modeti*modevj);
+	}
+
+}
+
+matrix VTM = rVT;
+
+//------------------------------------------------------------------------------
+// LPS MATRIX
+//------------------------------------------------------------------------------
+real[int,int] DP(rP,rP),mediaP(rP,rP);
+DP=0.;mediaP=0.;
+VhP1dc xPmodepj,yPmodepj,xPmodepi,yPmodepi;
+
+for(int i = 0;i<rP;i++)
+{
+	modepi[]=Phip(:,i);
+	xPmodepi[]=IPhDXP2*modepi[];
+	yPmodepi[]=IPhDYP2*modepi[];
+	for(int j = 0;j<rP;j++)
+	{
+		modepj[]=Phip(:,j);
+		xPmodepj[]=IPhDXP2*modepj[];
+		yPmodepj[]=IPhDYP2*modepj[];	
+		DP(i,j)=int2d(Th)(hTriangle^2*(xPmodepj*xPmodepi+yPmodepj*yPmodepi));
+		mediaP(j,i)=int2d(Th)(1.e-8*modepi*modepj);
+	}
+}
+
+matrix DDP = DP;
+matrix mediaPM = mediaP;
+
+
+
+//------------------------------------------------------------------------------
+// Right hand side 
+//------------------------------------------------------------------------------
+
+real[int] rhs1aux(rU),rhs3t1(rT);
+rhs1aux = 0.;
+rhs3t1 = 0.;
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	rhs1aux(i) = int2d(Th)(G*modevi);
+}
+
+for(int i = 0;i<rT;i++)
+{
+	modeti[] = rPhit(:,i);
+	rhs3t1(i) = int2d(Th)(Grad(G)'*Grad(modeti));
+
+}
+
+real[int,int] rhs3t2(rT,rU);
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	for(int j = 0;j<rT;j++)
+	{
+		modetj[] = rPhit(:,j);
+		rhs3t2(j,i) = int2d(Th)([modeui,modevi]'*Grad(G)*modetj);
+	}
+}
+
+real[int] rhs3t3(rT);
+rhs3t3 = 0.;
+VhP2 Gfil,filmodeti,filmodetj;
+Gfil[] = IPhP2P1*G[];
+for(int i = 0;i<rT;i++)
+{
+	modeti[] = rPhit(:,i);
+	filmodeti[] = IPhP2P1*modeti[];
+	rhs3t3(i) = int2d(Th)(1/Pr*(CS*hTriangle)^2*visPODG*Grad(filmodeti)'*Grad(filmodeti));
+}
+
+//------------------------------------------------------------------------------
+// Tensores	 para velocidad y temperatura VMS-SMAGO
+//------------------------------------------------------------------------------
+
+real[int,int][int] rD(rVis),rDT(rVis);
+real[int,int] Daux(rU,rU),DTaux(rT,rT);
+Daux=0.;DTaux=0.;
+for(int i = 0;i<rVis;i++)
+{
+	rD[i] = Daux(0:rU-1,0:rU-1);
+	rDT[i] = DTaux(0:rU-1,0:rU-1);
+}
+
+VhP1dc modevisi;
+VhP2 filmodeuj,filmodevj,filmodevk,filmodeuk;
+for(int i = 0;i<rVis;i++)
+{
+	modevisi[] = rPhivis(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		filmodeuj[] = rPhiufil(:,j); filmodevj[] = rPhivfil(:,j);
+		for(int k = 0;k<rU;k++)
+		{
+			filmodeuk[] = rPhiufil(:,k); filmodevk[] = rPhivfil(:,k);
+			rD[i](k,j) = int2d(Th)((CS*hTriangle)^2*(modevisi*Grad(filmodeuj)'*Grad(filmodeuk) + modevisi*Grad(filmodevj)'*Grad(filmodevk)));
+		}
+	}
+}
+
+VhP2 filmodetk;
+
+for(int i = 0;i<rVis;i++)
+{
+	modevisi[] = rPhivis(:,i);
+	for(int j = 0;j<rT;j++)
+	{
+		modetj[] = rPhit(:,j);
+		filmodetj[] = IPhP2P1*modetj[];
+		for(int k = 0;k<rT;k++)
+		{
+			modetk[] = rPhit(:,k);
+			filmodetk[] = IPhP2P1*modetk[];
+			rDT[i](k,j) = int2d(Th)((CS*hTriangle)^2*(modevisi*Grad(filmodetj)'*Grad(filmodetk)));
+		}
+	}
+}
+/*
+real[int,int] DDprueba(rU,rU), DDTprueba(rT,rT);
+DDprueba=0.; DDTprueba = 0.;
+VhP2 filmodeui,filmodevi,filmodeuj,filmodevj;
+for(int i = 0;i<rU;i++)
+{
+	modeui[] = rPhiu(:,i); modevi[] = rPhiv(:,i);
+	filmodeui[] = rPhiufil(:,i); filmodevi[] = rPhivfil(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		filmodeuj[] = rPhiufil(:,j); filmodevj[] = rPhivfil(:,j);
+		DDprueba(j,i) = int2d(Th)((CS*hTriangle)^2*visPODG*gradugradv(filmodeui,filmodevi,filmodeuj,filmodevj));
+	}
+}
+
+matrix DDpruebaM = DDprueba; 
+
+cout << DDprueba << endl;
+for(int i = 0;i<rT;i++)
+{
+	modeti[] = rPhit(:,i);
+	filmodeti[] = IPhP2P1*modeti[];
+	for(int j = 0;j<rT;j++)
+	{
+		modetj[] = rPhit(:,j);
+		filmodetj[] = IPhP2P1*modetj[];
+		DDTprueba(j,i) = int2d(Th)(1/Pr*(CS*hTriangle)^2*visPODG*Grad(filmodeti)'*Grad(filmodetj));
+	}
+}
+
+matrix DDTpruebaM = DDTprueba;
+*/
+//------------------------------------------------------------------------------
+// DEIM magic points
+//------------------------------------------------------------------------------
+
+ifstream introIvis("../Data/Offline/Deim/Ivis.txt");
+introIvis>>dVis; real[int] Ivis(rVis);
+for(int i = 0;i<rVis;i++){introIvis>>Ivis(i);}
+
+
+cout<< "Reading phase complete" << endl;
+
+////////////////////////////////////////////////////////////////////////////////
+// END OF READING
+////////////////////////////////////////////////////////////////////////////////
+
+//------------------------
+// Auxiliary for DEIM
+//-------------------------
+
+//La matriz QI 
+real[int] alpha(rVis);
+alpha =0.;
+
+real[int,int] QIauxvis(rVis,rVis);
+QIauxvis = 0.;
+
+
+for(int i = 0;i<rVis;i++)
+{
+	QIauxvis(i,:) = Phivis(Ivis(i),:);
+}
+
+
+
+matrix QIvis = QIauxvis;
+
+
+set(QIvis,solver=UMFPACK);
+
+
+//Evaluar la base POD filtrada y derivada en los puntos magicos
+
+real[int,int] xPhiuIvis(rU,rVis),xPhivIvis(rU,rVis),yPhiuIvis(rU,rVis),yPhivIvis(rU,rVis);
+VhP1dc xmodeu,xmodev,ymodeu,ymodev;
+
+for(int i = 0;i<rU;i++)
+{
+	modeu[] = rPhiu(:,i);
+	modev[] = rPhiv(:,i);
+	xmodeu = dx(modeu);
+	xmodev = dx(modev);
+	ymodeu = dy(modeu);
+	ymodev = dy(modev);
+	for(int j = 0;j<rVis;j++)
+	{
+		
+		xPhiuIvis(i,j) = xmodeu[][Ivis(j)];
+		xPhivIvis(i,j) = xmodev[][Ivis(j)];
+		yPhiuIvis(i,j) = ymodeu[][Ivis(j)];
+		yPhivIvis(i,j) = ymodev[][Ivis(j)];
+	
+	}
+
+
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// STARTING ONLINE PHASE
+////////////////////////////////////////////////////////////////////////////////
+
+
+//Initialization
+VhP2 uPODGp,vPODGp,tPODGp;
+uPODGp = 0.;
+vPODGp = 0.;
+tPODGp = 0.;
+
+// LHS MATRIX 
+
+matrix dtM = dtt*MM;
+matrix PrA = Pr*AM;
+matrix LHS1aux = dtM + PrA; // + DDpruebaM;
+matrix LHS2 = (-1)*(divPM');
+real cteMMT = (-1)*Pr*Ra;
+matrix LHS3 = cteMMT*VTM;
+matrix LHS4 = divPM;
+matrix LHS5 = DDP + mediaPM;
+matrix LHS6 = 0.;
+matrix LHS7 = 0.;
+matrix LHS8 = 0.;
+matrix dtMT = dtt*MMT;
+matrix LHS9aux = dtMT + AMT; // + DDTpruebaM;
+
+// RHS VECTOR
+
+real[int] rhs1(rU),rhs2(rP),rhs3(rT),rhs(rU+rP+rT),aix(rU+rP+rT);
+rhs1 = 0.;
+rhs2 = 0.;
+rhs3 = 0.; 
+aix = 0.; 
+rhs = 0.;
+
+// POD-G-ROM time coefficients
+VhP2 uPODG,vPODG,velmagPODG,pPODG,tPODG;
+
+//------------------------
+// TIME LOOP
+//-------------------------
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+real cpu=clock(); 
+for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
+{
+	
+	//Initialization
+	VhP2 uPODGp,vPODGp;
+	uPODG = 0.;
+	uPODGp = 0.;
+	vPODGp = 0.;
+	vPODG = 0.;
+	tPODG = 0.;
+	pPODG = 0.;
+	
+	//---------------------------------------------------------------------------
+	// Deim Process
+	//---------------------------------------------------------------------------
+	
+	real[int] dxuvis(rVis),dxvvis(rVis),dyuvis(rVis),dyvvis(rVis);
+	dxuvis = 0.;
+	dxvvis = 0.;
+	dyuvis = 0.;
+	dyvvis = 0.;
+	
+	for(int j = 0;j<rVis;j++){
+		dxuvis(j) = (xPhiuIvis(:,j)'*aiUp)^2;
+		dxvvis(j) = (xPhivIvis(:,j)'*aiUp)^2;
+		dyuvis(j) = (yPhiuIvis(:,j)'*aiUp)^2;
+		dyvvis(j) = (yPhivIvis(:,j)'*aiUp)^2;
+	}
+	real[int] dxyuvvis(rVis);
+	dxyuvvis=0.;
+	for(int j = 0;j<rVis;j++){
+		dxyuvvis(j) = sqrt(dxuvis(j) + dxvvis(j) + dyuvis(j) + dyvvis(j));
+	}
+	
+	alpha = QIvis^(-1)*dxyuvvis;
+	//---------------------------------------------------------------------------
+	// Calculate the multiplication of the DEIM tensor for the velocity and temperature
+	//---------------------------------------------------------------------------
+	
+	real[int,int] DD(rU,rU);
+	DD = 0.; 
+	for(int j = 0;j<rVis;j++)
+	{
+		DD+= rD[j]*alpha(j);
+	}
+	
+	matrix DDM = DD;
+	
+	real[int,int] DDT(rT,rT);
+	DDT = 0.;
+	for(int j = 0;j<rVis;j++)
+	{
+		DDT += rDT[j]*alpha(j);
+	}
+	
+	matrix DDTM = DDT;
+	
+	//---------------------------------------------------------------------------
+	// Calculate the multiplication of the tensor for the velocity and temperature
+	//---------------------------------------------------------------------------
+	
+	real[int,int] CC(rU,rU);
+	CC = 0.;
+	for(int j = 0;j<rU;j++)
+	{
+		CC += rC[j]*aiUp(j);
+	}
+	matrix CMp = CC;
+	
+	real[int,int] CCT(rT,rT);
+	CCT = 0.;
+	for(int j = 0;j<rU;j++)
+	{
+		CCT += rCT[j]*aiUp(j);
+	}
+	matrix CMTp = CCT;
+	
+	//---------------------------------------------------------------------------
+	// Left hand side
+	//---------------------------------------------------------------------------
+	
+	matrix LHS1 = LHS1aux + CMp + DDM; 
+	matrix LHS9 = LHS9aux + CMTp + DDTM;
+	matrix LHS = [[LHS1,LHS2,LHS3],[LHS4,LHS5,LHS6],[LHS7,LHS8,LHS9]];
+	set(LHS,solver = UMFPACK);
+	
+	//---------------------------------------------------------------------------
+	// Right hand side
+	//---------------------------------------------------------------------------
+	real[int] rhs1dt(rU);
+	rhs1dt = 0.;
+	rhs1dt = MM*aiUp;
+	rhs1 = Pr*Ra*rhs1aux + dtt*rhs1dt;
+	
+	real[int] rhs3dt(rT),rhs3aux1(rT),rhs3sum(rT);
+	rhs3dt = 0.;
+	rhs3dt = MMT*aiTp;
+	
+	rhs3aux1 = 0.;
+	rhs3aux1 = rhs3t2*aiUp;
+	
+	rhs3sum = 0.;
+	rhs3sum = dtt*rhs3dt - rhs3aux1;
+	
+	rhs3 = rhs3sum - rhs3t1;
+	rhs3 = rhs3 - rhs3t3;
+	
+	//RHS FINAL
+	
+	rhs = [rhs1,rhs2,rhs3];
+	//POD-G-ROM solution 
+
+	
+	aix = LHS^(-1)*rhs;
+	
+	
+	
+	
+	
+	real[int] error(rU);
+	error = aix(0:rU-1) - aiUp;
+	
+	
+	itercontrol1 = error.l2;
+	iterrelative1 = itercontrol1;
+	
+	// UPDATE
+	
+	
+	
+	aiUp  = aix(0:rU-1);
+	aiTp  = aix(rU+rP:(rU+rT+rP-1));
+	
+	
+} 
+cout << "CPU time = " << clock()-cpu << endl;
+
+// POD-G-ROM vel.solution 
+for(int j = 0;j<rU;j++)
+{
+	modeu[] = rPhiu(:,j);
+	modev[] = rPhiv(:,j);
+	uPODG[] += aix(j)*modeu[];
+	vPODG[] += aix(j)*modev[];
+}
+
+for(int i = 0;i<rT;i++)
+{
+	modet[] = rPhit(:,i);
+	tPODG[] += aiTp(i)*modet[];
+}	
+tPODG[] += G[];
+Snaptini[] += G[];
+
+for(int i = 0;i<rP;i++)
+{
+	modep[] = rPhip(:,i);
+	pPODG[] += aix(i+rU)*modep[];
+
+}
+
+
+
+plot([Snapuini,Snapvini],fill=1,value=1,cmm="Snapshots velocity for Ra: "+Ra);
+plot([uPODG,vPODG],fill=1,value=1,cmm="POD-G-ROM velocity for Ra"+Ra);
+plot(Snapuini,fill=1,value=1,cmm="Snapshots velocity x for Ra: "+Ra);
+plot(uPODG,fill=1,value=1,cmm="POD-G-ROM velocity x for Ra: "+Ra);
+plot(Snapvini,fill=1,value=1,cmm="Snapshots velocity y for Ra: "+Ra);
+plot(vPODG,fill=1,value=1,cmm="POD-G-ROM velocity y for Ra: "+Ra);
+plot(Snappini,fill=1,value=1,cmm="Snapshots pressure for Ra: "+Ra);
+plot(pPODG,fill=1,value=1,cmm="POD-G-ROM pressure for Ra: "+Ra);
+plot(Snaptini,fill=1,value=1,cmm="Snapshots temperature for Ra: "+Ra);
+plot(tPODG,fill=1,value=1,cmm="POD-G-ROM temperature for Ra: "+Ra);
+	
+real errorvel,errorp,errort;
+
+errorvel = int2d(Th)((Snapuini-uPODG)^2 + (Snapvini-vPODG)^2)/int2d(Th)(Snapuini^2 + Snapvini^2);
+cout << "Error relativo en velocidad: " << errorvel << endl;
+cout << "------------------" << endl;
+errorp = int2d(Th)((Snappini-pPODG)^2)/int2d(Th)(Snappini^2);
+cout << "Error relativo  en presion: " << errorp << endl;
+cout << "------------------" << endl;
+errort = int2d(Th)((Snaptini-tPODG)^2)/int2d(Th)(Snaptini^2);
+cout << "Error relativo  en temperature: " << errort << endl;
+cout << "------------------" << endl;
+
