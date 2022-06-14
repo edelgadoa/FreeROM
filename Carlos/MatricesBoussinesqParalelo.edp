@@ -1,0 +1,296 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+
+int ndof,dU,dP,dT,dVis; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
+
+ifstream introPODu("../Data/PODbasis/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("../Data/PODbasis/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODp("../Data/PODbasis/BasePODpressure.txt"); // Importing p POD basis
+introPODp>>ndof;introPODp>>dP;
+real[int,int] Phip(ndof,dP);
+for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
+
+ifstream introPODt("../Data/PODbasis/BasePODtemperature.txt"); // Importing t POD basis
+introPODt>>ndof;introPODt>>dT;
+real[int,int] Phit(ndof,dT);
+for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
+ 
+
+// OFFLINE MATRIX/VECTOR CONSTRUCTION
+VhP2 modeuj,modeuk,modeui,modevj,modevk,modevi;
+VhP1 modepj,modepi;
+
+real[int,int] M(dU,dU);  // MASS MATRIX for velocity(Identity matrix for L2-POD basis)
+
+real[int,int] A(dU,dU);  // STIFFNESS MATRIX (Identity matrix for H1-POD basis)
+
+real[int,int] P(dP,dU);  // DIV. MATRIX
+
+real[int,int] AT(dT,dT); // STIFFNES MATRIX TEMPERATURE 
+
+real[int,int] MT(dT,dU); // MASS MATRIX temperature velocity	 
+
+real[int,int] auxC(dU,dU);  // AUX. MATRIX for CONVECTION TERM (TRILINEAR TENSOR)
+
+real[int,int] auxCT(dT,dT); // AUX. MATRIX FOR CONVECTION TERM OF TEMPERATURE (TRILINEAR TENSOR)
+
+real[int,int][int] C(dU);  // VECTOR of MATRICES for CONVECTION TERM (TRILINEAR TENSOR)
+
+real[int,int][int] CT(dU); // VECTOR OF MATRICES FOR CONVECTION TERM OF TEMPERATURE (TRILINEAR TENSOR)
+
+
+//CALCULATE THE MATRIX IN PARALEL
+
+
+
+
+// INITIALIZATION CONVECTION TRILINEAR TENSOR
+
+for(int j=0;j<dU;j++)
+{ 
+	auxC=0.;
+	auxCT=0.;
+	C[j]=auxC(0:dU-1,0:dU-1);
+	CT[j]=auxCT(0:dT-1,0:dT-1);
+	
+}
+
+//Calculate Mass matrix, stiffness matrix and div matrix
+
+
+matrix prodl2l2;
+{
+	varf a(u,v)=
+	intN(Th)(u*v);
+	prodl2l2 = a(VhP2,VhP2);
+
+}
+
+matrix prodh1h1;
+{
+	varf a(u,v)=
+	intN(Th)(Grad(u)'*Grad(v));
+	prodh1h1 = a(VhP2,VhP2);
+}
+
+matrix proddivX;
+{
+	varf a(u,p)=
+	intN(Th)(dx(u)*p);
+	proddivX = a(VhP2,VhP2);
+}
+
+matrix proddivY;
+{
+	varf a(v,p)=
+	intN(Th)(dy(v)*p);
+	proddivY = a(VhP2,VhP2);
+}
+
+
+
+real[int,int] ML=M,AL=A,PL=P,PLX=P,PLY=P,ATL = AT, MTL=MT;
+ML=0;M=0;AL=0;A=0;PL=0;P=0;PLX=0;PLY=0;ATL=0;AT=0;MTL=0;MT=0;
+for(int i=0;i<dU;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxU = prodl2l2*Phiu(:,i);
+		real[int] auxV = prodl2l2*Phiv(:,i);
+		real[int] auxgradU = prodh1h1*Phiu(:,i);
+		real[int] auxgradV = prodh1h1*Phiv(:,i);
+		for(int j = 0;j<dU;j++)
+		{
+			ML(i,j) = (Phiu(:,j)'*auxU + Phiv(:,j)'*auxV);
+			AL(i,j) = (Phiu(:,j)'*auxgradU + Phiv(:,j)'*auxgradV);
+		}
+	}
+}
+
+
+
+
+mpiAllReduce(ML,M,mpiCommWorld,mpiSUM);
+mpiAllReduce(AL,A,mpiCommWorld,mpiSUM);
+
+for(int i = 0;i<dP;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxPX = proddivX*Phip(:,i);
+		real[int] auxPY = proddivY*Phip(:,i);
+		for(int j =0;j<dU;j++)
+		{
+			PLX(i,j) = Phiu(:,j)'*auxPX;
+			PLY(i,j) = Phiv(:,j)'*auxPY;
+		}
+	}
+}
+PL = PLX+PLY;
+
+mpiAllReduce(PL,P,mpiCommWorld,mpiSUM);
+
+for(int i=0;i<dT;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxT = prodh1h1*Phit(:,i);
+		for(int j=i;j<dT;j++)
+		{
+			ATL(i,j) = Phit(:,j)'*auxT;
+			if(i!=j){ATL(j,i) = ATL(i,j);}
+		}
+	}
+}
+
+mpiAllReduce(ATL,AT,mpiCommWorld,mpiSUM);
+
+for(int i=0;i<dT;i++)
+{
+	if(mpirank==i%mpisize)
+	{
+		real[int] auxTU = prodl2l2*Phit(:,i);
+		for(int j=0;j<dU;j++)
+		{
+			MTL(i,j) = Phiu(:,j)'*auxTU + Phiv(:,j)'*auxTU;
+		}
+	}
+}
+
+mpiAllReduce(MTL,MT,mpiCommWorld,mpiSUM);
+
+if(mpirank==0){
+cout << "Built Mass Matrix M" << endl;			  
+cout << "Built Stiffness Matrix A" << endl;		  
+cout << "Built Div. Matrix P" << endl;	
+cout << "Built Stiffnes Matrix temperature AT" << endl;
+cout << "Built Mass Matrix temperature MT" << endl;
+}
+
+//------------------Export data -------------------
+
+ofstream outputM("../Data/Offline/MatrixOff/M.txt");	outputM<<M;			// Mass Matrix (Identity matrix for L2-POD basis)          
+ofstream outputA("../Data/Offline/MatrixOff/A.txt");	outputA<<A;    		// Stiffness Matrix (Identity matrix for H1-POD basis)
+
+ofstream outputP("../Data/Offline/MatrixOff/P.txt");	outputP<<P;    		// Div. Matrix 
+
+ofstream outputAT("../Data/Offline/MatrixOff/AT.txt"); outputAT<<AT; 		// Sitffnes Matrix for temperature
+
+ofstream outputMT("../Data/Offline/MatrixOff/MT.txt"); outputMT<<MT; 		// Mass Matrix for temperature
+
+
+
+////////////////////
+//Construct tensor
+///////////////////
+
+
+VhP2 modeus,modevs;
+matrix Caux1,Caux2,Caux3,Caux4;
+real[int,int] auxCL = auxC;
+
+for(int j = 0;j<dU;j++){
+	auxC=0;auxCL=0;
+	modeuj[] = Phiu(:,j); modevj[] = Phiv(:,j);
+	varf aC1(u,v) = intN(Th)(modeuj*(dx(v)*u));
+	varf aC2(u,v) = intN(Th)(modeuj*(dy(v)*u));
+	varf aC3(u,v) = intN(Th)(modevj*(dx(v)*u));
+	varf aC4(u,v) = intN(Th)(modevj*(dy(v)*u));
+	Caux1 = aC1(VhP2,VhP2);
+	Caux2 = aC2(VhP2,VhP2);
+	Caux3 = aC3(VhP2,VhP2);
+	Caux4 = aC4(VhP2,VhP2);
+	for(int k = 0;k<dU;k++)
+	{
+		if(mpirank==k%mpisize)
+		{
+			real[int] auxC1 = Caux1*Phiu(:,k);
+			real[int] auxC2 = Caux2*Phiv(:,k);
+			real[int] auxC3 = Caux3*Phiu(:,k);
+			real[int] auxC4 = Caux4*Phiv(:,k);
+			for(int i = 0;i<dU;i++)
+			{
+				auxCL(k,i) = Phiu(:,i)'*auxC1 + Phiu(:,i)'*auxC2 + Phiv(:,i)'*auxC3 + Phiv(:,i)'*auxC4; 
+			}
+		}
+	}
+	mpiAllReduce(auxCL,auxC,mpiCommWorld,mpiSUM);
+	C[j] = auxC(0:dU-1,0:dU-1);
+	
+}
+
+
+
+matrix CauxTemp;
+real[int,int] auxCTL = auxCT;
+
+for(int s=0;s<dU;s++){
+	auxCT = 0;auxCTL=0;
+	modeus[] = Phiu(:,s); modevs[] = Phiv(:,s);
+	varf a(t,tt)=intN(Th)(Grad(t)'*[modeus,modevs]*tt);
+	CauxTemp = a(VhP2,VhP2);
+	for(int i = 0;i<dT;i++)
+	{
+		if(mpirank==i%mpisize)
+		{	
+			real[int] auxtensor = CauxTemp*Phit(:,i);
+			for(int j = 0;j<dT;j++)
+			{
+				auxCTL(i,j) = Phit(:,j)'*auxtensor;
+			}
+		}
+	}
+	mpiAllReduce(auxCTL,auxCT,mpiCommWorld,mpiSUM);
+	CT[s] = auxCT(0:dT-1,0:dT-1);
+}
+	
+	
+if(mpirank==0){
+cout << "Built Trilinear Tensor C" << endl;
+
+cout << "Built Trilinear Tensor CT" << endl;		  
+}
+//------------Export data----------------
+
+ofstream outputC("../Data/Offline/MatrixOff/C.txt");		outputC<<C;		// Convection trilinear tensor (Phi_j , Phi_k Grad(Phi_i))
+ofstream outputCT("../Data/Offline/MatrixOff/CT.txt");      outputCT<<CT;
+
