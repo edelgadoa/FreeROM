@@ -31,7 +31,7 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1, IPh2P22P1;
             VhP1 fauxp1 = 1.;
             IdP1 = fauxp1[];
 			Id3P2=[[IdP2, 0, 0],[0, IdP2, 0],[0, 0, IdP2]];
-			Id2P2=[[IdP2, 0, 0],[0, IdP2, 0]];
+			Id2P2=[[IdP2, 0],[0, IdP2]];
 		}
 		
 		matrix PIg = interpolate(VhP1,VhP1dc); //(Id-πh) P1dc->P1->P1dc
@@ -52,7 +52,7 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1, IPh2P22P1;
 		matrix PI2=interpolate(Vh2P1,Vh2P2);
 		matrix IP2=interpolate(Vh2P2,Vh2P1);
 		matrix IPPI2=IP2*PI2;
-		IPh2P22P1 = Id2P2 + (-1)*IPPI2; // (Id-πh) 3P2->3P1->3P2
+		IPh2P22P1 = Id2P2 + (-1)*IPPI2; // (Id-πh) 2P2->2P1->2P2
 }
 
 // Matrices de derivadas	
@@ -122,5 +122,5 @@ matrix IPhD3Y3P2 = IPhP1dcP1 * D3Y3P2; // (I-πh) de ∂y componente 3 de 3P2 (3
 matrix IPhDXP2 = IPhP1dcP1 * DXP2; // (I-πh) de ∂x (P2 -> Derivo componente X -> P1dc (filtro) -> P1 -> P1dc) 
 matrix IPhDYP2 = IPhP1dcP1 * DYP2; // (I-πh) de ∂y (P2 -> Derivo componente Y -> P1dc (filtro) -> P1 -> P1dc)   
 
-matrix DX2P2IPh = DX2P2*IPh2P22P1; // Para las matrices de Prod. Escalar en la construccion de las matrices offline reducidas
-matrix DY2P2IPh = DY2P2*IPh2P22P1;
+matrix DX2P2IPh = DX2P2 * IPh2P22P1; // Para las matrices de Prod. Escalar en la construccion de las matrices offline reducidas
+matrix DY2P2IPh = DY2P2 * IPh2P22P1;

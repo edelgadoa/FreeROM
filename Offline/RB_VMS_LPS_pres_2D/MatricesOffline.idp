@@ -86,8 +86,7 @@ for (int s=0; s<Mbases; s++){
 		contFF++;		
 	}
 	pause;
-	mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);
-	
+	mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
 	SmagoRB[s] += SintG;
 }
 
@@ -98,7 +97,7 @@ for (int s=0; s<Taubases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			LPSintL(i,j) = innerprodX(BaseP[j][], BaseP[i][], StabPPEM[s]);
+			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[j][], BaseP[i][], StabPPEM[s]);
 			if(j<i){
 				LPSintL(j,i) = LPSintL(i,j);
 			}
@@ -111,5 +110,45 @@ for (int s=0; s<Taubases; s++){
 	StabPRB[s] += LPSintG;
 }
 
+// Matrices para el EIM de Smago
+for (int s=0; s<Mbases; s++){
+   real[int,int] Dtk=GradPM[s];
+   
+   Dtk(0,i)=FdxV[i][](Tint(s));
+   Dtk(1,i)=FdyV[i][](Tint(s));
+   Dtk(2,i)=FdxVY[i][](Tint(s));
+   Dtk(3,i)=FdyVY[i][](Tint(s));
+   GradPM[s]=Dtk;
+}
+	
+
+// Matrices para el EIM LPS
+for (int s=0; s<Taubases; s++){
+	real[int,int] Ngk = NUK[s];
+	VhP2 fvel,fvelY;
+	varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
+	fvel = BaseVel[i]; fvelY = BaseVelY[i];
+	real[int] ngaux = NG(0,VhP0);
+	Ngk(0,1+i) = ngaux(TauTint(s));		
+	
+	//Matriz simétrica
+	Ngk(1+i,0)=Ngk(0,1+i);
+	
+	NUK[ki]=Ngk;
+	
+	///////////////////////////////////////////////
+	
+	real[int,int] Nggk = NGUK[s];
+	VhP1dc dxfv1,dyfv1,dxfv2,dyfv2;
+	varf NDG(un,v) = int2d(Th)((dxfv1*DxG1f + dyfv1*DyG1f + dxfv2*DxG2f + dyfv2*DyG2f)*v);
+	dxfv1 = Fv1dx[i]; dyfv1 = Fv1dy[i]; dxfv2 = Fv2dx[i]; dyfv2 = Fv2dy[i];
+	real[int] ndgaux = NDG(0,VhP0);
+	Nggk(0,1+i) = ndgaux(TauTint(s));
+	//Matriz simétrica
+	Nggk(1+i,0) = Nggk(0,1+i);
+	
+	
+	NGUK[s] = Nggk;
+}
 
 
