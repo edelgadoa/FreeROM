@@ -59,12 +59,12 @@ Vh2P2[int] [BaseV, BaseVY](Nbases);
 VhP2[int] BaseVel(Nbases);
 VhP2[int] BaseVelY(Nbases);
 
-VhP2[int] FBaseV(Nbases),FBaseVY(Nbases);
+VhP2[int] FBaseV(Nbases), FBaseVY(Nbases);
 
-VhP1dc[int] FdxP(Nbases), FdyP(Nbases);
+VhP1dc[int] FPdX(Nbases), FPdY(Nbases);
 
-VhP1dc[int] FdxV(Nbases),FdyV(Nbases);
-VhP1dc[int] FdxVY(Nbases),FdyVY(Nbases);
+VhP1dc[int] FVdX(Nbases), FVdY(Nbases);
+VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(VhP2.ndof, Nbases), MBaseVY(VhP2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
@@ -184,10 +184,10 @@ for (int i=0; i<Nbases; i++){
 	// Actualizo las soluciones filtradas
 	FBaseV[i][] = IPhP2P1*BaseVel[i][]; FBaseVY[i][] = IPhP2P1*BaseVelY[i][];
 	
-	FdxV[i][] = DXP2*FBaseV[i][]; FdyV[i][] = DYP2*FBaseV[i][];
-	FdxVY[i][] = DXP2*FBaseVY[i][]; FdyVY[i][] = DYP2*FBaseVY[i][];
+	FVdX[i][] = DXP2*FBaseV[i][]; FVdY[i][] = DYP2*FBaseV[i][];
+	FVYdX[i][] = DXP2*FBaseVY[i][]; FVYdY[i][] = DYP2*FBaseVY[i][];
 	
-	FdxP[i][] = IPhDXP2*BaseP[i][]; FdxP[i][] = IPhDYP2*BaseP[i][];
+	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	
 	
 	// Defino el nuevo producto escalar para la convección

@@ -112,43 +112,51 @@ for (int s=0; s<Taubases; s++){
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
-   real[int,int] Dtk=GradPM[s];
+   real[int,int] Dtk = GradPM[s];
    
-   Dtk(0,i)=FdxV[i][](Tint(s));
-   Dtk(1,i)=FdyV[i][](Tint(s));
-   Dtk(2,i)=FdxVY[i][](Tint(s));
-   Dtk(3,i)=FdyVY[i][](Tint(s));
-   GradPM[s]=Dtk;
+   Dtk(0,i) = FdxV[i][](Tint(s));
+   Dtk(1,i) = FdyV[i][](Tint(s));
+   Dtk(2,i) = FdxVY[i][](Tint(s));
+   Dtk(3,i) = FdyVY[i][](Tint(s));
+   GradPM[s] = Dtk;
 }
 	
 
-// Matrices para el EIM LPS
-for (int s=0; s<Taubases; s++){
-	real[int,int] Ngk = NUK[s];
-	VhP2 fvel,fvelY;
-	varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
-	fvel = BaseVel[i]; fvelY = BaseVelY[i];
-	real[int] ngaux = NG(0,VhP0);
-	Ngk(0,1+i) = ngaux(TauTint(s));		
+
+// Matrices para el EIM LPS (parte del levantamiento)
+real[int, int] NgkL, NggkL;
+NgkL = 0, NggkL = 0;
+contFF = 0;
+for (int s=0; s<Taubases; s++){ 
+	if(mpirank==contFF%mpisize){
+		// real[int,int] Ngk = NUK[s];
+		VhP2 fvel,fvelY;
+		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
+		fvel = BaseVel[i]; fvelY = BaseVelY[i];
+		real[int] ngaux = NG(0,VhP0);
+		NgkL(0,1+i) = ngaux(TauTint(s));		
 	
-	//Matriz simétrica
-	Ngk(1+i,0)=Ngk(0,1+i);
+		//Matriz simétrica
+		NgkL(1+i,0) = NgkL(0,1+i);
 	
-	NUK[ki]=Ngk;
+		NUK[s] += NgkL;
 	
-	///////////////////////////////////////////////
+		///////////////////////////////////////////////
 	
-	real[int,int] Nggk = NGUK[s];
-	VhP1dc dxfv1,dyfv1,dxfv2,dyfv2;
-	varf NDG(un,v) = int2d(Th)((dxfv1*DxG1f + dyfv1*DyG1f + dxfv2*DxG2f + dyfv2*DyG2f)*v);
-	dxfv1 = Fv1dx[i]; dyfv1 = Fv1dy[i]; dxfv2 = Fv2dx[i]; dyfv2 = Fv2dy[i];
-	real[int] ndgaux = NDG(0,VhP0);
-	Nggk(0,1+i) = ndgaux(TauTint(s));
-	//Matriz simétrica
-	Nggk(1+i,0) = Nggk(0,1+i);
+		//real[int,int] Nggk = NGUK[s];
+		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
+		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
+		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
+		real[int] ndgaux = NDG(0,VhP0);
+		NggkL(0,1+i) = ndgaux(TauTint(s));
+		//Matriz simétrica
+		NggkL(1+i,0) = Nggk(0,1+i);
 	
-	
-	NGUK[s] = Nggk;
+		NGUK[s] += NggkL;
+	}
+	contFF++;
 }
+pause;
+
 
 

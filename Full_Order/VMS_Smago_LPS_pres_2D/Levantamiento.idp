@@ -11,3 +11,15 @@ VhP2 GP2 = G;
 VhP2 GzeroP2 = 0.;
 
 [Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+
+// Filtro el levantamiento y lo derivo
+VhP1dc FLevdX, FLevdY, FLevYdX, FLevYdY;
+
+{
+	VhP2 Levaux;
+	Levaux[] = IPhP2P1 * GP2; //Lo hago componente a componente
+	FLevdX[] = DXP2 * Levaux[]; FLevdY[] = DYP2 * Levaux[];
+	
+	Levaux[] = IPhP2P1 * GzeroP2; 
+	FLevYdX[] = DXP2 * Levaux[]; FLevYdY[] = DYP2 * Levaux[];
+}
