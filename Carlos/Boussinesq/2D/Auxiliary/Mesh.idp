@@ -23,8 +23,9 @@ cout<<"Max h de la malla: "<<hT<<endl;
 
 //Malla cavidad -> Estructurada
 
-mesh Th=square(50,50,flags=3);
-//func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
-//func fy = 0.5*(1 + (tanh(2*(2*y-1)))/(tanh(2)));
- //Th = movemesh(Th,[fx,fy]);
+mesh Th=square(32,32,flags=3);
+
+func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
+func fy = 0.5*(1 + (tanh(2*(2*y-1)))/(tanh(2)));
+ Th = movemesh(Th,[fx,fy]);
 //plot (Th,wait=1,ps="cavity.ps");

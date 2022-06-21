@@ -36,12 +36,12 @@ include "../EF/Interp_matrix_NoStab_2D.idp"
 
 int ndof,dP,dTau; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
 
-ifstream introPODp("../Data/PODbasis/PODbasis_LPS/BasePODpressure.txt"); // Importing t POD basis
+ifstream introPODp("../Data/PODbasis/PODbasis_LPS_refine/BasePODpressure.txt"); // Importing t POD basis
 introPODp>>ndof;introPODp>>dP;
 real[int,int] Phip(ndof,dP);
 for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
 
-ifstream introPODtau("../Data/PODbasis/PODbasis_LPS/BasePODTau.txt"); // Importing t POD basis
+ifstream introPODtau("../Data/PODbasis/PODbasis_LPS_refine/BasePODTau.txt"); // Importing t POD basis
 introPODtau>>ndof;introPODtau>>dTau;
 real[int,int] Phitau(ndof,dTau);
 for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
@@ -137,5 +137,5 @@ mpiAllReduce(mediaPL,mediaP,mpiCommWorld,mpiSUM);
 
 //------------Export data----------------
 
-ofstream outputDP("../Data/Offline/Offline_LPS/MatrixOff/DP.txt");		outputDP<<DP;	
-ofstream outputmediaP("../Data/Offline/Offline_LPS/MatrixOff/mediaP.txt"); outputmediaP << mediaP;
+ofstream outputDP("../Data/Offline/Offline_LPS_refine/MatrixOff/DP.txt");		outputDP<<DP;	
+ofstream outputmediaP("../Data/Offline/Offline_LPS_refine/MatrixOff/mediaP.txt"); outputmediaP << mediaP;

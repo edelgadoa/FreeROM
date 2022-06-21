@@ -33,12 +33,12 @@ include "../EF/parametros.idp"
 
 int ndof,dVis,dTau; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
 
-ifstream introPODvis("../Data/PODbasis/BasePODviscosity.txt"); // Importing p POD basis
+ifstream introPODvis("../Data/PODbasis/PODbasis_LPS_refine/BasePODviscosity.txt"); // Importing p POD basis
 introPODvis>>ndof;introPODvis>>dVis;
 real[int,int] Phivis(ndof,dVis);
 for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
 
-ifstream introPODtau("../Data/PODbasis/BasePODTau.txt"); // Importing p POD basis
+ifstream introPODtau("../Data/PODbasis/PODbasis_LPS_refine/BasePODTau.txt"); // Importing p POD basis
 introPODtau>>ndof;introPODtau>>dTau;
 real[int,int] Phitau(ndof,dVis);
 for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
@@ -64,10 +64,10 @@ for(int i = 0;i<nSnapshots;i++)
 {
 	Rayleigh = vRa(i);
 	
-	ifstream SnapshotsVis("../Data/Snapshots/Vis_" + Rayleigh + ".txt");
+	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_LPS_refine/Vis_" + Rayleigh + ".txt");
 	SnapshotsVis >> SnapVis[];
 	
-	ifstream SnapshotsTau("../Data/Snapshots/Tau_" + Rayleigh + ".txt");
+	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS_refine/Tau_" + Rayleigh + ".txt");
 	SnapshotsTau >> SnapTau[];
 	
 	Avis(:,i) = SnapVis[];
@@ -121,8 +121,8 @@ for(int i = 0;i<nSnapshots;i++)
 mpiAllReduce(YL,Y,mpiCommWorld,mpiSUM);
 mpiAllReduce(YtauL,Ytau,mpiCommWorld,mpiSUM);
 
-ofstream outputY("../Data/Offline/RBF/Y.txt"); outputY << Y;
-ofstream outputYtau("../Data/Offline/RBF/Ytau.txt"); outputYtau << Ytau;
+ofstream outputY("../Data/Offline/Offline_LPS_refine/RBF/Y.txt"); outputY << Y;
+ofstream outputYtau("../Data/Offline/Offline_LPS_refine/RBF/Ytau.txt"); outputYtau << Ytau;
 
 //Construct the cartesian product but is only one set because we don't have time instance
 
@@ -133,20 +133,22 @@ for(int i = 0;i<nSnapshots;i++)
  Xmu(i) = (vRa(i)-Ramin)/(Ramax-Ramin);	
 }
 
-/*
+
 	//RBF function 
 func real gauss(real r){
  	if( 1- r >= 0){
-	 return 	 (1 -2*r); }
+	 return 	 (1 -r); }
 	 else{
 	return 	 0;}
 }
-*/
+
+/*
 func real gauss(real r)
 {
 	return r^2*log(r+1);
+	
 }
-
+*/
 //DEFINE THE MATRIX OF THE GAUSSIAN FUNCTION AND THE CARTESIAN PRODUCT
 
 real[int,int] Agauss(nSnapshots,nSnapshots),Ainv(nSnapshots,nSnapshots),I(nSnapshots,nSnapshots);
@@ -177,5 +179,5 @@ for(int i = 0;i<dTau;i++){
 	WgausTau(:,i) = MAgauss^(-1)*Ytau(:,i);
 }
 
-ofstream outputWeight("../Data/Offline/RBF/Weight.txt"); outputWeight << Wgaus;
-ofstream outputWeightTau("../Data/Offline/RBF/WeightTau.txt"); outputWeightTau << WgausTau;
+ofstream outputWeight("../Data/Offline/Offline_LPS_refine/RBF/Weight.txt"); outputWeight << Wgaus;
+ofstream outputWeightTau("../Data/Offline/Offline_LPS_refine/RBF/WeightTau.txt"); outputWeightTau << WgausTau;

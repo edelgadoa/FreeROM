@@ -35,7 +35,7 @@ include "../EF/parametros.idp"
 
 int ndof,dTau; 
 
-ifstream introPODtau("../Data/PODbasis/PODbasis_LPS/BasePODtau.txt"); // Importing p POD basis
+ifstream introPODtau("../Data/PODbasis/PODbasis_LPS_refine/BasePODtau.txt"); // Importing p POD basis
 introPODtau>>ndof;introPODtau>>dTau;
 real[int,int] Phitau(ndof,dTau);
 for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
@@ -62,7 +62,7 @@ for(int i = 0;i<nSnapshots;i++)
 {
 	Rayleigh = vRa(i);
 	
-	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS/Tau_" + Rayleigh + ".txt");
+	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS_refine/Tau_" + Rayleigh + ".txt");
 	SnapshotsTau >> SnapTau[];
 	
 	
@@ -151,7 +151,7 @@ for(int i = 1;i<dTau;i++)
 
 //------------Export data----------------
 
-ofstream outputItau("../Data/Offline/Deim/Itau.txt"); outputItau << Itau;
+ofstream outputItau("../Data/Offline/Offline_LPS_refine/Deim/Itau.txt"); outputItau << Itau;
 
 
 

@@ -39,22 +39,22 @@ include "../EF/Interp_matrix_NoStab_2D.idp"
 
 int ndof,dU,dVis,dT; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
 
-ifstream introPODu("../Data/PODbasis/PODbasis_LPS/BasePODvelocity1.txt"); // Importing u POD basis
+ifstream introPODu("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity1.txt"); // Importing u POD basis
 introPODu>>ndof;introPODu>>dU;
 real[int,int] Phiu(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
 
-ifstream introPODv("../Data/PODbasis/PODbasis_LPS/BasePODvelocity2.txt"); // Importing v POD basis
+ifstream introPODv("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity2.txt"); // Importing v POD basis
 introPODv>>ndof;introPODv>>dU;
 real[int,int] Phiv(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
 
-ifstream introPODt("../Data/PODbasis/PODbasis_LPS/BasePODtemperature.txt"); // Importing t POD basis
+ifstream introPODt("../Data/PODbasis/PODbasis_LPS_refine/BasePODtemperature.txt"); // Importing t POD basis
 introPODt>>ndof;introPODt>>dT;
 real[int,int] Phit(ndof,dT);
 for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
 
-ifstream introPODvis("../Data/PODbasis/PODbasis_LPS/BasePODviscosity.txt"); // Importing p POD basis
+ifstream introPODvis("../Data/PODbasis/PODbasis_LPS_refine/BasePODviscosity.txt"); // Importing p POD basis
 introPODvis>>ndof;introPODvis>>dVis;
 real[int,int] Phivis(ndof,dVis);
 for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
@@ -152,6 +152,6 @@ GY[] = DYP2IPh*G[];
 
 
 //------------Export data----------------
-ofstream outputrhs1term("../Data/Offline/Offline_LPS/VectorOff/rhs1aux.txt"); outputrhs1term << rhs1term;
-ofstream outputrhs3term1("../Data/Offline/Offline_LPS/VectorOff/rhs3t1.txt"); outputrhs3term1 << rhs3term1;
-ofstream outputrhs3term2("../Data/Offline/Offline_LPS/VectorOff/rhs3t2.txt"); outputrhs3term2 << rhs3term2;
+ofstream outputrhs1term("../Data/Offline/Offline_LPS_refine/VectorOff/rhs1aux.txt"); outputrhs1term << rhs1term;
+ofstream outputrhs3term1("../Data/Offline/Offline_LPS_refine/VectorOff/rhs3t1.txt"); outputrhs3term1 << rhs3term1;
+ofstream outputrhs3term2("../Data/Offline/Offline_LPS_refine/VectorOff/rhs3t2.txt"); outputrhs3term2 << rhs3term2;

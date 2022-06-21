@@ -41,7 +41,7 @@ for(int i=0;i<=ni;i++){
 	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
 	//vRa(i)=10^(3+i*(1.)/50);
 }
-//cout<<vRa<<endl;
+cout<<vRa<<endl;
 
 
 
@@ -55,7 +55,7 @@ VhP1dc SnapVis;
 
 //BUCLE RESOLVER EL PROBLEMA
 
-for (int i=0;i<=ni;i++)
+for (int i=10;i<=ni;i++)
 {
 	
 	real Ra=vRa(i);

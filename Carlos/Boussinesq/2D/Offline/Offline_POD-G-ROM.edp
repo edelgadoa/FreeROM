@@ -34,24 +34,24 @@ include "../EF/parametros.idp"
 
 int ndof,dU,dP,dT,dVis; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
 
-ifstream introPODu("../Data/PODbasis/PODbasis_LPS/BasePODvelocity1.txt"); // Importing u POD basis
+ifstream introPODu("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity1.txt"); // Importing u POD basis
 introPODu>>ndof;introPODu>>dU;
 real[int,int] Phiu(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
 
-ifstream introPODv("../Data/PODbasis/PODbasis_LPS/BasePODvelocity2.txt"); // Importing v POD basis
+ifstream introPODv("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity2.txt"); // Importing v POD basis
 introPODv>>ndof;introPODv>>dU;
 real[int,int] Phiv(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
 
 
-ifstream introPODp("../Data/PODbasis/PODbasis_LPS/BasePODpressure.txt"); // Importing t POD basis
+ifstream introPODp("../Data/PODbasis/PODbasis_LPS_refine/BasePODpressure.txt"); // Importing t POD basis
 introPODp>>ndof;introPODp>>dP;
 real[int,int] Phip(ndof,dP);
 for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
 
 
-ifstream introPODt("../Data/PODbasis/PODbasis_LPS/BasePODtemperature.txt"); // Importing t POD basis
+ifstream introPODt("../Data/PODbasis/PODbasis_LPS_refine/BasePODtemperature.txt"); // Importing t POD basis
 introPODt>>ndof;introPODt>>dT;
 real[int,int] Phit(ndof,dT);
 for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
@@ -226,16 +226,16 @@ cout << "Built Mass Matrix temperature MT" << endl;
 
 //------------------Export data -------------------
 
-ofstream outputM("../Data/Offline/Offline_LPS/MatrixOff/M.txt");	outputM<<M;			// Mass Matrix (Identity matrix for L2-POD basis)          
-ofstream outputA("../Data/Offline/Offline_LPS/MatrixOff/A.txt");	outputA<<A;    		// Stiffness Matrix (Identity matrix for H1-POD basis)
+ofstream outputM("../Data/Offline/Offline_LPS_refine/MatrixOff/M.txt");	outputM<<M;			// Mass Matrix (Identity matrix for L2-POD basis)          
+ofstream outputA("../Data/Offline/Offline_LPS_refine/MatrixOff/A.txt");	outputA<<A;    		// Stiffness Matrix (Identity matrix for H1-POD basis)
 
-ofstream outputP("../Data/Offline/Offline_LPS/MatrixOff/P.txt");	outputP<<P;    		// Div. Matrix 
+ofstream outputP("../Data/Offline/Offline_LPS_refine/MatrixOff/P.txt");	outputP<<P;    		// Div. Matrix 
 
-ofstream outputAT("../Data/Offline/Offline_LPS/MatrixOff/AT.txt"); outputAT<<AT; 		// Sitffnes Matrix for temperature
+ofstream outputAT("../Data/Offline/Offline_LPS_refine/MatrixOff/AT.txt"); outputAT<<AT; 		// Sitffnes Matrix for temperature
 
-ofstream outputVT("../Data/Offline/Offline_LPS/MatrixOff/VT.txt"); outputVT<<VT; 		// Matrix for temperature-velocity
+ofstream outputVT("../Data/Offline/Offline_LPS_refine/MatrixOff/VT.txt"); outputVT<<VT; 		// Matrix for temperature-velocity
 
-ofstream outputMT("../Data/Offline/Offline_LPS/MatrixOff/MT.txt"); outputMT<<MT;        // Mass Matrix temperature
+ofstream outputMT("../Data/Offline/Offline_LPS_refine/MatrixOff/MT.txt"); outputMT<<MT;        // Mass Matrix temperature
 
 
 
@@ -312,6 +312,6 @@ cout << "Built Trilinear Tensor CT" << endl;
 }
 //------------Export data----------------
 
-ofstream outputC("../Data/Offline/Offline_LPS/MatrixOff/C.txt");		outputC<<C;		// Convection trilinear tensor (Phi_j , Phi_k Grad(Phi_i))
-ofstream outputCT("../Data/Offline/Offline_LPS/MatrixOff/CT.txt");      outputCT<<CT;
+ofstream outputC("../Data/Offline/Offline_LPS_refine/MatrixOff/C.txt");		outputC<<C;		// Convection trilinear tensor (Phi_j , Phi_k Grad(Phi_i))
+ofstream outputCT("../Data/Offline/Offline_LPS_refine/MatrixOff/CT.txt");      outputCT<<CT;
 
