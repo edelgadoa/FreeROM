@@ -19,6 +19,7 @@ matrix DTPEM = DTPE(Vh2P2, Vh2P2);
 
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
+
 matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
@@ -57,3 +58,6 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 		contS++;
 	}
 }
+
+varf bDiffPE([un, unY], [v, vY]) = int2d(Th)(GradUGradV(Lev, v));
+real[int] bDiffPEv = bDiffPE(0, Vh2P2);

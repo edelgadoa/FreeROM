@@ -2,3 +2,43 @@
 // FreeROM 
 /////////////// 
 
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
+real[int] TauN(Ntrain), DeltaN(Ntrain), ErrVel(Ntrain), ErrPres(Ntrain);
+
+// Inicializamos las matrices para el problema reducido
+real[int, int] DiffRBi(2*i, 2*i), DivPRBi(2*i, 2*i), DivPRBTi(2*i, 2*i), PenRBi(2*i, 2*i),
+			   ConvLevRBi(2*i, 2*i), DTRBi(2*i, 2*i), ConvRBi(2*i, 2*i), SmagoRBi(2*i, 2*i),
+			   StabPRBi(2*i, 2*i); 
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDiffRBi(2*i), bSmagoRBi(2*i), bDTRBi(2*i), bConvRBi(2*i); 
+
+// Matrices fijas 
+DiffRBi = DiffRB(0:2*i-1, 0:2*i-1);
+DivPRBi = DivPRB(Nbases-i:Nbases+i-1, 0:2*i-1);
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB(Nbases-i:Nbases+i-1, Nbases-i:Nbases+i-1);
+ConvLevRBi = ConvLevRB(0:2*i-1, 0:2*i-1);
+DTRBi = DTRB(0:2*i, 0:2*i);
+
+bDiffRBi = bDiffRb(0:2*i-1);
+bConvRBi = bConvRB(0:2*i-1);
+
+real[int] uRB(2*i), uRBp(2*i); // Vectores donde almaceno la Solución Reducida
+
+real[int,int] MRB(2*i,2*i); // Matriz para resolver el sistema
+real[int] bRB(2*i); // Segundo miembro para resolver el sistema
+
+// Comenzamos el bucle del greedy 
+
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	cout<<"----Reynolds= "<<muTrain(iRB)<<"-----------"<<endl
+	real nuRB = 1./muTrain(iRB);
+	
+	
+	include "RB_LPS_VMSSmago.idp"
+	
+		
+
+}

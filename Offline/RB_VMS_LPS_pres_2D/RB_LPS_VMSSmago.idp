@@ -1,0 +1,118 @@
+///////////////
+// FreeROM 
+/////////////// 	
+
+// Comenzamos a resolver el problema reducido	
+real errRB = 1.;	
+	
+MRB = nuRB * DiffRBi;
+MRB += DivPRBi;
+MRB += DivPRBTi;
+MRB += (1./dt) * DTRBi;
+MRB += ConvLevRBi;
+MRB += PenRBi;	
+	
+for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
+	ConvRBi = 0;
+	SmagoRBi = 0;
+	StabPRBi = 0;
+	bDTRB = 0;
+	bSmagoRB = 0;
+	
+	// Matriz de conveccion
+	for (int s=0; s<i; s++){
+		real[int,int] ConvRBint(2*i,2*i), ConvRBN(2*Nbases, 2*Nbases);
+		ConvRBN = ConvRB[s];
+		ConvRBint = ConvRBN(0:2*i-1, 0:2*i-1);
+		ConvRBint *= uRB(s);
+		ConvRBi += ConvRBint;
+	}
+
+	// Matiz de Smagorinsky
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(i);
+	uN = uRB(0:i-1); //solo las componentes de la velocidad
+	for(int s=0; s<Mbases; s++){
+		real[int, int] Gradint(4,i);
+		Gradint = GradPM[s](0:3, 0:i-1);
+		GraduN = Gradint * uN;
+		GraduN += GradPMLev[s];
+		bEIMS(s) = sqrt(GraduN'*GraduN);
+	}
+	
+	sigmaEIMS = MEIMS^-1 * bEIMS;
+	
+	for (int s=0; s<Mbases; s++){
+		real[int,int] SmagoRBint(2*i, 2*i), SmagoRBN(2*Nbases, 2*Nbases);
+		SmagoRBN = SmagoRB[s];
+		SmagoRBint = SmagoRBN(2*i-1, 2*i-1);
+		SmagoRBint *= sigmaEIM(s);
+		SmagoRBi += SmagoRBint; 
+	}
+	
+	// Segundo miembro Smago
+	for (int s=0; s<i; s++){
+		bSmagoRB(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
+	}
+	
+	// Matriz LPS
+	real[int] uN1(i+1), sigmaEIMTau(Taubases), bEIMTau(Taubases);
+	real[int,int] CuN(i+1,i+1);
+	uN1(0) = 1;
+	uN1(1:i) = uN;
+	CuN = uN1*uN1';
+	for (int s=0; s<Taubases; s++){
+		real Nuk, Nguk;
+		Nuk = 0; Nguk = 0;
+		real[int, int] Nuki(i+1,i+1), Nguki(i+1,i+1), Auxi(i+1,i+1);
+		
+		Nuki = NUK[s](0:i, 0:i);
+		Auxi = CuN.*Nuki;
+		Nuk = sqrt(Auxi.sum)/mk[](PuntosMTau(s));
+		
+		Nguki = NGUK[s](0:i,0:i);
+		Auxi = CuN*Nguki;
+		Nguk = (CS*hk[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mk[](PuntosMTau(s));
+		
+		bEIMTau(s) = (cc1*(nuBR+Nguk)/hk[](PuntosMTau(s))^2 + cc2*Nuk/hk[](PuntosMTau(s)))^-1;	
+	}
+	
+	sigmaEIMTau = MEIMTau^-1*bEIMTau;
+	
+	for (int s=0; s<Taubases; s++){
+		real[int,int] StabRBint(2*i,2*i), StabRBN(2*Nbases, 2*Nbases);
+		StabRBN = StabRB[s];
+		StabRBint = StabRBN(Nbases-i:Nbases+i-1,Nbases-i:Nbases+i-1);
+		StabRBint *= sigmaEIMTau;
+		StabRBi += StabRBint; 
+	}
+	
+	// Segundos miembro dt
+	for (int s=0; s<i; s++){
+		real[int] bDTRBint(2*i);
+		bDTRBint = DTRB(s,:);
+		bDTRB += uRB(s)*bDTRBint;
+	}
+	
+	// Construyo la matriz y Segundo miembros para el problema reducido
+	MRB += ConvRBi;
+	MRB += SmagoRBi;
+	MRB += StabRBi;
+	
+	bRB = nuRB * bDiffRB(0:2*i-1);
+	bRB += (1./dt) * bDTRB(0:2*i-1);
+	bRB += bConbRB(0:2*i-1);
+	bRB += bSmagoRB(0:2*i-1);
+	
+	// Resuelvo el problema reducido
+	uRBp = uRB;
+	matrix MRBs = MRB;
+	set(MRBs, solver=sparsesolver);
+	
+	uRB = MRBs^-1*bRB;
+	
+	// Actualizo el error 
+	real[int] uRBerr(i); 
+	uRBerr = uRB(0:i-1) - uRBp(0:i-1);
+	errRB = uRBerr.l2/uRBp.l2; 
+}
+

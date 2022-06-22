@@ -9,24 +9,23 @@
 // Inicializo las matrices locales para el paralelo
 include "Allocate_matrices_local.idp"
 
-cout<<i<<endl;
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 int contFF = 0; // Contador para el paralelo
 for (int j=0; j<=i; j++){
 	if (mpirank==contFF%mpisize){
 		// Matrices
-		DiffRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], DiffPEM); 
+		DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
 		DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
-		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[j][], BaseP[i][], PenPEM);
-		ConvLevRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
-		DTRBL(i,j) = innerprodX(BaseV[j][], BaseV[i][], DTPEM);
+		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
-			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+			DivPRBL(j+Nbases, i) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
-			ConvLevRBL(j,i) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRBL(j,i) = DTRBL(i,j);
 		}	
 	}
@@ -56,9 +55,9 @@ for (int s=0; s<=i; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			CintL(i,j) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+			CintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
 			if(j<i){
-				CintL(j,i) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+				CintL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
 			}
 			if (s==i && (j!=i)){
 				for (int k=0; k<s; k++){
@@ -81,7 +80,7 @@ for (int s=0; s<Mbases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			SintL(i,j) = innerprodX(BaseV[j][], BaseV[i][], SmagoPEM[s]);
+			SintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], SmagoPEM[s]);
 			if(j<i){
 				SintL(j,i) = SintL(i,j);
 			}
@@ -100,7 +99,7 @@ for (int s=0; s<Taubases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[j][], BaseP[i][], StabPPEM[s]);
+			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]);
 			if(j<i){
 				LPSintL(j,i) = LPSintL(i,j);
 			}
@@ -209,4 +208,17 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	NGUK[s] += NggkG;
 }
 
+
+// Definicion de segundos miembros
+bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
+bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
+
+contFF = 0;
+for (int s=0; s<Mbases; s++){
+	if(mpirank==contFF%mpisize){
+		bSmagoRB(s,i) = innerprodX(BaseV[i][], LevV[], SmagoPEM[s]);
+	}
+	contFF++;
+}
+pause;
 

@@ -7,10 +7,12 @@
 func G = 1*(y>=1);
 
 Vh3P2 [Lev, LevY, LevP];
+Vh2P2 [LevV, LevVY];
 VhP2 GP2 = G;
 VhP2 GzeroP2 = 0.;
 
 [Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+[LevV, LevVY] = [GP2, GzeroP2];
 
 // Filtro el levantamiento y lo derivo
 VhP1dc FLevdX, FLevdY, FLevYdX, FLevYdY;

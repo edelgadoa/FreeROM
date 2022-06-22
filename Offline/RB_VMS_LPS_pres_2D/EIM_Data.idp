@@ -12,6 +12,8 @@ for (int i=0; i<Mbases; i++){
 readmatrix("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/MatrizEIM_Smago.txt", real, MatrixEIMSmago, 0);
 readvector("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/TintEIM_Smago.txt", real, PuntosMSmago, 0);
 
+matrix MEIMS = MatrixEIMSmago;
+
 //////////////////////////////////////////
 //////////////////////////////////////////
 // Cargo los elementos del EIM SMAGO
@@ -21,4 +23,6 @@ for (int i=0; i<Taubases; i++){
 }
 readmatrix("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/MatrizEIM_LPS.txt", real, MatrixEIMTau, 0);
 readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/TintEIM_LPS.txt", real, PuntosMTau, 0);
+
+matrix MEIMTau = MatrixEIMTau;
 ///////////////////////////////////////////
