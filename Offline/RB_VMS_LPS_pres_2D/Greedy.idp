@@ -33,10 +33,10 @@ real[int] bRB(2*i); // Segundo miembro para resolver el sistema
 
 for (int iRB=0; iRB<Ntrain; iRB++){
 	
-	cout<<"----Reynolds= "<<muTrain(iRB)<<"-----------"<<endl;
+	mpi(cout<<"----Reynolds= "<<muTrain(iRB)<<"-----------"<<endl;)
 	real nuRB = 1./muTrain(iRB);
 	
-	
+	// Resuelvo el problema 
 	include "RB_LPS_VMSSmago.idp"
 	
 		

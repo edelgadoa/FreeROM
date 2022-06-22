@@ -28,3 +28,4 @@ macro UporV(U,V) (U*V + U#Y*V#Y) //EOM
 
 // Macros para el paralelo
 macro pause()mpiBarrier(mpiCommWorld) //EOM
+macro mpi(variable)if(mpirank==0){variable} //EOM
