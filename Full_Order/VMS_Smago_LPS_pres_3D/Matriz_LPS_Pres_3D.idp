@@ -1,0 +1,44 @@
+///////////////
+// FreeROM 
+///////////////
+
+//COEF. ESTAB. CODINA
+varf tauK(unused,v)=int2d(Th)((uprevL^2 + uprevLY^2 + uprevLZ^2)*v);
+varf tauKT(unused,v)=int2d(Th)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+
+tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+/////////////////////////////
+//MATRIZ ESTAB. PRES.
+/////////////////////////////
+
+varf termPres(pp,q) = int2d(ThL)(tau*pp*q);
+
+
+matrix TermP = termPres(VhP1dcL,VhP1dcL);
+
+matrix DDxx;
+{
+	DDxx = TermP * IPhD4X4P2L; 
+	DDxx = IPhD4X4P2L' * DDxx;
+}
+
+matrix DDyy;
+{
+	DDyy = TermP * IPhD4Y4P2L; 
+	DDyy = IPhD4Y4P2L' * DDyy;
+}
+
+matrix DDzz;
+{
+	DDzz = TermP * IPhD4Z4P2L; 
+	DDzz = IPhD4Z4P2L' * DDzz;
+}
+
+LPSpres = DDxx + DDyy + DDzz;
