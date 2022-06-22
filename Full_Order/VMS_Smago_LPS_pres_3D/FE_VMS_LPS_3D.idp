@@ -59,7 +59,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
 	
-	include "Matriz_LPS_Pres_2D.idp"
+	include "Matriz_LPS_Pres_3D.idp"
 	
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
