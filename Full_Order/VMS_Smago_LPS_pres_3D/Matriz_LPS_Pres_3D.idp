@@ -3,8 +3,8 @@
 ///////////////
 
 //COEF. ESTAB. CODINA
-varf tauK(unused,v)=int2d(Th)((uprevL^2 + uprevLY^2 + uprevLZ^2)*v);
-varf tauKT(unused,v)=int2d(Th)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
+varf tauK(unused,v)=int3d(Th)((uprevL^2 + uprevLY^2 + uprevLZ^2)*v);
+varf tauKT(unused,v)=int3d(Th)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
 real[int] tK=tauK(0,VhP0);
 real[int] tKT=tauKT(0,VhP0);
 
@@ -18,7 +18,7 @@ tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 //MATRIZ ESTAB. PRES.
 /////////////////////////////
 
-varf termPres(pp,q) = int2d(ThL)(tau*pp*q);
+varf termPres(pp,q) = int3d(ThL)(tau*pp*q);
 
 
 matrix TermP = termPres(VhP1dcL,VhP1dcL);
