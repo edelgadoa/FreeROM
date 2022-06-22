@@ -17,7 +17,7 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 	SmagoRBi = 0;
 	StabPRBi = 0;
 	bDTRB = 0;
-	bSmagoRB = 0;
+	bSmagoRBi = 0;
 	
 	// Matriz de conveccion
 	for (int s=0; s<i; s++){
@@ -45,13 +45,13 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 		real[int,int] SmagoRBint(2*i, 2*i), SmagoRBN(2*Nbases, 2*Nbases);
 		SmagoRBN = SmagoRB[s];
 		SmagoRBint = SmagoRBN(2*i-1, 2*i-1);
-		SmagoRBint *= sigmaEIM(s);
+		SmagoRBint *= sigmaEIMS(s);
 		SmagoRBi += SmagoRBint; 
 	}
 	
 	// Segundo miembro Smago
 	for (int s=0; s<i; s++){
-		bSmagoRB(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
+		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
 	}
 	
 	// Matriz LPS
@@ -73,17 +73,17 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 		Auxi = CuN*Nguki;
 		Nguk = (CS*hk[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mk[](PuntosMTau(s));
 		
-		bEIMTau(s) = (cc1*(nuBR+Nguk)/hk[](PuntosMTau(s))^2 + cc2*Nuk/hk[](PuntosMTau(s)))^-1;	
+		bEIMTau(s) = (cc1*(nuRB+Nguk)/hk[](PuntosMTau(s))^2 + cc2*Nuk/hk[](PuntosMTau(s)))^-1;	
 	}
 	
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
 	
 	for (int s=0; s<Taubases; s++){
-		real[int,int] StabRBint(2*i,2*i), StabRBN(2*Nbases, 2*Nbases);
-		StabRBN = StabRB[s];
-		StabRBint = StabRBN(Nbases-i:Nbases+i-1,Nbases-i:Nbases+i-1);
-		StabRBint *= sigmaEIMTau;
-		StabRBi += StabRBint; 
+		real[int,int] StabPRBint(2*i,2*i), StabPRBN(2*Nbases, 2*Nbases);
+		StabPRBN = StabPRB[s];
+		StabPRBint = StabPRBN(Nbases-i:Nbases+i-1,Nbases-i:Nbases+i-1);
+		StabPRBint *= sigmaEIMTau(s);
+		StabPRBi += StabPRBint; 
 	}
 	
 	// Segundos miembro dt
@@ -96,12 +96,12 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRB += ConvRBi;
 	MRB += SmagoRBi;
-	MRB += StabRBi;
+	MRB += StabPRBi;
 	
 	bRB = nuRB * bDiffRB(0:2*i-1);
 	bRB += (1./dt) * bDTRB(0:2*i-1);
-	bRB += bConbRB(0:2*i-1);
-	bRB += bSmagoRB(0:2*i-1);
+	bRB += bConvRB(0:2*i-1);
+	bRB += bSmagoRBi(0:2*i-1);
 	
 	// Resuelvo el problema reducido
 	uRBp = uRB;

@@ -9,15 +9,17 @@
 real CS = 0.1; // Smago
 real Refijo = 1000; // Valor del Reynolds fijo
 
-real cc1=16.; // tauk
-real cc2=sqrt(cc1);
+real cc1 = 16.; // tauk
+real cc2 = sqrt(cc1);
 
 VhP0 mk,tKcod,tKTcod,tau;
 
-varf med(unused,v)=int2d(Th)(1.*v);
-real[int] medk=med(0,VhP0);
-mk[]=sqrt(medk); 
+varf med(unused,v) = int2d(Th)(1.*v);
+real[int] medk = med(0,VhP0);
+mk[] = sqrt(medk); 
 
+VhP0 hk = hTriangle;
+real hT = hk[].max; //El máximo de los diámetros de la malla
 
 //Construyo el vector que bloqueará el residuo de SMAGO
 varf CC([un1,un2,unp],[vvel1,vvel2,vpres]) = on(1,2,3,4, un1=1,un2=1); 
