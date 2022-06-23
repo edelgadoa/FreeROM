@@ -22,24 +22,21 @@ real[int] bSx(Vh3P2.ndof), bSy(Vh3P2.ndof);
 
 matrix DXX,DYY;
 {
-	matrix Maux; 
 	//COMPONENTE X
-	Maux = DX3P2*IPh3P23P1;
-	DXX = (Maux')*M;
-	DXX = DXX*Maux;
+	DXX = (DX3P2IPh')*M;
+	DXX = DXX*DX3P2IPh;
 	
-	Levf[] = Maux*Lev[]; //seg miembro x
+	Levf[] = DX3P2IPh*Lev[]; //seg miembro x
 	real[int] bS = FVSmagob(0,Vh3P1dc);
-	bSx = (Maux')*bS;
+	bSx = (DX3P2IPh')*bS;
 	
 	//COMPONENTE Y
-	Maux = DY3P2*IPh3P23P1;
-	DYY = (Maux')*M;
-	DYY = DYY*Maux;
+	DYY = (DY3P2IPh')*M;
+	DYY = DYY*DY3P2IPh;
 	
-	Levf[] = Maux*Lev[]; //seg miembro y
+	Levf[] = DY3P2IPh*Lev[]; //seg miembro y
 	bS = FVSmagob(0,Vh3P1dc);
-	bSy = (Maux')*bS;
+	bSy = (DY3P2IPh')*bS;
 }
 	
 Smago = DXX + DYY;

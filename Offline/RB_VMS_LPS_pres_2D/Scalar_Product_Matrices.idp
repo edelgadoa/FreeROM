@@ -2,6 +2,15 @@
 // FreeROM 
 /////////////// 
 
+// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
+varf pescT ([uu, uuY], [v,vY]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+matrix MPescT = pescT(Vh2P2, Vh2P2);
+
+varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
+matrix MPescX = pescX(Vh3P2, Vh3P2);
+
+///////////////////////////////////////////////////////
+
 varf DiffPE([uu,uuY], [v,vY]) = int2d(Th)(GradUGradV(uu,v));
 matrix DiffPEM = DiffPE(Vh2P2,Vh2P2);
 

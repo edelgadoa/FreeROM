@@ -14,7 +14,7 @@
 
 // Cargamos librerias
 load "iovtk" 
-
+load "lapack"
 
 // Creamos la Malla
 include "../../Mallas/CuadradoNxNy.idp"
@@ -23,7 +23,7 @@ include "../../Mallas/CuadradoNxNy.idp"
 // Cargamos macros, funciones i/o
 include "../../Auxiliary/Macros_2D.idp"
 include "../../Auxiliary/search.idp"
-include "../../Auxiliary/IO.idp" //HAY QUE EJECUTAR ESTE CÓDIGO EN PARALELO, LAS MATRICES SERÁN ALMACENADAS EN PARALELO
+include "../../Auxiliary/IO.idp" 
 
 
 // Definimos los espacios de EF
@@ -40,6 +40,9 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../../Auxiliary/Normas.idp"
+
+// Cargo las funciones del RBF
+include "../../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
 int Nbases = 30; 
@@ -127,7 +130,7 @@ else{
 	uFijoY = uFijoY + LevY;
 	
 }
-{
+{ //TODO: CAMBIAR CON LA NUEVA NOTACION DE MATRICES
 	VhP2 udcAux;
 	udcAux[] = IPhP2P1*uFijo[];
 	uFijodX[] = DXP2*udcAux[]; uFijodY[] = DYP2*udcAux[];
@@ -135,11 +138,6 @@ else{
 	udcAux[] = IPhP2P1*uFijoY[];
 	uFijodX[] = DXP2*udcAux[]; uFijoYdY[] = DYP2*udcAux[];
 }
-
-
-// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
-varf pescT ([uu, uuY], [v,vY]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
-matrix MPescT = pescT(Vh2P2, Vh2P2);
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"

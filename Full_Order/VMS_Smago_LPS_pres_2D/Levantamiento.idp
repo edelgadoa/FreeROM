@@ -18,10 +18,6 @@ VhP2 GzeroP2 = 0.;
 VhP1dc FLevdX, FLevdY, FLevYdX, FLevYdY;
 
 {
-	VhP2 Levaux;
-	Levaux[] = IPhP2P1 * GP2[]; //Lo hago componente a componente
-	FLevdX[] = DXP2 * Levaux[]; FLevdY[] = DYP2 * Levaux[];
-	
-	Levaux[] = IPhP2P1 * GzeroP2[]; 
-	FLevYdX[] = DXP2 * Levaux[]; FLevYdY[] = DYP2 * Levaux[];
+	FLevdX[] = DXP2IPh * GP2[]; FLevdY[] = DYP2IPh * GP2[];
+	FLevYdX[] = DXP2IPh * GzeroP2[]; FLevYdY[] = DYP2IPh * GzeroP2[];
 }

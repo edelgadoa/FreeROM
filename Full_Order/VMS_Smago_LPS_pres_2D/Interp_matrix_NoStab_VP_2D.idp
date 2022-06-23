@@ -122,5 +122,13 @@ matrix IPhD3Y3P2 = IPhP1dcP1 * D3Y3P2; // (I-πh) de ∂y componente 3 de 3P2 (3
 matrix IPhDXP2 = IPhP1dcP1 * DXP2; // (I-πh) de ∂x (P2 -> Derivo componente X -> P1dc (filtro) -> P1 -> P1dc) 
 matrix IPhDYP2 = IPhP1dcP1 * DYP2; // (I-πh) de ∂y (P2 -> Derivo componente Y -> P1dc (filtro) -> P1 -> P1dc)   
 
+
+// Matrices filtrado, con derivada (∂x((I-πh u)))
 matrix DX2P2IPh = DX2P2 * IPh2P22P1; // Para las matrices de Prod. Escalar en la construccion de las matrices offline reducidas
 matrix DY2P2IPh = DY2P2 * IPh2P22P1;
+
+matrix DX3P2IPh = DX3P2 * IPh3P23P1;
+matrix DY3P2IPh = DY3P2 * IPh3P23P1;
+
+matrix DXP2IPh = DXP2 * IPhP2P1;
+matrix DYP2IPh = DXP2 * IPhP2P1;

@@ -3,7 +3,8 @@
 /////////////// 
 
 // Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
-real[int] TauN(Ntrain), DeltaN(Ntrain), ErrVel(Ntrain), ErrPres(Ntrain);
+real[int] TauN(Ntrain), DeltaN(Ntrain), ResN(Ntrain); 
+//, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
 
 // Inicializamos las matrices para el problema reducido
 real[int, int] DiffRBi(2*i, 2*i), DivPRBi(2*i, 2*i), DivPRBTi(2*i, 2*i), PenRBi(2*i, 2*i),
@@ -43,17 +44,30 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	Vh2P2 [uRB, uRBY];
 	VhP2 uRBP;
 	
-	real[int,int] MBaseVi(Vh2P2.nodf, i), MBasePi(VhP2.ndof, i); // Matrices intermedias
+	real[int,int] MBaseVi(Vh2P2.ndof, i), MBasePi(VhP2.ndof, i); // Matrices intermedias
 	MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
 	MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
 	
 	uRB[] = MBaseVi*uRBv(0:i-1);
 	uRBP[] = MBasePi*uRBv(i:2*i-1);
 	
-	uRB = uRB + Lev;
-	uRBY = uRBY + LevY;
+	uRB[] += LevV[];
+	
+	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;
+	
+	{ 
+		VhP2 uRBvel, uRBvelY;
+		uRBvel = uRB; uRBvelY = uRBY;
+	
+		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	
+		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[];
+	}
 	
 	// Calculo el estimador de error 
-	include "Residuo_LPS_VMSSmago.idp"	
 
+	// Norma del Residuo
+	include "Residuo_LPS_VMSSmago.idp"	
+	
+	// Beta_h
+	real Betah = fbeta(gammaI, muI, muTrain(iRB)); //Comprobar
 }

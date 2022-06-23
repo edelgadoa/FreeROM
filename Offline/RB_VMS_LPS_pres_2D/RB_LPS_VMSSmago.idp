@@ -24,13 +24,13 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 		real[int,int] ConvRBint(2*i,2*i), ConvRBN(2*Nbases, 2*Nbases);
 		ConvRBN = ConvRB[s];
 		ConvRBint = ConvRBN(0:2*i-1, 0:2*i-1);
-		ConvRBint *= uRB(s);
+		ConvRBint *= uRBv(s);
 		ConvRBi += ConvRBint;
 	}
 
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(i);
-	uN = uRB(0:i-1); //solo las componentes de la velocidad
+	uN = uRBv(0:i-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
 		real[int, int] Gradint(4,i);
 		Gradint = GradPM[s](0:3, 0:i-1);
@@ -90,7 +90,7 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 	for (int s=0; s<i; s++){
 		real[int] bDTRBint(2*i);
 		bDTRBint = DTRB(s,:);
-		bDTRB += uRB(s)*bDTRBint;
+		bDTRB += uRBv(s)*bDTRBint;
 	}
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
@@ -105,10 +105,11 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 	
 	// Resuelvo el problema reducido
 	uRBvp = uRBv;
-	matrix MRBs = MRB;
-	set(MRBs, solver=sparsesolver);
+	//matrix MRBs = MRB;
+	//set(MRBs, solver=sparsesolver);
+	real[int,int] MRBinv = MRB^-1;
 	
-	uRBv = MRBs^-1*bRB;
+	uRBv = MRBinv*bRB;
 	
 	// Actualizo el error 
 	real[int] uRBerr(i); 
