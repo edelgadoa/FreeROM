@@ -24,7 +24,7 @@ DTRBi = DTRB(0:2*i, 0:2*i);
 bDiffRBi = bDiffRB(0:2*i-1);
 bConvRBi = bConvRB(0:2*i-1);
 
-real[int] uRB(2*i), uRBp(2*i); // Vectores donde almaceno la Solución Reducida
+real[int] uRBv(2*i), uRBvp(2*i); // Vectores donde almaceno la Solución Reducida
 
 real[int,int] MRB(2*i,2*i); // Matriz para resolver el sistema
 real[int] bRB(2*i); // Segundo miembro para resolver el sistema
@@ -39,6 +39,21 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// Resuelvo el problema 
 	include "RB_LPS_VMSSmago.idp"
 	
-		
+	// Reconstruyo la solución reducida
+	Vh2P2 [uRB, uRBY];
+	VhP2 uRBP;
+	
+	real[int,int] MBaseVi(Vh2P2.nodf, i), MBasePi(VhP2.ndof, i); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
+	MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
+	
+	uRB[] = MBaseVi*uRBv(0:i-1);
+	uRBP[] = MBasePi*uRBv(i:2*i-1);
+	
+	uRB = uRB + Lev;
+	uRBY = uRBY + LevY;
+	
+	// Calculo el estimador de error 
+	include "Residuo_LPS_VMSSmago.idp"	
 
 }

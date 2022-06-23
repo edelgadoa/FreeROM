@@ -7,12 +7,12 @@
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-real[int, int] MBasePint = MBaseP(0:VhP2.ndof-1, 0:i-1);
+real[int, int] MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
 
-BaseP[i][] = OrtoL2(BaseP[i][], MBasePint);
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
 // Doble Ortonormalización
-BaseP[i][] = OrtoL2(BaseP[i][], MBasePint);
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
 ////////////////////////////////////////////
 
@@ -21,13 +21,10 @@ varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
 matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
 
 
-//real[int,int] MBaseVint(Vh2P2.ndof, i), 
-real[int,int] MBaseVint = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
+real[int,int] MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
 
-//MBaseVint(VhP2.ndof:Vh2P2.ndof-1, 0:i-1) = MBaseVYint;
-
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVint, MNormaVel);
+BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 
 // Doble Ortonormalización
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVint, MNormaVel);
+BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 

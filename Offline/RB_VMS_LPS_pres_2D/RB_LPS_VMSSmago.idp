@@ -104,15 +104,15 @@ for (int iN=0; iN<=niterRB && errRB<epsRB; iN++){
 	bRB += bSmagoRBi(0:2*i-1);
 	
 	// Resuelvo el problema reducido
-	uRBp = uRB;
+	uRBvp = uRBv;
 	matrix MRBs = MRB;
 	set(MRBs, solver=sparsesolver);
 	
-	uRB = MRBs^-1*bRB;
+	uRBv = MRBs^-1*bRB;
 	
 	// Actualizo el error 
 	real[int] uRBerr(i); 
-	uRBerr = uRB(0:i-1) - uRBp(0:i-1);
-	errRB = uRBerr.l2/uRBp.l2; 
+	uRBerr = uRBv(0:i-1) - uRBvp(0:i-1);
+	errRB = uRBerr.l2/uRBvp.l2; 
 }
 
