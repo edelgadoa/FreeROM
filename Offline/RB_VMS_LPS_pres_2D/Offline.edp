@@ -47,7 +47,7 @@ include "../../Auxiliary/betas.idp"
 //Definicion de Constantes y variables varias
 int Nbases = 30; 
 
-real[int] MUbest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
+real[int] MuBest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
 // Leo los valores de los parámetros para los cuales he calculado ya Snapshots
 readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
@@ -130,13 +130,9 @@ else{
 	uFijoY = uFijoY + LevY;
 	
 }
-{ //TODO: CAMBIAR CON LA NUEVA NOTACION DE MATRICES
-	VhP2 udcAux;
-	udcAux[] = IPhP2P1*uFijo[];
-	uFijodX[] = DXP2*udcAux[]; uFijodY[] = DYP2*udcAux[];
-
-	udcAux[] = IPhP2P1*uFijoY[];
-	uFijodX[] = DXP2*udcAux[]; uFijoYdY[] = DYP2*udcAux[];
+{ 
+	uFijodX[] = DXP2IPh*uFijo[]; uFijodY[] = DYP2IPh*uFijo[];
+	uFijoYdX[] = DXP2IPh*uFijoY[]; uFijoYdY[] = DYP2IPh*uFijoY[];
 }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
@@ -169,11 +165,12 @@ for (int i=0; i<Nbases; i++){
 		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", real, SolP, 0);
 		BaseP[i][] = SolP;		
 		
-		BaseV[i][] = [BaseVel[i][], BaseVelY[i][]];
+		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
 	
 	}
 	
-	include "GramSchmidt.idp"
+	plot([BaseV[i], BaseVY[i]], cmm="FE para Re = "+Reynolds, fill=1);
+	// include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -197,4 +194,10 @@ for (int i=0; i<Nbases; i++){
 		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
 	include "Greedy.idp"
+	
+	// Actualizo el nuevo Reynolds
+	Reynolds = MuBest(i);
+	
+	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
 }
+

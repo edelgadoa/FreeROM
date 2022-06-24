@@ -79,5 +79,5 @@ bRes += bStabPRes;
 {
 	Vh3P2 [RES, RESY, RESP];
 	RES[] = MRes^-1*bRes;
-	ResN(iRB) = normX(RES[], MPescX);
+	ResG(iRB) = normX(RES[], MPescX);
 }

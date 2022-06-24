@@ -56,8 +56,8 @@ real Remax = 5100;
 
 int Ntrain = 165;
 
-real[int] muTrain(Ntrain);
+real[int] MuTrain(Ntrain);
 for (int ig=0; ig<Ntrain; ig++){
-	muTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
+	MuTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
 }
 
