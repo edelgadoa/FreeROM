@@ -13,7 +13,7 @@ fespace Vh4P2(Th, [P2, P2, P2, P2]);  //Cambiar P1 en la presión por P2 cuando 
 fespace Vh2P2(Th, [P2, P2]);
 fespace Vh2P1(Th, [P1,P1]);
 fespace Vh4P1(Th, [P1, P1, P1, P1]); //Cambiar P0 por P1 cuando se añada termino de estab presion 
-fespace Vh4P1dc(Th, [P1dc, P1dc, P1dc, P0]); 
+fespace Vh4P1dc(Th, [P1dc, P1dc, P1dc, P1dc]); 
 fespace VhP0(Th, P0); 
 fespace VhP1dc(Th, P1dc);
 fespace VhP1(Th, P1);

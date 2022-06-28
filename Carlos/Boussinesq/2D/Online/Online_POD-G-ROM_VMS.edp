@@ -371,6 +371,7 @@ matrix VTM = rVT;
 //------------------------------------------------------------------------------
 // LPS MATRIX
 //------------------------------------------------------------------------------
+
 real[int,int] DP(rP,rP),mediaP(rP,rP);
 DP=0.;mediaP=0.;
 VhP1dc xPmodepj,yPmodepj,xPmodepi,yPmodepi;

@@ -55,7 +55,7 @@ VhP1dc SnapVis;
 
 //BUCLE RESOLVER EL PROBLEMA
 
-for (int i=10;i<=ni;i++)
+for (int i=0;i<=ni;i++)
 {
 	
 	real Ra=vRa(i);
@@ -196,22 +196,22 @@ for (int i=10;i<=ni;i++)
 	//Guardamos los snapshots 
 	
 	//Componente X de la velocidad
-	ofstream SnapshotVX("../Data/Snapshots/Snapshots_106/Vx_" + Ra + ".txt");
+	ofstream SnapshotVX("../Data/Snapshots/Snapshots_107/Vx_" + Ra + ".txt");
 	SnapshotVX<<SnapUX[]<<endl;
 	//Componente Y de la velocidad
-	ofstream SnapshotVY("../Data/Snapshots/Snapshots_106/Vy_" + Ra + ".txt");
+	ofstream SnapshotVY("../Data/Snapshots/Snapshots_107/Vy_" + Ra + ".txt");
 	SnapshotVY<<SnapUY[]<<endl;
 	//Presion
-	ofstream SnapshotP("../Data/Snapshots/Snapshots_106/P_" + Ra + ".txt");
+	ofstream SnapshotP("../Data/Snapshots/Snapshots_107/P_" + Ra + ".txt");
 	SnapshotP<<SnapP[]<<endl;
 	//Temperatura
-	ofstream SnapshotT("../Data/Snapshots/Snapshots_106/T_" + Ra + ".txt");
+	ofstream SnapshotT("../Data/Snapshots/Snapshots_107/T_" + Ra + ".txt");
 	SnapshotT<<SnapT[]<<endl;
 	//Viscosidad turbulenta
-	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_106/Vis_" + Ra + ".txt");
+	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_107/Vis_" + Ra + ".txt");
 	SnapshotsVis << SnapVis[] << endl;
 	//Coeficiente de estabilizacion de la presion 
-	ofstream SnapshotsTau("../Data/Snapshots/Snapshots_106/Tau_" + Ra + ".txt");
+	ofstream SnapshotsTau("../Data/Snapshots/Snapshots_107/Tau_" + Ra + ".txt");
 	SnapshotsTau << tau[] << endl;
 	
 	

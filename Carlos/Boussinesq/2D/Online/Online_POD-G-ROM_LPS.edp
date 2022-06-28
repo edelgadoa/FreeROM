@@ -30,11 +30,11 @@ include "../EF/Interp_matrix_NoStab_2D.idp"
 
 //ONLINE PARAMETERS 
 
-int rU = 7; // Number of online vel. basis
-int rP = 6; // Number of online pres. basis
-int rT = 7; //Number of online temp. basis
-int rVis = 35; // Number of online viscosity basis
-int rTau = 11; //Number of online coef stab basis of LPS
+int rU = 6; // Number of online vel. basis
+int rP = 4; // Number of online pres. basis
+int rT = 5; //Number of online temp. basis
+int rVis = 30; // Number of online viscosity basis
+int rTau = 20; //Number of online coef stab basis of LPS
 real Ra; //Rayleigh number 
 
 
@@ -52,7 +52,7 @@ real[int] vRa(ni+1);
 for(int i=0;i<=ni;i++){
 	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
 }
-real ira = 0;
+real ira = 100;
 Ra = vRa(ira);
 real Rayleigh;
 VhP2 SnapUX,SnapUY,SnapP,SnapT;
@@ -66,22 +66,22 @@ for(int i = 0;i<nSnapshots;i++)
 {
 	Rayleigh = vRa(i);
 	
-	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_LPS_refine/Vis_" + Rayleigh + ".txt");
+	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_106/Vis_" + Rayleigh + ".txt");
 	SnapshotsVis >> SnapVis[];
 	
-	ifstream SnapshotsVX("../Data/Snapshots/Snapshots_LPS_refine/Vx_" + Rayleigh + ".txt");
+	ifstream SnapshotsVX("../Data/Snapshots/Snapshots_106/Vx_" + Rayleigh + ".txt");
 	SnapshotsVX >> SnapUX[];
 	
-	ifstream SnapshotsVY("../Data/Snapshots/Snapshots_LPS_refine/Vy_" + Rayleigh + ".txt");
+	ifstream SnapshotsVY("../Data/Snapshots/Snapshots_106/Vy_" + Rayleigh + ".txt");
 	SnapshotsVY >> SnapUY[];
 	
-	ifstream SnapshotsP("../Data/Snapshots/Snapshots_LPS_refine/P_" + Rayleigh + ".txt");
+	ifstream SnapshotsP("../Data/Snapshots/Snapshots_106/P_" + Rayleigh + ".txt");
 	SnapshotsP >> SnapP[];
 	
-	ifstream SnapshotsT("../Data/Snapshots/Snapshots_LPS_refine/T_" + Rayleigh + ".txt");
+	ifstream SnapshotsT("../Data/Snapshots/Snapshots_106/T_" + Rayleigh + ".txt");
 	SnapshotsT >> SnapT[];
 	
-	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_LPS_refine/Tau_" + Rayleigh + ".txt");
+	ifstream SnapshotsTau("../Data/Snapshots/Snapshots_106/Tau_" + Rayleigh + ".txt");
 	SnapshotsTau >> SnapTau[];
 	
 	
@@ -96,32 +96,32 @@ for(int i = 0;i<nSnapshots;i++)
 
 }
 
-ifstream introPODu("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity1.txt"); // Importing u POD basis
+ifstream introPODu("../Data/PODbasis/PODbasis_106/BasePODvelocity1.txt"); // Importing u POD basis
 introPODu>>ndof;introPODu>>dU;
 real[int,int] Phiu(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
 
-ifstream introPODv("../Data/PODbasis/PODbasis_LPS_refine/BasePODvelocity2.txt"); // Importing v POD basis
+ifstream introPODv("../Data/PODbasis/PODbasis_106/BasePODvelocity2.txt"); // Importing v POD basis
 introPODv>>ndof;introPODv>>dU;
 real[int,int] Phiv(ndof,dU);
 for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
 
-ifstream introPODvis("../Data/PODbasis/PODbasis_LPS_refine/BasePODviscosity.txt"); // Importing p POD basis
+ifstream introPODvis("../Data/PODbasis/PODbasis_106/BasePODviscosity.txt"); // Importing p POD basis
 introPODvis>>ndof;introPODvis>>dVis;
 real[int,int] Phivis(ndof,dVis);
 for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
 
-ifstream introPODt("../Data/PODbasis/PODbasis_LPS_refine/BasePODtemperature.txt"); // Importing t POD basis
+ifstream introPODt("../Data/PODbasis/PODbasis_106/BasePODtemperature.txt"); // Importing t POD basis
 introPODt>>ndof;introPODt>>dT;
 real[int,int] Phit(ndof,dT);
 for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
 
-ifstream introPODp("../Data/PODbasis/PODbasis_LPS_refine/BasePODpressure.txt"); // Importing t POD basis
+ifstream introPODp("../Data/PODbasis/PODbasis_106/BasePODpressure.txt"); // Importing t POD basis
 introPODp>>ndof;introPODp>>dP;
 real[int,int] Phip(ndof,dP);
 for(int i=0;i<ndof;i++){for(int j=0;j<dP;j++){introPODp>>Phip(i,j);}}
 
-ifstream introPODtau("../Data/PODbasis/PODbasis_LPS_refine/BasePODtau.txt"); // Importing p POD basis
+ifstream introPODtau("../Data/PODbasis/PODbasis_106/BasePODtau.txt"); // Importing p POD basis
 introPODtau>>ndof;introPODtau>>dTau;
 real[int,int] Phitau(ndof,dTau);
 for(int i=0;i<ndof;i++){for(int j=0;j<dTau;j++){introPODtau>>Phitau(i,j);}}
@@ -259,13 +259,13 @@ plot(tPODGin,fill=1,value=1,cmm="POD-G-ROM initial temperature for Ra"+Ra);
 
 VhP2 modeui,modeuj,modevi,modevj;
 
-ifstream introM("../Data/Offline/Offline_LPS_refine/MatrixOff/M.txt");
+ifstream introM("../Data/Offline/Offline_106/MatrixOff/M.txt");
 introM>>dU;introM>>dU;real[int,int] M(dU,dU);
 for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introM>>M(i,j);}}
 real[int,int] rM(rU,rU); rM=M(0:rU-1,0:rU-1);
 matrix MM=rM;
 
-ifstream introA("../Data/Offline/Offline_LPS_refine/MatrixOff/A.txt");
+ifstream introA("../Data/Offline/Offline_106/MatrixOff/A.txt");
 introA>>dU;introA>>dU;real[int,int] A(dU,dU);
 for(int i=0;i<dU;i++){for(int j=0;j<dU;j++){introA>>A(i,j);}}
 real[int,int] rA(rU,rU); rA=A(0:rU-1,0:rU-1);
@@ -278,13 +278,13 @@ matrix AM=rA;
 VhP2 modeti,modetj;
 
 
-ifstream introMT("../Data/Offline/Offline_LPS_refine/MatrixOff/MT.txt");
+ifstream introMT("../Data/Offline/Offline_106/MatrixOff/MT.txt");
 introMT>>dT;introMT>>dT;real[int,int] MT(dT,dT);
 for(int i=0;i<dT;i++){for(int j=0;j<dT;j++){introMT>>MT(i,j);}}
 real[int,int] rMT(rT,rT); rMT=MT(0:rT-1,0:rT-1);
 matrix MMT=rMT;
 
-ifstream introAT("../Data/Offline/Offline_LPS_refine/MatrixOff/AT.txt");
+ifstream introAT("../Data/Offline/Offline_106/MatrixOff/AT.txt");
 introAT>>dT;introAT>>dT;real[int,int] AT(dT,dT);
 for(int i=0;i<dT;i++){for(int j=0;j<dT;j++){introAT>>AT(i,j);}}
 real[int,int] rAT(rT,rT); rAT=AT(0:rT-1,0:rT-1);
@@ -315,7 +315,7 @@ matrix divPM = divP;
 cout << divP << endl;
 */
 
-ifstream introP("../Data/Offline/Offline_LPS_refine/MatrixOff/P.txt");
+ifstream introP("../Data/Offline/Offline_106/MatrixOff/P.txt");
 introP>>dP;introP>>dU;real[int,int] P(dP,dU);
 for(int i=0;i<dP;i++){for(int j=0;j<dU;j++){introP>>P(i,j);}}
 real[int,int] divP(rP,rU); divP=P(0:rP-1,0:rU-1);
@@ -341,7 +341,7 @@ for(int i = 0;i<rU;i++)
 VhP2 modeuk,modevk;
 
 
-ifstream introC("../Data/Offline/Offline_LPS_refine/MatrixOff/C.txt");
+ifstream introC("../Data/Offline/Offline_106/MatrixOff/C.txt");
 introC>>dU;real[int,int][int] C(dU);
 for(int i=0;i<dU;i++)
 {
@@ -371,7 +371,7 @@ for(int i = 0;i<rU;i++)
 VhP2 modetk;
 
 
-ifstream introCT("../Data/Offline/Offline_LPS_refine/MatrixOff/CT.txt");
+ifstream introCT("../Data/Offline/Offline_106/MatrixOff/CT.txt");
 introCT>>dU;real[int,int][int] CT(dU);
 for(int i=0;i<dU;i++)
 {
@@ -389,11 +389,12 @@ for(int i=0;i<rU;i++)
 // Matrix velocity and temperature
 //------------------------------------------------------------------------------
 
-ifstream introVT("../Data/Offline/Offline_LPS_refine/MatrixOff/VT.txt");
+ifstream introVT("../Data/Offline/Offline_106/MatrixOff/VT.txt");
 introVT>>dT;introVT>>dU;real[int,int] VT(dT,dU);
 for(int i=0;i<dT;i++){for(int j=0;j<dU;j++){introVT>>VT(i,j);}}
-real[int,int] rVT(rT,rU); rVT=VT(0:rT-1,0:rU-1);
-matrix VTM=rVT;
+real[int,int] rVT(rT,rU),rVTt(rU,rT); rVT=VT(0:rT-1,0:rU-1);
+rVTt = rVT';
+matrix VTM=rVTt;
 
 
 
@@ -401,7 +402,7 @@ matrix VTM=rVT;
 // LPS MATRIX
 //------------------------------------------------------------------------------
 
-ifstream intromediaP("../Data/Offline/Offline_LPS_refine/MatrixOff/mediaP.txt");
+ifstream intromediaP("../Data/Offline/Offline_106/MatrixOff/mediaP.txt");
 intromediaP>>dP;intromediaP>>dP;real[int,int] mediaP(dP,dP);
 for(int i=0;i<dP;i++){for(int j=0;j<dP;j++){intromediaP>>mediaP(i,j);}}
 real[int,int] rmediaP(rP,rP); rmediaP=mediaP(0:rP-1,0:rP-1);
@@ -422,7 +423,7 @@ VhP2 modepk;
 VhP1dc xPmodepj,yPmodepj,xPmodepk,yPmodepk;
 
 
-ifstream introDP("../Data/Offline/Offline_LPS_refine/MatrixOff/DP.txt");
+ifstream introDP("../Data/Offline/Offline_106/MatrixOff/DP.txt");
 introDP>>dTau;real[int,int][int] DP(dTau);
 for(int i=0;i<dTau;i++)
 {
@@ -441,15 +442,15 @@ for(int i=0;i<rTau;i++)
 //------------------------------------------------------------------------------
 
 
-ifstream introrhs1aux("../Data/Offline/Offline_LPS_refine/VectorOff/rhs1aux.txt");
+ifstream introrhs1aux("../Data/Offline/Offline_106/VectorOff/rhs1aux.txt");
 introrhs1aux>>dU;real[int] rhs1aux(rU);
 for(int i=0;i<rU;i++){introrhs1aux>>rhs1aux(i);}
 
-ifstream introrhs3t1("../Data/Offline/Offline_LPS_refine/VectorOff/rhs3t1.txt");
+ifstream introrhs3t1("../Data/Offline/Offline_106/VectorOff/rhs3t1.txt");
 introrhs3t1>>dT;real[int] rhs3t1(rT);
 for(int i=0;i<rT;i++){introrhs3t1>>rhs3t1(i);}
 
-ifstream introrhs3t2("../Data/Offline/Offline_LPS_refine/VectorOff/rhs3t2.txt");
+ifstream introrhs3t2("../Data/Offline/Offline_106/VectorOff/rhs3t2.txt");
 introrhs3t2>>dT;introrhs3t2>>dU;real[int,int] rhs3t2aux(dT,dU);
 for(int i=0;i<dT;i++){for(int j=0;j<dU;j++){introrhs3t2>>rhs3t2aux(i,j);}}
 real[int,int] rhs3t2(rT,rU); rhs3t2=rhs3t2aux(0:rT-1,0:rU-1);
@@ -471,7 +472,7 @@ for(int i = 0;i<rVis;i++)
 }
 
 
-ifstream introDT("../Data/Offline/Offline_LPS_refine/MatrixOff/DT.txt");
+ifstream introDT("../Data/Offline/Offline_106/MatrixOff/DT.txt");
 introDT>>dVis;real[int,int][int] DT(dVis);
 for(int i=0;i<dVis;i++)
 {
@@ -485,7 +486,7 @@ for(int i=0;i<rVis;i++)
 	rDT[i]=DT[i](0:rT-1,0:rT-1);
 }
 
-ifstream introD("../Data/Offline/Offline_LPS_refine/MatrixOff/D.txt");
+ifstream introD("../Data/Offline/Offline_106/MatrixOff/D.txt");
 introD>>dVis;real[int,int][int] D(dVis);
 for(int i=0;i<dVis;i++)
 {
@@ -503,11 +504,11 @@ for(int i=0;i<rVis;i++)
 // DEIM magic points of viscosity and stab 
 //------------------------------------------------------------------------------
 
-ifstream introIvis("../Data/Offline/Offline_LPS_refine/Deim/Ivis.txt");
+ifstream introIvis("../Data/Offline/Offline_106/Deim/Ivis.txt");
 introIvis>>dVis; real[int] Ivis(rVis);
 for(int i = 0;i<rVis;i++){introIvis>>Ivis(i);}
 
-ifstream introItau("../Data/Offline/Offline_LPS_refine/Deim/Itau.txt");
+ifstream introItau("../Data/Offline/Offline_106/Deim/Itau.txt");
 introItau>>dTau; real[int] Itau(rTau);
 for(int i = 0;i<rTau;i++){introItau>>Itau(i);}
 
@@ -863,7 +864,7 @@ for(int i = 0;i<rP;i++)
 }
 
 
-/*
+
 plot([Snapuini,Snapvini],fill=1,value=1,cmm="Snapshots velocity for Ra: "+Ra);
 plot([uPODG,vPODG],fill=1,value=1,cmm="POD-G-ROM velocity for Ra"+Ra);
 plot(Snapuini,fill=1,value=1,cmm="Snapshots velocity x for Ra: "+Ra);
@@ -874,17 +875,17 @@ plot(Snappini,fill=1,value=1,cmm="Snapshots pressure for Ra: "+Ra);
 plot(pPODG,fill=1,value=1,cmm="POD-G-ROM pressure for Ra: "+Ra);
 plot(Snaptini,fill=1,value=1,cmm="Snapshots temperature for Ra: "+Ra);
 plot(tPODG,fill=1,value=1,cmm="POD-G-ROM temperature for Ra: "+Ra);
-*/
+
 real errorvel,errorp,errort;
 
 errorvel = int2d(Th)((Snapuini-uPODG)^2 + (Snapvini-vPODG)^2)/int2d(Th)(Snapuini^2 + Snapvini^2);
-cout << "Error relativo en velocidad: " << errorvel << endl;
+cout << "Error relativo en velocidad: " << sqrt(errorvel) << endl;
 cout << "------------------" << endl;
 errorp = int2d(Th)((Snappini-pPODG)^2)/int2d(Th)(Snappini^2);
-cout << "Error relativo  en presion: " << errorp << endl;
+cout << "Error relativo  en presion: " << sqrt(errorp) << endl;
 cout << "------------------" << endl;
 errort = int2d(Th)((Snaptini-tPODG)^2)/int2d(Th)(Snaptini^2);
-cout << "Error relativo  en temperature: " << errort << endl;
+cout << "Error relativo  en temperature: " << sqrt(errort) << endl;
 cout << "------------------" << endl;
 
 real averagenu,averagenusnap;

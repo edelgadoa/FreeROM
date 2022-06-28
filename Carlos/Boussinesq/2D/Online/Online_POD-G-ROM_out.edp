@@ -30,20 +30,20 @@ include "../EF/Interp_matrix_NoStab_2D.idp"
 
 //ONLINE PARAMETERS 
 
-int rU = 7; // Number of online vel. basis
-int rP = 6; // Number of online pres. basis
-int rT = 7; //Number of online temp. basis
-int rVis = 35; // Number of online viscosity basis
-int rTau = 11; //Number of online coef stab basis of LPS
+int rU = 6; // Number of online vel. basis
+int rP = 4; // Number of online pres. basis
+int rT = 5; //Number of online temp. basis
+int rVis = 30; // Number of online viscosity basis
+int rTau = 20; //Number of online coef stab basis of LPS
 real Ra; //Rayleigh number 
 real Rayleigh;
+
 
 /////////////////////////////////////////////////////
 // READING DATA 
 ////////////////////////////////////////////////////
 int ndof, nSnapshots, dU,dP,dT,dVis,dTau;
 
-ni = 100;
 //Número de snapshots que tomamos
 nSnapshots = ni+1;
 //Intervalo de Rayleigh
@@ -146,10 +146,11 @@ rPhitau = Phitau(0:VhP0.ndof-1,0:rTau-1);
 
 real[int] aiUp(rU),aiUpp(rU),aiPp(rP),aiTp(rT),aiVis(rVis),aiTau(rTau);
 
+
 //-----------------------------------------------------------
 //Resuelvo con E.F. para comparar tiempos y el error que cometo
 //------------------------------------------------------------
-Ra = 26435;
+Ra = 4363;
 
 real TFE=clock();
 include "Boussinesq.idp"
@@ -157,7 +158,7 @@ TFE=clock()-TFE;
 cout << "Tiempo FOM: " << TFE << endl;
 
 ////////////////////////////////////////////////////////////
-//Ahora calculo BR:
+//Ahora calculo POD-G-ROM:
 
 
 //------------------------------------------------------------------------------
@@ -192,12 +193,6 @@ VhP1dc Snapvis,visPODG,modevis;
 VhP2 Snapu1,Snapu2,Snapv1,Snapv2,Snapt1,Snapt2,Snapumedia,Snapvmedia,Snaptmedia;
 VhP0 Snaptau,tauPODG,modetau;
 
-uPODGin = 0.;
-vPODGin = 0.;
-pPODGin = 0.;
-tPODGin = 0.;
-visPODG = 0.;
-tauPODG = 0.;
 
 real Indiceant,Indicepost;
 for(int i = 0;i<nSnapshots;i++)
@@ -226,6 +221,20 @@ Snappini[] = SnapPnew[];
 
 
 
+
+
+uPODGin = 0.;
+vPODGin = 0.;
+pPODGin = 0.;
+tPODGin = 0.;
+visPODG = 0.;
+tauPODG = 0.;
+
+
+
+
+
+
 for(int i = 0;i<rU;i++)
 {
 	modeu[] = rPhiu(:,i);
@@ -246,7 +255,12 @@ for(int i =0;i<rT;i++)
 }
 
 
-
+/*
+plot(uPODGin,fill=1,value=1,cmm="POD-G-ROM initial velocity x component for Ra"+Ra);
+plot(vPODGin,fill=1,value=1,cmm="POD-G-ROM initial velocity y component for Ra"+Ra);
+plot(pPODGin,fill=1,value=1,cmm="POD-G-ROM initial pressure for Ra"+Ra);
+plot(tPODGin,fill=1,value=1,cmm="POD-G-ROM initial temperature for Ra"+Ra);
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -314,7 +328,24 @@ matrix AMT=rAT;
 // DIV. MATRIX (Revisar porque sale con el signo cambiado cuando se calcula en paralelo)
 //------------------------------------------------------------------------------
 
+VhP2 modepj,modepi;
+/*
+real[int,int] divP(rP,rU);
 
+divP =0.;
+for(int i = 0;i<rP;i++)
+{
+	modepi[] = rPhip(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		divP(i,j) = int2d(Th)(dx(modeuj)*modepi + dy(modevj)*modepi);
+	}
+
+}
+matrix divPM = divP;
+cout << divP << endl;
+*/
 
 ifstream introP("../Data/Offline/Offline_LPS_refine/MatrixOff/P.txt");
 introP>>dP;introP>>dU;real[int,int] P(dP,dU);
@@ -393,8 +424,9 @@ for(int i=0;i<rU;i++)
 ifstream introVT("../Data/Offline/Offline_LPS_refine/MatrixOff/VT.txt");
 introVT>>dT;introVT>>dU;real[int,int] VT(dT,dU);
 for(int i=0;i<dT;i++){for(int j=0;j<dU;j++){introVT>>VT(i,j);}}
-real[int,int] rVT(rT,rU); rVT=VT(0:rT-1,0:rU-1);
-matrix VTM=rVT;
+real[int,int] rVT(rT,rU),rVTt(rU,rT); rVT=VT(0:rT-1,0:rU-1);
+rVTt = rVT';
+matrix VTM=rVTt;
 
 
 
@@ -519,6 +551,8 @@ cout<< "Reading phase complete" << endl;
 // END OF READING
 ////////////////////////////////////////////////////////////////////////////////
 
+
+
 //------------------------
 // Auxiliary for RBF
 //-------------------------
@@ -559,6 +593,9 @@ alpha =0.;
 
 real[int] alphagorro(rTau);
 alphagorro = 0.;
+
+
+
 
 
 
@@ -626,6 +663,7 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	tPODG = 0.;
 	pPODG = 0.;
 	
+	
 	//---------------------------------------------------------------------------
 	// RBF Process
 	//---------------------------------------------------------------------------
@@ -651,6 +689,7 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	for(int j = 0;j<rTau;j++){
 		alphagorro(j) = rWeightTau(:,j)'*MGauss; 
 	}
+	
 	
 	//---------------------------------------------------------------------------
 	// Calculate the multiplication of the DEIM tensor for the velocity and temperature
@@ -718,16 +757,21 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	//---------------------------------------------------------------------------
 	// Right hand side
 	//---------------------------------------------------------------------------
-	real[int] rhs1dt(rU),rhs3dt(rT),rhs3aux1(rT),rhs3sum(rT);
-	rhs1dt = 0.;rhs3dt = 0.;rhs3aux1 = 0.;rhs3sum = 0.;
+	real[int] rhs1dt(rU);
+	rhs1dt = 0.;
 	rhs1dt = MM*aiUp;
 	rhs1 = Pr*Ra*rhs1aux + dtt*rhs1dt;
 	
+	real[int] rhs3dt(rT),rhs3aux1(rT),rhs3sum(rT);
+	rhs3dt = 0.;
 	rhs3dt = MMT*aiTp;
 	
+	rhs3aux1 = 0.;
 	rhs3aux1 = rhs3t2*aiUp;
 	
+	rhs3sum = 0.;
 	rhs3sum = dtt*rhs3dt - rhs3aux1;
+	
 	
 	rhs3 = rhs3sum - rhs3t1;
 	
@@ -786,6 +830,23 @@ for(int i = 0;i<rP;i++)
 }
 
 
+/*
+plot([Snapuini,Snapvini],fill=1,value=1,cmm="Snapshots velocity for Ra: "+Ra);
+plot([uPODG,vPODG],fill=1,value=1,cmm="POD-G-ROM velocity for Ra"+Ra);
+plot(Snapuini,fill=1,value=1,cmm="Snapshots velocity x for Ra: "+Ra);
+plot(uPODG,fill=1,value=1,cmm="POD-G-ROM velocity x for Ra: "+Ra);
+plot(Snapvini,fill=1,value=1,cmm="Snapshots velocity y for Ra: "+Ra);
+plot(vPODG,fill=1,value=1,cmm="POD-G-ROM velocity y for Ra: "+Ra);
+plot(Snappini,fill=1,value=1,cmm="Snapshots pressure for Ra: "+Ra);
+plot(pPODG,fill=1,value=1,cmm="POD-G-ROM pressure for Ra: "+Ra);
+plot(Snaptini,fill=1,value=1,cmm="Snapshots temperature for Ra: "+Ra);
+plot(tPODG,fill=1,value=1,cmm="POD-G-ROM temperature for Ra: "+Ra);
+*/
+
+savevtk("TemperaturePODG_"+Ra+".vtk",Th,tPODG,dataname="POD-G-ROM Temperature",order=Order);
+savevtk("VelocityPODG_"+Ra+".vtk",Th,[uPODG,vPODG],dataname="POD-G-ROM Velocity Magnitude",order=Order);
+savevtk("PressurePODG_"+Ra+".vtk",Th,pPODG,dataname="POD-G-ROM Pressure",order=Order);
+
 
 real errorvel,errorp,errort;
 
@@ -811,6 +872,5 @@ cout << "Valor media de nusselt FOM:" << averagenusnap << endl;
 cout << "------------------" << endl;
 cout << "Error relativo nusselt: " << errornu << endl;
 cout << "------------------" << endl;
-
 
 

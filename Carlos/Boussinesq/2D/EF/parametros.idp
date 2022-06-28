@@ -15,17 +15,17 @@ real cc2=sqrt(cc1);
 
 real Pr=0.71; //Prandlt aire
 
-real dt=1.e-2;
+real dt=2.e-3;//2.e-3
 real dtt = 1./dt;
-real epspen=1e-8;
+real epspen=1.e-8;//1.e-8
 
-real Ramin=1.e3;
-real Ramax=1.e5;
+real Ramin=1.e6;//1.e5
+real Ramax=1.e7;//1.e6
 
 
 int ni=100;
 
 
 int nIterations=2000;
-real epsError = 1.e-10;
+real epsError = 1.e-8;//1.e-8
 

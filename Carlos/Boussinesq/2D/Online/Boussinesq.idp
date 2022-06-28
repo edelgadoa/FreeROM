@@ -153,12 +153,16 @@ VhP1dc SnapVisnew;
 	
 	
 	VhP2 T = t+G;
-	
+	/*
 	plot(T,cmm="Temperatura para Ra="+Ra,fill=1,value=1);
 	plot(u1,cmm="Velocidad x para Ra="+Ra,fill=1,value=1);
 	plot(u2,cmm="Velocidad y para Ra="+Ra,fill=1,value=1);
 	//plot([u1,u2],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
 	plot(p,cmm="Presion para Ra = "+Ra,fill=1,value=1);
-	
+	*/
+	int[int] Order=[1];
+	savevtk("Temperature_"+ Ra +".vtk",Th,T,dataname="Temperature",order=Order);
+	savevtk("Velocity_"+ Ra +".vtk",Th,[u1,u2],dataname="Velocity Magnitude",order=Order);
+	savevtk("Pressure_"+ Ra +".vtk",Th,p,dataname="Pressure",order=Order);
 	
 	

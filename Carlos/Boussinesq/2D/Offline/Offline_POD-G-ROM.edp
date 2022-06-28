@@ -194,7 +194,7 @@ for(int i=0;i<dT;i++)
 		real[int] auxTU = prodl2l2*Phit(:,i);
 		for(int j=0;j<dU;j++)
 		{
-			VTL(j,i) =  Phiv(:,j)'*auxTU;
+			VTL(i,j) =  Phiv(:,j)'*auxTU;
 		}
 	}
 }

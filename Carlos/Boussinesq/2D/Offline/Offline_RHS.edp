@@ -124,7 +124,7 @@ for(int i = 0;i<dT;i++)
 	{
 		real[int] auxX = prodXG*Phit(:,i);
 		real[int] auxY = prodYG*Phit(:,i);
-		for(int j = 0;j<dT;j++)
+		for(int j = 0;j<dU;j++)
 		{
 			rhs3term2L(i,j) = Phiu(:,j)'*auxX + Phiv(:,j)'*auxY;
 		}

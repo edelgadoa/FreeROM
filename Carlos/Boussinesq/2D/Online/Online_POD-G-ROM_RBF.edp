@@ -43,7 +43,6 @@ real Ra; //Rayleigh number
 ////////////////////////////////////////////////////
 int ndof, nSnapshots, dU,dP,dT,dVis,dTau;
 
-ni = 100;
 //Número de snapshots que tomamos
 nSnapshots = ni+1;
 //Intervalo de Rayleigh
@@ -411,8 +410,9 @@ for(int i=0;i<rU;i++)
 ifstream introVT("../Data/Offline/Offline_LPS_refine/MatrixOff/VT.txt");
 introVT>>dT;introVT>>dU;real[int,int] VT(dT,dU);
 for(int i=0;i<dT;i++){for(int j=0;j<dU;j++){introVT>>VT(i,j);}}
-real[int,int] rVT(rT,rU); rVT=VT(0:rT-1,0:rU-1);
-matrix VTM=rVT;
+real[int,int] rVT(rT,rU),rVTt(rU,rT); rVT=VT(0:rT-1,0:rU-1);
+rVTt = rVT';
+matrix VTM=rVTt;
 
 
 
@@ -537,6 +537,8 @@ cout<< "Reading phase complete" << endl;
 // END OF READING
 ////////////////////////////////////////////////////////////////////////////////
 
+
+
 //------------------------
 // Auxiliary for RBF
 //-------------------------
@@ -577,6 +579,9 @@ alpha =0.;
 
 real[int] alphagorro(rTau);
 alphagorro = 0.;
+
+
+
 
 
 
@@ -644,6 +649,7 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	tPODG = 0.;
 	pPODG = 0.;
 	
+	
 	//---------------------------------------------------------------------------
 	// RBF Process
 	//---------------------------------------------------------------------------
@@ -669,6 +675,7 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	for(int j = 0;j<rTau;j++){
 		alphagorro(j) = rWeightTau(:,j)'*MGauss; 
 	}
+	
 	
 	//---------------------------------------------------------------------------
 	// Calculate the multiplication of the DEIM tensor for the velocity and temperature
@@ -736,16 +743,21 @@ for(int i = 0; i<=nIterations && (iterrelative1 > epsError); i++)
 	//---------------------------------------------------------------------------
 	// Right hand side
 	//---------------------------------------------------------------------------
-	real[int] rhs1dt(rU),rhs3dt(rT),rhs3aux1(rT),rhs3sum(rT);
-	rhs1dt = 0.;rhs3dt = 0.;rhs3aux1 = 0.;rhs3sum = 0.;
+	real[int] rhs1dt(rU);
+	rhs1dt = 0.;
 	rhs1dt = MM*aiUp;
 	rhs1 = Pr*Ra*rhs1aux + dtt*rhs1dt;
 	
+	real[int] rhs3dt(rT),rhs3aux1(rT),rhs3sum(rT);
+	rhs3dt = 0.;
 	rhs3dt = MMT*aiTp;
 	
+	rhs3aux1 = 0.;
 	rhs3aux1 = rhs3t2*aiUp;
 	
+	rhs3sum = 0.;
 	rhs3sum = dtt*rhs3dt - rhs3aux1;
+	
 	
 	rhs3 = rhs3sum - rhs3t1;
 	
@@ -815,7 +827,7 @@ plot(Snappini,fill=1,value=1,cmm="Snapshots pressure for Ra: "+Ra);
 plot(pPODG,fill=1,value=1,cmm="POD-G-ROM pressure for Ra: "+Ra);
 plot(Snaptini,fill=1,value=1,cmm="Snapshots temperature for Ra: "+Ra);
 plot(tPODG,fill=1,value=1,cmm="POD-G-ROM temperature for Ra: "+Ra);
-*/	
+*/
 real errorvel,errorp,errort;
 
 errorvel = int2d(Th)((Snapuini-uPODG)^2 + (Snapvini-vPODG)^2)/int2d(Th)(Snapuini^2 + Snapvini^2);
@@ -834,4 +846,48 @@ averagenu = int2d(Th)(uPODG*tPODG - dx(tPODG));
 averagenusnap = int2d(Th)(Snapuini*Snaptini - dx(Snaptini));
 cout << averagenu << endl;
 cout << averagenusnap << endl;
+
+//Transformar los valores de la presion y la velocidad en el intervalo [-1,1]
+
+VhP2 Snappininorm,pPODGnorm,Snapuininorm,Snapvininorm,uPODGnorm,vPODGnorm;
+
+real cteSnappnorm = (-2)/(-2*Snappini[].max);
+real ctePODpnorm = (-2)/(-2*pPODG[].max);
+real cteSnapunorm = (-2)/(-2*Snapuini[].max);
+real cteSnapvnorm = (-2)/(-2*Snapvini[].max);
+real ctePODunorm = (-2)/(-2*uPODG[].max);
+real ctePODvnorm = (-2)/(-2*vPODG[].max);
+
+for(int i = 0;i<VhP2.ndof;i++)
+{
+	pPODGnorm[][i] =  ctePODpnorm*(pPODG[][i] + pPODG[].max) - 1;
+	Snappininorm[][i] =  cteSnappnorm*(Snappini[][i] + Snappini[].max) - 1; 
+	Snapuininorm[][i] =  cteSnapunorm*(Snapuini[][i] + Snapuini[].max) - 1; 
+	Snapvininorm[][i] =  cteSnapvnorm*(Snapvini[][i] + Snapvini[].max) - 1;
+	uPODGnorm[][i] =  ctePODunorm*(uPODG[][i] + uPODG[].max) - 1;
+	vPODGnorm[][i] =  ctePODvnorm*(vPODG[][i] + vPODG[].max) - 1; 
+	
+}
+
+
+
+plot([Snapuininorm,Snapvininorm],fill=1,value=1,cmm="Snapshots velocity for Ra: "+Ra);
+plot([uPODGnorm,vPODGnorm],fill=1,value=1,cmm="POD-G-ROM velocity for Ra"+Ra);
+plot(Snapuininorm,fill=1,value=1,cmm="Snapshots velocity x for Ra: "+Ra);
+plot(uPODGnorm,fill=1,value=1,cmm="POD-G-ROM velocity x for Ra: "+Ra);
+plot(Snapvininorm,fill=1,value=1,cmm="Snapshots velocity y for Ra: "+Ra);
+plot(vPODGnorm,fill=1,value=1,cmm="POD-G-ROM velocity y for Ra: "+Ra);
+plot(Snappininorm,fill=1,value=1,cmm="Snapshots pressure for Ra: "+Ra);
+plot(pPODGnorm,fill=1,value=1,cmm="POD-G-ROM pressure for Ra: "+Ra);
+
+
+real errorvelnorm,errorpnorm,errortnorm;
+
+errorvelnorm = int2d(Th)((Snapuininorm-uPODGnorm)^2 + (Snapvininorm-vPODGnorm)^2)/int2d(Th)(Snapuininorm^2 + Snapvininorm^2);
+cout << "Error relativo en velocidad normalizado: " << errorvelnorm << endl;
+cout << "------------------" << endl;
+errorpnorm = int2d(Th)((Snappininorm-pPODGnorm)^2)/int2d(Th)(Snappininorm^2);
+cout << "Error relativo  en presion normalizado: " << errorpnorm << endl;
+cout << "------------------" << endl;
+
 

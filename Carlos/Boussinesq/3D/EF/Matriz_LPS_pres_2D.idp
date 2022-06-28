@@ -1,0 +1,44 @@
+///////////////
+// FreeROM 
+///////////////
+
+//COEF. ESTAB. CODINA
+varf tauK(unused,v)=int3d(Th)((u1tmp^2+u2tmp^2+u3tmp^2)*v);
+varf tauKT(unused,v)=int3d(Th)(((u1dcX)^2+(u1dcY)^2+(u1dcZ)^2+(u2dcX)^2+(u2dcY)^2+(u2dcZ)^2+(u3dcX)^2+(u3dcY)^2+(u3dcZ)^2)*v);
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+
+tau = ((cc1*(Pr+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+/////////////////////////////
+//MATRIZ ESTAB. PRES.
+/////////////////////////////
+
+varf termPres(pp,q) = int3d(Th)(tau*pp*q);
+
+
+matrix TermP = termPres(VhP1dc,VhP1dc);
+
+matrix DDxx;
+{
+	DDxx = TermP * IPhD5X5P2; 
+	DDxx = IPhD5X5P2' * DDxx;
+}
+
+matrix DDyy;
+{
+	DDyy = TermP * IPhD5Y5P2; 
+	DDyy = IPhD5Y5P2' * DDyy;
+}
+
+matrix DDzz;
+{
+	DDzz = TermP * IPhD5Z5P2;
+	DDzz = IPhD5Z5P2' * DDzz;
+}
+
+LPSpres = DDxx + DDyy + DDzz;

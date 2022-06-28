@@ -71,9 +71,9 @@ VhP0 SnapTau;
 
 real[int,int] Avis(VhP1dc.ndof,2*nSnapshots),Atau(VhP0.ndof,2*nSnapshots); 
 real[int,int] Avx(VhP2.ndof,2*nSnapshots),Avy(VhP2.ndof,2*nSnapshots),Ap(VhP2.ndof,2*nSnapshots),At(VhP2.ndof,2*nSnapshots);
-for(int i = 0;i<2*nSnapshots-1;i++)
+for(int i = 0;i<nSnapshots;i++)
 {
-	Rayleigh = vRanuevo(i);
+	Rayleigh = vRa(i);
 	
 	ifstream SnapshotsVis("../Data/Snapshots/Snapshots_LPS_refine/Vis_" + Rayleigh + ".txt");
 	SnapshotsVis >> SnapVis[];
@@ -163,20 +163,20 @@ real[int] aiUp(rU),aiUpp(rU),aiPp(rP),aiTp(rT),aiVis(rVis),aiTau(rTau);
 // INITIAL CONDITION
 //------------------------------------------------------------------------------
 
-ofstream outEvelR("../Data/Errores/ErrorVelRelSnap_out.txt");
-ofstream outEpresR("../Data/Errores/ErrorPresRelSnap_out.txt");
-ofstream outEtempR("../Data/Errores/ErrorTempRelSnap_out.txt");
-ofstream outEnusR("../Data/Errores/ErrorNusRelSnap_out.txt");
-ofstream outNusSnap("../Data/Errores/NusseltSnap_out.txt");
-ofstream outNusPOD("../Data/Errores/NusseltPOD_out.txt");
-for(int ira = 0;ira<2*nSnapshots-1;ira=ira+2)
+ofstream outEvelR("../Data/Errores_LPS_refine/ErrorVelRelSnap_out.txt");
+ofstream outEpresR("../Data/Errores_LPS_refine/ErrorPresRelSnap_out.txt");
+ofstream outEtempR("../Data/Errores_LPS_refine/ErrorTempRelSnap_out.txt");
+ofstream outEnusR("../Data/Errores_LPS_refine/ErrorNusRelSnap_out.txt");
+ofstream outNusSnap("../Data/Errores_LPS_refine/NusseltSnap_out.txt");
+ofstream outNusPOD("../Data/Errores_LPS_refine/NusseltPOD_out.txt");
+for(int ira = 0;ira<nSnapshots;ira++)
 {
 	VhP2 uPODGin,vPODGin,modeu,modev,Snapuini,Snapvini,pPODGin,modep,Snappini,tPODGin,modet,Snaptini,velmagPODGin;
 	VhP1dc Snapvis, visPODG,modevis;
 	VhP2 Snapu1,Snapu2,Snapv1,Snapv2,Snapt1,Snapt2,Snapumedia,Snapvmedia,Snaptmedia;
 	VhP0 Snaptau,tauPODG,modetau;
 	
-	Ra = vRanuevo(ira);
+	Ra = vRa(ira);
 	cout<<"i: "<<ira<<"-----"<<Ra<<endl;
 	
 
@@ -285,7 +285,24 @@ matrix AMT=rAT;
 // DIV. MATRIX (Revisar porque sale con el signo cambiado cuando se calcula en paralelo)
 //------------------------------------------------------------------------------
 
+VhP2 modepj,modepi;
+/*
+real[int,int] divP(rP,rU);
 
+divP =0.;
+for(int i = 0;i<rP;i++)
+{
+	modepi[] = rPhip(:,i);
+	for(int j = 0;j<rU;j++)
+	{
+		modeuj[] = rPhiu(:,j); modevj[] = rPhiv(:,j);
+		divP(i,j) = int2d(Th)(dx(modeuj)*modepi + dy(modevj)*modepi);
+	}
+
+}
+matrix divPM = divP;
+cout << divP << endl;
+*/
 
 ifstream introP("../Data/Offline/Offline_LPS_refine/MatrixOff/P.txt");
 introP>>dP;introP>>dU;real[int,int] P(dP,dU);
@@ -364,8 +381,9 @@ for(int i=0;i<rU;i++)
 ifstream introVT("../Data/Offline/Offline_LPS_refine/MatrixOff/VT.txt");
 introVT>>dT;introVT>>dU;real[int,int] VT(dT,dU);
 for(int i=0;i<dT;i++){for(int j=0;j<dU;j++){introVT>>VT(i,j);}}
-real[int,int] rVT(rT,rU); rVT=VT(0:rT-1,0:rU-1);
-matrix VTM=rVT;
+real[int,int] rVT(rT,rU),rVTt(rU,rT); rVT=VT(0:rT-1,0:rU-1);
+rVTt = rVT';
+matrix VTM=rVTt;
 
 
 
@@ -490,6 +508,8 @@ cout<< "Reading phase complete" << endl;
 // END OF READING
 ////////////////////////////////////////////////////////////////////////////////
 
+
+
 //------------------------
 // Auxiliary for RBF
 //-------------------------
@@ -530,6 +550,10 @@ alpha =0.;
 
 real[int] alphagorro(rTau);
 alphagorro = 0.;
+
+
+
+
 
 
 

@@ -27,4 +27,4 @@ mesh Th=square(32,32,flags=3);
 func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
 func fy = 0.5*(1 + (tanh(2*(2*y-1)))/(tanh(2)));
 mesh Th2 = movemesh(Th,[fx,fy]);
-plot (Th2,wait=1,ps="cavity.ps");
+plot (Th2,wait=1,ps="cavity_32.ps");
