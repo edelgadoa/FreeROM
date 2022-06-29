@@ -16,10 +16,6 @@ BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
 ////////////////////////////////////////////
 
-// Ortonormalizacion de la velocidad
-varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
-
 
 real[int,int] MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
 

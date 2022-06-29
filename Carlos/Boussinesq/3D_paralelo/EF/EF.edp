@@ -90,7 +90,7 @@ for (int i=0;i<=1;i++)
 	
 	
 	//[u1,u2,t,p] = [UX,UY,t,p];
-	u[]=1.;
+	u[]=0.;
 	
 	
 	
@@ -176,6 +176,7 @@ for (int i=0;i<=1;i++)
 		
 		solvesystem(Afinal,bNS,u);
 		
+		
 		//Pintamos la solucion de cada iteracion
 	
 	//	VhP2 TEMP=t+G;
@@ -219,9 +220,11 @@ for (int i=0;i<=1;i++)
 	
 		Gr=mod(u1dcX,u1dcY,u1dcZ,u2dcX,u2dcY,u2dcZ,u3dcX,u3dcY,u3dcZ);
 		
-		if(ii%20==0)
+		if(ii%10==0)
 		{
-			savevtk("../Data/PostProc/Snapshots_"+Ra+"_"+ii+".vtu",Th,[u,uY,uZ],uT,uP,dataname="Velocity Temperature Pressure",order=fforder);
+			VhP2 Temp = uT +G;
+			if(mpirank==0){cout <<"media pres:"<<intN(Th)(uP)<< endl;}
+			savevtk("../Data/PostProc/Snapshots_"+Ra+"_"+ii+".vtu",Th,[u,uY,uZ],Temp,uP,dataname="Velocity Temperature Pressure",order=fforder);
  	
 		}
 	

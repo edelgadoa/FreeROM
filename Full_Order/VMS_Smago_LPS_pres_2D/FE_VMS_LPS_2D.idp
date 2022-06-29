@@ -7,9 +7,7 @@
 matrix MFija;
 real[int] bFija(Vh3P2.ndof);
 
-
 include "Matrices_fijas_NS_2D.idp"
-
 ERROR = 10;
 
 // Comenzamos el bucle iterativo para resolver el problema de EF
@@ -38,7 +36,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real[int] bNS(Vh3P2.ndof);
 	
 	include "Matrices_variables_NS_2D.idp"
-	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
 	real[int] bSmago(Vh3P2.ndof);
@@ -48,17 +45,16 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
-	
 	include "Matriz_LPS_Pres_2D.idp"
 
-	
+
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
 	real[int] bFinal(Vh3P2.ndof);
 	
 	MFinal = MFija;
 	MFinal += MNS;
-	MFinal += Smago;
+ 	MFinal += Smago;
 	MFinal += LPSpres;
 	
 	bFinal = bFija;
@@ -82,3 +78,4 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
 
 }
+

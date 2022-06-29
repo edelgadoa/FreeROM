@@ -9,6 +9,9 @@ matrix MPescT = pescT(Vh2P2, Vh2P2);
 varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
 matrix MPescX = pescX(Vh3P2, Vh3P2);
 
+varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
+matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
+
 ///////////////////////////////////////////////////////
 
 varf DiffPE([uu,uuY], [v,vY]) = int2d(Th)(GradUGradV(uu,v));
@@ -25,6 +28,18 @@ matrix ConvLevPEM = ConvLevPE(Vh2P2, Vh2P2);
 
 varf DTPE([uu,uuY], [v,vY]) = int2d(Th)(UporV(uu,v));
 matrix DTPEM = DTPE(Vh2P2, Vh2P2);
+
+varf StabhK(uP,vP) = int2d(Th)(hTriangle^2*uP*vP);
+matrix FiltroX, FiltroY;
+matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
+{
+	FiltroX = SPPEM2 * IPhDXP2;
+	FiltroX = (IPhDXP2') * FiltroX;
+	FiltroY = SPPEM2 * IPhDYP2;
+	FiltroY = (IPhDYP2') * FiltroY;	
+}
+matrix StabhkPEM = FiltroX + FiltroY;
+
 
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
@@ -53,7 +68,7 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	for (int s=0; s<Taubases; s++){
 		//if(mpirank==contS%mpisize){
 			// Matrices LPS
-			varf StabPPE(p,q)=int2d(Th)(EIMTau[s]*p*q);
+			varf StabPPE(uP,vP) = int2d(Th)(EIMTau[s]*uP*vP);
 			matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
 			matrix FiltroX, FiltroY;
 			{

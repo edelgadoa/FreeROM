@@ -11,9 +11,9 @@ MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += ConvLevRBi;
 MRB += PenRBi;	
+//MRB += StabhkRBi;
 
-mpi(cout<<DivPRBi<<endl;) 
-
+//cout<<MRB<<endl;
 bDiffRBi = bDiffRB(0:2*I-1);
 	
 for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
@@ -22,6 +22,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	StabPRBi = 0;
 	bDTRBi = 0;
 	bSmagoRBi = 0;
+	bRB = 0;
 	
 	// Matriz de conveccion
 	for (int s=0; s<I; s++){
@@ -32,7 +33,6 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		ConvRBi += ConvRBint;
 	}
 	
-
 
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(I);
@@ -105,24 +105,27 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRB += ConvRBi;
-	MRB += SmagoRBi;
+	//cout<<ConvRBi<<endl;
+	MRB += SmagoRBi; 
 	MRB += StabPRBi;
 	
-	mpi(cout<<StabPRBi<<endl;)
+	cout<<MRB<<endl;
 	
-	bRB = nuRB * bDiffRBi(0:2*I-1);
-	bRB += (1./dt) * bDTRBi(0:2*I-1);
-	bRB += bConvRB(0:2*I-1);
-	bRB += bSmagoRBi(0:2*I-1);
+	bRB = (1./dt) * bDTRBi(0:2*I-1);
+	bRB -= nuRB * bDiffRBi(0:2*I-1);
+	bRB -= bConvRBi(0:2*I-1);
+	bRB -= bSmagoRBi(0:2*I-1);
 
+	//cout<<bRB<<endl;
 	
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRB;
-	set(MRBs, solver=sparsesolver);
-	//real[int,int] MRBinv = MRB^-1;
+	set(MRBs, solver=UMFPACK);
+	// cout<<MRBs<<endl;
+	// real[int,int] MRBinv = MRB^-1;
 	
-	uRBv = MRBs*bRB;
+	uRBv = MRBs^-1*bRB;
 	//mpi(cout<<"uRB:"<<uRBv<<endl;)
 	// Actualizo el error 
 	real[int] uRBerr(I); 

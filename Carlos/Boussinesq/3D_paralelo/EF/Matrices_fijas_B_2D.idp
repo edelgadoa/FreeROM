@@ -11,7 +11,7 @@ varf vNS([uu1,uu2,uu3,tt,pp],[v1,v2,v3,zt,q])=
 			   +div(uu1,uu2,uu3)*q
 			   +Pr*gradugradv(uu1,uu2,uu3,v1,v2,v3)
 			   +Grad(tt)'*Grad(zt)
-			   +1e-8*pp*q
+			   +1e-6*pp*q
 			   -Pr*Ra*tt*v3) //Verificar si es v3 o v2
 			   //Segundo miembro
 			   +intN(ThL)(Pr*Ra*G*v3 //Verificar si es v3 o v2

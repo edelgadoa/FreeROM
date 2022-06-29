@@ -9,9 +9,9 @@ include "Cube.idp" //Programa de la documentación FreeFem++
 mesh3 Th, ThL;
  
 {
-	int Nx = 5; // Numero de divisiones eje X
-	int Ny = 5; // Numero de divisiones eje Y
-	int Nz = 5; // Numero de divisiones eje Z
+	int Nx = 10; // Numero de divisiones eje X
+	int Ny = 10; // Numero de divisiones eje Y
+	int Nz = 10; // Numero de divisiones eje Z
 	int[int] Nxyz = [Nx,Ny,Nz]; // Subdivisiones en las 3 direcciones
 	
 	// geometria del cubo:

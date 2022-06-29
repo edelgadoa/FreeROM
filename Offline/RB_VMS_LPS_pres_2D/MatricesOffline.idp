@@ -20,6 +20,7 @@ for (int j=0; j<=i; j++){
 		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+		StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
@@ -27,6 +28,7 @@ for (int j=0; j<=i; j++){
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
 			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRBL(j,i) = DTRBL(i,j);
+			StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
 	}
 	contFF++;
@@ -38,13 +40,16 @@ mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
 DiffRB += DiffRBG;
 DivPRB += DivPRBG;
 PenRB += PenRBG;
 ConvLevRB += ConvLevRBG;
 DTRB += DTRBG;
+StabhkRB += StabhkRBG;
 
+//mpi(cout<<DTRB<<endl;)
 // Comienzo el bucle para la construcción de los tensores
 
 // Conveccion
