@@ -1,0 +1,19 @@
+////////////////
+// FreeROM
+///////////////
+
+
+///////////////////////////////////
+//Matriz término de Conveccion Boussinesq
+///////////////////////////////////
+	varf vNSb([uu1,uu2,uu3,tt,pp],[v1,v2,v3,zt,q])=
+			 intN(ThL)(antisimetric(u,uY,uZ,uu1,uu2,uu3,v1,v2,v3)
+			+([u,uY,uZ]'*Grad(tt))*zt)
+			//Seg miembro
+			+intN(ThL)((1./dt)*(u*v1+uY*v2+uZ*v3+uT*zt)
+	   		-([u,uY,uZ]'*Grad(G))*zt)
+			;
+						
+	matrix AvNSb=vNSb(Vh5P2L,Vh5P2L);
+	real[int] bNSb = vNSb(0,Vh5P2L);
+	

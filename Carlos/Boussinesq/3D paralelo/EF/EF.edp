@@ -19,10 +19,10 @@ macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
 macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
 */
 //Cargamos las macros
-
+int[int] fforder = [1,1,1,1];
 load "iovtk"
-
-include "../Auxiliary/Macros_2D.idp"
+verbosity = 0;
+include "../Auxiliary/Macros_3D.idp"
 
 //Creamos la matriz 
 include "../Auxiliary/CuboNxNyNz.idp"
@@ -38,11 +38,15 @@ int techo = 1;
 //Definimos los espacios de EF 
 include "Fe_Spaces_NoStab_2D.idp"
 
-//Definimos las matrices de interpolacion y derivacion 
-include "Interp_matrix_NoStab_2D.idp"
-
 //Definimos los parametros a usar 
 include "parametros.idp"
+
+//Definimos las matrices de interpolacion y derivacion 
+include "Interp_matrix_NoStab_3D.idp"
+
+include "Interp_matrix_NoStab_3D_local.idp"
+
+
 
 //Definimos el intervalo de Rayleigh que vamos a calcular 
 real[int] vRa(ni+1);
@@ -71,7 +75,7 @@ for (int i=0;i<=1;i++)
 	
 	real Ra=vRa(i);
 	
-	cout<<"i: "<<i<<"-----"<<Ra<<endl;
+	if(mpirank==0){cout<<"i: "<<i<<"-----"<<Ra<<endl;}
 	
 	//Incluimos el levantamiento para la temperatura
 	include "Levantamiento.idp"
@@ -82,11 +86,11 @@ for (int i=0;i<=1;i++)
 	
 	//Definimos la solucion y la solucion en la etapa anterior 
 	
-	Vh5P2 [u1,u2,u3,t,p]; //Solucion 
+	Vh5P2 [u,uY,uZ,uT,uP]; //Solucion 
 	
 	
 	//[u1,u2,t,p] = [UX,UY,t,p];
-	u1[]=1.;
+	u[]=1.;
 	
 	
 	
@@ -97,9 +101,9 @@ for (int i=0;i<=1;i++)
 
 	VhP2 u1tmp,u2tmp,u3tmp; //Solucion en la etapa anterior 
 	{
-		u1tmp=u1;
-		u2tmp=u2;
-		u3tmp=u3;
+		u1tmp=u;
+		u2tmp=uY;
+		u3tmp=uZ;
 	}
 	
 	//Derivadas en la etapa anterior para el VMS-SMago
@@ -164,13 +168,13 @@ for (int i=0;i<=1;i++)
 		////////////////////////
 		//Segundo miembro
 		///////////////////////
-		real[int] bNS = vNSb(0,Vh5P2);
+		real[int] bNS = vNSb(0,Vh5P2L);
 		bNS += bNSf;
 		bNS += bTx;
 		bNS += bTy;
 		bNS += bTz;
-		set(Afinal, solver=UMFPACK);
-		u1[] = Afinal^-1*bNS;
+		
+		solvesystem(Afinal,bNS,u);
 		
 		//Pintamos la solucion de cada iteracion
 	
@@ -179,24 +183,24 @@ for (int i=0;i<=1;i++)
 	//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
 	
 	    VhP2 eu1,eu2,eu3;
-		eu1=u1-u1tmp;
-		eu2=u2-u2tmp;
-		eu3=u3-u3tmp;
+		eu1=u-u1tmp;
+		eu2=uY-u2tmp;
+		eu3=uZ-u3tmp;
 	
 		//Inicio calculo normas
-		itercontrol1 = sqrt(int3d(Th)(gradugradv(eu1,eu2,eu3,eu1,eu2,eu3)));  		    	 
-	    real itertmp1 = sqrt(int3d(Th)(gradugradv(u1,u2,u3,u1,u2,u3))); 
+		itercontrol1 = sqrt(intN(Th)(gradugradv(eu1,eu2,eu3,eu1,eu2,eu3)));  		    	 
+	    //real itertmp1 = sqrt(intN(Th)(gradugradv(u1,u2,u3,u1,u2,u3))); 
 	
 		iterrelative1 = itercontrol1;///itertmp1;	
-		cout << itercontrol1 << endl;
+		if(mpirank==0){cout << itercontrol1 << endl;}
 	//
 	//	cout << "------------------------------------" << endl;	
 	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
 	
 		//ACTUALIZ.
-		u1tmp=u1;
-		u2tmp=u2;
-		u3tmp=u3;
+		u1tmp=u;
+		u2tmp=uY;
+		u3tmp=uZ;
 						
 		udcAux[] = IPhP2P1*u1tmp[];
 		u1dcX[]  = DXP2*udcAux[];		
@@ -215,13 +219,18 @@ for (int i=0;i<=1;i++)
 	
 		Gr=mod(u1dcX,u1dcY,u1dcZ,u2dcX,u2dcY,u2dcZ,u3dcX,u3dcY,u3dcZ);
 		
+		if(ii%20==0)
+		{
+			savevtk("../Data/PostProc/Snapshots_"+Ra+"_"+ii+".vtu",Th,[u,uY,uZ],uT,uP,dataname="Velocity Temperature Pressure",order=fforder);
+ 	
+		}
 	
 	}
- 	SnapUX = u1;
-	SnapUY = u2;
-	SnapUZ = u3;
-	SnapT = t;
-	SnapP = p;
+ 	SnapUX = u;
+	SnapUY = uY;
+	SnapUZ = uZ;
+	SnapT = uT;
+	SnapP = uP;
 	SnapVis = Gr;
 	//Guardamos los snapshots 
 	
@@ -247,12 +256,9 @@ for (int i=0;i<=1;i++)
 	ofstream SnapshotsTau("../Data/Snapshots/Tau_" + Ra + ".txt");
 	SnapshotsTau << tau[] << endl;
 	
-	VhP2 T = t+G;
+	VhP2 T = uT+G;
 	
- 	savevtk("../Data/PostProc/velocity_"+Ra+".vtu",Th,[u1,u2,u3],dataname="Velocity field");
- 	savevtk("../Data/PostProc/pressure_"+Ra+".vtu",Th,p,dataname="Pressure field");
-	savevtk("../Data/PostProc/Temperature"+Ra+".vtu",Th,T,dataname="Temperature field");
-	
+ 	
 	
 	
 	
