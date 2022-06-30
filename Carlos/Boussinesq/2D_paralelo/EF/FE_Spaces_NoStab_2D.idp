@@ -1,0 +1,31 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Definicion de los espacios de EF no estables para problemas 2D. NECESARIO ESTABILIZAR LA PRESION 
+
+// Este programa define espacios de EF no estables para Velocidad-Presion [P2-P2]
+// Sintaxis de los espacios de EF: VhNPX    --> N Elementos Finitos PX. Ej : Vh3P2 -> [P2, P2, P2]
+//                                 VhNPXMPY	--> N Elementos Finitos PX y M Py. Ej: Vh2P2P1 -> [P2, P2, P1]	
+//								   VhNPXdc  --> N Elementos Finitos PXdc			
+
+fespace Vh4P2(Th, [P2, P2, P2, P2]);  //Cambiar P1 en la presión por P2 cuando se añada el termino de stab de presion 
+fespace Vh2P2(Th, [P2, P2]);
+fespace Vh2P1(Th, [P1,P1]);
+fespace Vh4P1(Th, [P1, P1, P1, P1]); //Cambiar P0 por P1 cuando se añada termino de estab presion 
+fespace Vh4P1dc(Th, [P1dc, P1dc, P1dc, P1dc]); 
+fespace VhP0(Th, P0); 
+fespace VhP1dc(Th, P1dc);
+fespace VhP1(Th, P1);
+fespace VhP2(Th, P2);
+// fespace Vh2P2(Th, [P2,P2]);
+
+fespace Vh4P2L(ThL, [P2, P2, P2, P2]);  //Cambiar P1 en la presión por P2 cuando se añada el termino de stab de presion 
+fespace Vh2P2L(ThL, [P2, P2]);
+fespace Vh2P1L(ThL, [P1,P1]);
+fespace Vh4P1L(ThL, [P1, P1, P1, P1]); //Cambiar P0 por P1 cuando se añada termino de estab presion 
+fespace Vh4P1dcL(ThL, [P1dc, P1dc, P1dc, P1dc]); 
+fespace VhP0L(ThL, P0); 
+fespace VhP1dcL(ThL, P1dc);
+fespace VhP1L(ThL, P1);
+fespace VhP2L(ThL, P2);
