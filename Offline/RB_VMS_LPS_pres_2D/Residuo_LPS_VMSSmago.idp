@@ -75,6 +75,7 @@ real[int] bStabPRes(Vh3P2.ndof);
 bRes = bNSRes;
 bRes += bSmagoRes;
 bRes += bStabPRes;
+mpi(cout<<"bres = "<<bRes.l2<<endl;)
 
 {
 	Vh3P2 [RES, RESY, RESP];

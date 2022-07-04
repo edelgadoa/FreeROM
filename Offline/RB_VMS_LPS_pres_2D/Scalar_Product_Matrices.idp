@@ -23,7 +23,7 @@ matrix DivPPEM = DivPPE(Vh2P2, VhP2);
 varf PenPE(uP, vP) = int2d(Th)(epspen*uP*vP);
 matrix PenPEM = PenPE(VhP2, VhP2);
 
-varf ConvLevPE([uu,uuY], [v,vY]) = int2d(Th)(UGradVW(Lev, uu, v) + UGradVW(uu, Lev, v));
+varf ConvLevPE([uu,uuY], [v,vY]) = int2d(Th)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
 matrix ConvLevPEM = ConvLevPE(Vh2P2, Vh2P2);
 
 varf DTPE([uu,uuY], [v,vY]) = int2d(Th)(UporV(uu,v));

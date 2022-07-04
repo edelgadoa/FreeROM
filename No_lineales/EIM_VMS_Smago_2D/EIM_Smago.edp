@@ -28,7 +28,7 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots; // numero de Snapshots que voy a querer calcular 
-ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/nSnapshots.txt"); // TODO: Hacerlo mediante la funcion read
+ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
 nSnapshotFILE>>nSnapshots;
 real[int] vReynolds(nSnapshots);
 
@@ -87,16 +87,19 @@ for (int i=1; i<Mmax; i++){
 real[int] muEIMF(M);
 muEIMF = muEIM(0:M-1);
 ofstream muFILE("Bases_EIM/muEIM_Smago.txt");
+muFILE.precision(20);
 muFILE<<muEIMF<<endl;
 
-ofstream MatrizFile("Bases_EIM/MatrizEIM_Smago.txt");
+ofstream MatrizFILE("Bases_EIM/MatrizEIM_Smago.txt");
 real[int, int] BFinal(M,M);
 BFinal = BM(0:M-1,0:M-1);
-MatrizFile<<BFinal<<endl;
+MatrizFILE.precision(20);
+MatrizFILE<<BFinal<<endl;
 
 real[int] TM(M);
 TM = Tmax(0:M-1);
 ofstream TmaxFILE("Bases_EIM/TintEIM_Smago.txt");
+TmaxFILE.precision(20);
 TmaxFILE<<TM<<endl;
 
 real[int] ErrorEIM(M);

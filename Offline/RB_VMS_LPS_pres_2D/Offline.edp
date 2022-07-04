@@ -169,9 +169,10 @@ for (int i=0; i<Nbases; i++){
 		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
 	
 	}
-	
-	plot([BaseV[i], BaseVY[i]], cmm="FE para Re = " + Reynolds, fill=1);
-	//include "GramSchmidt.idp"
+	VhP2 UL, ULY;
+	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
+	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
+	include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -189,7 +190,7 @@ for (int i=0; i<Nbases; i++){
 	
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(ugradvw(BaseV[i],BaseVY[i],uu,uuY,v,vY));
+	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
 	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
 	
 	// Construyo las matrices

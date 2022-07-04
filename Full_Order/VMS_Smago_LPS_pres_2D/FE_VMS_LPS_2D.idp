@@ -36,6 +36,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real[int] bNS(Vh3P2.ndof);
 	
 	include "Matrices_variables_NS_2D.idp"
+	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
 	real[int] bSmago(Vh3P2.ndof);

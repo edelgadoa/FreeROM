@@ -75,6 +75,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// Norma del Residuo
 	include "Residuo_LPS_VMSSmago.idp"	
 	mpi(cout<<"ResN = "<<ResG(iRB)<<endl;)
+
 	
 	// Beta_h
 	real Betah = fbeta(gammaI, muI, MuTrain(iRB)); 

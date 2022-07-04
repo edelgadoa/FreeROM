@@ -24,7 +24,7 @@ for (int j=0; j<=i; j++){
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
-			DivPRBL(j+Nbases, i) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
 			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRBL(j,i) = DTRBL(i,j);
