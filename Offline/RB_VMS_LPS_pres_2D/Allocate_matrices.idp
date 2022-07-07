@@ -6,25 +6,6 @@
 // Codigo donde inicializo las matrices que almacenaré de manera offline
 ///////////////////////////
 
-// Defino el filtrado de las derivadas del levantamiento
-VhP1dc DxFLev, DyFLev, DxFLevY, DyFLevY;
-VhP2 FLev, FLevY;
-
-FLev = Lev; 
-FLevY = LevY; //Los llamo asi para poder filtrarlos despues más facil
-
-
-{
-	VhP2 auxF;
-	auxF[] = IPhP2P1 * FLev[];
-	DxFLev[] = DXP2 * auxF[]; 
-	DyFLev[] = DYP2 * auxF[];
-	
-	auxF[] = IPhP2P1 * FLevY[];
-	DxFLevY[] = DXP2 * auxF[];
-	DyFLevY[] = DYP2 * auxF[];
-}
-
 
 // Definicion del array de matrices del gradiente en los Puntos mágicos
 real[int,int][int] GradPM(Mbases);
@@ -33,9 +14,10 @@ real[int][int] GradPMLev(Mbases);
 for (int i=0;i<Mbases;i++){
 	real[int,int] Aux(4,Nbases);
 	Aux=0;
-	GradPMLev[i]=[DxFLev[](PuntosMSmago(i)), DyFLev[](PuntosMSmago(i)), DxFLevY[](PuntosMSmago(i)), DyFLevY[](PuntosMSmago(i))];
+	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i))];
 	GradPM[i]=Aux(0:3,0:Nbases-1);
 }
+
 
 //Definicion de los arrays para calcular el tauk en el EIM de Tau
 real[int,int][int] NUK(Taubases), NGUK(Taubases);
@@ -48,7 +30,7 @@ for (int i=0; i<Taubases; i++){
 	Aux(0,0) = ngk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NUK[i] = Aux(0:Nbases,0:Nbases);
 	
-	varf Ngradgk(un1,v)=int2d(Th)((DxFLev^2+DyFLev^2+DxFLevY^2+DyFLevY^2)*v);
+	varf Ngradgk(un1,v)=int2d(Th)((FLevdX^2+FLevdY^2+FLevYdX^2+FLevYdY^2)*v);
 	real[int] nggk = Ngradgk(0,VhP0); 
 	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);

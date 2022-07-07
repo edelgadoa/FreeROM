@@ -48,6 +48,7 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
+macro mpi(variable)if(mpirank==0){variable} //EOM
 
 macro reduceSolution(uL,u,D,map)
 {
@@ -61,11 +62,11 @@ macro reduceSolution(uL,u,D,map)
 
 NewMacro solvesystem(A,b,u)
 {
-	Vh5P2L [u#L, u#LY, u#LZ, u#LT, u#LP]; 
-	MatAVh5P2 = A;
-	set(MatAVh5P2,sparams=sparamsv);
-	u#L[]=MatAVh5P2^-1*b;
-	reduceSolution(u#L,u,MatAVh5P2.D,mapVh5P2);
+	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
+	MatAVh4P2 = A;
+	set(MatAVh4P2,sparams=sparamsv);
+	u#L[]=MatAVh4P2^-1*b;
+	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
 }
 EndMacro
 

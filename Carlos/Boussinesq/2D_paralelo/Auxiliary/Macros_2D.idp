@@ -32,11 +32,11 @@ macro pause() mpiBarrier(mpiCommWorld)// EOM
 
 macro reduceSolution(uL,u,D,map)
 {
-	real[int] aux(u[].n);aux=0;
+	real[int] aux(u.n + 1);aux=0;
 	uL[].*=D;
 	aux(map)=uL[];
-	u[]=0;
-	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+	u=0;
+	mpiAllReduce(aux,u,mpiCommWorld,mpiSUM);
 }
 //EOM
 

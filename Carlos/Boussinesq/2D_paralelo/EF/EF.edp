@@ -77,9 +77,9 @@ for (int i=0;i<=0;i++)
 	
 	Vh4P2 [u,uY,uT,uP]; //Solucion 
 	
-	
+	real[int] uMed(Vh4P2.ndof + 1);
 	//[u1,u2,t,p] = [UX,UY,t,p];
-	u[]=1.;
+	// u[]=1.;
 	
 	
 	
@@ -146,19 +146,22 @@ for (int i=0;i<=0;i++)
 		Afinal+= SmaT;
 		Afinal+= LPSpres;
 		
+		matrix MFinal = [[Afinal, bMedPres], [bMedPres', 1]];
 		////////////////////////
 		//Segundo miembro
 		///////////////////////
-		real[int] bNS(Vh4P2L.ndof);
-		bNS = vNSb(0,Vh4P2L);
+		real[int] bNS(Vh4P2L.ndof + 1);
+		real[int] bVNS = vNSb(0,Vh4P2L); 
+		bNS = 0;
+		bNS += bVNS;
 		bNS += bNSf;
 		bNS += bTx;
 		bNS += bTy;
 		
-		solvesystem(Afinal,bNS,u)
+		solvesystem(MFinal,bNS,uMed)
 		
 		//Pintamos la solucion de cada iteracion
-	
+		
 	//	VhP2 TEMP=t+G;
 	
 	//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
@@ -173,7 +176,8 @@ for (int i=0;i<=0;i++)
 	
 		iterrelative1 = itercontrol1;///itertmp1;	
 		if(mpirank==0){cout << itercontrol1 << endl;}
-	if(ii%10==0){if(mpirank==0){cout << "media pres:" << intN(Th)(uP) << endl;}}
+		if(ii%10==0){if(mpirank==0){cout << "media pres:" << intN(Th)(uP) << endl;
+								plot(uP, fill = 1, value=1);}}
 	//	cout << "------------------------------------" << endl;	
 	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
 	

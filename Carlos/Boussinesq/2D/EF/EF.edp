@@ -73,7 +73,7 @@ for (int i=0;i<=ni;i++)
 	
 	Vh4P2 [u1,u2,t,p]; //Solucion 
 	
-	
+	real[int] uMed(Vh4P2.ndof + 1);
 	//[u1,u2,t,p] = [UX,UY,t,p];
 	u1[]=1.;
 	
@@ -142,16 +142,25 @@ for (int i=0;i<=ni;i++)
 		Afinal+= SmaT;
 		Afinal+= LPSpres;
 		
+		
+		matrix MF =[[Afinal,  bMedPres],  [bMedPres', 1]];
 		////////////////////////
 		//Segundo miembro
 		///////////////////////
-		real[int] bNS = vNSb(0,Vh4P2);
+		real[int] bNS(Vh4P2.ndof + 1);
+		bNS = 0;
+		real[int] bvNS = vNSb(0,Vh4P2);
+		
+		bNS += bvNS;
 		bNS += bNSf;
 		bNS += bTx;
 		bNS += bTy;
-		set(Afinal, solver=UMFPACK);
-		u1[] = Afinal^-1*bNS;
+		bNS(Vh4P2.ndof) = 0; // Este estoy seguro que es cero
+		//cout<<bNS<<endl;
+		set(MF, solver=UMFPACK);
+		uMed = MF^-1*bNS;
 		
+		u1[] = uMed;
 		//Pintamos la solucion de cada iteracion
 	
 	//	VhP2 TEMP=t+G;
@@ -168,6 +177,8 @@ for (int i=0;i<=ni;i++)
 	
 		iterrelative1 = itercontrol1;///itertmp1;	
 		cout << itercontrol1 << endl;
+		cout<<"Med pres: "<<int2d(Th)(p)<<endl;
+		// plot(p, fill=1, value=1);
 	//
 	//	cout << "------------------------------------" << endl;	
 	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;

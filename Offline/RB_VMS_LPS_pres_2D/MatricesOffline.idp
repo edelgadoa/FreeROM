@@ -77,7 +77,7 @@ for (int s=0; s<=i; s++){
 	
 	ConvRB[s] += CintG;
 }
-
+cout<<ConvRB<<endl;
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
 	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
@@ -85,7 +85,7 @@ for (int s=0; s<Mbases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			SintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], SmagoPEM[s]);
+			SintL(i,j) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
 			if(j<i){
 				SintL(j,i) = SintL(i,j);
 			}
@@ -97,6 +97,8 @@ for (int s=0; s<Mbases; s++){
 	SmagoRB[s] += SintG;
 }
 
+
+
 // LPS
 for (int s=0; s<Taubases; s++){
 	real[int, int] LPSintL(2*Nbases, 2*Nbases), LPSintG(2*Nbases, 2*Nbases);
@@ -104,7 +106,7 @@ for (int s=0; s<Taubases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]);
+			LPSintL(i + Nbases,j + Nbases) =int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
 			if(j<i){
 				LPSintL(j,i) = LPSintL(i,j);
 			}
@@ -127,7 +129,6 @@ for (int s=0; s<Mbases; s++){
    Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
    GradPM[s] = Dtk;
 }
-	
 
 
 // Matrices para el EIM LPS (parte del levantamiento)
@@ -192,7 +193,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			// real[int,int] Nggk=NGUK[ki];
 			VhP1dc dxfv1, dyfv1, dxfv2, dyfv2, DXFV1, DYFV1, DXFV2, DYFV2;
 			
-		    varf NDG(un,v) = int2d(Th)((dxfv1*DXFV1+dyfv1*DYFV1+dxfv2*DXFV2+dyfv2*DYFV2)*v);
+		    varf NDG(un,v) = int2d(Th)((dxfv1*DXFV1 + dyfv1*DYFV1 + dxfv2*DXFV2 + dyfv2*DYFV2)*v);
 			dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
 			DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j];
 			real[int] ndgaux = NDG(0,VhP0);
@@ -221,7 +222,7 @@ bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 
 contFF = 0;
 for (int s=0; s<Mbases; s++){
 	if(mpirank==contFF%mpisize){
-		bSmagoRB(s,i) = innerprodX(BaseV[i][], LevV[], SmagoPEM[s]);
+		bSmagoRB(s,i) = innerprodX(FBaseV[i][], FLev[], SmagoPEM[s]);
 	}
 	contFF++;
 }

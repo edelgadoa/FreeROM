@@ -21,7 +21,7 @@ tau = ((cc1*(Pr+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 
 varf termPres(pp,q) = intN(ThL)(tau*(pp)*(q));
 
-
+ 
 matrix TermP = termPres(VhP1dcL,VhP1dcL);
 
 matrix DDxx;
@@ -37,9 +37,4 @@ matrix DDyy;
 }
 
 LPSpres = DDxx + DDyy;
-cout<<mapVh4P2<<endl;
-//int[int, int] AuxLocal = mapVh4P2 '* mapVh4P2;
-//cout<<"nxm A local: "<<AuxLocal.n<<"x"<<AuxLocal.m<<endl;
-cout<<"nxm LPRES: "<<LPSpres.n<<"x"<<LPSpres.m<<endl;
-cout<<"dimenson EF local y global: "<<Vh4P2L.ndof<<","<<Vh4P2.ndof<<endl;
-//LPSpres.*=AuxLocal;
+

@@ -51,12 +51,13 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
-	uRBP[] = MBasePi*uRBv(i:2*I-1);
+	uRBP[] = MBasePi*uRBv(I:2*I-1);
 	
 	uRB[] += LevV[];
 	
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds, wait=1);
+		plot(uRBP, fill=1);
 		mpi(cout<<uRBv<<endl;)
 	}
 	

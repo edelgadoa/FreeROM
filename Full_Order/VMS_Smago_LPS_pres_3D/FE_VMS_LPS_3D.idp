@@ -79,7 +79,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uEFp[]=uEF[];
 	solvesystem(MFinal, bFinal, uEF);
 	
-
+	// mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
 	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY, errEFZ;

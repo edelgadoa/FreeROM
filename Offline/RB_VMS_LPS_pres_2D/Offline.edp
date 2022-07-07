@@ -45,7 +45,7 @@ include "../../Auxiliary/Normas.idp"
 include "../../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
-int Nbases = 30; 
+int Nbases = 10; 
 
 real[int] MuBest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -63,7 +63,9 @@ Vh2P2[int] [BaseV, BaseVY](Nbases);
 VhP2[int] BaseVel(Nbases);
 VhP2[int] BaseVelY(Nbases);
 
-VhP2[int] FBaseV(Nbases), FBaseVY(Nbases);
+Vh2P2[int] [FBaseV, FBaseVY](Nbases);//, FBaseVY(Nbases);
+
+VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases);;
 
 VhP1dc[int] FPdX(Nbases), FPdY(Nbases);
 
@@ -100,6 +102,7 @@ include "Allocate_matrices.idp"
 // Comenzamos con el Algoritmo Greedy
 
 Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+
 
 // Calculo la constante de Sobolev
 include "../../Auxiliary/Sobolev.idp"
@@ -141,16 +144,17 @@ include "Scalar_Product_Matrices.idp"
 
 for (int i=0; i<Nbases; i++){
 	
-	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+	if (1){//(search(ReSnapshots, Reynolds, 1.e-9)==-1){
 		// Si no lo he calculado todavía, lo calculo
 
 		include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
 		
-		BaseV[i][] = [uEF, uEFY];
-		BaseP[i][] = uEFP;
+		[BaseV[i], BaseVY[i]] = [uEF, uEFY];
+		BaseP[i] = uEFP;
 		
-		BaseVel[i][] = uEF; BaseVelY[i][] = uEFY; // Para construir las funciones filtradas después
-
+		BaseVel[i] = uEF; BaseVelY[i] = uEFY; // Para construir las funciones filtradas después
+		
+		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -167,12 +171,13 @@ for (int i=0; i<Nbases; i++){
 		BaseP[i][] = SolP;		
 		
 		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
+		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	
 	}
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	include "GramSchmidt.idp"
+	// include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -181,10 +186,11 @@ for (int i=0; i<Nbases; i++){
 	// TODO: GUARDAR LOS SNAPSHOTS -> PUEDO GUARDAR LA MATRIZ HASTA LA ITERACIÓN i
 
 	// Actualizo las soluciones filtradas
-	FBaseV[i][] = IPhP2P1*BaseVel[i][]; FBaseVY[i][] = IPhP2P1*BaseVelY[i][];
+	// FBaseV[i][] = IPh2P22P1*BaseV[i][];
+	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
 	
-	FVdX[i][] = DXP2*FBaseV[i][]; FVdY[i][] = DYP2*FBaseV[i][];
-	FVYdX[i][] = DXP2*FBaseVY[i][]; FVYdY[i][] = DYP2*FBaseVY[i][];
+	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
+	FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
 	
 	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	

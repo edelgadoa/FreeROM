@@ -50,16 +50,8 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	for (int s=0; s<Mbases; s++){
 		//if(mpirank==contS%mpisize){ //Si lo pongo para que lo haga en paralelo, me da un segmentation fault
 			// Matrices Smago
-			varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
-			matrix SPEM = SmagoPE(Vh2P1dc, Vh2P1dc);
-			matrix FiltroX, FiltroY;
-			{
-				FiltroX = (DX2P2IPh') * SPEM;
-				FiltroX = SPEM * DX2P2IPh;
-				FiltroY = (DY2P2IPh') * SPEM;
-				FiltroY = SPEM * DY2P2IPh;
-			}
-			SmagoPEM[s] = FiltroX + FiltroY;
+			varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+			SmagoPEM[s] = SmagoPE(Vh2P2, Vh2P2);
 			//}
 		contS++;
 	}
