@@ -59,7 +59,7 @@ VhP1dc SnapVis;
 
 //BUCLE RESOLVER EL PROBLEMA
 
-for (int i=0;i<=0;i++)
+for (int i=0;i<=ni;i++)
 {
 	
 	real Ra=vRa(i);
@@ -77,9 +77,9 @@ for (int i=0;i<=0;i++)
 	
 	Vh4P2 [u,uY,uT,uP]; //Solucion 
 	
-	real[int] uMed(Vh4P2.ndof + 1);
+	
 	//[u1,u2,t,p] = [UX,UY,t,p];
-	// u[]=1.;
+	u[]=0.;
 	
 	
 	
@@ -136,9 +136,12 @@ for (int i=0;i<=0;i++)
 		matrix LPSpres; 
 		include "Matriz_LPS_pres_2D.idp"
 		
+		
+		
 		///////////////////////////
 		//Matriz final 
 		///////////////////////////
+		
 		
 		matrix Afinal;
 		Afinal=AvNSb + AvNS;
@@ -146,22 +149,22 @@ for (int i=0;i<=0;i++)
 		Afinal+= SmaT;
 		Afinal+= LPSpres;
 		
-		matrix MFinal = [[Afinal, bMedPres], [bMedPres', 1]];
+		
+		
 		////////////////////////
 		//Segundo miembro
 		///////////////////////
-		real[int] bNS(Vh4P2L.ndof + 1);
-		real[int] bVNS = vNSb(0,Vh4P2L); 
-		bNS = 0;
-		bNS += bVNS;
+		real[int] bNS(Vh4P2L.ndof);
+		bNS = vNSb(0,Vh4P2L,tgv=-1);
 		bNS += bNSf;
 		bNS += bTx;
 		bNS += bTy;
 		
-		solvesystem(MFinal,bNS,uMed)
+		
+		solvesystem(Afinal,bNS,u)
 		
 		//Pintamos la solucion de cada iteracion
-		
+	
 	//	VhP2 TEMP=t+G;
 	
 	//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
@@ -173,11 +176,11 @@ for (int i=0;i<=0;i++)
 		//Inicio calculo normas
 		itercontrol1 = sqrt(int2d(Th)(gradugradv(eu1,eu2,eu1,eu2)));  		    	 
 	    
-	
+		
 		iterrelative1 = itercontrol1;///itertmp1;	
-		if(mpirank==0){cout << itercontrol1 << endl;}
-		if(ii%10==0){if(mpirank==0){cout << "media pres:" << intN(Th)(uP) << endl;
-								plot(uP, fill = 1, value=1);}}
+		if(mpirank==0){cout << itercontrol1 << endl;
+			cout << "media pres:" << intN(Th)(uP) << endl;}
+	
 	//	cout << "------------------------------------" << endl;	
 	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
 	

@@ -5,8 +5,8 @@
 //COEF. ESTAB. CODINA
 varf tauK(unused,v)=intN(Th)((u1tmp^2+u2tmp^2)*v);
 varf tauKT(unused,v)=intN(Th)(((u1dcX)^2+(u1dcY)^2+(u2dcX)^2+(u2dcY)^2)*v);
-real[int] tK=tauK(0,VhP0);
-real[int] tKT=tauKT(0,VhP0);
+real[int] tK=tauK(0,VhP0,tgv=-1);
+real[int] tKT=tauKT(0,VhP0,tgv=-1);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);
@@ -19,22 +19,29 @@ tau = ((cc1*(Pr+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 //MATRIZ ESTAB. PRES.
 /////////////////////////////
 
-varf termPres(pp,q) = intN(ThL)(tau*(pp)*(q));
+varf termPres(pp,q) = intN(Th)(tau*pp*q);
 
- 
-matrix TermP = termPres(VhP1dcL,VhP1dcL);
+
+matrix TermP = termPres(VhP1dcL,VhP1dcL,tgv=-1);
+
 
 matrix DDxx;
 {
-	DDxx = TermP * IPhD4X4P2L; 
-	DDxx = IPhD4X4P2L' * DDxx;
+	matrix Maux;
+	Maux = IPhD4X4P2L;
+	DDxx = Maux' *TermP; 
+	DDxx = DDxx *Maux;
 }
 
 matrix DDyy;
 {
-	DDyy = TermP * IPhD4Y4P2L; 
-	DDyy = IPhD4Y4P2L' * DDyy;
+	matrix Maux;
+	Maux = IPhD4Y4P2L;
+	DDyy = Maux' * TermP; 
+	DDyy = DDyy * Maux;
 }
 
-LPSpres = DDxx + DDyy;
+LPSpres =  (DDxx + DDyy);
+
+
 

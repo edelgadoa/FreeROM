@@ -119,3 +119,6 @@ matrix IPhD4X4P2L = IPhP1dcP1L * D4X4P2L; // (I-πh) de ∂x componente 4 de 4P2
 matrix IPhD4Y4P2L = IPhP1dcP1L * D4Y4P2L; // (I-πh) de ∂y componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Z4P2L = IPhP1dcP1L * D4Z4P2L; // (I-πh) de ∂z componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 
+// Global a local 
+
+matrix Vh4P2GL = interpolate(Vh4P2L,Vh4P2);

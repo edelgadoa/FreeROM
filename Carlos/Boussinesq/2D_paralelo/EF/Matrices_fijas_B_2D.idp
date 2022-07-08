@@ -10,7 +10,7 @@ varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
 			   -div(v1,v2)*pp+div(uu1,uu2)*q
 			   +Pr*gradugradv(uu1,uu2,v1,v2)
 			   +Grad(tt)'*Grad(zt)
-			   // +1.e-8*pp*q
+			   +1.e-8*pp*q
 			   -Pr*Ra*tt*v2)
 			   //Segundo miembro
 			   +intN(ThL)(Pr*Ra*G*v2
@@ -23,14 +23,7 @@ varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
 						
 matrix AvNS;
 
-AvNS=vNS(Vh4P2L,Vh4P2L);
+AvNS=vNS(Vh4P2L,Vh4P2L,tgv=-1);
 
 real[int] bNSf(Vh4P2L.ndof);
 bNSf=vNS(0,Vh4P2L);
-
-
-// Termino para el multiplicador de Lagrange
-varf MedPres ([uu1,uu2,tt,pp],[v1,v2,zt,q]) = intN(ThL)(q);
-
-real[int] bMedPres= MedPres(0,Vh4P2L);
-

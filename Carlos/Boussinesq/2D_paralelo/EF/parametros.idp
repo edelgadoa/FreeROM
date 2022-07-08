@@ -9,7 +9,8 @@ include "macro_ddm.idp";
 
 load "PETSc";
 Mat MatAVh4P2;
-int[int] mapVh4P2;
+Mat MatAVhP1dc;
+int[int] mapVh4P2,mapVhP1dc;
 string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
 
 if(petsc){	
@@ -22,7 +23,17 @@ if(petsc){
 		macro init(i) [i, i, i, i] // EOM
 		createMat(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
 	}	
+	mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
+	{
+		macro def(i) [i] //
+		macro init(i) [i] //
+		createMat(ThL,MatAVhP1dc,P1dc);
+	}
+	
+	
 }
+
+real[int] auxD = MatAVhP1dc.D;
 
 
 VhP0 mk,tau,h,tKcod,tKTcod;
@@ -44,7 +55,7 @@ real Pr=0.71; //Prandlt aire
 
 real dt=1.e-2;//2.e-3
 real dtt = 1./dt;
-real epspen=1.e-10;//1.e-8
+real epspen=1.e-6;//1.e-8
 
 real Ramin=1.e3;//1.e5
 real Ramax=1.e5;//1.e6
@@ -54,5 +65,5 @@ int ni=100;
 
 
 int nIterations=2000;
-real epsError = 1.e-10;//1.e-8
+real epsError = 1.e-6;//1.e-8
 

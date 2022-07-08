@@ -13,7 +13,7 @@ varf VMSSmaT([un1l,un2l,TT,unusedpp],[v1l,v2l,zl,ql]) =
 		//FALTA SEGUNDO MIEMBRO DEL LEVANTAMIENTO DE LA TEMPERATURA
 						
 										
-matrix MT = VMSSmaT(Vh4P1dcL,Vh4P1dcL);
+matrix MT = VMSSmaT(Vh4P1dcL,Vh4P1dcL,tgv=-1);
 					
 matrix SmaT;
 matrix DXXT;
@@ -29,7 +29,7 @@ real[int] bTx(Vh4P2L.ndof),bTy(Vh4P2L.ndof);
 		DXXT  = (Maux')*MT;
 		DXXT  = DXXT*Maux;
 		Gfv1[]=MauxG*GG1[];
-		real[int] bTs=VMSSmaT(0,Vh4P1dcL);
+		real[int] bTs=VMSSmaT(0,Vh4P1dcL,tgv=-1);
 		bTx=(Maux')*bTs;
 	
 		Maux = DY4P2L*IPh4P24P1L;
@@ -37,7 +37,7 @@ real[int] bTx(Vh4P2L.ndof),bTy(Vh4P2L.ndof);
 		DYYT  = (Maux')*MT;
 		DYYT  = DYYT*Maux;
 		Gfv1[]=MauxG*GG1[];
-		bTs=VMSSmaT(0,Vh4P1dcL);
+		bTs=VMSSmaT(0,Vh4P1dcL,tgv=-1);
 		bTy=(Maux')*bTs;
 	
 	}

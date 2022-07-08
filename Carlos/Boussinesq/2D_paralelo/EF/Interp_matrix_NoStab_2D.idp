@@ -31,6 +31,7 @@ matrix IPhP2P1, IPh4P24P1, IPhP1dcP1;
 			IdP1dc = faux1[];
             IdP1 = fauxp1[];
 			Id4P2=[[IdP2, 0, 0,0],[0, IdP2, 0, 0],[0, 0, IdP2,0],[0, 0, 0, IdP2]];
+			
 		}
 		
 		matrix PIg = interpolate(VhP1,VhP1dc); //(Id-πh) P1dc->P1->P1dc
@@ -47,6 +48,8 @@ matrix IPhP2P1, IPh4P24P1, IPhP1dcP1;
 		matrix IP4=interpolate(Vh4P2,Vh4P1);
 		matrix IPPI4=IP4*PI4;
 		IPh4P24P1 = Id4P2 + (-1)*IPPI4; // (Id-πh) 4P2->4P1->4P2
+		
+		
 }
 
 // Matrices de derivadas	
