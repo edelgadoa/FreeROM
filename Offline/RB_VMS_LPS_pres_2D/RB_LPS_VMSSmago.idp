@@ -46,7 +46,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	}
 	
 	sigmaEIMS = MEIMS^-1 * bEIMS;
-	
+	cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] SmagoRBint(2*I, 2*I), SmagoRBN(2*Nbases, 2*Nbases);
 		SmagoRBN = SmagoRB[s];

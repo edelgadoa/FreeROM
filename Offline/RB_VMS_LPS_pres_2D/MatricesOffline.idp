@@ -77,7 +77,7 @@ for (int s=0; s<=i; s++){
 	
 	ConvRB[s] += CintG;
 }
-cout<<ConvRB<<endl;
+
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
 	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);

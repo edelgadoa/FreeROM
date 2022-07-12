@@ -1,0 +1,45 @@
+
+// Definition of macros
+macro div(u1,u2) (dx(u1)+dy(u2)) //EOM
+macro gradugradv(u1,u2,v1,v2) (dx(u1)*dx(v1) + dy(u1)*dy(v1) + dx(u2)*dx(v2) + dy(u2)*dy(v2)) //EOM
+
+
+// Create mesh
+mesh Th = square(50,50);
+
+// Definition of spaces
+fespace Vh(Th, [P2, P2, P1]); 
+
+func f=1;
+
+// Variational formulation
+varf Stokes([u, uY, uP],[v, vY, vP]) = int2d(Th)(gradugradv(u,uY,v,vY) - uP*div(v,vY) + vP*div(u,uY) + 1e-8*uP*vP)
+		//- int1d(Th, 3)(1e30*(u*v + uY*vY)) 
+		//- int1d(Th, 3)(1e30*v)
+		//- int1d(Th,1,2,4)(1e30*(u*v + uY*vY))
+		 + on(3, u=1, uY=0) + on(1, 2, 4, u=0, uY=0)
+		 ;
+
+varf Lagrange([u, uY, uP],[v, vY, vP]) = int2d(Th)(vP);
+
+matrix MStokes = Stokes(Vh, Vh, tgv = -1);
+real[int] bStokes = Stokes(0, Vh, tgv = -10);
+
+
+real[int] Lag = Lagrange(0, Vh);
+
+matrix MFinal = [[MStokes, Lag], [Lag', 1]];
+set(MFinal, solver=sparsesolver);
+
+real[int] bfinal(Vh.ndof + 1);
+bfinal(0:Vh.ndof-1) = bStokes(0:Vh.ndof-1);
+bfinal(Vh.ndof) = 0;
+
+Vh [uEF, uEFY, uEFP];
+
+uEF[] = MStokes^-1*bStokes;
+
+plot([uEF, uEFY], cmm = "Velocity", value = 1);
+plot([uEFP], cmm = "Pressure", value = 1, fill = 1);
+
+cout<<"Mean pressure: "<<int2d(Th)(uEFP)<<endl;

@@ -5,8 +5,8 @@
 //COEF. ESTAB. CODINA
 varf tauK(unused,v)=intN(Th)((u1tmp^2+u2tmp^2)*v);
 varf tauKT(unused,v)=intN(Th)(((u1dcX)^2+(u1dcY)^2+(u2dcX)^2+(u2dcY)^2)*v);
-real[int] tK=tauK(0,VhP0,tgv=-1);
-real[int] tKT=tauKT(0,VhP0,tgv=-1);
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);
@@ -22,7 +22,7 @@ tau = ((cc1*(Pr+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 varf termPres(pp,q) = intN(Th)(tau*pp*q);
 
 
-matrix TermP = termPres(VhP1dcL,VhP1dcL,tgv=-1);
+matrix TermP = termPres(VhP1dcL,VhP1dcL,tgv=-10);
 
 
 matrix DDxx;

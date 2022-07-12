@@ -11,38 +11,34 @@ func Pk = [P2, P2, P1];
 
 // Create mesh
 mesh Th = square(50,50);
-// mesh ThL = Th;
+mesh ThL = Th;
 
 // Definition of spaces
 fespace Vh(Th, [P2, P2, P1]); 
-// fespace VhL(ThL, [P2, P2, P1]);
-
-
+fespace VhL(ThL, [P2, P2, P1]);
 
 
 // // I think here is where I don't do things well
 // macro reduceSolution(uL,u,D,map)
 // {
 // 	real[int] aux(u.n);aux=0;
-// 	uL[].*=D;
-// 	aux(map)=uL[];
-// 	u[]=0;
-// 	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+// 	uL.*=D;
+// 	aux(map)=uL;
+// 	u=0;
+// 	mpiAllReduce(aux,u,mpiCommWorld,mpiSUM);
 // }
 // //EOM
 //
 // NewMacro solveblocksystem(A,b,u)
 // {
-// 	Vh [u#L, u#LY, u#LP];
-// 	MatAVh = A;
+// 	Mat MatAVh = A;
 // 	set(MatAVh,sparams=sparamsv);
 // 	real[int] xsol= MatAVh^-1*b;
-// 	if(mpirank==0){xsol.resize(xsol.n - 1);}
-// 	u#L[] = xsol;
-// 	reduceSolution(u#L, u, MatAVh.D, mapVh);
+// 	real[int] xsolG(xsol.n);
+// 	reduceSolution(xsolG, u, MatAVh.D, mapVh);
 // }
 // EndMacro
-////
+//
 
 // Load PETSc
 
@@ -50,35 +46,39 @@ fespace Vh(Th, [P2, P2, P1]);
 
 string sparamsv = "-pc_type lu";
 Mat MStokes;
-createMat(Th, MatAVh, [P2, P2, P1])
+macro def(i) [i, iY, iP] //
+macro init(i) [i, i, i] // EOM
 
-// int[int] myN2o;
-// macro ThLN2O() myN2o // EOM
-// buildDmesh(ThL);
-// int[int] mapVh;
-// mapVh = restrict(VhL,Vh,myN2o);
+
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
+int[int] mapVh;
+mapVh = restrict(VhL,Vh,myN2o);
+
+createMat(ThL, MStokes, [P2, P2, P1])
 // {
-// 	macro def(i) [i, iY, iP] //
-// 	macro init(i) [i, i, i] // EOM
+
 // 	createMat(ThL, MatAVh, [P2, P2, P1]);
 // }
 
 
 // Variational formulation
-varf Stokes([u, uY, uP],[v, vY, vP]) = intN(Th)(gradugradv(u,uY,v,vY) - uP*div(v,vY) + vP*div(u,uY)) + on(3, u=1, uY=0) + on(1, 2, 4, u=0, uY=0);
+varf Stokes([u, uY, uP],[v, vY, vP]) = intN(ThL)(gradugradv(u,uY,v,vY) - uP*div(v,vY) + vP*div(u,uY)) + on(3, u=1, uY=0) + on(1, 2, 4, u=0, uY=0);
 
-varf Lagrange([u, uY, uP],[v, vY, vP]) = intN(Th)(vP);
+varf Lagrange([u, uY, uP],[v, vY, vP]) = intN(ThL)(vP);
 
-real[int] bStokes = Stokes(0, Vh);
+real[int] bStokes = Stokes(0, VhL);
 
-real[int] Lag = Lagrange(0, Vh);
+real[int] Lag = Lagrange(0, VhL);
 
 real[int] pLag, pSto, pSol;
-MStokes = Stokes(Vh, Vh);
-ChangeNumbering(MStokes, bStokes, pSto);
-ChangeNumbering(MStokes, Lag, pLag);
+MStokes = Stokes(VhL, VhL);
+//ChangeNumbering(MStokes, bStokes, pSto);
+//ChangeNumbering(MStokes, Lag, pLag);
 
-Mat Mfinal = [[MatAVh, pLag], [pLag', 1]];
+Mat Mfinal = [[MStokes, pLag], [pLag', 1]];
+//cout<<Mfinal.m<<"x"<<Mfinal.n<<endl;
 
 if(mpirank == 0){
 	pSto.resize(pSto.n + 1);
@@ -86,11 +86,20 @@ if(mpirank == 0){
 	bStokes.resize(bStokes.n + 1);
 	bStokes = [bStokes(0:bStokes.n - 2), 0];
 }
-
+cout<<bStokes.n<<endl;
 set(Mfinal, sparams = sparamsv);
-real[int] xsol = Mfinal^-1*bStokes;
+//real[int] xsol(bStokes.n);
+
+//solveblocksystem(Mfinal, bStokes, xsol)
+cout<<"System init"<<endl;
+real[int] xsol=Mfinal^-1*bStokes;
+cout<<"System solved"<<endl;
+VhL [uL, uLY, uLP];
+uL[] = xsol;
 
 Vh [uEF, uEFY, uEFP];
+cout<<"MPIALLREDUCE"<<endl;
+mpiAllReduce(uL[], uEF[], mpiCommWorld,mpiSUM);
 
 //solveblocksystem(MatAVh, bfinal, uEF);
 plot([uEF, uEFY], cmm = "Velocity", value = 1);

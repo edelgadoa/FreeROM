@@ -23,7 +23,7 @@ varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
 						
 matrix AvNS;
 
-AvNS=vNS(Vh4P2L,Vh4P2L,tgv=-1);
+AvNS=vNS(Vh4P2L,Vh4P2L,tgv=-10);
 
 real[int] bNSf(Vh4P2L.ndof);
-bNSf=vNS(0,Vh4P2L);
+bNSf=vNS(0,Vh4P2L, tgv=-10);

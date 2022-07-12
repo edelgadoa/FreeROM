@@ -14,7 +14,7 @@
 	   		-([u,uY]'*Grad(G))*zt)
 			;
 						
-	matrix AvNSb=vNSb(Vh4P2L,Vh4P2L,tgv=-1);
+	matrix AvNSb=vNSb(Vh4P2L,Vh4P2L,tgv=-10);
 	real[int] bNSb(Vh4P2L.ndof);
-	bNSb = vNSb(0,Vh4P2L,tgv=-1);
+	bNSb = vNSb(0,Vh4P2L,tgv=-10);
 	

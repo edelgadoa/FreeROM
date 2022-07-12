@@ -139,12 +139,13 @@ else{
 	uFijoYdX[] = DXP2IPh*uFijoY[]; uFijoYdY[] = DYP2IPh*uFijoY[];
 }
 
+
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"
 
 for (int i=0; i<Nbases; i++){
 	
-	if (1){//(search(ReSnapshots, Reynolds, 1.e-9)==-1){
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 		// Si no lo he calculado todavía, lo calculo
 
 		include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
@@ -153,13 +154,17 @@ for (int i=0; i<Nbases; i++){
 		BaseP[i] = uEFP;
 		
 		BaseVel[i] = uEF; BaseVelY[i] = uEFY; // Para construir las funciones filtradas después
+		//BaseVel[i] = BaseVel[i] + Lev; BaseVelY[i] = BaseVelY[i] + LevY;
 		
+
 		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
-	
+		
+
+		
 		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
 	}
 	else{
@@ -171,6 +176,7 @@ for (int i=0; i<Nbases; i++){
 		BaseP[i][] = SolP;		
 		
 		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
+		//BaseVel[i] = BaseVel[i] + Lev; BaseVelY[i] = BaseVelY[i] + LevY;
 		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	
 	}
@@ -194,6 +200,25 @@ for (int i=0; i<Nbases; i++){
 	
 	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	
+	// VhP1dc GR, GrEIM;
+	// GrEIM=0;
+	// GR = mod(FVdX[i], FVdY[i], FVYdX[i], FVYdY[i]);
+	//
+	// real[int] beim(Mbases);
+	// for (int s=0; s<Mbases; s++){
+	// 	beim(s) = GR[](PuntosMSmago(s));
+	// }
+	// cout<<beim<<endl;
+	//
+	// real[int] sigmaE = MEIMS^-1*beim;
+	//
+	// cout<<sigmaE<<endl;
+	// for(int s=0;s<Mbases;s++){
+	// 	GrEIM = GrEIM + sigmaE(s)*EIMSmago[s];
+	// }
+	//
+	// plot(GR, cmm="Gr");
+	// plot(GrEIM, cmm="GREIM");
 	
 	// Defino el nuevo producto escalar para la convección
 	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));

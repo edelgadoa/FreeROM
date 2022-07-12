@@ -131,6 +131,6 @@ matrix DX3P2IPh = DX3P2 * IPh3P23P1;
 matrix DY3P2IPh = DY3P2 * IPh3P23P1;
 
 matrix DXP2IPh = DXP2 * IPhP2P1;
-matrix DYP2IPh = DXP2 * IPhP2P1;
+matrix DYP2IPh = DYP2 * IPhP2P1;
 
 
