@@ -1,0 +1,99 @@
+load "PETSc";
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+
+// Definition of macros
+macro div(u1,u2) (dx(u1)+dy(u2)) //EOM
+macro gradugradv(u1,u2,v1,v2) (dx(u1)*dx(v1) + dy(u1)*dy(v1) + dx(u2)*dx(v2) + dy(u2)*dy(v2)) //EOM
+
+
+func Pk = [P2, P2, P1];
+
+// Create mesh
+mesh Th = square(50,50);
+// mesh ThL = Th;
+
+// Definition of spaces
+fespace Vh(Th, [P2, P2, P1]); 
+// fespace VhL(ThL, [P2, P2, P1]);
+
+
+
+
+// // I think here is where I don't do things well
+// macro reduceSolution(uL,u,D,map)
+// {
+// 	real[int] aux(u.n);aux=0;
+// 	uL[].*=D;
+// 	aux(map)=uL[];
+// 	u[]=0;
+// 	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+// }
+// //EOM
+//
+// NewMacro solveblocksystem(A,b,u)
+// {
+// 	Vh [u#L, u#LY, u#LP];
+// 	MatAVh = A;
+// 	set(MatAVh,sparams=sparamsv);
+// 	real[int] xsol= MatAVh^-1*b;
+// 	if(mpirank==0){xsol.resize(xsol.n - 1);}
+// 	u#L[] = xsol;
+// 	reduceSolution(u#L, u, MatAVh.D, mapVh);
+// }
+// EndMacro
+////
+
+// Load PETSc
+
+
+
+string sparamsv = "-pc_type lu";
+Mat MStokes;
+createMat(Th, MatAVh, [P2, P2, P1])
+
+// int[int] myN2o;
+// macro ThLN2O() myN2o // EOM
+// buildDmesh(ThL);
+// int[int] mapVh;
+// mapVh = restrict(VhL,Vh,myN2o);
+// {
+// 	macro def(i) [i, iY, iP] //
+// 	macro init(i) [i, i, i] // EOM
+// 	createMat(ThL, MatAVh, [P2, P2, P1]);
+// }
+
+
+// Variational formulation
+varf Stokes([u, uY, uP],[v, vY, vP]) = intN(Th)(gradugradv(u,uY,v,vY) - uP*div(v,vY) + vP*div(u,uY)) + on(3, u=1, uY=0) + on(1, 2, 4, u=0, uY=0);
+
+varf Lagrange([u, uY, uP],[v, vY, vP]) = intN(Th)(vP);
+
+real[int] bStokes = Stokes(0, Vh);
+
+real[int] Lag = Lagrange(0, Vh);
+
+real[int] pLag, pSto, pSol;
+MStokes = Stokes(Vh, Vh);
+ChangeNumbering(MStokes, bStokes, pSto);
+ChangeNumbering(MStokes, Lag, pLag);
+
+Mat Mfinal = [[MatAVh, pLag], [pLag', 1]];
+
+if(mpirank == 0){
+	pSto.resize(pSto.n + 1);
+	pSto = [pSto(0:pSto.n - 2), 0];
+	bStokes.resize(bStokes.n + 1);
+	bStokes = [bStokes(0:bStokes.n - 2), 0];
+}
+
+set(Mfinal, sparams = sparamsv);
+real[int] xsol = Mfinal^-1*bStokes;
+
+Vh [uEF, uEFY, uEFP];
+
+//solveblocksystem(MatAVh, bfinal, uEF);
+plot([uEF, uEFY], cmm = "Velocity", value = 1);
+plot([uEFP], cmm = "Pressure", value = 1, fill = 1);
+
+cout<<"Mean pressure: "<<int2d(Th)(uEFP)<<endl;
