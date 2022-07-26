@@ -1,0 +1,267 @@
+////////////
+// FreeROM
+///////////
+
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago ///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago de boussinesq. 
+// Elemento Finito P2-P2-P1 en vel-temp-pres 
+
+/*
+//Definimos macros
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt(dx(u1)^2+dy(u1)^2+dx(u2)^2+dy(u2)^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+*/
+//Cargamos las macros
+verbosity  =0.;
+include "../Auxiliary/Macros_2D.idp"
+
+//Creamos la matriz 
+include "../Auxiliary/Mesh.idp"
+
+//Definimos los espacios de EF 
+include "Fe_Spaces_NoStab_2D.idp"
+
+//Definimos los parametros a usar 
+include "parametros.idp"
+
+//Definimos las matrices de interpolacion y derivacion 
+include "Interp_matrix_NoStab_2D.idp"
+
+include "Interp_matrix_NoStab_2D_local.idp"
+
+
+
+//Definimos el intervalo de Rayleigh que vamos a calcular 
+real[int] vRa(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRa(i)=Ramin+i*(Ramax-Ramin)/(ni);
+	//vRa(i)=10^(3+i*(1.)/50);
+}
+
+
+
+
+////////////////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad Boussinesq 2D//
+///////////////////////////////////////////////////////
+
+VhP2 SnapUX,SnapUY,SnapT,SnapP;
+VhP1dc SnapVis;
+
+
+//BUCLE RESOLVER EL PROBLEMA
+
+for (int i=0;i<=ni;i++)
+{
+	
+	real Ra=vRa(i);
+	
+	if(mpirank==0){cout<<"i: "<<i<<"-----"<<Ra<<endl;}
+	
+	//Incluimos el levantamiento para la temperatura
+	include "Levantamiento.idp"
+
+	//Incluimos la matriz fija 
+
+	include "Matrices_fijas_B_2D.idp"
+	
+	//Definimos la solucion y la solucion en la etapa anterior 
+	
+	Vh4P2 [u,uY,uT,uP]; //Solucion 
+	
+	
+	//[u1,u2,t,p] = [UX,UY,t,p];
+	u[]=0.;
+	
+	
+	
+	// Preliminares a la iteracion
+	real itercontrol1 = 2.*epsError + 1.;
+
+	real iterrelative1 = itercontrol1;
+
+	VhP2 u1tmp,u2tmp; //Solucion en la etapa anterior 
+	{
+		u1tmp=u;
+		u2tmp=uY;
+	}
+	
+	//Derivadas en la etapa anterior para el VMS-SMago
+	VhP2 udcAux;
+	VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,Gr;
+
+	udcAux[] = IPhP2P1*u1tmp[];
+	u1dcX[]  = DXP2*udcAux[];		
+	u1dcY[]  = DYP2*udcAux[];
+	 
+	udcAux[] = IPhP2P1*u2tmp[];
+	u2dcX[]  = DXP2*udcAux[];
+	u2dcY[]  = DYP2*udcAux[];
+
+	Gr=mod(u1dcX,u1dcY,u2dcX,u2dcY);
+	//Bucle para llegar a la estabilizacion 
+	for(int ii=0;ii<=nIterations && (iterrelative1 > epsError); ii++)
+	{
+	
+	
+		///////////////////////////////////
+		//Matriz término de Conveccion N-S
+		///////////////////////////////////
+		include "Matrices_variables_B_2D.idp"
+	
+		////////////////////////////////////
+		////MATRIZ SMAGORINSKY VEL FILTRADA
+		////////////////////////////////////
+		
+		include "Matriz_VMSSmago_vel_2D.idp"
+		
+		////////////////////////////////////
+		////MATRIZ SMAGORINSKY TEMP FILTRADA
+		////////////////////////////////////
+		
+		include "Matriz_VMSSmago_temp_2D.idp"
+		
+		////////////////////////////////////
+		/////MATRIZ LPS 
+		////////////////////////////////////
+		
+		matrix LPSpres; 
+		include "Matriz_LPS_pres_2D.idp"
+		
+		
+		
+		///////////////////////////
+		//Matriz final 
+		///////////////////////////
+		
+		
+		matrix Afinal;
+		Afinal=AvNSb + AvNS;
+		Afinal+= Sma;
+		Afinal+= SmaT;
+		Afinal+= LPSpres;
+		
+		
+		
+		////////////////////////
+		//Segundo miembro
+		///////////////////////
+		real[int] bNS(Vh4P2L.ndof);
+		bNS = vNSb(0,Vh4P2L);
+		bNS += bNSf;
+		bNS += bTx;
+		bNS += bTy;
+		
+		
+		MatAVh4P2 = Afinal;
+	
+		bNS.resize(bNS.n+1);
+		bNS(bNS.n-1) = 0;
+	
+		varf Lagrange([uu,uuY,uuT,uuP],[vv,vvY,vT,vP]) = intN(ThL)(vP);
+		real[int] Lag = Lagrange(0,Vh4P2L);
+	
+		real[int] pLag;
+		ChangeNumbering(MatAVh4P2,Lag,pLag);
+		Mat Mfinal = [[MatAVh4P2,pLag],[pLag',1]];
+	
+		set(Mfinal,sparams=sparamsv);
+		
+		real[int] xsol = Mfinal^-1*bNS;
+	
+		Vh4P2L [uL,uLY,uLT,uLP];
+		uL[] = 0.;
+	
+		uL[] = xsol;
+	
+		reduceSolution(uL,u, MatAVh4P2.D, mapVh4P2);
+		
+	
+		
+		
+		//solvesystem(Afinal,bNS,u)
+		
+		
+		//Pintamos la solucion de cada iteracion
+	
+	//	VhP2 TEMP=t+G;
+	
+	//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
+	
+	    VhP2 eu1,eu2;
+		eu1=u-u1tmp;
+		eu2=uY-u2tmp;
+	
+		//Inicio calculo normas
+		itercontrol1 = sqrt(intN(Th)(gradugradv(eu1,eu2,eu1,eu2)));  		    	 
+	    
+		
+		iterrelative1 = itercontrol1;///itertmp1;	
+		if(mpirank==0){cout << itercontrol1 << endl;
+			cout << "media pres:" << intN(Th)(uP) << endl;}
+	
+	//	cout << "------------------------------------" << endl;	
+	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+		//ACTUALIZ. 
+		u1tmp=u;
+		u2tmp=uY;
+						
+		udcAux[] = IPhP2P1*u1tmp[];
+		u1dcX[]  = DXP2*udcAux[];		
+		u1dcY[]  = DYP2*udcAux[];
+	 
+		udcAux[] = IPhP2P1*u2tmp[];
+		u2dcX[]  = DXP2*udcAux[];
+		u2dcY[]  = DYP2*udcAux[];
+	
+		Gr=mod(u1dcX,u1dcY,u2dcX,u2dcY);
+	
+	}
+ 	SnapUX = u;
+	SnapUY = uY;
+	SnapT = uT;
+	SnapP = uP;
+	SnapVis = Gr;
+	//Guardamos los snapshots 
+	
+	//Componente X de la velocidad
+	ofstream SnapshotVX("../Data/Snapshots/Snapshots_107/Vx_" + Ra + ".txt");
+	SnapshotVX<<SnapUX[]<<endl;
+	//Componente Y de la velocidad
+	ofstream SnapshotVY("../Data/Snapshots/Snapshots_107/Vy_" + Ra + ".txt");
+	SnapshotVY<<SnapUY[]<<endl;
+	//Presion
+	ofstream SnapshotP("../Data/Snapshots/Snapshots_107/P_" + Ra + ".txt");
+	SnapshotP<<SnapP[]<<endl;
+	//Temperatura
+	ofstream SnapshotT("../Data/Snapshots/Snapshots_107/T_" + Ra + ".txt");
+	SnapshotT<<SnapT[]<<endl;
+	//Viscosidad turbulenta
+	ofstream SnapshotsVis("../Data/Snapshots/Snapshots_107/Vis_" + Ra + ".txt");
+	SnapshotsVis << SnapVis[] << endl;
+	//Coeficiente de estabilizacion de la presion 
+	ofstream SnapshotsTau("../Data/Snapshots/Snapshots_107/Tau_" + Ra + ".txt");
+	SnapshotsTau << tau[] << endl;
+	
+	
+	VhP2 T = uT+G;
+	
+	plot(T,cmm="Temperatura para Ra="+Ra,fill=1,value=1);
+	plot(u,cmm="Velocidad x para Ra="+Ra,fill=1,value=1);
+	plot(uY,cmm="Velocidad y para Ra="+Ra,fill=1,value=1);
+	//plot([u1,u2],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
+	plot(uP,cmm="Presion para Ra = "+Ra,fill=1,value=1);
+	
+	
+	
+	
+}

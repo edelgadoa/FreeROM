@@ -1,0 +1,44 @@
+////////////////
+// FreeROM
+///////////////
+
+
+////////////////////////////////////
+////MATRIZ SMAGORINSKY TEMP FILTRADA
+////////////////////////////////////
+
+varf VMSSmaT([un1l,un2l,TT,unusedpp],[v1l,v2l,zl,ql]) = 
+		intN(ThL)((1./Pr)*((CS*hTriangle)^2)*Gr*(TT*zl))
+	   -intN(ThL)((1./Pr)*((CS*hTriangle)^2)*Gr*(GfT*zl));
+		//FALTA SEGUNDO MIEMBRO DEL LEVANTAMIENTO DE LA TEMPERATURA
+						
+										
+matrix MT = VMSSmaT(Vh4P1dcL,Vh4P1dcL);
+					
+matrix SmaT;
+matrix DXXT;
+matrix DYYT;
+real[int] bTx(Vh4P2L.ndof),bTy(Vh4P2L.ndof);
+
+
+	{
+		matrix Maux,MauxG;
+
+		Maux = DX4P2L*IPh4P24P1L;
+		MauxG = DX4P2*IPh4P24P1;
+		DXXT  = (Maux')*MT;
+		DXXT  = DXXT*Maux;
+		Gfv1[]=MauxG*GG1[];
+		real[int] bTs=VMSSmaT(0,Vh4P1dcL);
+		bTx=(Maux')*bTs;
+	
+		Maux = DY4P2L*IPh4P24P1L;
+		MauxG = DY4P2*IPh4P24P1;
+		DYYT  = (Maux')*MT;
+		DYYT  = DYYT*Maux;
+		Gfv1[]=MauxG*GG1[];
+		bTs=VMSSmaT(0,Vh4P1dcL);
+		bTy=(Maux')*bTs;
+	
+	}
+SmaT = DXXT + DYYT;

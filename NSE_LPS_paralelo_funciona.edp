@@ -1,0 +1,340 @@
+verbosity=0.;
+
+//GENERAL MACRO
+macro Div(U) (dx(U) + dy(U#Y)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y))//EOM
+macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
+macro UGradT(U,temp) ([U,U#Y]'*Grad(temp)) //EOM
+macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
+macro MOD(U) (sqrt(U#dX^2+U#dY^2+U#YdX^2+U#YdY^2)) //EOM
+
+
+
+//// MACRO FOR PARALEL
+macro pause() mpiBarrier(mpiCommWorld)// EOM
+
+
+
+//MESH 
+
+
+mesh Th,ThL;
+ 
+{
+	int Nx = 50; // Numero de divisiones eje X
+	int Ny = 50; // Numero de divisiones eje Y
+	int nflag = 0; 		
+	Th=square(Nx,Ny,flags=nflag);
+}
+
+ThL = Th;
+
+//SPACES DEFINITION
+
+fespace Vh3P2(Th, [P2, P2, P2]);
+fespace Vh3P1(Th, [P1, P1, P1]);
+fespace Vh3P1dc(Th, [P1dc, P1dc, P1dc]); 
+fespace VhP0(Th, P0); 
+fespace VhP1dc(Th, P1dc);
+fespace VhP1(Th, P1);
+fespace VhP2(Th, P2);
+fespace Vh2P2(Th, [P2, P2]);
+fespace Vh2P1(Th, [P1, P1]);
+fespace Vh2P1dc(Th, [P1dc, P1dc]);
+
+fespace Vh3P2L(ThL, [P2, P2, P2]);
+fespace Vh3P1L(ThL, [P1, P1, P1]);
+fespace Vh3P1dcL(ThL, [P1dc, P1dc, P1dc]); 
+fespace VhP0L(ThL, P0); 
+fespace VhP1dcL(ThL, P1dc);
+fespace VhP1L(ThL, P1);
+fespace VhP2L(ThL, P2);
+fespace Vh2P2L(ThL, [P2, P2]);
+fespace Vh2P1L(ThL, [P1, P1]);
+fespace Vh2P1dcL(ThL, [P1dc, P1dc]);
+
+//PARAMETERS DEFINITION
+
+
+
+// Parametros del PETSC
+int petsc = 1; //Para usar el paralelo = 1
+
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+
+
+load "PETSc";
+Mat MatAVh3P2;
+Mat MatAVhP1dc;
+
+int[int] mapVh3P2;
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+if(petsc){	
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	buildDmesh(ThL);
+	mapVh3P2 = restrict(Vh3P2L,Vh3P2,myN2o);  
+	{
+		macro def(i) [i, iY, iP] //
+		macro init(i) [i, i, i] // EOM
+		createMat(ThL, MatAVh3P2, [P2, P2, P2]); 
+	}	
+}
+
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);
+	aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}
+//EOM
+
+
+// Parametros para el problema de EF
+real dt = 1;
+real epspen = 1.e-7;
+
+real ERROR = 10; // inicializacion del error para el bucle
+
+int niterFE = 2000; 
+real epsFE = 1e-7;
+
+
+// Parametros mu
+real Reynolds; // Esto es perceptible de cambiarlo
+
+
+//INTERPOLATION MATRIX
+
+
+
+// Matrices de filtrado. 
+matrix IPhP1dcP1L;
+
+{
+		matrix IdP1dcL; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
+		{
+			VhP1dcL faux1=1.;
+			IdP1dcL = faux1[];
+		}
+		
+		matrix PIgL = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
+		matrix IPgL = interpolate(VhP1dcL,VhP1L); 
+		matrix IPPIgL = IPgL*PIgL;
+		IPhP1dcP1L = IdP1dcL + (-1.)*IPPIgL;
+		
+}
+
+
+matrix D3X3P2L; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix D3Y3P2L; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+
+{
+
+	/////////////////////////////////////////////////////////
+		
+
+	int[int] cs2=[2];
+	D3X3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=1);
+	D3Y3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=2);
+	
+	////////////////////////////////////////////////////////
+
+}
+
+// Matrices de derivada, con filtrado 
+matrix IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; // (I-πh) de ∂x componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
+matrix IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; // (I-πh) de ∂y componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
+
+
+
+//Levantamiento
+
+// Programa para definir el levantamiento de frontera
+
+func G = 1*(y>=1);
+
+Vh3P2 [Lev, LevY, LevP];
+Vh2P2 [LevV, LevVY];
+VhP2 GP2 = G;
+VhP2 GzeroP2 = 0.;
+
+[Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+[LevV, LevVY] = [GP2, GzeroP2];
+
+
+
+
+
+Reynolds = 1000;
+
+
+/////////////////////////////////////////////
+// Problem: Cavity 2D//
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+
+
+
+// Fixed matrix
+matrix MFija;
+real[int] bFija(Vh3P2L.ndof);
+
+
+real nu=1./Reynolds;
+
+
+
+varf FVFija([uu,uuY,uP],[v,vY,vP]) = intN(ThL)((1./dt)*(uu*v + uuY*vY)
+								   + (Div(uu)*vP - Div(v)*uP)
+								   + (nu*GradUGradV(uu,v))
+								   + (Antisimetric(uu,Lev,v)) + (Antisimetric(Lev, uu, v))
+								   + (epspen*uP*vP))
+									//Segundo miembro
+								   - intN(ThL)(Antisimetric(Lev,Lev,v) 
+								   - (nu*GradUGradV(Lev,v)))
+								   + on(1,2,3,4, uu=0., uuY=0.); 
+
+						
+
+MFija = FVFija(Vh3P2L,Vh3P2L);
+bFija = FVFija(0,Vh3P2L);
+
+
+ERROR = 2*epsFE +1;
+
+
+
+// The loop of the problem
+for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
+	
+	
+	
+	
+	// Convective matrix
+	matrix MNS;
+	real[int] bNS(Vh3P2L.ndof);
+	
+	
+	varf FVNS ([uu,uuY,uuP],[v,vY,vP])= intN(Th)(Antisimetric(uEF, uu, v))			
+									  //Segundo miembro
+									  + intN(Th)((1./dt)*(uEF*v + uEFY*vY));
+				
+						
+	MNS = FVNS(Vh3P2L,Vh3P2L);
+	bNS = FVNS(0,Vh3P2L);
+	
+	
+
+	/////////////////////////////
+	//MATRIZ ESTAB. PRES.
+	/////////////////////////////
+	
+	matrix LPSpres;
+	
+	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
+
+
+	matrix TermP = termPres(VhP1dcL,VhP1dcL);
+
+	matrix DDxx;
+	{
+		DDxx = TermP * IPhD3X3P2L; 
+		DDxx = IPhD3X3P2L' * DDxx;
+	}
+
+	matrix DDyy;
+	{
+		DDyy = TermP * IPhD3Y3P2L; 
+		DDyy = IPhD3Y3P2L' * DDyy;
+	}
+
+	LPSpres = DDxx + DDyy;
+	
+	
+	
+
+	
+	
+	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
+	matrix MFinal;
+	real[int] bFinal(Vh3P2L.ndof);
+	
+	MFinal = MFija;
+	MFinal += MNS;
+	MFinal += LPSpres;
+	
+	bFinal = bFija;
+	bFinal += bNS;
+	
+	MatAVh3P2 = MFinal;
+	
+	bFinal.resize(bFinal.n+1);
+	bFinal(bFinal.n-1) = 0;
+	
+	varf Lagrange([uu,uuY,uuP],[vv,vvY,vP]) = intN(ThL)(vP);
+	real[int] Lag = Lagrange(0,Vh3P2L);
+	
+	real[int] pLag;
+	ChangeNumbering(MatAVh3P2,Lag,pLag);
+	Mat Mfinal = [[MatAVh3P2,pLag],[pLag',1]];
+	
+	set(Mfinal,sparams=sparamsv);
+	
+	
+	
+	
+	
+	
+	
+	Vh3P2 [uEFp, uEFpY, uEFpP]; // the previous solution
+	uEFp[]=uEF[];
+	
+	real[int] xsol = Mfinal^-1*bFinal;
+	
+	Vh3P2L [uL,uLY,uLP];
+	uL[] = 0.;
+	
+	uL[] = xsol;
+	
+	reduceSolution(uL,uEF, MatAVh3P2.D, mapVh3P2);
+
+	//solvesystem(MFinal,bFinal,uEF,MatAVhP1dc.D);
+	
+	
+	VhP2 errEF, errEFY;
+	errEF = uEF - uEFp;
+	errEFY = uEFY - uEFpY;
+	
+	real ERRORabs = sqrt((intN(Th)(GradUGradV(errEF,errEF))));
+	ERROR = ERRORabs /sqrt((intN(Th)(GradUGradV(uEF, uEF))));
+	
+	if(mpirank==0){
+		cout << "media pres:" << intN(Th)(uEFP) << endl;
+		 cout << ERROR << endl;}
+		 
+		 
+}
+
+
+
+
+
+// Plot the solution
+
+Vh3P2 [uEFL, uEFLY, uEFLP];
+uEFL[]=uEF[] + Lev[];
+
+plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+
