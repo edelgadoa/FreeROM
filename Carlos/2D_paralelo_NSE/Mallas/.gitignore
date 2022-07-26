@@ -1,0 +1,9 @@
+*.txt
+*.pvd
+*.vtu
+*.pdf
+*.eps
+*.fig
+*.DS_Store
+*.msh
+*.mesh

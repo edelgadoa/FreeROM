@@ -1,0 +1,23 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Creacion de malla. Dominio Cuadrado con Nx,Ny divisiones por eje. 
+// Por defecto tiene 50 divisiones por eje y construye la malla estandar.
+
+mesh Th,ThL;
+ 
+{
+	int Nx = 50; // Numero de divisiones eje X
+	int Ny = 50; // Numero de divisiones eje Y
+	int nflag = 0; 
+		// nflag = 0 --> Malla estandar (diagonal x-y=cte)
+		// nflag = 1 --> Malla tipo "Union flag" |x|
+		// nflag = 2 --> Malla con diagonal x+y=cte
+		// nflag = 3 --> Malla tipo 0 con dos esquinas donde cambia la diagonal
+		// nflag = 4 --> Malla tipo 2 con dos esquinas donde cambia la diagonal
+	
+	Th=square(Nx,Ny,flags=nflag);
+}
+
+ThL = Th;
