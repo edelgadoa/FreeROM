@@ -19,10 +19,10 @@
 
 
 // Matrices de filtrado. 
-matrix IPhP2P1L, IPh5P25P1L, IPhP1dcP1L;
+matrix IPhP2P1L, IPh5P25P1L, IPhP1dcP1L,IPh5P1dcP1L;
 
 {
-		matrix IdP2L,Id5P2L,IdP1dcL,IdP1L; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
+		matrix IdP2L,Id5P2L,IdP1dcL,IdP1L,Id5P1dcL; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
 		{
 			VhP2L faux2=1.;
 			VhP1dcL faux1=1.;
@@ -31,6 +31,7 @@ matrix IPhP2P1L, IPh5P25P1L, IPhP1dcP1L;
 			IdP1dcL = faux1[];
             IdP1L = fauxp1[];
 			Id5P2L =[[IdP2L, 0, 0,0, 0],[0, IdP2L, 0, 0, 0],[0, 0, IdP2L,0, 0],[0, 0, 0, IdP2L, 0], [0, 0, 0, 0, IdP2L]];
+			Id5P1dcL = [[IdP1dcL, 0, 0,0, 0],[0, IdP1dcL, 0, 0, 0],[0, 0, IdP1dcL,0, 0],[0, 0, 0, IdP1dcL, 0], [0, 0, 0, 0, IdP1dcL]];
 		}
 		
 		matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
@@ -47,6 +48,11 @@ matrix IPhP2P1L, IPh5P25P1L, IPhP1dcP1L;
 		matrix IP5=interpolate(Vh5P2L,Vh5P1L);
 		matrix IPPI5=IP5*PI5;
 		IPh5P25P1L = Id5P2L + (-1)*IPPI5; // (Id-πh) 4P2->4P1->4P2
+		
+		matrix PI5dc = interpolate(Vh5P1L,Vh5P1dcL);
+		matrix IP5dc = interpolate(Vh5P1dcL,Vh5P1L);
+		matrix IPPI5dc = IP5dc*PI5dc;
+		IPh5P1dcP1L = Id5P1dcL + (-1)*IPPI5dc;
 }
 
 // Matrices de derivadas	

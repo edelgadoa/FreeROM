@@ -90,7 +90,7 @@ for (int i=0;i<=1;i++)
 	
 	
 	//[u1,u2,t,p] = [UX,UY,t,p];
-	u[]=0.;
+	u[]=1.;
 	
 	
 	
@@ -174,8 +174,30 @@ for (int i=0;i<=1;i++)
 		bNS += bTy;
 		bNS += bTz;
 		
-		solvesystem(Afinal,bNS,u);
+		MatAVh5P2 = Afinal;
+	
+		bNS.resize(bNS.n+1);
+		bNS(bNS.n-1) = 0;
+	
+		varf Lagrange([uu,uuY,uuZ,uuT,uuP],[vv,vvY,vvZ,vT,vP]) = intN(ThL)(vP);
+		real[int] Lag = Lagrange(0,Vh5P2L);
+	
+		real[int] pLag;
+		ChangeNumbering(MatAVh5P2,Lag,pLag);
+		Mat Mfinal = [[MatAVh5P2,pLag],[pLag',1]];
+	
+		set(Mfinal,sparams=sparamsv);
 		
+		real[int] xsol = Mfinal^-1*bNS;
+	
+		Vh5P2L [uL,uLY,uLZ,uLT,uLP];
+		uL[] = 0.;
+	
+		uL[] = xsol;
+	
+		reduceSolution(uL,u, MatAVh5P2.D, mapVh5P2);
+		
+	
 		
 		//Pintamos la solucion de cada iteracion
 	
@@ -220,12 +242,10 @@ for (int i=0;i<=1;i++)
 	
 		Gr=mod(u1dcX,u1dcY,u1dcZ,u2dcX,u2dcY,u2dcZ,u3dcX,u3dcY,u3dcZ);
 		
-		if(ii%10==0)
+		if(ii%20==0)
 		{
-			VhP2 Temp = uT +G;
-			if(mpirank==0){cout <<"media pres:"<<intN(Th)(uP)<< endl;}
-			savevtk("../Data/PostProc/Snapshots_"+Ra+"_"+ii+".vtu",Th,[u,uY,uZ],Temp,uP,dataname="Velocity Temperature Pressure",order=fforder);
- 	
+			savevtk("../Data/PostProc/Snapshots_"+Ra+"_"+ii+".vtu",Th,[u,uY,uZ],uT,uP,dataname="Velocity Temperature Pressure",order=fforder);
+ 			if(mpirank==0){cout << "media pres:" << intN(Th)(uP) << endl;}
 		}
 	
 	}
