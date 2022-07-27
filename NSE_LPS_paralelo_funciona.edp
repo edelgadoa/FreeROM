@@ -115,7 +115,7 @@ real Reynolds; // Esto es perceptible de cambiarlo
 
 
 
-// Matrices de filtrado. 
+// // Matrices de filtrado.
 matrix IPhP1dcP1L;
 
 {
@@ -124,12 +124,12 @@ matrix IPhP1dcP1L;
 			VhP1dcL faux1=1.;
 			IdP1dcL = faux1[];
 		}
-		
+
 		matrix PIgL = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
-		matrix IPgL = interpolate(VhP1dcL,VhP1L); 
+		matrix IPgL = interpolate(VhP1dcL,VhP1L);
 		matrix IPPIgL = IPgL*PIgL;
 		IPhP1dcP1L = IdP1dcL + (-1.)*IPPIgL;
-		
+
 }
 
 
@@ -139,17 +139,17 @@ matrix D3Y3P2L; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 {
 
 	/////////////////////////////////////////////////////////
-		
+
 
 	int[int] cs2=[2];
 	D3X3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=1);
 	D3Y3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=2);
-	
+
 	////////////////////////////////////////////////////////
 
 }
 
-// Matrices de derivada, con filtrado 
+// Matrices de derivada, con filtrado
 matrix IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; // (I-πh) de ∂x componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; // (I-πh) de ∂y componente 3 de 3P2 (3P2 (derivo componente 3) -> P1dc (filtro)-> P1 -> P1dc)
 
@@ -159,7 +159,7 @@ matrix IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; // (I-πh) de ∂y componente 3 de 3P2
 
 // Programa para definir el levantamiento de frontera
 
-func G = 1*(y>=1);
+func G = -1*(y>=1);
 
 Vh3P2 [Lev, LevY, LevP];
 Vh2P2 [LevV, LevVY];
@@ -198,8 +198,7 @@ real nu=1./Reynolds;
 varf FVFija([uu,uuY,uP],[v,vY,vP]) = intN(ThL)((1./dt)*(uu*v + uuY*vY)
 								   + (Div(uu)*vP - Div(v)*uP)
 								   + (nu*GradUGradV(uu,v))
-								   + (Antisimetric(uu,Lev,v)) + (Antisimetric(Lev, uu, v))
-								   + (epspen*uP*vP))
+								   + (Antisimetric(uu,Lev,v)) + (Antisimetric(Lev, uu, v)))
 									//Segundo miembro
 								   - intN(ThL)(Antisimetric(Lev,Lev,v) 
 								   - (nu*GradUGradV(Lev,v)))
@@ -241,7 +240,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	/////////////////////////////
 	
 	matrix LPSpres;
-	
+
 	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
 
 
@@ -249,19 +248,19 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 
 	matrix DDxx;
 	{
-		DDxx = TermP * IPhD3X3P2L; 
+		DDxx = TermP * IPhD3X3P2L;
 		DDxx = IPhD3X3P2L' * DDxx;
 	}
 
 	matrix DDyy;
 	{
-		DDyy = TermP * IPhD3Y3P2L; 
+		DDyy = TermP * IPhD3Y3P2L;
 		DDyy = IPhD3Y3P2L' * DDyy;
 	}
 
 	LPSpres = DDxx + DDyy;
-	
-	
+
+
 	
 
 	
@@ -333,7 +332,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 // Plot the solution
 
 Vh3P2 [uEFL, uEFLY, uEFLP];
-uEFL[]=uEF[] + Lev[];
+uEFL[]=uEF[] - Lev[];
 
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 plot(uEFLP, cmm="FE pres para Re="+Reynolds);

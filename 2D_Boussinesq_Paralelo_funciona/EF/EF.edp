@@ -258,7 +258,7 @@ for (int i=0;i<=ni;i++)
 	plot(T,cmm="Temperatura para Ra="+Ra,fill=1,value=1);
 	plot(u,cmm="Velocidad x para Ra="+Ra,fill=1,value=1);
 	plot(uY,cmm="Velocidad y para Ra="+Ra,fill=1,value=1);
-	//plot([u1,u2],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
+	plot([u,uY],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
 	plot(uP,cmm="Presion para Ra = "+Ra,fill=1,value=1);
 	
 	

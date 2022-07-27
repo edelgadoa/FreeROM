@@ -61,20 +61,23 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal = bFija;
 	bFinal += bNS;
 	
+	varf Lagrange([u, uY, uP],[v, vY, vP]) = intN(ThL)(vP);
+	real[int] Lag = Lagrange(0, VhL), pLag;
+	ChangeNumbering(Mfinal, Lag, pLag);
 	
+	Mat MBlock = [[Mfinal, pLag], [pLag', 1]];
+	set(MBlock, sparams = sparamsv);
 	
-	//set(MFinal, solver=sparsesolver);
+	bFinal.resize(bFinal.n + 1);
+	bFinal(bFinal.n-1) = 0;
 	
-	
-
-	
-	
-	solvesystem(MFinal,bFinal,uEF);
+	real[int] uEFblock = Mblock^-1*bFinal;
+	//solvesystem(MFinal,bFinal,uEF);
 	
 	Vh3P2 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[]=uEF[];
 	
-	uEF[]=MFinal^-1*bFinal;
+	//uEF[]=MFinal^-1*bFinal;
 
 	
 	// Calculamos el error cometido (en velocidad)
