@@ -18,9 +18,12 @@ set(MEIMS, solver=sparsesolver);
 //////////////////////////////////////////
 //////////////////////////////////////////
 // Cargo los elementos del EIM SMAGO
+
 for (int i=0; i<Taubases; i++){
+
 	readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/Base_" + muEIMTau(i) + ".txt", real, BaseEIM, 0);
 	EIMTau[i][] = BaseEIM; //Cargo la bases
+
 }
 
 readmatrix("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/MatrizEIM_LPS.txt", real, MatrixEIMTau, 0);

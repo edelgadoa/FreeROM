@@ -106,7 +106,7 @@ for (int s=0; s<Taubases; s++){
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		if (mpirank==contFF%mpisize){
-			LPSintL(i + Nbases,j + Nbases) =int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
 			if(j<i){
 				LPSintL(j,i) = LPSintL(i,j);
 			}
@@ -132,12 +132,12 @@ for (int s=0; s<Mbases; s++){
 
 
 // Matrices para el EIM LPS (parte del levantamiento)
-real[int, int] NgkL(2*Nbases, 2*Nbases), NggkL(2*Nbases, 2*Nbases);
+real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
 NgkL = 0; NggkL = 0;
 contFF = 0;
 for (int s=0; s<Taubases; s++){ 
 	if(mpirank==contFF%mpisize){
-		// real[int,int] Ngk = NUK[s];
+		real[int,int] Ngk = NUK[s];
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
 		fvel = BaseVel[i]; fvelY = BaseVelY[i];
@@ -151,7 +151,7 @@ for (int s=0; s<Taubases; s++){
 	
 		///////////////////////////////////////////////
 	
-		//real[int,int] Nggk = NGUK[s];
+		real[int,int] Nggk = NGUK[s];
 		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
 		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
 		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
@@ -164,11 +164,12 @@ for (int s=0; s<Taubases; s++){
 	}
 	contFF++;
 }
-pause;
 
+//pause;
+cout<<"i="<<i<<endl;
 for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
-	real[int,int] NgkL(2*Nbases, 2*Nbases), NgkG(2*Nbases, 2*Nbases);
-	real[int,int] NggkL(2*Nbases, 2*Nbases), NggkG(2*Nbases, 2*Nbases);
+	real[int,int] NgkL(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
+	real[int,int] NggkL(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
 	NgkL = 0; NgkG = 0;
 	NggkL = 0; NggkG = 0;
 	contFF = 0;
@@ -188,9 +189,8 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 				NgkL(1+j,1+i)=NgkL(1+i,1+j);
 			}
 		
-			//NUK[ki]=Ngk;
+
 			///////////////////////////////////////////////
-			// real[int,int] Nggk=NGUK[ki];
 			VhP1dc dxfv1, dyfv1, dxfv2, dyfv2, DXFV1, DYFV1, DXFV2, DYFV2;
 			
 		    varf NDG(un,v) = int2d(Th)((dxfv1*DXFV1 + dyfv1*DYFV1 + dxfv2*DXFV2 + dyfv2*DYFV2)*v);
@@ -202,7 +202,8 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			if(j<i){
 				NggkL(1+j,1+i)=NggkL(1+i,1+j);
 			}
-		
+			
+
 		}
 		contFF++;
 	}
@@ -210,8 +211,8 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	mpiAllReduce(NgkL, NgkG, mpiCommWorld, mpiSUM);
 	mpiAllReduce(NggkL, NggkG, mpiCommWorld, mpiSUM);
 	
-	NUK[s] += NgkG;
-	NGUK[s] += NggkG;
+	NUK[s] = NgkG;
+	NGUK[s] = NggkG;
 }
 
 

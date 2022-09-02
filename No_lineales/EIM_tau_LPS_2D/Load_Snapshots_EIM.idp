@@ -6,7 +6,6 @@
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 
-
 	ifstream SnapshotVXFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + vReynolds(i) + ".txt");
 	ifstream SnapshotVYFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + vReynolds(i) + ".txt");
 	//ifstream SnapshotPFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt");

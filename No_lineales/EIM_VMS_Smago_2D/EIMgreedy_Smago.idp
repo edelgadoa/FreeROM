@@ -7,6 +7,8 @@
 // Definimos la matriz del sistema que resolveremos para calcular el EIM en cada iteracion
 real [int,int] BMi(i,i);
 BMi = BM(0:i-1,0:i-1);
+matrix BMs = BMi;
+set(BMs, solver=sparsesolver);
 
 real[int,int] Binv = BMi^-1; 
 real [int] bEIM(i),sigmai(i);
@@ -20,23 +22,23 @@ for (int imu=0; imu<nSnapshots; imu++){
 			bEIM(j) = gEIM[](Tmax(j));
 		}
 		
-		sigmai = Binv*bEIM;
+		sigmai = BMs^-1*bEIM;
 		
 		IgEIM = 0;
 		for (int j=0;j<i;j++){
 			IgEIM[] += sigmai(j)*BEIM[j][];
 		}
 		
-		VhP1dc Linf=abs(gEIM-IgEIM); 
+		VhP1dc Linf = abs(gEIM-IgEIM); 
 		
 		//ErroritL(imu)=Linf[].max/gEIM[].max;
-		Errorit(imu)=Linf[].max/gEIM[].max;
+		Errorit(imu) = Linf[].max/gEIM[].max;
 		//}
 	//mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
 	//pause;
 	
-	ErrorMaxEIM(i-1)=Errorit.max;
-	muEIM(i)=vReynolds(Errorit.imax);
+	ErrorMaxEIM(i-1) = Errorit.max;
+	muEIM(i) = vReynolds(Errorit.imax);
 
 	
 	
@@ -60,11 +62,11 @@ for (int j=0; j<i; j++){
 }
 
 VhP1dc absBEIM = abs(BEIM[i]);
-Tmax(i)=absBEIM[].imax;
+Tmax(i) = absBEIM[].imax;
 BEIM[i][] /= BEIM[i][](Tmax(i));
 
 for (int j=0; j<=i; j++){
-	BM(i,j)=BEIM[j][](Tmax(i));
+	BM(i,j) = BEIM[j][](Tmax(i));
 }
 
 // Almacenamos la base escogida 

@@ -18,7 +18,6 @@ for (int i=0;i<Mbases;i++){
 	GradPM[i]=Aux(0:3,0:Nbases-1);
 }
 
-cout<<GradPMLev<<endl;
 
 //Definicion de los arrays para calcular el tauk en el EIM de Tau
 real[int,int][int] NUK(Taubases), NGUK(Taubases);

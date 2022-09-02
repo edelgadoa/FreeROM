@@ -76,11 +76,12 @@ real[int] tK=tauK(0,VhP0);
 real[int] tKT=tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
+
 tKTcod[] = sqrt(tKT);
 
 
 BEIM[0] = ((cc1*(1./vReynolds(0)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
-// plot(BEIM[0]);
+
 
 Tmax(0) = BEIM[0][].imax;
 BEIM[0][] /= BEIM[0][].max;

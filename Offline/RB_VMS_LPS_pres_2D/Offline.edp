@@ -44,6 +44,7 @@ include "../../Auxiliary/Normas.idp"
 // Cargo las funciones del RBF
 include "../../Auxiliary/betas.idp"
 
+
 //Definicion de Constantes y variables varias
 int Nbases = 10; 
 

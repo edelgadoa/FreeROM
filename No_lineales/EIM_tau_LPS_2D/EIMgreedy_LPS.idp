@@ -8,6 +8,8 @@
 real [int,int] BMi(i,i);
 BMi = BM(0:i-1,0:i-1);
 real[int,int] Binv = BMi^-1; 
+matrix BMs = BMi;
+set(BMs, solver=sparsesolver);
 real [int] bEIM(i), sigmai(i);
 
 //pause; //Hacemos el siguiente for en paralelo
@@ -29,7 +31,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 			bEIM(j) = gEIM[](Tmax(j));
 		}
 	
-		sigmai = Binv*bEIM;
+		sigmai = BMs^-1*bEIM;
 		
 		IgEIM = 0;
 		for (int j=0;j<i;j++){
