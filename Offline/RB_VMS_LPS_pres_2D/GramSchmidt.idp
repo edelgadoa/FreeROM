@@ -23,3 +23,6 @@ BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 
 // Doble Ortonormalización
 BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
+
+// Para el filtrado
+BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];

@@ -59,10 +59,6 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
 		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
 		mpi(cout<<uRBv<<endl;)
-		
-		real normV = normX(uRB[], MNormaVel);
-		real normP = normL2(uRBP[]);
-		cout<<"Norma V:"<<normV<<", Norma P:"<<normP<<endl;
 	}
 	
 	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;

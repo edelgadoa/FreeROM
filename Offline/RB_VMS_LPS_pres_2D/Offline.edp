@@ -155,7 +155,7 @@ for (int i=0; i<Nbases; i++){
 		//BaseVel[i] = BaseVel[i] + Lev; BaseVelY[i] = BaseVelY[i] + LevY;
 		
 
-		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+		// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -174,18 +174,13 @@ for (int i=0; i<Nbases; i++){
 		BaseP[i][] = SolP;		
 		
 		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
-		//BaseVel[i] = BaseVel[i] + Lev; BaseVelY[i] = BaseVelY[i] + LevY;
-		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
-
-	
+			
 	}
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
-	//plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	plot([BaseV[i],BaseVY[i]], cmm="FE para Re = " + Reynolds, value=1);
-	plot(BaseP[i],cmm="FE para Re = " + Reynolds, fill=1, value=1);
+	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
 	
-	//include "GramSchmidt.idp"
+	include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -194,6 +189,8 @@ for (int i=0; i<Nbases; i++){
 	// TODO: GUARDAR LOS SNAPSHOTS -> PUEDO GUARDAR LA MATRIZ HASTA LA ITERACIÓN i
 
 	// Actualizo las soluciones filtradas
+	FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+	
 	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
 	
 	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
@@ -214,7 +211,7 @@ for (int i=0; i<Nbases; i++){
 	
 	// Actualizo el nuevo Reynolds
 	Reynolds = MuBest(i+1);
-	mpi(cout<<"New Reynolds:"<<Reynolds<<endl;)
+	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
 	
 	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
 }
