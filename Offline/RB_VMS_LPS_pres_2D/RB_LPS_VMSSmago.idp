@@ -11,7 +11,7 @@ MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += ConvLevRBi;
 MRB += PenRBi;	
-MRB += StabhkRBi;
+// MRB += StabhkRBi;
 
 
 bDiffRBi = bDiffRB(0:2*I-1);
@@ -77,9 +77,9 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		Nuk = sqrt(Auxi.sum)/mk[](PuntosMTau(s));
 		
 		Nguki = NGUK[s](0:I,0:I);
-		Auxi = CuN*Nguki;
+		Auxi = CuN.*Nguki;
 		Nguk = (CS*hk[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mk[](PuntosMTau(s));
-		
+
 		bEIMTau(s) = (cc1*(nuRB+Nguk)/hk[](PuntosMTau(s))^2 + cc2*Nuk/hk[](PuntosMTau(s)))^-1;	
 	}
 	
@@ -93,7 +93,6 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		StabPRBi += StabPRBint; 
 	}
 	
-	if(iN==0)cout<<StabPRBi<<endl;
 	
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
@@ -106,7 +105,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
-	//MRBF += StabPRBi;
+	MRBF += StabPRBi;
 	
 	
 	bRB = (1./dt) * bDTRBi(0:2*I-1);
@@ -114,13 +113,11 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	bRB -= bConvRBi(0:2*I-1);
 	bRB -= bSmagoRBi(0:2*I-1);
 	
-	{if(iN==0){mpi(cout<<MRBF<<endl;cout<<bRB<<endl;)}}
 	
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
 	set(MRBs, solver=UMFPACK);
-	// cout<<MRBs<<endl;
 	// real[int,int] MRBinv = MRB^-1;
 	
 	uRBv = MRBs^-1*bRB;

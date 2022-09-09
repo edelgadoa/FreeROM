@@ -5,6 +5,7 @@
 // Programa que calcula el residuo de la solución de RBM
 matrix MRes;
 real[int] bRes(Vh3P2.ndof);
+Vh3P2 [BRES, BRESY, BRESP];
 
 // Termino de Navier-Stokes
 real[int] bNSRes(Vh3P2.ndof);
@@ -12,7 +13,7 @@ real[int] bNSRes(Vh3P2.ndof);
 {
 	varf NSRes([u,uY,uP],[v,vY,vP]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
 									// Segundo miembro
-									+ int2d(Th)(nuRB*GradUGradV(uRB,v) + UGradVW(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
+									+ int2d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
 									+ on(1,2,3,4, u=0, uY=0);
     MRes = NSRes(Vh3P2, Vh3P2);
 	set(MRes, solver = sparsesolver);									
@@ -25,8 +26,8 @@ real[int] bSmagoRes(Vh3P2.ndof);
 {
 	real[int] bSx(Vh3P2.ndof), bSy(Vh3P2.ndof), bSaux(Vh3P1dc.ndof);
 	VhP1dc uFRB, uFRBY;
-	
-	varf SmagoRes([u,uY,uP],[v,vY,vP]) = int2d(Th)((CS*hTriangle)^2*MOD(uRB)*UporV(uFRB,v));
+	VhP1dc GrN = MOD(uRB);
+	varf SmagoRes([u,uY,uP],[v,vY,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
 	
 	// Componente X
 	uFRB = uRBdX; uFRBY = uRBYdX;
@@ -76,6 +77,7 @@ bRes = bNSRes;
 bRes += bSmagoRes;
 bRes += bStabPRes;
 mpi(cout<<"bres = "<<bRes.l2<<endl;)
+BRES[] = bRes;
 
 {
 	Vh3P2 [RES, RESY, RESP];

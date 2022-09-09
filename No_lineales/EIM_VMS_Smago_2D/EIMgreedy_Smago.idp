@@ -38,10 +38,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 	//pause;
 	
 	ErrorMaxEIM(i-1) = Errorit.max;
-	muEIM(i) = vReynolds(Errorit.imax);
-
-	
-	
+	muEIM(i) = vReynolds(Errorit.imax);	
 }
 
 

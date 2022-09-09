@@ -20,7 +20,7 @@ for (int j=0; j<=i; j++){
 		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
-		StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
@@ -28,7 +28,7 @@ for (int j=0; j<=i; j++){
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
 			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRBL(j,i) = DTRBL(i,j);
-			StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
+			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
 	}
 	contFF++;
@@ -40,16 +40,15 @@ mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
 DiffRB += DiffRBG;
 DivPRB += DivPRBG;
 PenRB += PenRBG;
 ConvLevRB += ConvLevRBG;
 DTRB += DTRBG;
-StabhkRB += StabhkRBG;
+// StabhkRB += StabhkRBG;
 
-//mpi(cout<<DTRB<<endl;)
 // Comienzo el bucle para la construcción de los tensores
 
 // Conveccion
@@ -108,7 +107,7 @@ for (int s=0; s<Taubases; s++){
 		if (mpirank==contFF%mpisize){
 			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
 			if(j<i){
-				LPSintL(j,i) = LPSintL(i,j);
+				LPSintL(j + Nbases,i + Nbases) = LPSintL(i + Nbases,j + Nbases);
 			}
 		}
 		contFF++;		
@@ -137,7 +136,7 @@ NgkL = 0; NggkL = 0;
 contFF = 0;
 for (int s=0; s<Taubases; s++){ 
 	if(mpirank==contFF%mpisize){
-		real[int,int] Ngk = NUK[s];
+		//real[int,int] Ngk = NUK[s];
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
 		fvel = BaseVel[i]; fvelY = BaseVelY[i];
@@ -151,7 +150,7 @@ for (int s=0; s<Taubases; s++){
 	
 		///////////////////////////////////////////////
 	
-		real[int,int] Nggk = NGUK[s];
+		//real[int,int] Nggk = NGUK[s];
 		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
 		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
 		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
@@ -177,7 +176,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 		if(mpirank==contFF%mpisize){ 
 
 			VhP2 fvel,fvelY,ffvel,ffvelY;
-			varf NGL(un,v) = int2d(Th)(UporV(fvel, ffvel)*v);
+			varf NGL(un,v) = int2d(Th)((fvel*ffvel+fvelY*ffvelY)*v);
 			
 			fvel = BaseV[i]; fvelY = BaseVY[i]; ffvel = BaseV[j]; ffvelY = BaseVY[j];
 			
@@ -186,7 +185,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			
 								
 			if(j<i){
-				NgkL(1+j,1+i)=NgkL(1+i,1+j);
+				NgkL(1+j,1+i) = NgkL(1+i,1+j);
 			}
 		
 
@@ -200,7 +199,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			NggkL(1+i,1+j) = ndgaux(PuntosMTau(s));
 			
 			if(j<i){
-				NggkL(1+j,1+i)=NggkL(1+i,1+j);
+				NggkL(1+j,1+i) = NggkL(1+i,1+j);
 			}
 			
 
@@ -211,8 +210,8 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	mpiAllReduce(NgkL, NgkG, mpiCommWorld, mpiSUM);
 	mpiAllReduce(NggkL, NggkG, mpiCommWorld, mpiSUM);
 	
-	NUK[s] = NgkG;
-	NGUK[s] = NggkG;
+	NUK[s] += NgkG;
+	NGUK[s] += NggkG;
 }
 
 

@@ -30,5 +30,6 @@ readmatrix("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/MatrizEIM_LPS.txt", real,
 readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/TintEIM_LPS.txt", real, PuntosMTau, 0);
 
 matrix MEIMTau = MatrixEIMTau;
+real[int,int] MEIMTauinv = MatrixEIMTau^-1;
 set(MEIMTau, solver=sparsesolver);
 ///////////////////////////////////////////

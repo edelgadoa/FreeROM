@@ -45,10 +45,10 @@ for(int i=0; i<nSnapshots; i++){
 }
 
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
-{
-	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
-	nSnapshotFILE<<vReynolds<<endl;
-}
+// {
+// 	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
+// 	nSnapshotFILE<<vReynolds<<endl;
+// }
 // Esto lo he quitado, porque debo ir añadiendo a medida que los voy calculando
 
 /////////////////////////////////////////////
@@ -73,8 +73,8 @@ for (int i=0; i<nSnapshots; i++){
 		include "FE_VMS_LPS_2D.idp"
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
-		ReSnapshotsNEW(0:ReSnapshots.n) = ReSnapshots;
-		ReSnapshotsNEW(ReSnapshots.n + 1) = Reynolds;
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 		
 		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 		

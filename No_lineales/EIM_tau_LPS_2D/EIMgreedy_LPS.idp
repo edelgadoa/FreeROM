@@ -26,7 +26,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 	
 		
 		gEIM = ((cc1*(1./vReynolds(imu)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
-	
+
 		for (int j=0; j<i; j++){
 			bEIM(j) = gEIM[](Tmax(j));
 		}
@@ -47,11 +47,13 @@ for (int imu=0; imu<nSnapshots; imu++){
 	
 	ErrorMaxEIM(i-1) = Errorit.max;
 	muEIM(i) = vReynolds(Errorit.imax);
+
 	
 }
 
-
+	cout<<muEIM<<endl;
 // Calculamos la base escogida
+int iReynolds = Errorit.imax;
 UX = BVX[Errorit.imax]; UY = BVY[Errorit.imax];  // Tomo la base donde se encuentra el Reynolds con mayor error
 UXdX = BVdX[Errorit.imax]; UXdY = BVdY[Errorit.imax]; UYdX = BVYdX[Errorit.imax]; UYdY = BVYdY[Errorit.imax]; 
 
@@ -67,7 +69,7 @@ gEIM = ((cc1*(1./vReynolds(Errorit.imax)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriang
 for (int j=0; j<i; j++){
 	bEIM(j) = gEIM[](Tmax(j));
 }
-sigmai = Binv*bEIM;
+sigmai = BMs^-1*bEIM;
 
 BEIM[i] = gEIM;
 for (int j=0; j<i; j++){

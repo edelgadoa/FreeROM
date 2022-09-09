@@ -51,7 +51,7 @@ varf tauKT(unused,v)=int2d(Th)((UXdX^2+UXdY^2+UYdX^2+UYdY^2)*v);
 
 
 include "Load_Snapshots_EIM.idp"
-		
+
 // Defino las variables para el EIM
 int Mmax = 83; //numero maximo de bases del EIM
 int M; //numero de bases que voy a considerar finalmente

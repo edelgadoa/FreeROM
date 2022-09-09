@@ -46,9 +46,9 @@ include "../../Auxiliary/betas.idp"
 
 
 //Definicion de Constantes y variables varias
-int Nbases = 10; 
+int Nbases = 40; 
 
-real[int] MuBest(Nbases), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
+real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
 
 // Leo los valores de los parámetros para los cuales he calculado ya Snapshots
@@ -103,7 +103,7 @@ include "Allocate_matrices.idp"
 // Comenzamos con el Algoritmo Greedy
 
 Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
-
+MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
 include "../../Auxiliary/Sobolev.idp"
@@ -135,10 +135,7 @@ else{
 	uFijoY = uFijoY + LevY;
 	
 }
-{ 
-	uFijodX[] = DXP2IPh*uFijo[]; uFijodY[] = DYP2IPh*uFijo[];
-	uFijoYdX[] = DXP2IPh*uFijoY[]; uFijoYdY[] = DYP2IPh*uFijoY[];
-}
+
 
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
@@ -164,9 +161,9 @@ for (int i=0; i<Nbases; i++){
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 		
-
 		
 		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
+		
 	}
 	else{
 		readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", real, SolX, 0);
@@ -179,12 +176,16 @@ for (int i=0; i<Nbases; i++){
 		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
 		//BaseVel[i] = BaseVel[i] + Lev; BaseVelY[i] = BaseVelY[i] + LevY;
 		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+
 	
 	}
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
-	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	// include "GramSchmidt.idp"
+	//plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
+	plot([BaseV[i],BaseVY[i]], cmm="FE para Re = " + Reynolds, value=1);
+	plot(BaseP[i],cmm="FE para Re = " + Reynolds, fill=1, value=1);
+	
+	//include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -193,7 +194,6 @@ for (int i=0; i<Nbases; i++){
 	// TODO: GUARDAR LOS SNAPSHOTS -> PUEDO GUARDAR LA MATRIZ HASTA LA ITERACIÓN i
 
 	// Actualizo las soluciones filtradas
-	// FBaseV[i][] = IPh2P22P1*BaseV[i][];
 	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
 	
 	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
@@ -201,25 +201,6 @@ for (int i=0; i<Nbases; i++){
 	
 	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	
-	// VhP1dc GR, GrEIM;
-	// GrEIM=0;
-	// GR = mod(FVdX[i], FVdY[i], FVYdX[i], FVYdY[i]);
-	//
-	// real[int] beim(Mbases);
-	// for (int s=0; s<Mbases; s++){
-	// 	beim(s) = GR[](PuntosMSmago(s));
-	// }
-	// cout<<beim<<endl;
-	//
-	// real[int] sigmaE = MEIMS^-1*beim;
-	//
-	// cout<<sigmaE<<endl;
-	// for(int s=0;s<Mbases;s++){
-	// 	GrEIM = GrEIM + sigmaE(s)*EIMSmago[s];
-	// }
-	//
-	// plot(GR, cmm="Gr");
-	// plot(GrEIM, cmm="GREIM");
 	
 	// Defino el nuevo producto escalar para la convección
 	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
@@ -232,7 +213,8 @@ for (int i=0; i<Nbases; i++){
 	include "Greedy.idp"
 	
 	// Actualizo el nuevo Reynolds
-	Reynolds = MuBest(i);
+	Reynolds = MuBest(i+1);
+	mpi(cout<<"New Reynolds:"<<Reynolds<<endl;)
 	
 	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
 }

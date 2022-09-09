@@ -23,4 +23,3 @@ BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 
 // Doble Ortonormalización
 BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
-
