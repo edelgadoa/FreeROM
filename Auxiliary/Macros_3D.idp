@@ -71,4 +71,32 @@ NewMacro solvesystem(A,b,u)
 EndMacro
 
 
+NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
+{
+	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
+	u#L[]=0;
+	MatAVh4P2 = A;
+	
+	b.resize(b.n+1);
+	b(b.n-1) = 0;
+	
+	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
+	real[int] Lag = Lagrange(0,Vh4P2L);
+	
+	real[int] pLag;
+	ChangeNumbering(MatAVh4P2,Lag,pLag);
+	
+	Mat MatLPS = [[MatAVh4P2,pLag],[pLag',1]];
+	set(MatLPS, sparams=sparamsv);
+	
+	real[int] solLPS = MatLPS^-1*b;
+	u#L[] = solLPS;
+	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
+}
+EndMacro
+
+
+
+
+
 

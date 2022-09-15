@@ -15,7 +15,8 @@ load "iovtk"
 
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_3D.idp"
-// include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../../Auxiliary/IO.idp" 
+include "../../Auxiliary/search.idp"
 
 // Creamos la malla
 include "../../Mallas/CuboNxNyNz.idp"
@@ -52,16 +53,13 @@ for(int i=0; i<nSnapshots; i++){
 }
 
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
-{
-	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt");
-	nSnapshotFILE<<vReynolds<<endl;	
-}
+
 
 /////////////////////////////////////////////
-// Resolvemos el problema de EF: Cavidad 2D//
+// Resolvemos el problema de EF: Cavidad 3D//
 /////////////////////////////////////////////
 
-Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
+Vh4P2 [uEF, uEFY, uEFZ, uEFP];
 Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
 VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
@@ -70,30 +68,39 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 VhP2 SnapX, SnapY, SnapZ;
 VhP2 SnapP;
 
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, ReSnapshots, 0);
+
 for (int i=0; i<nSnapshots; i++){
 
 	Reynolds = vReynolds(i);
-	if (mpirank==0){
-		cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
+	mpi(cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;)
+	
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		include "FE_VMS_LPS_3D.idp"
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+		
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+
+		SnapX = uEF;
+		SnapY = uEFY;
+		SnapZ = uEFZ;
+		SnapP = uEFP;
+	
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);		
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		
+		Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
+		uEFL[]=uEF[] + Lev[];
+		
+		int[int] fforder=[1,1,1,1];
+		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
+		
+		real mediaP = intN(Th)(uEFP);
+		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
-	include "FE_VMS_LPS_3D.idp"
-
-	SnapX = uEF;
-	SnapY = uEFY;
-	SnapZ = uEFZ;
-	SnapP = uEFP;
-	
-	// Guardamos el snapshot -> TODO hacerlo con la funcion write
-
-	ofstream SnapshotVX("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt");
-	SnapshotVX<<SnapX[]<<endl;
-
-	ofstream SnapshotVY("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt");
-	SnapshotVY<<SnapY[]<<endl;
-	
-	ofstream SnapshotVZ("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt");
-	SnapshotVZ<<SnapZ[]<<endl;
-
-	ofstream SnapshotP("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt");
-	SnapshotP<<SnapP[]<<endl;	
 }

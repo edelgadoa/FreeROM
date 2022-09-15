@@ -291,11 +291,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	set(Mfinal,sparams=sparamsv);
 	
 	
-	
-	
-	
-	
-	
 	Vh3P2 [uEFp, uEFpY, uEFpP]; // the previous solution
 	uEFp[]=uEF[];
 	

@@ -77,9 +77,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Actualizamos la solución
 	uEFp[]=uEF[];
-	solvesystem(MFinal, bFinal, uEF);
 	
-	// mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
+	
+	real mediaPint = intN(Th)(uEFP);
+	mpi(cout<<"media Pres:"<<mediaPint<<endl;)
 	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY, errEFZ;

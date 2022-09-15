@@ -17,7 +17,8 @@ load "medit"
 
 // Cargamos macros
 include "../../Auxiliary/Macros_3D.idp"
-
+include "../../Auxiliary/IO.idp" 
+include "../../Auxiliary/search.idp"
 
 // Creamos la malla
 include "../../Mallas/CuboNxNyNZ.idp"
