@@ -164,8 +164,9 @@ for (int s=0; s<Taubases; s++){
 	contFF++;
 }
 
-//pause;
-cout<<"i="<<i<<endl;
+pause;
+
+
 for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	real[int,int] NgkL(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
 	real[int,int] NggkL(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
@@ -219,12 +220,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
 bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
 
-contFF = 0;
 for (int s=0; s<Mbases; s++){
-	if(mpirank==contFF%mpisize){
 		bSmagoRB(s,i) = innerprodX(FBaseV[i][], FLev[], SmagoPEM[s]);
-	}
-	contFF++;
 }
-pause;
 

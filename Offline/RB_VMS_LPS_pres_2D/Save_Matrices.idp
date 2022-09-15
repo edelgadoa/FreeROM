@@ -1,0 +1,60 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+
+real[int,int] AN(2*NRB,2*NRB),BN(2*NRB,2*NRB),DN(2*NRB,2*NRB),DT(2*NRB,2*NRB),EN(2*NRB,2*NRB),sN(mbases,2*NRB);
+real[int] aN(2*NRB),cN(2*NRB);
+real[int,int][int] CN(NRB),SN(Mbases),GTjN(Mbases),SP(Taubases),Nuk(Taubases),NGuk(Taubases);
+
+
+AN = StoNnu(0:2*NRB-1, 0:2*NRB-1);
+BN = StoNB(nbases-NRB:Nbases+NRB-1, 0:2*NRB-1);
+DN = vNSc2N(0:2*NRB-1, 0:2*NRB-1);
+DT = vNSdt(0:2*NRB-1, 0:2*NRB-1);
+EN = PresPen(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
+sN = bSmagoN(0:Mbases-1, 0:2*NRB-1);
+
+aN = bStoNnu(0:2*NRB-1);
+cN = bNSsegN(0:2*NRB-1);
+
+for (int s=0; s<NRB; s++){
+	real [int,int] cint(2*NRB,2*NRB), aux(2*Nbases,2*nNbases);
+	aux = vNSN[s];
+	cint = aux(0:2*NRB-1, 0:2*NRB-1);
+	CN[s] = cint(0:2*NRB-1, 0:2*NRB-1);
+}
+for (int s=0; s<Mbases; s++){
+	real [int,int] sint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
+	aux=SmagoN[s];
+	sint=aux(0:2*NRB-1, 0:2*NRB-1);
+	SN[s]=sint(0:2*NRB-1, 0:2*NRB-1);
+}
+for (int s=0;s<mbases;s++){
+	real [int,int] GTjint(4,NRB), aux(4,nbases);
+	aux=GradTj[s];
+	GTjint = aux(0:3,0:NRB-1);
+	GTjN[s] = GTjint(0:3,0:NRB-1);
+}
+
+for (int s=0; s<Taubases; s++){
+    real[int,int] Spresint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
+    aux=SpresN[s];
+    Spresint = aux(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
+    SP[s] = Spresint(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
+}
+
+for (int s=0; s<Taubases; s++){
+    real[int,int] NUKint(NRB+1,NRB+1), aux(Nbases+1,Nbases+1);
+    aux = NUK[s];
+    NUKint = aux(0:NRB,0:NRB); 
+    Nuk[s] = NUKint(0:NRB,0:NRB);
+}
+
+for (int s=0;s<taubases;s++){
+    real[int,int] NGUKint(NRB+1,NRB+1), aux(Nbases+1,Nbases+1);
+    aux = NGUK[s];
+    NGUKint = aux(0:NRB,0:NRB); 
+    NGuk[s] = NGUKint(0:NRB,0:NRB);
+}
+

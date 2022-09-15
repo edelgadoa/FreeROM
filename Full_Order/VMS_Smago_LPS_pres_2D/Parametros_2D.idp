@@ -45,6 +45,8 @@ real epsRB = 1e-10; //parada de problema reducido
 real epsGreedy = 5e-5;
 real epsEIM = 5e-5;
 
+int NRB = 0;
+
 // Parametros para el RBF
 real RBFeps = 1e-5;
 
