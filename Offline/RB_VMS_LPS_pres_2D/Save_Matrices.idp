@@ -3,58 +3,77 @@
 /////////////// 
 
 
-real[int,int] AN(2*NRB,2*NRB),BN(2*NRB,2*NRB),DN(2*NRB,2*NRB),DT(2*NRB,2*NRB),EN(2*NRB,2*NRB),sN(mbases,2*NRB);
-real[int] aN(2*NRB),cN(2*NRB);
-real[int,int][int] CN(NRB),SN(Mbases),GTjN(Mbases),SP(Taubases),Nuk(Taubases),NGuk(Taubases);
+real[int,int] DiffN(2*NRB,2*NRB), DivPN(2*NRB,2*NRB), ConvLevN(2*NRB,2*NRB), DTN(2*NRB,2*NRB), PenN(2*NRB,2*NRB), bSmagoN(Mbases,2*NRB);
+real[int] bDiffN(2*NRB), bConvN(2*NRB);
+real[int,int][int] ConvN(NRB), SmagoN(Mbases), StabPN(Taubases), NukN(Taubases), NGukN(Taubases);
 
 
-AN = StoNnu(0:2*NRB-1, 0:2*NRB-1);
-BN = StoNB(nbases-NRB:Nbases+NRB-1, 0:2*NRB-1);
-DN = vNSc2N(0:2*NRB-1, 0:2*NRB-1);
-DT = vNSdt(0:2*NRB-1, 0:2*NRB-1);
-EN = PresPen(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
-sN = bSmagoN(0:Mbases-1, 0:2*NRB-1);
+DiffN = DiffRB(0:2*NRB-1, 0:2*NRB-1);
+DivPN = DivPRB(nbases-NRB:Nbases+NRB-1, 0:2*NRB-1);
+ConvLevN = ConvLevRB(0:2*NRB-1, 0:2*NRB-1);
+DTN = DTRB(0:2*NRB-1, 0:2*NRB-1);
+PenN = PenRB(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
+bSmagoN = bSmagoRB(0:Mbases-1, 0:2*NRB-1);
 
-aN = bStoNnu(0:2*NRB-1);
-cN = bNSsegN(0:2*NRB-1);
+bDiffN = bDiffRB(0:2*NRB-1);
+bConvN = bConvRB(0:2*NRB-1);
 
 for (int s=0; s<NRB; s++){
 	real [int,int] cint(2*NRB,2*NRB), aux(2*Nbases,2*nNbases);
-	aux = vNSN[s];
+	aux = ConvRB[s];
 	cint = aux(0:2*NRB-1, 0:2*NRB-1);
-	CN[s] = cint(0:2*NRB-1, 0:2*NRB-1);
+	ConvN[s] = cint(0:2*NRB-1, 0:2*NRB-1);
 }
 for (int s=0; s<Mbases; s++){
 	real [int,int] sint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
-	aux=SmagoN[s];
+	aux=SmagoRB[s];
 	sint=aux(0:2*NRB-1, 0:2*NRB-1);
-	SN[s]=sint(0:2*NRB-1, 0:2*NRB-1);
-}
-for (int s=0;s<mbases;s++){
-	real [int,int] GTjint(4,NRB), aux(4,nbases);
-	aux=GradTj[s];
-	GTjint = aux(0:3,0:NRB-1);
-	GTjN[s] = GTjint(0:3,0:NRB-1);
+	SmagoN[s]=sint(0:2*NRB-1, 0:2*NRB-1);
 }
 
 for (int s=0; s<Taubases; s++){
     real[int,int] Spresint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
-    aux=SpresN[s];
-    Spresint = aux(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
-    SP[s] = Spresint(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
+    aux = StabPRB[s];
+    Spresint = aux(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
+    StabPN[s] = Spresint(nbases-NRB:Nbases+NRB-1, nbases-NRB:Nbases+NRB-1);
 }
 
 for (int s=0; s<Taubases; s++){
     real[int,int] NUKint(NRB+1,NRB+1), aux(Nbases+1,Nbases+1);
     aux = NUK[s];
     NUKint = aux(0:NRB,0:NRB); 
-    Nuk[s] = NUKint(0:NRB,0:NRB);
+    NukN[s] = NUKint(0:NRB,0:NRB);
 }
 
 for (int s=0;s<taubases;s++){
     real[int,int] NGUKint(NRB+1,NRB+1), aux(Nbases+1,Nbases+1);
     aux = NGUK[s];
     NGUKint = aux(0:NRB,0:NRB); 
-    NGuk[s] = NGUKint(0:NRB,0:NRB);
+    NGukN[s] = NGUKint(0:NRB,0:NRB);
 }
+
+
+// Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
+write("MatricesRB/Diff.txt", DiffN, 0 ,0);
+write("MatricesRB/DivP.txt", DivPN, 0, 0);
+write("MatricesRB/ConvLev.txt", ConvLevN, 0, 0);
+write("MatricesRB/DT.txt", DTN, 0, 0);
+write("MatricesRB/Pen.txt", PenN, 0, 0);
+write("MatricesRB/bSmago.txt", bSmagoN, 0, 0);
+write("MatricesRB/bDiff.txt", bDiffN, 0, 0);
+write("MatricesRB/bConv.txt", bConvN, 0, 0);
+write("MatricesRB/Conv.txt", ConvN, 0, 0);
+write("MatricesRB/Smago.txt", SmagoN, 0, 0);
+write("MatricesRB/StabP.txt", StabPN, 0, 0);
+write("MatricesRB/NUK.txt", NukN, 0, 0);
+write("MatricesRB/NGUK.txt", NGukN, 0, 0);
+
+// Guardo los Snapshots calculados
+
+real[int, int] MBaseVN(Vh2P2.ndof, NRB), MBasePN(VhP2.ndof, NRB);
+MBaseVN = MBaseV(0:Vh2P2.ndof-1, 0:NRB-1);
+MBasePN = MBaseP(0:VhP2.ndof-1, 0:NRB-1);
+
+write("MatricesRB/BaseV.txt", MBaseVN, 0, 0);
+write("MatricesRB/BaseP.txt", MBasePN, 0, 0);
 
