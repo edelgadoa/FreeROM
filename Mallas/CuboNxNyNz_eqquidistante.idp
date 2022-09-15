@@ -22,15 +22,12 @@ mesh3 Th, ThL;
 	real [int,int]  Bxyz=[[x01,x11],[y01,y11],[z01,z11]]; // Coordenadas de las esquinas del cubo
 	
 	//Labels para los problemas
-	int paredi = 0; //Pared izquierda
-	int paredd = 0; //Pared derecha
-	int paredf = 2; //Pared frontal
-	int paredt = 2; //Pared trasera
+	int pared = 1;
 	int suelo = 1; //En mi problema, el suelo y las paredes tienen la misma condicion de contorno
-	int techo = 1;
+	int techo = 2;
 	
-	int [int,int]  Lxyz=[[paredt,paredf],[paredi,paredd],[suelo,techo]]; // Referencias a los planos [[x00,x01],[y00,y01],[z00,z01]]
-
+	int [int,int]  Lxyz=[[pared,pared],[pared,pared],[suelo,techo]]; // Referencias a los planos [[x00,x01],[y00,y01],[z00,z01]]
+	
 	// Puntos del 
 	int nflag = 0; 
 		// nflag = 0 --> Malla estandar (diagonal x-y=cte)
@@ -40,12 +37,5 @@ mesh3 Th, ThL;
 		// nflag = 4 --> Malla tipo 2 con dos esquinas donde cambia la diagonal (PARA 2D)
 	
 	Th = Cube(Nxyz, Bxyz, Lxyz);
-	//Una vez construidos el cubo hacemos el refinamiento en las paredes 
-	func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
-	func fy = 0.5*(1 + (tanh(2*(2*y-1)))/(tanh(2)));
-	func fz = 0.5*(1 + (tanh(2*(2*z-1)))/(tanh(2)));
-	Th = movemesh(Th,[fx,fy,fz]);
 	ThL = Th;
 }
-
-plot(Th);
