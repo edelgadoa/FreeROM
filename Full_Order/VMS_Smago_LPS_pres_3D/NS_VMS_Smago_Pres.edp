@@ -9,7 +9,7 @@
 // Codigo para resolver el problema 3D de EF de VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres 
 
-verbosity=0;
+verbosity = 0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -41,11 +41,11 @@ include "Interp_matrix_NoStab_VP_3D_Local.idp"
 include "Levantamiento_3D.idp"
 
 
-Reynolds = 3545;
+Reynolds = 1000;
 
 
 /////////////////////////////////////////////
-// Resolvemos el problema de EF: Cavidad 2D//
+// Resolvemos el problema de EF: Cavidad 3D//
 /////////////////////////////////////////////
 
 Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
@@ -57,10 +57,10 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 include "FE_VMS_LPS_3D.idp"
 
 
-// Dibujamos la solucion, con levantamiento
+// Guardamos la solucion en paraview, con levantamiento
 
 Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
-uEFL[]=uEF[] + Lev[];
+uEFL[] = uEF[] + Lev[];
 
 int[int] fforder=[1,1,1,1];
 savevtk("VMS_Smago.vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);

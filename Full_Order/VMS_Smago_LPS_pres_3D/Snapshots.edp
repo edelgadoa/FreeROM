@@ -8,7 +8,7 @@
 
 // Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres 
-verbosity=0;
+verbosity = 0;
 
 // Cargamos librerias
 load "iovtk" 
