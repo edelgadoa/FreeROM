@@ -76,7 +76,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal += bSmago;
 	
 	// Actualizamos la solución
-	uEFp[]=uEF[];
+	uEFp[] = uEF[];
 	
 	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	

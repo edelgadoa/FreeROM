@@ -48,15 +48,15 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
-macro mpi(variable)if(mpirank==0){variable} //EOM
+macro mpi(variable) if(mpirank==0){variable} //EOM
 
 macro reduceSolution(uL,u,D,map)
 {
-	real[int] aux(u[].n);aux=0;
-	uL[].*=D;
-	aux(map)=uL[];
-	u[]=0;
-	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+	real[int] aux(u[].n); aux = 0;
+	uL[] .*= D;
+	aux(map) = uL[];
+	u[] = 0;
+	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
 }
 //EOM
 
@@ -65,7 +65,7 @@ NewMacro solvesystem(A,b,u)
 	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
 	MatAVh4P2 = A;
 	set(MatAVh4P2,sparams=sparamsv);
-	u#L[]=MatAVh4P2^-1*b;
+	u#L[] = MatAVh4P2^-1*b;
 	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
 }
 EndMacro
@@ -74,22 +74,24 @@ EndMacro
 NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
 {
 	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
-	u#L[]=0;
+	u#L[] = 0;
 	MatAVh4P2 = A;
 	
-	b.resize(b.n+1);
-	b(b.n-1) = 0;
+	mpi(b.resize(b.n + 1); b = [b(0: b.n - 2), 0];)
 	
 	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
 	real[int] Lag = Lagrange(0,Vh4P2L);
 	
 	real[int] pLag;
-	ChangeNumbering(MatAVh4P2,Lag,pLag);
+	ChangeNumbering(MatAVh4P2, Lag, pLag);
 	
-	Mat MatLPS = [[MatAVh4P2,pLag],[pLag',1]];
+	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
 	set(MatLPS, sparams=sparamsv);
 	
 	real[int] solLPS = MatLPS^-1*b;
+	
+	mpi(solLPS.resize(solLPS.n - 1);) // El valor del multiplicador no me interesa
+	
 	u#L[] = solLPS;
 	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
 }
