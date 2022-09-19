@@ -77,7 +77,7 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	u#L[] = 0;
 	MatAVh4P2 = A;
 	
-	mpi(b.resize(b.n + 1); b = [b(0: b.n - 2), 0];)
+	mpi(real[int] tempb = b; b.resize(b.n + 1); b = [tempb(0: tempb.n - 1), 0];)
 	
 	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
 	real[int] Lag = Lagrange(0,Vh4P2L);
