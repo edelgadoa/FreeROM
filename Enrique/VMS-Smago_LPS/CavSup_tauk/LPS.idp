@@ -1,4 +1,4 @@
-load "UMFPACK64"
+//load "UMFPACK64"
 
 macro Grad(u) [dx(u), dy(u)]//
 macro div(u1,u2) (dx(u1)+dy(u2))//

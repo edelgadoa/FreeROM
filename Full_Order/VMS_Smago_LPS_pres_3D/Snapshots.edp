@@ -38,8 +38,8 @@ include "Levantamiento_3D.idp"
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
-
-
+// Incluimos funciones para calcular normas
+include "../../Auxiliary/Normas.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
@@ -100,7 +100,7 @@ for (int i=0; i<nSnapshots; i++){
 		int[int] fforder=[1,1,1,1];
 		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
 		
-		real mediaP = intN(Th)(uEFP);
-		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
+		//real mediaP = intN(Th)(uEFP);
+		//mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
 }

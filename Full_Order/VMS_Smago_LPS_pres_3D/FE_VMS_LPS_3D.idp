@@ -81,19 +81,17 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	
-	real mediaPint = intN(Th)(uEF);
-	mpi(cout<<"media Pres:"<<mediaPint<<endl;)
+	//real mediaPint = intN(Th)(uEF);
+	//mpi(cout<<"media Pres:"<<mediaPint<<endl;)
 	
 	// Calculamos el error cometido (en velocidad)
-	VhP2 errEF, errEFY, errEFZ;
-	errEF = uEF - uEFp;
-	errEFY = uEFY - uEFpY;
-	errEFZ = uEFZ - uEFpZ;
+	Vh4P2 [errEF, errEFY, errEFZ, errEFP];
+	errEF[] = uEF[] - uEFp[];
 	
-	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
-	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
+	real ERRORabs = normL2(errEF[]);
+	ERROR = ERRORabs / normL2(uEF[]);
 	
-	mpi(cout<<ERROR<<endl;)
+	// mpi(cout<<ERROR<<endl;)
 
 }
 
