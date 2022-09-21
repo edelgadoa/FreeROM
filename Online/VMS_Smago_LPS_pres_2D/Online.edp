@@ -1,0 +1,53 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Programa principal que resuelve la fase ONLINE LPS 2D (P2-P2)
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../../Mallas/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "Parametros_2D.idp"
+
+// Incluimos el levantamiento
+include "Levantamiento.idp"
+
+// Cargamos Bases y Matrices
+include "Load_Basis_Data.idp"
+
+real Reynolds = 1000;
+real nu = 1./Reynolds;
+
+// Resolvemos el problema de FE, y calculamos el tiempo en resolver
+real timeFE = clock();
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
+
+uEF[] = uEF[] + Lev[];
+
+timeFE = clock() - timeFE; 
+
+//	Resolvemos el problema de RB, y calculamos el tiempo en resolver
+real timeRB = clock()
+
+include "RB_VMS_LPS_2D.idp"

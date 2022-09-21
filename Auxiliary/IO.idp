@@ -87,6 +87,27 @@ type[int,int][int] result(result#s);
 }
 EndMacro
 
+NewMacro readvectorarray(filename,type,result,show)
+int result#s,result#n;
+{
+	ifstream file(filename);
+	file >> result#s;
+	file >> result#n;
+}
+type[int][int] result(result#s);
+{
+	type[int,int] result#aux(result#n);
+	ifstream file(filename);
+	file >> result#s;
+	for(int i=0;i<result#s;i++)
+	{
+		file >> result#aux;
+		result[i]=result#aux(0:result#n-1);
+	}
+	if(show==1)cout << result << endl;
+}
+EndMacro
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // Archivo auxiliar para la escritura de archivos txt a través de una única función write.
@@ -827,6 +848,203 @@ func int write(string filename,complex[int,int][int]towrite,int ind,bool show,in
 	return 1;
 }
 func int write(string filename,complex[int,int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+
+// Array de array
+func int write(string filename,int[int][int] towrite,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,int[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,int[int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int][int] towrite,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int] towrite,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces,int preci)
 {
 	if(mpirank==proces){
 	if(ind==0)

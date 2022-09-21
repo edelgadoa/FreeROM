@@ -18,7 +18,7 @@ include "../../Auxiliary/Macros_2D.idp"
 include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
 include "../../Auxiliary/search.idp"
 
-// Creamos la matriz
+// Creamos la malla
 include "../../Mallas/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
@@ -36,7 +36,6 @@ include "Levantamiento.idp"
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
-
 
 Remin = 1000;
 Remax = 5100;

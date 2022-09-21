@@ -77,7 +77,10 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	u#L[] = 0;
 	MatAVh4P2 = A;
 	
-	mpi(real[int] tempb = b; b.resize(b.n + 1); b = [tempb(0: tempb.n - 1), 0];)
+	real[int] bNew (b.n + 1);
+	//b.resize(b.n + 1);
+	bNew(0:b.n - 1) = b(0:b.n - 1);
+	bNew(b.n) = 0;
 	
 	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
 	real[int] Lag = Lagrange(0,Vh4P2L);
@@ -88,10 +91,10 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
 	set(MatLPS, sparams=sparamsv);
 	
-	real[int] solLPS = MatLPS^-1*b;
+	real[int] solLPS = MatLPS^-1*bNew;
 	
-	mpi(solLPS.resize(solLPS.n - 1);) // El valor del multiplicador no me interesa
-	
+	// mpi(solLPS.resize(solLPS.n - 1);) // El valor del multiplicador no me interesa
+	u#L[] = 0.;
 	u#L[] = solLPS;
 	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
 }

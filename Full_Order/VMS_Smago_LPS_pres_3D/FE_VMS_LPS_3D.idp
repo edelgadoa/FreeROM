@@ -76,11 +76,12 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal += bSmago;
 	
 	// Actualizamos la solución
+	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[] = uEF[];
 	
 	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	
-	real mediaPint = intN(Th)(uEFP);
+	real mediaPint = intN(Th)(uEF);
 	mpi(cout<<"media Pres:"<<mediaPint<<endl;)
 	
 	// Calculamos el error cometido (en velocidad)
@@ -91,7 +92,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
-
+	
+	mpi(cout<<ERROR<<endl;)
 
 }
 

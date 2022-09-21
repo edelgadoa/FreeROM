@@ -99,12 +99,12 @@ macro reduceSolution(uL,u,D,map)
 
 // Parametros para el problema de EF
 real dt = 1;
-real epspen = 1.e-7;
+real epspen = 1.e-10;
 
 real ERROR = 10; // inicializacion del error para el bucle
 
 int niterFE = 2000; 
-real epsFE = 1e-7;
+real epsFE = 1e-10;
 
 
 // Parametros mu

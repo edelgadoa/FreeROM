@@ -49,7 +49,6 @@ Reynolds = 1000;
 /////////////////////////////////////////////
 
 Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
-Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
 VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
