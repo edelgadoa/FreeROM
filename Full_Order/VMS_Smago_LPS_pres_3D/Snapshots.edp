@@ -76,7 +76,10 @@ for (int i=0; i<nSnapshots; i++){
 	mpi(cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;)
 	
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
+		TFE = clock() - TFE;
+		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<endl;)
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;

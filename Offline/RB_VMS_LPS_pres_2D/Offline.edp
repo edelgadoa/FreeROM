@@ -189,8 +189,7 @@ for (int i=0; i<Nbases; i++){
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseP(:,i) = BaseP[i][];
-	
-	// TODO: GUARDAR LOS SNAPSHOTS -> PUEDO GUARDAR LA MATRIZ HASTA LA ITERACIÓN i
+
 
 	// Actualizo las soluciones filtradas
 	FBaseV[i][] = IPh2P22P1 * BaseV[i][];
