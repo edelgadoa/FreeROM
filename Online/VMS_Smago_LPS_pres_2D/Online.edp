@@ -27,12 +27,19 @@ include "Parametros_2D.idp"
 // Incluimos el levantamiento
 include "Levantamiento.idp"
 
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../../Auxiliary/Normas.idp"
+
+varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
+matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
+
 // Cargamos Bases y Matrices
 include "Load_Basis_Data.idp"
 
 real Reynolds = 1000;
 real nu = 1./Reynolds;
 
+//////////////////////////
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
 real timeFE = clock();
 
@@ -46,8 +53,33 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 uEF[] = uEF[] + Lev[];
 
 timeFE = clock() - timeFE; 
+/////////////////////////
 
+/////////////////////////
 //	Resolvemos el problema de RB, y calculamos el tiempo en resolver
 real timeRB = clock()
 
 include "RB_VMS_LPS_2D.idp"
+
+Vh2P2 [uRB, uRBY];
+VhP2 uRBP;
+
+uRB[] = MBaseV*uRB(0:Nbases-1);
+uRBP[] = MBaseP*uRB(Nbases:2*Nbases-1);
+
+uRB[] = uRB[] + Lev[];
+
+timeRB = clock() - timeRB;
+////////////////////////
+
+// Calculo errores y speedups
+Vh2P2 [uERR, uERRY];
+VhP2 uERRP;
+
+uERR[] = abs(uEF[] - uRB[]);
+uERRP = abs(uEFP - uRBP);
+
+real normErrorV = normX(uERR[], NormVel);
+real normErrorP = normL2(uERRP);
+
+real speedup = timeFE/timeRB;

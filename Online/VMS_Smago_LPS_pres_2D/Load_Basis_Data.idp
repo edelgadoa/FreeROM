@@ -30,3 +30,6 @@ readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/NGUK.txt", re
 int Nbases = ConvN.n;
 int Mbases = SmagoN.n;
 int Taubases = StabPN.n;
+
+real[int, int] DivPNT(2*Nbases, 2*Nbases);
+DivPNT = DivPN'; DivPNT = (-1)*DivPNT;

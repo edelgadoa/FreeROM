@@ -88,8 +88,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	Vh4P2 [errEF, errEFY, errEFZ, errEFP];
 	errEF[] = uEF[] - uEFp[];
 	
-	real ERRORabs = normL2(errEF[]);
-	ERROR = ERRORabs / normL2(uEF[]);
+	real ERRORabs = normL2Vh4P2(errEF[]);
+	ERROR = ERRORabs / normL2Vh4P2(uEF[]);
 	
 	// mpi(cout<<ERROR<<endl;)
 
