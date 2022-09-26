@@ -41,9 +41,9 @@ mesh3 Th, ThL;
 	
 	Th = Cube(Nxyz, Bxyz, Lxyz);
 	//Una vez construidos el cubo hacemos el refinamiento en las paredes 
-	func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
-	func fy = 0.5*(1 + (tanh(2*(2*y-1)))/(tanh(2)));
-	func fz = 0.5*(1 + (tanh(2*(2*z-1)))/(tanh(2)));
+	func fx = 0.5*(1 + (tanh(1.5*(2*x-1)))/(tanh(1.5)));
+	func fy = 0.5*(1 + (tanh(1.5*(2*y-1)))/(tanh(1.5)));
+	func fz = 0.5*(1 + (tanh(1.5*(2*z-1)))/(tanh(1.5)));
 	Th = movemesh(Th,[fx,fy,fz]);
 	ThL = Th;
 }

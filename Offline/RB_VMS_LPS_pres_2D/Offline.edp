@@ -220,10 +220,7 @@ for (int i=0; i<Nbases; i++){
 	
 	if (DeltaN(i)<epsGreedy){
 		NRB = i;
-		write("DeltaNmax.txt", DeltaG, 0, 0);
-		write("DeltaN.txt", DeltaN(0:NRB), 0, 0);
-		write("TauN.txt", TauN(0:NRB), 0, 0);
-		write("MuBest.txt", MuBest(0:NRB), 0, 0);
+		include "Save_Matrices.idp"
 		break;
 	}
 }

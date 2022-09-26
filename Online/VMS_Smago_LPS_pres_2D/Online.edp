@@ -83,3 +83,18 @@ real normErrorV = normX(uERR[], NormVel);
 real normErrorP = normL2(uERRP);
 
 real speedup = timeFE/timeRB;
+
+mpi(cout<<"-------------------------------"<<endl;
+cout<<" "<<endl;
+cout<<" "<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Error T para velocidades= "<<normErrorV<<endl;
+cout<<"Error L2 para presiones=  "<<normErrorP<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Tiempo en resolver por B.R.:  "<<TRB<<"s"<<endl;
+cout<<"Numero iteraciones para B.R.: "<<RBit<<"s"<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Speedup de la resolucion :    "<<speedup<<endl;
+cout<<"-------------------------------"<<endl;)
+
+
