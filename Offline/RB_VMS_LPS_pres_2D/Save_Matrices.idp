@@ -40,7 +40,7 @@ for (int s=0; s<Taubases; s++){
     real[int,int] Spresint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
     aux = StabPRB[s];
     Spresint = aux(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
-    StabPN[s] = Spresint(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
+    StabPN[s] = Spresint(0:2*NRB-1, 0:2*NRB-1);
 }
 
 for (int s=0;s<Mbases;s++){

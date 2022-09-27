@@ -20,7 +20,7 @@ readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/bConv.txt", real, bConvN
 
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Conv.txt", real, ConvN, 0);
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Smago.txt", real, SmagoN, 0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/StabP.txt", real, StabPN, 0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/StabP.txt", real, StabPN, 1);
 
 readvectorarray("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPM.txt", real, GradPM,0);

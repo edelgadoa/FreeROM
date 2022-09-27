@@ -57,6 +57,8 @@ uEF[] = uEF[] + Lev[];
 VhP2 UEF, UEFY, UEFP;
 UEF = uEF; UEFY = uEFY; UEFP = uEFP;
 
+plot([uEF, uEFY], cmm = "FE solution for Re = " + Reynolds);
+
 timeFE = clock() - timeFE; 
 
 /////////////////////////
@@ -77,6 +79,8 @@ uN[] = MBaseV*uRB(0:Nbases-1);
 uNP[] = MBaseP*uRB(Nbases:2*Nbases-1);
 
 uN[] += LevV[];
+
+plot([uN, uNY], cmm = "FE solution for Re = " + Reynolds);
 
 UN = uN; UNY = uNY;
 
