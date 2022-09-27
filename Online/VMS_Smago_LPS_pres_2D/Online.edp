@@ -16,16 +16,16 @@ include "../../Auxiliary/search.idp"
 include "../../Mallas/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
-include "FE_Spaces_NoStab_VP_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "Interp_matrix_NoStab_VP_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "Parametros_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
 
 // Incluimos el levantamiento
-include "Levantamiento.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../../Auxiliary/Normas.idp"
@@ -36,8 +36,10 @@ matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
 // Cargamos Bases y Matrices
 include "Load_Basis_Data.idp"
 
-real Reynolds = 1000;
-real nu = 1./Reynolds;
+// Cargo los elementos del EIM (tanto para Smago como para LPS)
+include "../../Offline/RB_VMS_LPS_pres_2D/EIM_Data.idp"
+
+Reynolds = 1000;
 
 //////////////////////////
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
@@ -52,22 +54,30 @@ include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 
 uEF[] = uEF[] + Lev[];
 
+VhP2 UEF, UEFY, UEFP;
+UEF = uEF; UEFY = uEFY; UEFP = uEFP;
+
 timeFE = clock() - timeFE; 
+cout<<"FIN FE"<<endl;
 /////////////////////////
 
 /////////////////////////
 //	Resolvemos el problema de RB, y calculamos el tiempo en resolver
-real timeRB = clock()
+real timeRB = clock();
 
 include "RB_VMS_LPS_2D.idp"
 
-Vh2P2 [uRB, uRBY];
-VhP2 uRBP;
+Vh2P2 [uN, uNY];
+VhP2 uNP;
 
-uRB[] = MBaseV*uRB(0:Nbases-1);
-uRBP[] = MBaseP*uRB(Nbases:2*Nbases-1);
+VhP2 UN, UNY, UNP;
 
-uRB[] = uRB[] + Lev[];
+uN[] = MBaseV*uRB(0:Nbases-1);
+uNP[] = MBaseP*uRB(Nbases:2*Nbases-1);
+
+uN[] = uN[] + Lev[];
+
+UN = uN; UNY = uNY;
 
 timeRB = clock() - timeRB;
 ////////////////////////
@@ -75,12 +85,16 @@ timeRB = clock() - timeRB;
 // Calculo errores y speedups
 Vh2P2 [uERR, uERRY];
 VhP2 uERRP;
+VhP2 UERR, UERRY;
 
-uERR[] = abs(uEF[] - uRB[]);
-uERRP = abs(uEFP - uRBP);
+UERR = abs(UEF - UN);
+UERRY = abs(UEFY - UNY);
+uERRP = abs(UEFP - UNP);
 
-real normErrorV = normX(uERR[], NormVel);
-real normErrorP = normL2(uERRP);
+[uERR, uERRY] = [UERR, UERRY];
+
+real normErrorV = normX(uERR[], MNormaVel);
+real normErrorP = normL2(uERRP[]);
 
 real speedup = timeFE/timeRB;
 
@@ -91,8 +105,9 @@ cout<<"-------------------------------"<<endl;
 cout<<"Error T para velocidades= "<<normErrorV<<endl;
 cout<<"Error L2 para presiones=  "<<normErrorP<<endl;
 cout<<"-------------------------------"<<endl;
-cout<<"Tiempo en resolver por B.R.:  "<<TRB<<"s"<<endl;
-cout<<"Numero iteraciones para B.R.: "<<RBit<<"s"<<endl;
+cout<<"Tiempo en resolver por F.E.:  "<<timeFE<<"s"<<endl;
+cout<<"Tiempo en resolver por B.R.:  "<<timeRB<<"s"<<endl;
+// cout<<"Numero iteraciones para B.R.: "<<RBit<<"s"<<endl;
 cout<<"-------------------------------"<<endl;
 cout<<"Speedup de la resolucion :    "<<speedup<<endl;
 cout<<"-------------------------------"<<endl;)

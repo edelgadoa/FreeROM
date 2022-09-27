@@ -77,16 +77,6 @@ VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases);
 real[int, int] MBaseV(Vh2P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
 
 /////////////////////////////////////////
-readvector("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
-readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
-
-int Mbases = muEIM.n;
-int Taubases = muEIMTau.n;
-
-VhP1dc[int] EIMSmago(Mbases);
-VhP0[int] EIMTau(Taubases);
-
-
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
 
@@ -219,7 +209,7 @@ for (int i=0; i<Nbases; i++){
 	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
 	
 	if (DeltaN(i)<epsGreedy){
-		NRB = i;
+		NRB = i + 1;
 		include "Save_Matrices.idp"
 		break;
 	}

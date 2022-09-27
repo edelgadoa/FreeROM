@@ -11,6 +11,6 @@ func g1=1.*(z>=1);
 Vh4P2 [Lev, LevY, LevZ, LevP];
 VhP2 GP2 = g1;
 VhP2 GzeroP2 = 0.;
-VhP1 GzeroP1 = 0.; //NO NECESARIO CUANDO FUNCIONE CON EF ESTABLE
 
-[Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP1];
+
+[Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
