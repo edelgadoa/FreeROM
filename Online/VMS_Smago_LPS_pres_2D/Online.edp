@@ -58,7 +58,7 @@ VhP2 UEF, UEFY, UEFP;
 UEF = uEF; UEFY = uEFY; UEFP = uEFP;
 
 timeFE = clock() - timeFE; 
-cout<<"FIN FE"<<endl;
+
 /////////////////////////
 
 /////////////////////////
@@ -72,10 +72,11 @@ VhP2 uNP;
 
 VhP2 UN, UNY, UNP;
 
+
 uN[] = MBaseV*uRB(0:Nbases-1);
 uNP[] = MBaseP*uRB(Nbases:2*Nbases-1);
 
-uN[] = uN[] + Lev[];
+uN[] += LevV[];
 
 UN = uN; UNY = uNY;
 
@@ -91,10 +92,12 @@ UERR = abs(UEF - UN);
 UERRY = abs(UEFY - UNY);
 uERRP = abs(UEFP - UNP);
 
+
 [uERR, uERRY] = [UERR, UERRY];
 
 real normErrorV = normX(uERR[], MNormaVel);
 real normErrorP = normL2(uERRP[]);
+
 
 real speedup = timeFE/timeRB;
 

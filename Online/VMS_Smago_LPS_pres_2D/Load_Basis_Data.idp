@@ -27,6 +27,7 @@ readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPM.txt", real, GradP
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/NUK.txt", real, NukN, 0);
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/NGUK.txt", real, NGukN, 0);
 
+
 int Nbases = ConvN.n;
 // int Mbases = SmagoN.n;
 // int Taubases = StabPN.n;

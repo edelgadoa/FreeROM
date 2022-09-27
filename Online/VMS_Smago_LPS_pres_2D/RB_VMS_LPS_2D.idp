@@ -26,7 +26,6 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 	bDTNi = 0;
 	bSmagoNi = 0;
 	bRB = 0;
-	
 	// Matriz de conveccion
 	for (int s=0; s<Nbases; s++){
 		real[int,int] ConvNint(2*Nbases, 2*Nbases);
@@ -34,7 +33,6 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 		ConvNint = uRB(s)*ConvNint;
 		ConvNi += ConvNint;
 	}
-
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(Nbases);
 	uN = uRB(0:Nbases-1); //solo las componentes de la velocidad
@@ -45,7 +43,7 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	
+
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	//cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
@@ -92,7 +90,6 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 		StabPNi += StabPNint; 
 	}
 	
-	
 	// Segundos miembro dt
 	for (int s=0; s<Nbases; s++){
 		real[int] bDTNint(2*Nbases);
@@ -111,7 +108,6 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 	bRB -= nu * bDiffN(0:2*Nbases-1);
 	bRB -= bConvN(0:2*Nbases-1);
 	bRB -= bSmagoNi(0:2*Nbases-1);
-	
 	
 	// Resuelvo el problema reducido
 	real[int] uRBp = uRB;
