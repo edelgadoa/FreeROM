@@ -87,8 +87,8 @@ type[int,int][int] result(result#s);
 }
 EndMacro
 
-NewMacro readvectorarray(filename,type,result,show)
-int result#s,result#n;
+NewMacro readvectorarray(filename,type,result,show) // Este puede fallar, pero carga bien el vector de vectores que quiero
+int result#s,result#n, result#zero;
 {
 	ifstream file(filename);
 	file >> result#s;
@@ -96,13 +96,13 @@ int result#s,result#n;
 }
 type[int][int] result(result#s);
 {
-	type[int,int] result#aux(result#n);
+	type[int] result#aux(result#n);
 	ifstream file(filename);
-	file >> result#s;
+	file >> result#zero;
 	for(int i=0;i<result#s;i++)
 	{
 		file >> result#aux;
-		result[i]=result#aux(0:result#n-1);
+		result[i]=[result#aux(0:result#n-1)];
 	}
 	if(show==1)cout << result << endl;
 }

@@ -5,7 +5,6 @@
 // Programa que calcula el residuo de la solución de RBM
 matrix MRes;
 real[int] bRes(Vh3P2.ndof);
-Vh3P2 [BRES, BRESY, BRESP];
 
 // Termino de Navier-Stokes
 real[int] bNSRes(Vh3P2.ndof);
@@ -76,8 +75,6 @@ real[int] bStabPRes(Vh3P2.ndof);
 bRes = bNSRes;
 bRes += bSmagoRes;
 bRes += bStabPRes;
-mpi(cout<<"bres = "<<bRes.l2<<endl;)
-BRES[] = bRes;
 
 {
 	Vh3P2 [RES, RESY, RESP];

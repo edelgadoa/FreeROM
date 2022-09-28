@@ -8,28 +8,34 @@ readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/BaseV.txt", real, MBaseV
 readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/BaseV.txt", real, MBaseP, 0);
 
 
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/Diff.txt", real, DiffN, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/DivP.txt", real, DivPN, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/ConvLev.txt", real, ConvLevN, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/DT.txt", real, DTN, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/Pen.txt", real, PenN, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/bSmago.txt", real, bSmago, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Diff.txt", real, DiffN, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/DivP.txt", real, DivPN, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/ConvLev.txt", real, ConvLevN, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/DT.txt", real, DTN, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Pen.txt", real, PenN, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/bSmago.txt", real, bSmagoN, 0);
 
-readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/bDiff.txt", real, bDiffN, 0);
-readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/bConv.txt", real, bConvN, 0);
+readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/bDiff.txt", real, bDiffN, 0);
+readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/bConv.txt", real, bConvN, 0);
 
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/Conv.txt", real, ConvN, 0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/Smago.txt", real, SmagoN, 0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/StabP.txt", real, StabPN, 0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Conv.txt", real, ConvN, 0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Smago.txt", real, SmagoN, 0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/StabP.txt", real, StabPN, 1);
 
-readvectorarray("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/GradPM.txt", real, GradPM,0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/NUK.txt", real, NukN, 0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/MatricesRB/NGUK.txt", real, NGuKN, 0);
+readvectorarray("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPM.txt", real, GradPM,0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/NUK.txt", real, NukN, 0);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/NGUK.txt", real, NGukN, 0);
+
 
 int Nbases = ConvN.n;
-int Mbases = SmagoN.n;
-int Taubases = StabPN.n;
+// int Mbases = SmagoN.n;
+// int Taubases = StabPN.n;
 
-real[int, int] DivPNT(2*Nbases, 2*Nbases);
+real[int, int] DivPNT(2*Nbases, 2*Nbases), ConvNi(2*Nbases, 2*Nbases), SmagoNi(2*Nbases, 2*Nbases), 
+		       StabPNi(2*Nbases, 2*Nbases); 
+
+real[int] bDTNi(2*Nbases), bSmagoNi(2*Nbases);
+
 DivPNT = DivPN'; DivPNT = (-1)*DivPNT;
+

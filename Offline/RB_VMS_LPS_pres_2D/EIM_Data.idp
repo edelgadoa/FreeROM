@@ -2,6 +2,15 @@
 // FreeROM 
 /////////////// 
 
+readvector("../../No_lineales/EIM_VMS_Smago_2D/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
+readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
+
+int Mbases = muEIM.n;
+int Taubases = muEIMTau.n;
+
+VhP1dc[int] EIMSmago(Mbases);
+VhP0[int] EIMTau(Taubases);
+
 
 //////////////////////////////////////////
 // Cargo los elementos del EIM SMAGO
@@ -30,6 +39,6 @@ readmatrix("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/MatrizEIM_LPS.txt", real,
 readvector("../../No_lineales/EIM_tau_LPS_2D/Bases_EIM/TintEIM_LPS.txt", real, PuntosMTau, 0);
 
 matrix MEIMTau = MatrixEIMTau;
-real[int,int] MEIMTauinv = MatrixEIMTau^-1;
+// real[int,int] MEIMTauinv = MatrixEIMTau^-1;
 set(MEIMTau, solver=sparsesolver);
 ///////////////////////////////////////////

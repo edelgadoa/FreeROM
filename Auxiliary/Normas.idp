@@ -17,25 +17,26 @@ func real innerprodL2(real[int] &u, real[int] &v){
 	real result = innerprodX(u, v, XL2);
 	return result;
 }
-
+/*
 func real innerprodL2Vh4P2(real[int] &u, real[int] &v){
 	varf norml2(uu, vv) = int2d(Th)(uu*vv);
 	matrix XL2 = norml2(Vh4P2, Vh4P2);
 	real result = innerprodX(u, v, XL2);
 	return result;
 }
+*/
 
 func real normX(real[int] &u, matrix &X){
 	real result = innerprodX(u,u,X);
 	return sqrt(result);
 }
 
-
+/*
 func real normL2Vh4P2(real[int] &u){
 	real result = innerprodL2Vh4P2(u, u);
 	return sqrt(result);
 }
-
+*/
 
 func real normL2(real[int] &u){
 	real result = innerprodL2(u,u);
