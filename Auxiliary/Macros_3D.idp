@@ -95,7 +95,7 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	u#L[] = 0.;
 	u#L[] = solLPS;
 	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
-	
+
 }
 EndMacro
 
