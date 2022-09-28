@@ -5,7 +5,7 @@
 // Programa que carga las matrices y las bases para la fase ONLINE
 
 readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/BaseV.txt", real, MBaseV, 0);
-readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/BaseV.txt", real, MBaseP, 0);
+readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/BaseP.txt", real, MBaseP, 0);
 
 
 readmatrix("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Diff.txt", real, DiffN, 0);
@@ -20,7 +20,7 @@ readvector("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/bConv.txt", real, bConvN
 
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Conv.txt", real, ConvN, 0);
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/Smago.txt", real, SmagoN, 0);
-readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/StabP.txt", real, StabPN, 1);
+readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/StabP.txt", real, StabPN, 0);
 
 readvectorarray("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
 readtensor("../../Offline/RB_VMS_LPS_pres_2D/MatricesRB/GradPM.txt", real, GradPM,0);

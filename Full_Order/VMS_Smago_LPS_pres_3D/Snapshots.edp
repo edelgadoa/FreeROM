@@ -19,7 +19,7 @@ include "../../Auxiliary/IO.idp"
 include "../../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../../Mallas/CuboNxNyNz.idp"
+include "../../Mallas/CuboNxNyNz_equidistante.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno

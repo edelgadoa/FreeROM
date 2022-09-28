@@ -2,11 +2,11 @@
 // FreeROM 
 /////////////// 
 
-real[int] uRB(2*Nbases), bRB(2*Nbases);//, bDTNi(2*Nbases), bSmagoNi(2*Nbases);
+real[int] uRB(2*Nbases), bRB(2*Nbases);
 
 // Matriz RB Fija
 
-real[int, int] Mfija(2*Nbases, 2*Nbases); //, ConvNi(2*Nbases, 2*Nbases), SmagoNi(2*Nbases, 2*Nbases), StabPNi(2*Nbases, 2*Nbases);
+real[int, int] Mfija(2*Nbases, 2*Nbases); 
 
 Mfija = nu * DiffN;
 Mfija += DivPN;
@@ -103,12 +103,14 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 	MRB += SmagoNi; 
 	MRB += StabPNi;
 	
+
 	
 	bRB = (1./dt) * bDTNi(0:2*Nbases-1);
 	bRB -= nu * bDiffN(0:2*Nbases-1);
 	bRB -= bConvN(0:2*Nbases-1);
 	bRB -= bSmagoNi(0:2*Nbases-1);
 	
+	 
 	// Resuelvo el problema reducido
 	real[int] uRBp = uRB;
 	matrix MRBs = MRB;

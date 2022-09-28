@@ -173,8 +173,11 @@ for (int i=0; i<Nbases; i++){
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
+	plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
 	
 	include "GramSchmidt.idp"
+	
+	plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];

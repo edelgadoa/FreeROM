@@ -77,12 +77,9 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	u#L[] = 0;
 	MatAVh4P2 = A;
 	
-	real[int] bNew (b.n + 1);
-	//b.resize(b.n + 1);
-	bNew(0:b.n - 1) = b(0:b.n - 1);
-	bNew(b.n) = 0;
+	b.resize(b.n + 1);
+	b(b.n - 1) = 0;
 		
-	write("Sistema/b_" + ii + ".txt", bNew, 0, 0);
 	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
 	real[int] Lag = Lagrange(0,Vh4P2L);
 	
@@ -90,28 +87,15 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	ChangeNumbering(MatAVh4P2, Lag, pLag);
 
 	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
-	
-	
-	matrix Atemp = [[A,Lag], [Lag',1]];
-	write("Sistema/M_" + ii + ".txt", Atemp, 0, 0);
 
 	set(MatLPS, sparams=sparamsv);
 	
-	real[int] solLPS = MatLPS^-1*bNew;
+	real[int] solLPS = MatLPS^-1*b;
 
-	for (int proc = 0; proc<= mpisize; proc++){
-		write("Sistema/pLag_" + ii + "_" + proc + ".txt", pLag, 0, 0, proc);
-		write("Sistema/sol_" + ii + "_" + proc + ".txt", solLPS, 0, 0, proc);
-	}
 	u#L[] = 0.;
 	u#L[] = solLPS;
 	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
 	
-	Vh4P2 [U, UY, UZ, UP];
-	U[] = u[] + Lev[];
-	write("Sistema/u_" + ii + ".txt", u[], 0, 0);
-	int[int] fforder=[1,1,1,1];
-	savevtk("VTU/VMS_Smago" + ii + ".vtu", Th, [U, UY, UZ], UP, dataname="Velocity Pressure", order=fforder, bin=true);
 }
 EndMacro
 
