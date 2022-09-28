@@ -77,7 +77,6 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	u#L[] = 0;
 	MatAVh4P2 = A;
 	
-
 	b.resize(b.n + 1);
 	b(b.n - 1) = 0;
 		
@@ -88,8 +87,7 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 	ChangeNumbering(MatAVh4P2, Lag, pLag);
 
 	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
-	
-	
+
 	set(MatLPS, sparams=sparamsv);
 	
 	real[int] solLPS = MatLPS^-1*b;

@@ -22,8 +22,8 @@ macro pause() mpiBarrier(mpiCommWorld)// EOM
 mesh Th,ThL;
  
 {
-	int Nx = 50; // Numero de divisiones eje X
-	int Ny = 50; // Numero de divisiones eje Y
+	int Nx = 150; // Numero de divisiones eje X
+	int Ny = 150; // Numero de divisiones eje Y
 	int nflag = 0; 		
 	Th=square(Nx,Ny,flags=nflag);
 }
@@ -332,3 +332,5 @@ uEFL[]=uEF[] - Lev[];
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 plot(uEFLP, cmm="FE pres para Re="+Reynolds);
 
+int[int] fforder=[1,1,1];
+savevtk("VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
