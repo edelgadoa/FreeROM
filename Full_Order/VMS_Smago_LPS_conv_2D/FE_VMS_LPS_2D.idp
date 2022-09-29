@@ -47,7 +47,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
 	include "Matriz_LPS_Pres_2D.idp"
-
+	
+	// incluimos la matriz de estabilización LPS de la convección
+	matrix LPSConv;
+	real[int] bLPSConv(Vh3P2.ndof);
+	include "Matriz_LPS_Conv_2D.idp"
 
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
@@ -57,10 +61,12 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	MFinal += MNS;
  	MFinal += Smago;
 	MFinal += LPSpres;
+	MFinal += LPSConv;
 	
 	bFinal = bFija;
 	bFinal += bNS;
 	bFinal += bSmago;
+	bFinal += bLPSConv;
 	
 	set(MFinal, solver=sparsesolver);
 	

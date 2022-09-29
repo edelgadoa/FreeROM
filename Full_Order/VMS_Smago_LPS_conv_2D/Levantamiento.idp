@@ -16,10 +16,14 @@ VhP2 GzeroP2 = 0.;
 
 // Filtro el levantamiento y lo derivo
 VhP1dc FLevdX, FLevdY, FLevYdX, FLevYdY;
+VhP1dc LevdX, LevdY, LevYdX, LevYdY;
 
 {
 	FLevdX[] = DXP2IPh * GP2[]; FLevdY[] = DYP2IPh * GP2[];
 	FLevYdX[] = DXP2IPh * GzeroP2[]; FLevYdY[] = DYP2IPh * GzeroP2[];
+	
+	LevdX[] = DXP2 * GP2[]; LevdY[] = DYP2 * GP2[];
+	LevYdX[] = DXP2 * GzeroP2[]; LevYdY[] = DYP2 * GzeroP2[];
 }
 
 

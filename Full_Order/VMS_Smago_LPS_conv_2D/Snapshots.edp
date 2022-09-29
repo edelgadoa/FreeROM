@@ -61,7 +61,7 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 VhP2 SnapX, SnapY;
 VhP2 SnapP;
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
+readvector("../../Snapshots/VMS_Smago_LPS_conv_2D/Snapshots.txt", real, ReSnapshots, 0);
 
 for (int i=0; i<nSnapshots; i++){
 	Reynolds = vReynolds(i);
@@ -75,7 +75,7 @@ for (int i=0; i<nSnapshots; i++){
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 		
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+		write("../../Snapshots/VMS_Smago_LPS_conv_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 		
 		SnapX = uEF;
 		SnapY = uEFY;
@@ -83,9 +83,9 @@ for (int i=0; i<nSnapshots; i++){
 
 
 		// Guardamos los snapshots 
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_conv_2D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_conv_2D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+		write("../../Snapshots/VMS_Smago_LPS_conv_2D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
 
 		// Dibujamos la solucion, con levantamiento
 
@@ -95,7 +95,6 @@ for (int i=0; i<nSnapshots; i++){
 		plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 		plot(uEFLP, cmm="FE pres para Re="+Reynolds);
 
-		//
-	}
+		}
 	// Si ya está calculado, no hace nada
 }
