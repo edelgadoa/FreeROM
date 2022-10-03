@@ -82,7 +82,11 @@ for (int i=0; i<nSnapshots; i++){
         VhP2 medP = 1;
         medP[] *= intN(Th)(uEFP);
         
+<<<<<<< HEAD
         uEFP = uEFP - medP; // Media de la presion cero
+=======
+        uEFP = uEFp - medP; // Media de la presion cero
+>>>>>>> 359345fdd5516f59862d496711f3e845021d2b51
         mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
         
 		TFE = clock() - TFE;
