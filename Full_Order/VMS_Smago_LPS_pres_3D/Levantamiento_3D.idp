@@ -9,7 +9,7 @@ func gfunc = g*z*(z-0.75)*(z>=0.75) + 0;
 func g1=1.*(z>=1);
 
 Vh4P2 [Lev, LevY, LevZ, LevP];
-VhP2 GP2 = gfunc;
+VhP2 GP2 = g1;
 VhP2 GzeroP2 = 0.;
 
 
