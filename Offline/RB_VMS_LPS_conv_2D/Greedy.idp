@@ -10,7 +10,7 @@ real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain);
 // Inicializamos las matrices para el problema reducido
 real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(2*I, 2*I),
 			   ConvLevRBi(2*I, 2*I), DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I),
-			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I); 
+			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I), StabCRBi(2*I, 2*I); 
 			   			   			 			  
 // Inicializamos los segundos miembros
 real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 

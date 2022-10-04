@@ -118,6 +118,48 @@ for (int s=0; s<Taubases; s++){
 	StabPRB[s] += LPSintG;
 }
 
+
+// LPS Conveccion
+for (int s=0; s<Taubases; s++){
+	for (int ui=0; ui<Nbases; ui++){
+		for (int uj=0; uj<Nbases; uj++){
+			real[int, int] LPSCintL(2*Nbases, 2*Nbases), LPSCintG(2*Nbases, 2*Nbases);
+			LPSCintL = 0; LPSCintG = 0;
+			contFF = 0;
+			for (int j=0; j<=i; j++){
+				if (mpirank==contFF%mpisize){
+					LPSCintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+					if(j<i){
+						LPSCintL(j,i) = LPSCintL(i,j)
+					}
+				}
+				contFF++;
+			}
+			pause;
+			mpiAllReduce(LPSCintL, LPSCintG, mpiCommWorld, mpiSUM);
+			
+			StabCRB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCintG;
+		}
+	}
+}
+	
+
+	for (int j=0; j<=i; j++){
+		if (mpirank==contFF%mpisize){
+			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+			if(j<i){
+				LPSintL(j + Nbases,i + Nbases) = LPSintL(i + Nbases,j + Nbases);
+			}
+		}
+		contFF++;		
+	}
+	pause;
+	mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
+	
+	StabPRB[s] += LPSintG;
+}
+
+
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
    real[int,int] Dtk = GradPM[s];
