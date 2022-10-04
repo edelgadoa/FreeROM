@@ -19,7 +19,7 @@ include "../../Auxiliary/IO.idp"
 include "../../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../../Mallas/CuboNxNyNz_equidistante.idp"
+include "../../Mallas/CuboNxNyNz.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
@@ -79,15 +79,15 @@ for (int i=0; i<nSnapshots; i++){
 		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
         
-        VhP2 medP = 1;
-        medP[] *= intN(Th)(uEFP);
+        //VhP2 medP = 1, uEFpres;
+        //medP[] *= intN(Th)(uEFP);
         
-<<<<<<< HEAD
-        uEFP = uEFP - medP; // Media de la presion cero
-=======
-        uEFP = uEFp - medP; // Media de la presion cero
->>>>>>> 359345fdd5516f59862d496711f3e845021d2b51
+		//uEFpres = uEFP - medP;
+        // uEFP = uEFP - medP; // Media de la presion cero
+        // mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+
         mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+
         
 		TFE = clock() - TFE;
 		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<endl;)
@@ -113,9 +113,9 @@ for (int i=0; i<nSnapshots; i++){
 		
         
 		int[int] fforder=[1,1,1,1];
-		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
+		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
 		
-		//real mediaP = intN(Th)(uEFP);
-		//mpi(cout<<"Media Presion: "<<mediaP<<endl;)
+		real mediaP = intN(Th)(uEFP);
+		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
 }
