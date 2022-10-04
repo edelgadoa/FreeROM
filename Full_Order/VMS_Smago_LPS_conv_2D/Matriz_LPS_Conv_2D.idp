@@ -2,37 +2,65 @@
 // FreeROM 
 ///////////////
 
-//COEF. ESTAB. CODINA
-varf tauK(unused,v)=int2d(Th)((uprevL^2+uprevLY^2)*v);
-varf tauKT(unused,v)=int2d(Th)(((uEFdX)^2+(uEFdY)^2+(uEFYdX)^2+(uEFYdY)^2)*v);
-real[int] tK=tauK(0,VhP0);
-real[int] tKT=tauKT(0,VhP0);
-
-tKcod[] = sqrt(tK);
-tKTcod[] = sqrt(tKT);
-
-
-tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
-
 /////////////////////////////
-//MATRIZ ESTAB. PRES.
+//MATRIZ ESTAB. CONV.
 /////////////////////////////
 
-varf termPres(pp,q) = int2d(Th)(tau*pp*q);
+VhP1dc funcLev;
 
+varf termConv(uu1,v) = int2d(Th)(tau*uu1*v);
+varf btermConv(uu1,v) = int2d(Th)(-tau*funcLev*v);
 
-matrix TermP = termPres(VhP1dc,VhP1dc);
+matrix TermC = termConv(VhP1dc,VhP1dc);
 
-matrix DDxx;
+VhP1dc uEFdc = uEF + Lev;
+VhP1dc uEFYdc = uEFY + LevY;
+
+matrix UEFdc = uEFdc[];
+matrix UEFYdc = uEFYdc[];
+
+// Primera componente
+matrix EC1;
+real[int] bLPSConv1(Vh3P2.ndof);
 {
-	DDxx = TermP * IPhD3X3P2; 
-	DDxx = IPhD3X3P2' * DDxx;
+	matrix UXD1X = UEFdc * D1X3P2;
+	matrix UYD1Y = UEFYdc * D1Y3P2;
+	matrix UD1 = UXD1X + UYD1Y;
+	matrix IPhUD1 = IPhP1dcP1 * UD1;
+	
+	EC1 = TermC * IPhUD1;
+	EC1 = IPhUD1' * EC1;
+	
+	VhP1dc AUX;
+	AUX[] = UEFdc * LevdX[];
+	AUX[] += UEFYdc * LevdY[];
+	funcLev[] = IPhP1dcP1 * AUX[];
+	
+	real[int] bConv1 = btermConv(0, VhP1dc);
+	bLPSConv1 = IPhUD1' * bConv1;
 }
 
-matrix DDyy;
+// Segunda componente
+matrix EC2;
+real[int] bLPSConv2(Vh3P2.ndof);
 {
-	DDyy = TermP * IPhD3Y3P2; 
-	DDyy = IPhD3Y3P2' * DDyy;
+	matrix UXD2X = UEFdc * D2X3P2;
+	matrix UYD2Y = UEFYdc * D2Y3P2;
+	matrix UD2 = UXD2X + UYD2Y;
+	matrix IPhUD2 = IPhP1dcP1 * UD2;
+	
+	EC2 = TermC * IPhUD2;
+	EC2 = IPhUD2' * EC2;
+	
+	VhP1dc AUX;
+	AUX[] = UEFdc * LevYdX[];
+	AUX[] += UEFYdc * LevYdY[];
+	funcLev[] = IPhP1dcP1 * AUX[];
+	
+	real[int] bConv2 = btermConv(0, VhP1dc);
+	bLPSConv2 = IPhUD2' * bConv2;
+	
 }
 
-LPSpres = DDxx + DDyy;
+LPSConv = EC1 + EC2;
+bLPSConv = bLPSConv1 + bLPSConv2;
