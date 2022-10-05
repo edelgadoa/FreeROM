@@ -79,10 +79,10 @@ for (int i=0; i<nSnapshots; i++){
 		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
         
-        //VhP2 medP = 1, uEFpres;
-        //medP[] *= intN(Th)(uEFP);
+        VhP2 medP = 1, uEFpres;
+        medP[] *= intN(Th)(uEFP);
         
-		//uEFpres = uEFP - medP;
+		uEFpres = uEFP - medP;
         // uEFP = uEFP - medP; // Media de la presion cero
         // mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
 
@@ -101,7 +101,7 @@ for (int i=0; i<nSnapshots; i++){
 		SnapX = uEF;
 		SnapY = uEFY;
 		SnapZ = uEFZ;
-		SnapP = uEFP;
+		SnapP = uEFPres;
 	
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
