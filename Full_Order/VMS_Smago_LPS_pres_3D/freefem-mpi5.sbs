@@ -8,5 +8,5 @@
 module load freefem/4.11
 
 rm *.pref
-name=Snapshots1
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "terminal1.txt"
+name=Snapshots5
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "terminal5.txt"
