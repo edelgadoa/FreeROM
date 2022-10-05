@@ -5,7 +5,7 @@
 #SBATCH --partition=cpu
 #SBATCH --exclusive
 
-module load freefem/4.11
+module load freefem/4.9
 
 rm *.pref
 name=Snapshots8
