@@ -22,8 +22,8 @@ macro pause() mpiBarrier(mpiCommWorld)// EOM
 mesh Th,ThL;
  
 {
-	int Nx = 150; // Numero de divisiones eje X
-	int Ny = 150; // Numero de divisiones eje Y
+	int Nx = 300; // Numero de divisiones eje X
+	int Ny = 300; // Numero de divisiones eje Y
 	int nflag = 0; 		
 	Th=square(Nx,Ny,flags=nflag);
 }
@@ -217,7 +217,7 @@ ERROR = 2*epsFE +1;
 // The loop of the problem
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
-	
+	real timeIt = clock();
 	
 	
 	// Convective matrix
@@ -260,10 +260,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 
 	LPSpres = DDxx + DDyy;
 
-
-	
-
-	
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
@@ -316,7 +312,9 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	if(mpirank==0){
 		cout << "media pres:" << intN(Th)(uEFP) << endl;
 		 cout << ERROR << endl;}
-		 
+	
+	timeIt = clock() - timeIt;
+	if(mpirank==0){cout<<"Tiempo de una iteracion:"<<timeIt<<endl;} 	 
 		 
 }
 
