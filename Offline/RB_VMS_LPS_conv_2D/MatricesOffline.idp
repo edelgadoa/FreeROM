@@ -144,21 +144,6 @@ for (int s=0; s<Taubases; s++){
 }
 	
 
-	for (int j=0; j<=i; j++){
-		if (mpirank==contFF%mpisize){
-			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
-			if(j<i){
-				LPSintL(j + Nbases,i + Nbases) = LPSintL(i + Nbases,j + Nbases);
-			}
-		}
-		contFF++;		
-	}
-	pause;
-	mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
-	
-	StabPRB[s] += LPSintG;
-}
-
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){

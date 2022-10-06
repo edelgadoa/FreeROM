@@ -44,7 +44,7 @@ matrix StabhkPEM = FiltroX + FiltroY;
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 
-matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases), StabCPEM(Taubases*Nbases^2), StabCLevPEM(Taubases);
+matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
 	for (int s=0; s<Mbases; s++){
@@ -73,56 +73,8 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases), StabCPEM(Taubases*Nbases^2), S
 			//}
 		contS++;
 	}
-	for (int s=0; s<Taubases; s++){
-		varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
-		matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
-		
-		for (int ui=0; ui<Nbases; ui++){
-			
-			VhP1dc BaseVdci = BaseV[ui];
-			VhP1dc BaseVYdci = BaseVY[ui];
-			matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
-			for (int uj=0; uj<Nbases; uj++){
-
-				VhP1dc BaseVdcj = BaseV[uj];
-				VhP1dc BaseVYdcj = BaseVY[uj];
-				matrix BVdcj = BaseVdci[]; matrix BVYdcj = BaseVYdcj[];
-				
-				matrix ConvX, ConvY;
-				{
-					// Primera componente
-					matrix UXD1Xi = BVdci * D1X3P2;
-					matrix UYD1Yi = BVYdci * D1Y3P2;
-					matrix UD1i = UXD1Xi + UYD1Yi;
-					matrix IPhUD1i = IPhP1dcP1 * UD1i;
-					
-					matrix UXD1Xj = BVdcj * D1X3P2;
-					matrix UYD1Yj = BVYdcj * D1Y3P2;
-					matrix UD1j = UXD1Xj + UYD1Yj;
-					matrix IPhUD1j = IPhP1dcP1 * UD1ji;
-					
-					ConvX = SCPEM * IPhUD1i;
-					ConvX = IPhUD1j' * ConvX;
-					
-					// Segunda componente
-					matrix UXD2Xi = BVdci * D2X3P2;
-					matrix UYD2Yi = BVYdci * D2Y3P2;
-					matrix UD2i = UXD2Xi + UYD2Yi;
-					matrix IPhUD2i = IPhP1dcP1 * UD2i;
-					
-					matrix UXD2Xj = BVdcj * D2X3P2;
-					matrix UYD2Yj = BVYdcj * D2Y3P2;
-					matrix UD2j = UXD2Xj + UYD2Yij;
-					matrix IPhUD2j = IPhP1dcP1 * UD2j;
-					
-					ConvY = SCPEM * IPhUD2i;
-					ConvY = IPhUD2j' * ConvY;					
-				}
-				StabCPEM[s + ui*Taubases + uj*Taubases*Nbases] = ConvX + ConvY;				
-			}
-		}
-	}	
 }
 
-varf bDiffPE([un, unY], [v, vY]) = int2d(Th)(GradUGradV(Lev, v));
-real[int] bDiffPEv = bDiffPE(0, Vh2P2);
+
+include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
+
