@@ -8,5 +8,6 @@
 module load freefem/4.9
 
 rm *.pref
+
 name=NSE_3D_MPI
 mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "terminal.txt"
