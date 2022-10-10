@@ -4,5 +4,5 @@ echo 'Numero de procesadores:'
 read NP
 
 verbosity=0
-rm freefem++.pref 
-ff-mpirun -np $NP ./NSE_LPS_paralelo_funciona.edp -glut ffglut
+
+ff-mpirun -np $NP NSE_3D_MPI.edp -glut ffglut

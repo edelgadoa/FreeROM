@@ -21,9 +21,6 @@ include "../../Auxiliary/search.idp"
 // Creamos la malla
 include "../../Mallas/CuboNxNyNz.idp"
 
-real paredes = 1;
-real techo = 2; //para las condiciones de contorno
-
 // Definimos los espacios de EF
 include "FE_Spaces_NoStab_VP_3D.idp"
 

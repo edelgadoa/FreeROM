@@ -24,22 +24,15 @@ mesh3 Th, ThL;
 	real [int,int]  Bxyz=[[x01,x11],[y01,y11],[z01,z11]]; // Coordenadas de las esquinas del cubo
 	
 	//Labels para los problemas
-	int paredi = 0; //Pared izquierda
-	int paredd = 0; //Pared derecha
-	int paredf = 2; //Pared frontal
-	int paredt = 2; //Pared trasera
+	int paredi = 1; //Pared izquierda
+	int paredd = 1; //Pared derecha
+	int paredf = 1; //Pared frontal
+	int paredt = 1; //Pared trasera
 	int suelo = 1; //En mi problema, el suelo y las paredes tienen la misma condicion de contorno
-	int techo = 1;
+	int techo = 2;
 	
 	int [int,int]  Lxyz=[[paredt,paredf],[paredi,paredd],[suelo,techo]]; // Referencias a los planos [[x00,x01],[y00,y01],[z00,z01]]
 
-	// Puntos del 
-	int nflag = 0; 
-		// nflag = 0 --> Malla estandar (diagonal x-y=cte)
-		// nflag = 1 --> Malla tipo "Union flag" |x|
-		// nflag = 2 --> Malla con diagonal x+y=cte
-		// nflag = 3 --> Malla tipo 0 con dos esquinas donde cambia la diagonal
-		// nflag = 4 --> Malla tipo 2 con dos esquinas donde cambia la diagonal (PARA 2D)
 	
 	Th = Cube(Nxyz, Bxyz, Lxyz);
 	//Una vez construidos el cubo hacemos el refinamiento en las paredes 

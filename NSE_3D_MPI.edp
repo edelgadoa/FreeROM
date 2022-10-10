@@ -1,0 +1,174 @@
+//////
+// N-S Equations in 3D
+/////
+
+verbosity = 0;
+
+///////////////
+// Macros
+
+macro dimension()3 //EOM
+include "macro_ddm.idp";
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n); aux = 0;
+	uL[] .*= D;
+	aux(map) = uL[];
+	u[] = 0;
+	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
+}
+//EOM
+
+NewMacro solvesystem(A,b,u)
+{
+	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
+	MatAVh4P2 = A;
+	set(MatAVh4P2,sparams=sparamsv);
+	u#L[] = MatAVh4P2^-1*b;
+	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
+}
+EndMacro
+
+macro Div(U) (dx(U) + dy(U#Y) + dz(U#Z)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
+					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
+					 + dx(U#Z)*dx(V#Z) + dy(U#Z)*dy(V#Z) + dz(U#Z)*dz(V#Z)) //EOM
+
+macro UGradV(U,V)  [[U, U#Y, U#Z]'*[dx(V),   dy(V),   dz(V)], 
+				    [U, U#Y, U#Z]'*[dx(V#Y), dy(V#Y), dz(V#Y)],
+				    [U, U#Y, U#Z]'*[dx(V#Z), dy(V#Z), dz(V#Z)]] //EOM
+				   
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y, W#Z]) //EOM
+macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
+macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+
+////////////////
+// Create Mesh
+
+include "Cube.idp" //Programa de la documentación FreeFem++
+
+mesh3 Th, ThL;
+ 
+{
+	int Nx = 10; int Ny = 10; int Nz = 10; 
+	int[int] Nxyz = [Nx,Ny,Nz]; 
+	
+	// geometry of the cube
+	real x01 = 0., x11 = 1.;
+	real y01 = 0., y11 = 1.;
+	real z01 = 0., z11 = 1.;
+	
+	real [int,int]  Bxyz=[[x01,x11],[y01,y11],[z01,z11]]; // Coordinates of the cube
+	
+	//Labels 
+	int wall = 1; 
+	int floor = 1; 
+	int roof = 2;
+	
+	int [int,int]  Lxyz=[[wall,wall],[wall,wall],[floor,roof]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	
+	Th = Cube(Nxyz, Bxyz, Lxyz); 
+	ThL = Th;
+}
+
+/////////////
+// FE Spaces
+
+fespace Vh4P2(Th, [P2, P2, P2, P1]); 
+fespace VhP1(Th, P1);
+fespace VhP2(Th, P2);
+
+fespace Vh4P2L(ThL, [P2, P2, P2, P1]); 
+fespace VhP1L(ThL, P1);
+fespace VhP2L(ThL, P2);
+
+////////////
+// PETSc
+
+load "PETSc";
+
+Mat MatAVh4P2;
+int[int] mapVh4P2;
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
+mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
+{
+	macro def(i) [i, iY, iZ, iP] //
+	macro init(i) [i, i, i, i] // EOM
+	createMat(ThL, MatAVh4P2, [P2, P2, P2, P1]);
+}
+
+
+////////////
+// SOLVE THE PROBLEM
+
+real Reynolds = 1000;
+real nu = 1./Reynolds;
+real dt = 1;
+
+
+
+Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
+Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; 
+
+
+varf VFFix([uu,uuY,uuZ,uP],[v,vY,vZ,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v))
+								  	 	  + Div(uu)*vP - Div(v)*uP
+								          + nu*GradUGradV(uu, v)
+								          + 1e-8*uP*vP )
+										  //RHS
+								          + on(1, uu=0., uuY=0., uuZ=0.)
+										  + on(2, uu=1., uuY=0., uuZ=0.); 					  						
+
+matrix MFix = VFFix(Vh4P2L,Vh4P2L);
+real[int] bFix = VFFix(0,Vh4P2L);
+
+int niterFE = 200;
+real epsFE = 1e-8;
+real ERROR = 10;
+
+for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
+	real timeIt = clock();
+	varf VFNS ([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])= intN(ThL)(Antisimetric(uEF, uu, v))			
+									  		// RHS
+									 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
+				
+						
+	matrix MNS = VFNS(Vh4P2L,Vh4P2L);
+	real[int] bNS = VFNS(0,Vh4P2L);
+	
+	matrix MFinal = MFix + MNS;
+	real[int] bFinal = bFix + bNS;
+	
+	uEFp[] = uEF[];
+    
+	// Solve the linear system
+	real timeLS = clock();
+	solvesystem(MFinal, bFinal, uEF);
+    timeLS = clock() - timeLS;
+	
+	if(mpirank==0){cout<<"Time to solve Linear system: "<<timeLS<<endl;}
+	
+	
+	// Compute the relative velocity error
+	VhP2 errEF, errEFY, errEFZ;
+	errEF = uEF - uEFp;
+	errEFY = uEFY - uEFpY;
+	errEFZ = uEFZ - uEFpZ;
+	
+	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
+	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
+	
+	if(mpirank==0){cout<<"error: "<<ERROR<<endl;}
+	timeIt = clock() - timeIt;
+	if(mpirank==0){cout<<"Time of one iteration: "<<timeIt<<endl;}
+}
+
+// load "iovtk"
+// int[int] fforder = [1,1,1,1];
+// savevtk("NS.vtu", Th, [uEF, uEFY, uEFZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
+
