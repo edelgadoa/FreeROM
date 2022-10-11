@@ -53,7 +53,7 @@ include "Cube.idp" // FreeFem++ documentation
 mesh3 Th, ThL;
  
 {
-	int Nx = 20; int Ny = 20; int Nz = 20; 
+	int Nx = 30; int Ny = 30; int Nz = 30; 
 	int[int] Nxyz = [Nx,Ny,Nz]; 
 	
 	// geometry of the cube
@@ -165,7 +165,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
 	
-	// if(mpirank==0){cout<<"error: "<<ERROR<<endl;}
+	if(mpirank==0){cout<<"errorMPI0: "<<ERROR<<endl;}
 	timeIt = clock() - timeIt;
 	if(mpirank==0){cout<<"Time of one iteration: "<<timeIt<<endl;}
 }
