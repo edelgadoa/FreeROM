@@ -43,8 +43,8 @@ bDTRBL = 0;
 bSmagoRBL = 0;
 
 // Definicion de Matrices y Tensores variables globales y locales
-real[int,int][int] SmagoRBL(Mbases), StabPRBL(Taubases), StabCRBL(Taubases*Nbases^2);
-real[int,int][int] SmagoRBG(Mbases), StabPRBG(Taubases), StabCRBL(Taubases*Nbases^2);
+real[int,int][int] SmagoRBL(Mbases), StabPRBL(Taubases);
+real[int,int][int] SmagoRBG(Mbases), StabPRBG(Taubases);
 
 
 for (int nn = 0; nn<Mbases; nn++){
@@ -61,6 +61,10 @@ for (int nn = 0; nn<Taubases; nn++){
 	StabPRBG[nn] = maux(0:Nbases-1, 0:Nbases-1);
 }
 
+real[int,int][int] StabCUURBL(Taubases*Nbases^2), StabCUURBL(Taubases*Nbases^2), StabCUURBL(Taubases*Nbases^2), StabCUURBL(Taubases*Nbases^2);
+real[int,int][int] StabCUURBG(Taubases*Nbases^2), StabCUURBG(Taubases*Nbases^2), StabCUURBG(Taubases*Nbases^2), StabCUURBG(Taubases*Nbases^2);
+
+// Definicion de Matrices y Tensores variables globales y locales para LPS Conv
 for (int nn = 0; nn<Taubases*Nbases^2; n++){
 	real[int,int] maux(Nbases, Nbases);
 	maux = 0;

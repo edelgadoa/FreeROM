@@ -44,7 +44,7 @@ matrix StabhkPEM = FiltroX + FiltroY;
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 
-matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases), StabCPEM(Taubases*Nbases^2);
+matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
 	for (int s=0; s<Mbases; s++){
@@ -73,16 +73,8 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases), StabCPEM(Taubases*Nbases^2);
 			//}
 		contS++;
 	}
-	for (int s=0; s<Taubases; s++){
-		for (int ui=0; ui<Nbases; ui++){
-			for (int uj=0; uj<Nbases; uj++){
-				varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
-				
-			}
-		}
-	}
-	
 }
 
-varf bDiffPE([un, unY], [v, vY]) = int2d(Th)(GradUGradV(Lev, v));
-real[int] bDiffPEv = bDiffPE(0, Vh2P2);
+
+include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
+
