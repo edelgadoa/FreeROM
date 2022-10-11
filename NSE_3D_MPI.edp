@@ -46,7 +46,7 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 ////////////////
 // Create Mesh
 
-include "Cube.idp" //Programa de la documentación FreeFem++
+include "Cube.idp" // FreeFem++ documentation
 
 mesh3 Th, ThL;
  
@@ -171,4 +171,3 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 // load "iovtk"
 // int[int] fforder = [1,1,1,1];
 // savevtk("NS.vtu", Th, [uEF, uEFY, uEFZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
-
