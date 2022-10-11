@@ -78,8 +78,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Actualizamos la solución
 	uEFp[]=uEF[];
+    real timeIt = clock();
 	solvesystem(MFinal, bFinal, uEF);
-
+    timeIt = clock() - timeIt;
+    
+    mpi(cout<<"Tiempo en resolver el sistema:"<<timeIt<<endl;)
 
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY, errEFZ;

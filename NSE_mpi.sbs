@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --time=00:05:00
+#SBATCH --ntasks=48
+#SBATCH --mem=0
+#SBATCH --partition=cpu
+#SBATCH --exclusive
+
+module load freefem/4.9
+
+rm *.pref
+
+name=NSE_3D_MPI
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "terminal.txt"
