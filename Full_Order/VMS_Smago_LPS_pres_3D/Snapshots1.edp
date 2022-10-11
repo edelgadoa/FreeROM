@@ -46,8 +46,13 @@ int nSnapshots = 10; // numero de Snapshots que voy a querer calcular
 real[int] vReynolds(nSnapshots);
 
 
+<<<<<<< HEAD:Full_Order/VMS_Smago_LPS_pres_3D/Snapshots.edp
+Remin = 2050;
+Remax = 5100;
+=======
 Remin = 1000;
 Remax = 1450;
+>>>>>>> main:Full_Order/VMS_Smago_LPS_pres_3D/Snapshots1.edp
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
