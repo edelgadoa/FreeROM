@@ -129,7 +129,7 @@ varf VFFix([uu,uuY,uuZ,uP],[v,vY,vZ,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v))
 matrix MFix = VFFix(Vh4P2L,Vh4P2L);
 real[int] bFix = VFFix(0,Vh4P2L);
 
-int niterFE = 4;
+int niterFE = 2;
 real epsFE = 1e-8;
 real ERROR = 10;
 
