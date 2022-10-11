@@ -9,174 +9,96 @@ for (int s=0; s<Taubases; s++){
 	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
 	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 	
-	// u\nabla u, u\nabla v
+	VhP1dc Levdc = Lev; 
+	VhP1dc LevYdc = LevY;
+	matrix LEVdc = Levdc[]; matrix LEVYdc[] = LevYdc[];
+	
+	
+	matrix ConvUUX, ConvUUY, ConvULX, ConvULY, ConvLUX, ConvLUY, ConvLLX, ConvLLY;
+	
+	matrix IPhLD1, IPhLD2;
+	{
+		matrix LXD1X = LEVdc * D1X3P2;
+		matrix LYD1Y = LEVYdc * D1Y3P2;
+		matrix LD1 = LXD1X + LYD1Y;
+		IPhLD1 = IPhP1dcP1 * LD1;
+		
+		matrix LXD2X = LEVdc * D2X3P2;
+		matrix LYD2Y = LEVYdc * D2Y3P2;
+		matrix LD2 = LXD2X + LYD2Y;
+		IPhLD2 = IPhP1dcP1 * LD2;
+		
+		ConvLLX = SCPEM * IPhLD1;
+		ConvLLX = IPhLD1 * ConvLLX;
+		
+		ConvLLY = SCPEM * IPhLD2;
+		ConvLLY = IPhLD2 * ConvLLY;
+	}
+	
+	StabCLLPEM[s] = ConvLLX + ConvLLY;
+	
 	for (int ui=0; ui<Nbases; ui++){
 		
 		VhP1dc BaseVdci = BaseV[ui];
 		VhP1dc BaseVYdci = BaseVY[ui];
 		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
+		
+		matrix IPhUiD1, IPhUiD2;
+		
+		{
+			matrix UXD1Xi = BVdci * D1X3P2;
+			matrix UYD1Yi = BVYdci * D1Y3P2;
+			matrix UD1i = UXD1Xi + UYD1Yi;
+			IPhUiD1 = IPhP1dcP1 * UD1i;
+			
+			matrix UXD2Xi = BVdci * D2X3P2;
+			matrix UYD2Yi = BVYdci * D2Y3P2;
+			matrix UD2i = UXD2Xi + UYD2Yi;
+			IPhUiD2 = IPhP1dcP1 * UD2i;
+			
+			ConvLUX = SCPEM * IPhLD1;
+			ConvLUX = IPhUiD1 * ConvLUX;
+		
+			ConvULX = SCPEM * IPhUiD1;
+			ConvULX = IPhLD1 * ConvLUX;
+			
+			ConvLUY = SCPEM * IPhLD2;
+			ConvLUY = IPhUiD2 * ConvLUY;
+		
+			ConvULY = SCPEM * IPhUiD2;
+			ConvULY = IPhLD2 * ConvLUY;		
+		}
+
+		StabCULPEM[s + ui*Taubases] = ConvULX + ConvULY;
+		StabCLUPEM[s + ui*Taubases] = ConvLUX + ConvLUY;
+		
 		for (int uj=0; uj<Nbases; uj++){
 
 			VhP1dc BaseVdcj = BaseV[uj];
 			VhP1dc BaseVYdcj = BaseVY[uj];
-			matrix BVdcj = BaseVdci[]; matrix BVYdcj = BaseVYdcj[];
+			matrix BVdcj = BaseVdcj[]; matrix BVYdcj = BaseVYdcj[];
 			
-			matrix ConvX, ConvY;
+			matrix IPhUjD1, IPhUjD2;
 			{
-				// Primera componente
-				matrix UXD1Xi = BVdci * D1X3P2;
-				matrix UYD1Yi = BVYdci * D1Y3P2;
-				matrix UD1i = UXD1Xi + UYD1Yi;
-				matrix IPhUD1i = IPhP1dcP1 * UD1i;
 				
 				matrix UXD1Xj = BVdcj * D1X3P2;
 				matrix UYD1Yj = BVYdcj * D1Y3P2;
 				matrix UD1j = UXD1Xj + UYD1Yj;
-				matrix IPhUD1j = IPhP1dcP1 * UD1ji;
+				IPhUjD1 = IPhP1dcP1 * UD1j;
 				
-				ConvX = SCPEM * IPhUD1i;
-				ConvX = IPhUD1j' * ConvX;
-				
-				// Segunda componente
-				matrix UXD2Xi = BVdci * D2X3P2;
-				matrix UYD2Yi = BVYdci * D2Y3P2;
-				matrix UD2i = UXD2Xi + UYD2Yi;
-				matrix IPhUD2i = IPhP1dcP1 * UD2i;
 				
 				matrix UXD2Xj = BVdcj * D2X3P2;
 				matrix UYD2Yj = BVYdcj * D2Y3P2;
 				matrix UD2j = UXD2Xj + UYD2Yij;
-				matrix IPhUD2j = IPhP1dcP1 * UD2j;
+				IPhUjD2 = IPhP1dcP1 * UD2j;
 				
-				ConvY = SCPEM * IPhUD2i;
-				ConvY = IPhUD2j' * ConvY;					
+				ConvUUX = SCPEM * IPhUjD1;
+				ConvUUX = IPhUiD1 * ConvUUX;
+				
+				ConvUUY = SCPEM * IPhUjD2;
+				ConvUUY = IPhUiD2 * ConvUUY;				
 			}
-			StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases] = ConvX + ConvY;				
+			StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases] = ConvUUX + ConvUUY;								
 		}
-	}
-	
-	// u\nabla u, G\nabla v
-	for (int ui=0; ui<Nbases; ui++){
-		
-		VhP1dc BaseVdci = BaseV[ui];
-		VhP1dc BaseVYdci = BaseVY[ui];
-		
-		VhP1dc Levdc = Lev; 
-		VhP1dc LevYdc = LevY;
-		
-		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
-		matrix LEVdc = Levdc[]; matrix LEVYdc[] = LevYdc[];
-			
-		matrix ConvX, ConvY;
-		{
-			// Primera componente
-			matrix UXD1Xi = BVdci * D1X3P2;
-			matrix UYD1Yi = BVYdci * D1Y3P2;
-			matrix UD1i = UXD1Xi + UYD1Yi;
-			matrix IPhUD1i = IPhP1dcP1 * UD1i;
-		
-			matrix UXD1Xj = LEVdc * D1X3P2;
-			matrix UYD1Yj = LEVYdc * D1Y3P2;
-			matrix UD1j = UXD1Xj + UYD1Yj;
-			matrix IPhUD1j = IPhP1dcP1 * UD1ji;
-		
-			ConvX = SCPEM * IPhUD1i;
-			ConvX = IPhUD1j' * ConvX;
-		
-			// Segunda componente
-			matrix UXD2Xi = BVdci * D2X3P2;
-			matrix UYD2Yi = BVYdci * D2Y3P2;
-			matrix UD2i = UXD2Xi + UYD2Yi;
-			matrix IPhUD2i = IPhP1dcP1 * UD2i;
-		
-			matrix UXD2Xj = LEVdc * D2X3P2;
-			matrix UYD2Yj = LEVYdc * D2Y3P2;
-			matrix UD2j = UXD2Xj + UYD2Yij;
-			matrix IPhUD2j = IPhP1dcP1 * UD2j;
-		
-			ConvY = SCPEM * IPhUD2i;
-			ConvY = IPhUD2j' * ConvY;					
-		}
-		StabCULPEM[s + ui*Taubases] = ConvX + ConvY;				
-		
-	}
-	
-	// G\nabla u, u\nabla v
-	for (int ui=0; ui<Nbases; ui++){
-		
-		VhP1dc BaseVdci = BaseV[ui];
-		VhP1dc BaseVYdci = BaseVY[ui];
-		
-		VhP1dc Levdc = Lev; 
-		VhP1dc LevYdc = LevY;
-		
-		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
-		matrix LEVdc = Levdc[]; matrix LEVYdc[] = LevYdc[];
-			
-		matrix ConvX, ConvY;
-		{
-			// Primera componente
-			matrix UXD1Xi = BVdci * D1X3P2;
-			matrix UYD1Yi = BVYdci * D1Y3P2;
-			matrix UD1i = UXD1Xi + UYD1Yi;
-			matrix IPhUD1i = IPhP1dcP1 * UD1i;
-		
-			matrix UXD1Xj = LEVdc * D1X3P2;
-			matrix UYD1Yj = LEVYdc * D1Y3P2;
-			matrix UD1j = UXD1Xj + UYD1Yj;
-			matrix IPhUD1j = IPhP1dcP1 * UD1ji;
-		
-			ConvX = SCPEM * IPhUD1j;
-			ConvX = IPhUD1i' * ConvX;
-		
-			// Segunda componente
-			matrix UXD2Xi = BVdci * D2X3P2;
-			matrix UYD2Yi = BVYdci * D2Y3P2;
-			matrix UD2i = UXD2Xi + UYD2Yi;
-			matrix IPhUD2i = IPhP1dcP1 * UD2i;
-		
-			matrix UXD2Xj = LEVdc * D2X3P2;
-			matrix UYD2Yj = LEVYdc * D2Y3P2;
-			matrix UD2j = UXD2Xj + UYD2Yij;
-			matrix IPhUD2j = IPhP1dcP1 * UD2j;
-		
-			ConvY = SCPEM * IPhUD2j;
-			ConvY = IPhUD2i' * ConvY;
-		}
-		StabCLUPEM[s + ui*Taubases] = ConvX + ConvY;
-		
-	}
-	
-	// G\nabla u, G\nabla v
-	{
-		VhP1dc Levdc = Lev; 
-		VhP1dc LevYdc = LevY;
-		
-		matrix LEVdc = Levdc[]; 
-		matrix LEVYdc[] = LevYdc[];
-			
-		matrix ConvX, ConvY;
-		{
-			// Primera componente
-			matrix UXD1X = Levdc * D1X3P2;
-			matrix UYD1Y = LevYdc * D1Y3P2;
-			matrix UD1 = UXD1X + UYD1Y;
-			matrix IPhUD1 = IPhP1dcP1 * UD1i;
-	
-		
-			ConvX = SCPEM * IPhUD1;
-			ConvX = IPhUD1' * ConvX;
-		
-			// Segunda componente
-			matrix UXD2X = Levdc * D2X3P2;
-			matrix UYD2Y = LevYdc * D2Y3P2;
-			matrix UD2 = UXD2X + UYD2Y;
-			matrix IPhUD2 = IPhP1dcP1 * UD2;
-					
-			ConvY = SCPEM * IPhUD2;
-			ConvY = IPhUD2' * ConvY;					
-		}
-		StabCLLPEM[s] = ConvX + ConvY;				
-	}
-	
-}	
+	}		
+}
