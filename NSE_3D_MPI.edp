@@ -46,7 +46,7 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 ////////////////
 // Create Mesh
 
-include "Cube.idp" //Programa de la documentación FreeFem++
+include "Mallas/Cube.idp" //Programa de la documentación FreeFem++
 
 mesh3 Th, ThL;
  
