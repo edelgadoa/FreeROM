@@ -80,9 +80,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uEFp[] = uEF[];
 	
 	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
-	timeIt = clock() - timeIt; 
 
-	mpi(cout<<"Tiempo en una iteracion: "<<timeIt<<endl;)
 	// Calculamos el error cometido (en velocidad)
 	Vh4P2 [errEF, errEFY, errEFZ, errEFP];
 	errEF[] = uEF[] - uEFp[];
@@ -90,7 +88,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real ERRORabs = sqrt(intN(Th)(errEF^2 + errEFY^2 + errEFZ^2));
 	ERROR = ERRORabs / sqrt(intN(Th)(uEF^2 + uEFY^2 + uEFZ^2));
 	
-	mpi(cout<<ERROR<<endl;)
+	// mpi(cout<<ERROR<<endl;)
 
 
 }
