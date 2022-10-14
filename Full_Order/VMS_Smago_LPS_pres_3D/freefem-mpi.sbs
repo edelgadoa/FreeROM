@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --time=7-00:00:00
-#SBATCH --ntasks=32
+#SBATCH --ntasks=64
 #SBATCH --mem=0
 #SBATCH --partition=cpu
 #SBATCH --exclusive
