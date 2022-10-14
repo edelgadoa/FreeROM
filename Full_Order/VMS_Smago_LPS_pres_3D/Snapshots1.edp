@@ -48,6 +48,7 @@ real[int] vReynolds(nSnapshots);
 
 Remin = 1000;
 Remax = 1450;
+
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
@@ -79,10 +80,10 @@ for (int i=0; i<nSnapshots; i++){
 		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
         
-        VhP2 medP = 1, uEFpres;
-        medP[] *= intN(Th)(uEFP);
+        //VhP2 medP = 1, uEFpres;
+        //medP[] *= intN(Th)(uEFP);
         
-		uEFpres = uEFP - medP;
+		//uEFpres = uEFP - medP;
         // uEFP = uEFP - medP; // Media de la presion cero
         // mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
 
@@ -101,7 +102,7 @@ for (int i=0; i<nSnapshots; i++){
 		SnapX = uEF;
 		SnapY = uEFY;
 		SnapZ = uEFZ;
-		SnapP = uEFpres;
+		SnapP = uEFP;
 	
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
@@ -115,7 +116,5 @@ for (int i=0; i<nSnapshots; i++){
 		int[int] fforder=[1,1,1,1];
 		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
 		
-		real mediaP = intN(Th)(uEFP);
-		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
 }
