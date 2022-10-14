@@ -4,5 +4,5 @@ read NP
 
 verbosity=0
 rm freefem++.pref 
-ff-mpirun -np $NP ./Snapshots5.edp
+ff-mpirun -np $NP ./Snapshots1.edp
 
