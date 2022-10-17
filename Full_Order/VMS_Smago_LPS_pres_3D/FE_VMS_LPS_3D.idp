@@ -14,9 +14,10 @@ include "Matrices_fijas_NS_3D.idp"
 
 
 ERROR = 10;
+int itFE = 0;
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
-	
+	itFE++;	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
@@ -92,4 +93,4 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 
 
 }
-
+mpi(cout<<"It FE: "<<itFE<<", Error: "<<ERROR<<endl;)
