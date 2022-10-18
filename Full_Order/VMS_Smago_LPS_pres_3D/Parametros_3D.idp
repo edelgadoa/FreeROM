@@ -42,7 +42,7 @@ mk[]=sqrt(medk);
 
 
 // Parametros para el problema de EF
-real dt = 1;
+real dt = 0.5;
 real epspen = 1e-8;
 
 real ERROR = 10; // inicializacion del error para el bucle
