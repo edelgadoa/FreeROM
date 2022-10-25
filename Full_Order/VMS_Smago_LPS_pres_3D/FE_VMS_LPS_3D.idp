@@ -17,7 +17,8 @@ ERROR = 10;
 int itFE = 0;
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
-	itFE++;	
+	itFE++;
+	mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
