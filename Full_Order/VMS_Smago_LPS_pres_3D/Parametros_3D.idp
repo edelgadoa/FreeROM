@@ -1,7 +1,6 @@
 ///////////////
 // FreeROM 
 ///////////////
-
 // Parametros a usar durante la ejecucion del codigo
 
 // Parametros del PETSC
@@ -60,8 +59,14 @@ real epsRB = 1e-8; //parada de problema reducido
 real epsGreedy = 5e-5;
 real epsEIM = 1e-5;
 
+int NRB = 0;
+
+// Parametros para el RBF
+real RBFeps = 1e-5;
+
 // Parametros mu
 real Reynolds; // Esto es perceptible de cambiarlo
 real Remin;
 real Remax;
+real Refijo = 1000;
 

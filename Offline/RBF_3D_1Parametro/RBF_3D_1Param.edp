@@ -1,0 +1,143 @@
+///////////////
+// FreeROM 
+///////////////
+
+verbosity = 0;
+// Código para aproximar mediante RBF los valores de las constantes inf-sup del estimador de error
+
+// Este código lo calcula para un VMS-Smagorinsky con estabilización LPS en la presión.
+
+
+/////////////////////////////////////////////////////////////////////
+// Cargamos librerías
+load "lapack"
+
+// Cargamos macros y funciones varias
+include "../../Auxiliary/Macros_3D.idp"
+include "../../Auxiliary/search.idp"
+include "../../Auxiliary/IO.idp"
+include "../../Auxiliary/powermethod.idp"
+include "../../Auxiliary/betas.idp"
+
+
+// Creamos la malla
+include "../../Mallas/CuboNxNyNz.idp"
+
+// Definimos los espacios de EF y de los EF globales
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_Spaces_NoStab_VP_3D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D_Local.idp"
+
+// Definimos los parametros a usar
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Parametros_3D.idp"
+
+// Incluimos el levantamiento
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Levantamiento_3D.idp"
+
+
+////////////////////////////////////////////////////////////////
+// Definimos parámetros propios del RBF
+real Ninitpoints = 6; // Numero de puntos de interpolacion inicial
+real Nmaxpoints = 40; // Numero maximo de puntos de interporlacion
+real Nfine = 5001;  // Puntos de la interpolacion fina del intervalo parametrico
+int RBFcontador = 0;
+
+real[int] betaI(Nmaxpoints); //vector donde guardo los valores de beta de los ptos de interpolacion	
+real[int] gamma(Nmaxpoints+2); //vector donde guardo los coeficientes del RBF
+
+real [int] vmuI(Nmaxpoints); //Vector con los valores de los parametros en los puntos de interpolacion inicial
+real [int] vmufine(Nfine); //Vector con los valores de los parametros para la discretizacion fina
+
+
+
+Remin = 1000;
+Remax = 2900;
+
+for(int i=0; i<Ninitpoints; i++){
+	vmuI(i)=Remin+i*(Remax-Remin)/(Ninitpoints-1);
+}
+
+mpi(cout<<vmuI<<endl;)
+
+for(int i=0; i<Nfine; i++){
+	vmufine(i)=Remin+i*(Remax-Remin)/(Nfine-1);
+}
+
+
+// Calculo los valores de beta_h para cada uno de los valores de vReI y la matriz del producto escalar (mu_barra)
+matrix Fb, X;
+
+{include "Matriz_prodesc_RBF.idp"}
+
+// Inicio el bucle donde calculo cada uno de los \beta_h de vReI
+for (int ni=0; ni<Ninitpoints; ni++){
+	RBFcontador++;
+	Reynolds = vmuI(ni);
+	mpi(cout<<"----------- Re = "<<Reynolds;)
+	
+	{include "Matriz_Derivada.idp"}
+	
+	real[int] Potencia = powermethodRBF(X, Fb);
+	
+	betaI(ni) = sqrt(1./Potencia[0]); //La raíz cuadrada del inverso del máximo autovalor
+	mpi(cout<<", beta_h = "<<betaI(ni)<<" -----------"<<endl;)
+}
+
+// Comienzo con el método adaptativo para mejorar el beta_h "continuo"
+real[int] gamma1(RBFcontador+1+1); // Ninitpoints gammma + w_0 + w_1
+real[int] Betak(Nfine), Betak1(Nfine);
+{
+	real[int] vmuIi=vmuI(0:Ninitpoints-1);
+	gamma1 = fgamma(betaI,vmuIi);//BLbeta*lbeta;
+	for (int k=0;k<Nfine;k++)Betak(k)= fbeta(gamma1,vmuIi,vmufine(k));	
+}
+
+for (int k=0;k<RBFcontador+2;k++)gamma(k)=gamma1(k); //actualizo los valores de gamma
+
+real errorRBF = 1;
+real[int] C(Nfine);
+
+for (int k=RBFcontador; k<Nmaxpoints; k++){
+	//Calculamos el criterio
+	{
+		real[int] vmuIi = vmuI(0:k-1);
+		real[int] gammai = gamma(0:k+1);
+		C=calculocriterion(vmuIi, vmufine, gammai, Betak);		
+	}
+	vmuI(k) = vmufine(C.imax);
+	// Calculamos el nuevo betah
+	{
+		Reynolds = vmuI(k);
+		mpi(cout<<"----------- Re = "<<Reynolds;)
+		include "Matriz_Derivada.idp"
+		
+		real[int] Potencia = powermethodRBF(X, Fb);
+		betaI(k) = sqrt(1./Potencia[0]);
+		mpi(cout<<", beta_h = "<<betaI(k)<<" -----------"<<endl;)
+	}
+	// Actualizamos Betak para calcular el error cometido
+	{
+		real[int] gammai(k+1+1+1);
+		real[int] vmuIi = vmuI(0:k);
+		gammai = fgamma(betaI,vmuIi);
+		for (int j=0;j<Nfine;j++)Betak1(j)=fbeta(gammai,vmuIi,vmufine(j));
+		for (int j=0;j<k+1+1+1;j++)gamma(j)=gammai(j);
+	}
+	// Calculo del error en cada iteracion
+	real[int] Errbeta(Nfine);
+	Errbeta = Betak1-Betak;
+	Errbeta = abs(Errbeta);
+	errorRBF = Errbeta.max;//Errbeta.l2/Betak.l2; //norma infinito
+	Betak = Betak1;
+	if(errorRBF<RBFeps && Betak.min>0)
+	{
+		RBFcontador = k;
+		write("BetaMuI.txt", betaI(0:RBFcontador), 1, 0);
+		write("vMuI.txt", vmuI(0:RBFcontador), 1, 0);
+		write("gammaI.txt", gamma(0:RBFcontador + 2), 1, 0);
+		write("Betak.txt", Betak, 0, 0);
+		break; //test de parada, asegurando que es positivo todo
+	}
+}
