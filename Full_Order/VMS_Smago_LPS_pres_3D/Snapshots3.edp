@@ -42,11 +42,11 @@ include "Interp_matrix_NoStab_VP_3D_Local.idp"
 include "../../Auxiliary/Normas.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 12; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 14; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 
-Remin = 2750;
+Remin = 2650;
 Remax = 3300;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
