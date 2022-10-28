@@ -81,7 +81,7 @@ for (int ni=0; ni<Ninitpoints; ni++){
 	
 	include "Matriz_Derivada.idp"
 	
-	real[int] Potencia = powermethodRBF(X, Fb);
+	real[int] Potencia = powermethodRBFmpi(X, Fb);
 	broadcast(processor(0, mpiCommWorld), Potencia);
 	
 	betaI(ni) = sqrt(1./Potencia[0]); //La raíz cuadrada del inverso del máximo autovalor
@@ -116,7 +116,7 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 		mpi(cout<<"----------- Re = "<<Reynolds;)
 		include "Matriz_Derivada.idp"
 		
-		real[int] Potencia = powermethodRBF(X, Fb);
+		real[int] Potencia = powermethodRBFmpi(X, Fb);
 		broadcast(processor(0, mpiCommWorld), Potencia);
 		betaI(k) = sqrt(1./Potencia[0]);
 		
