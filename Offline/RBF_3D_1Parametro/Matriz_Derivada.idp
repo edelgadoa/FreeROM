@@ -22,7 +22,7 @@ if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 	ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 	
-	write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 	
 	SnapX = uEF;
 	SnapY = uEFY;
@@ -78,7 +78,7 @@ Vh4P1dc [uEFf, uEFfY, uEFfZ, uEFfP];
 // Calculo la matriz correspondiente a la Derivada direccional del operador fijo
 varf DerA([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)( (1./Reynolds)*GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))// +epspen*uuP*vP)
 									 + on (1,2,3,4, uu=0, uuY=0, uuZ=0); 
-matrix DA = DerA(Vh4P2, Vh4P2);
+matrix DA = DerA(Vh4P2, Vh4P2, tgv = -1);
 
 
 
@@ -126,7 +126,7 @@ tKTcod[] = sqrt(tKT);
 tau = ((cc1*(1./Reynolds+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
 
 
-varf DerPres(uuP,vP) = int2d(Th)(tau*uuP*vP);
+varf DerPres(uuP,vP) = int3d(Th)(tau*uuP*vP);
 matrix TermP = DerPres(VhP1dc,VhP1dc);
 
 matrix DXP, DYP, DZP;
@@ -142,7 +142,7 @@ matrix DXP, DYP, DZP;
 }
 
 
-matrix Fvb = DA + DXMS + DYMS + DXP + DYP + DZP;
+matrix Fvb = DA + DXMS + DYMS + DZMS + DXP + DYP + DZP;
 
 /////////////////////////////////////////////////////
 // Calculo el término para la media de la presión = 0

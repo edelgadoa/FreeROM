@@ -100,19 +100,22 @@ func real[int] powermethodRBF(matrix & A,matrix & B)
 	for[i,ui:v0] ui=randreal1();
 	// v0=1;
 	// v0=ini;
-	for(int ii=0;ii<5000 && err > eps; ii++)
-	{
+	for(int ii=0;ii<5000 & err>eps; ii++)
+	{	
 		v1=A*v0;
 		v2=Bt^-1*v1;
 		v3=A*v2;
-		v=B^-1*v3;
-		v1=v/v.l2;
-		lambda1=v.sum/v0.sum;
-		err=abs(lambda1-lambda0)/abs(lambda1);
-		v0=v1;
-		lambda0=lambda1;
-		//cout << "lambda0: " << lambda0 << ", err: " << err << endl;
-		if(ii==4999)cout << "max iteration achieved" << endl;
+		v=B^-1*v3;		
+		mpi(
+			v1 = v/v.l2;
+			lambda1 = v.sum/v0.sum;
+			cout<<"lambda1:"<<lambda1<<endl;
+			err=abs(lambda1-lambda0)/abs(lambda1);
+			v0=v1;
+			lambda0=lambda1;
+			if(ii==4999)cout << "max iteration achieved" << endl;
+		)
+		broadcast(processor(0, mpiCommWorld), err); // Paso la información del procesador 0 al resto
 	}
 	real[int] result(A.n+1);
 	result=[lambda1,v1];

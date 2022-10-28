@@ -11,12 +11,12 @@ verbosity = 0;
 /////////////////////////////////////////////////////////////////////
 // Cargamos librerías
 load "lapack"
+load "MUMPS_mpi"
 
 // Cargamos macros y funciones varias
 include "../../Auxiliary/Macros_3D.idp"
 include "../../Auxiliary/search.idp"
 include "../../Auxiliary/IO.idp"
-include "../../Auxiliary/powermethod.idp"
 include "../../Auxiliary/betas.idp"
 
 
@@ -26,16 +26,18 @@ include "../../Mallas/CuboNxNyNz.idp"
 // Definimos los espacios de EF y de los EF globales
 include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_Spaces_NoStab_VP_3D.idp"
 
+// Definimos los parametros a usar
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Parametros_3D.idp"
+
 // Definimos las matrices de interpolacion y derivacion
 include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D.idp"
 include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D_Local.idp"
 
-// Definimos los parametros a usar
-include "../../Full_Order/VMS_Smago_LPS_pres_3D/Parametros_3D.idp"
-
 // Incluimos el levantamiento
 include "../../Full_Order/VMS_Smago_LPS_pres_3D/Levantamiento_3D.idp"
 
+// Para realizar el metodo de la potencia
+include "../../Auxiliary/powermethod.idp"
 
 ////////////////////////////////////////////////////////////////
 // Definimos parámetros propios del RBF
@@ -69,7 +71,7 @@ for(int i=0; i<Nfine; i++){
 // Calculo los valores de beta_h para cada uno de los valores de vReI y la matriz del producto escalar (mu_barra)
 matrix Fb, X;
 
-{include "Matriz_prodesc_RBF.idp"}
+include "Matriz_prodesc_RBF.idp"
 
 // Inicio el bucle donde calculo cada uno de los \beta_h de vReI
 for (int ni=0; ni<Ninitpoints; ni++){
@@ -77,9 +79,10 @@ for (int ni=0; ni<Ninitpoints; ni++){
 	Reynolds = vmuI(ni);
 	mpi(cout<<"----------- Re = "<<Reynolds;)
 	
-	{include "Matriz_Derivada.idp"}
+	include "Matriz_Derivada.idp"
 	
 	real[int] Potencia = powermethodRBF(X, Fb);
+	broadcast(processor(0, mpiCommWorld), Potencia);
 	
 	betaI(ni) = sqrt(1./Potencia[0]); //La raíz cuadrada del inverso del máximo autovalor
 	mpi(cout<<", beta_h = "<<betaI(ni)<<" -----------"<<endl;)
@@ -114,7 +117,9 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 		include "Matriz_Derivada.idp"
 		
 		real[int] Potencia = powermethodRBF(X, Fb);
+		broadcast(processor(0, mpiCommWorld), Potencia);
 		betaI(k) = sqrt(1./Potencia[0]);
+		
 		mpi(cout<<", beta_h = "<<betaI(k)<<" -----------"<<endl;)
 	}
 	// Actualizamos Betak para calcular el error cometido
@@ -134,10 +139,10 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	if(errorRBF<RBFeps && Betak.min>0)
 	{
 		RBFcontador = k;
-		write("BetaMuI.txt", betaI(0:RBFcontador), 1, 0);
-		write("vMuI.txt", vmuI(0:RBFcontador), 1, 0);
-		write("gammaI.txt", gamma(0:RBFcontador + 2), 1, 0);
-		write("Betak.txt", Betak, 0, 0);
+		write("BetaMuI.txt", betaI(0:RBFcontador), 1, 0, 0);
+		write("vMuI.txt", vmuI(0:RBFcontador), 1, 0, 0);
+		write("gammaI.txt", gamma(0:RBFcontador + 2), 1, 0, 0);
+		write("Betak.txt", Betak, 0, 0, 0);
 		break; //test de parada, asegurando que es positivo todo
 	}
 }

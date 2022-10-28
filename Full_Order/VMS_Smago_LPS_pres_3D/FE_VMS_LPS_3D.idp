@@ -18,7 +18,7 @@ int itFE = 0;
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	itFE++;
-	mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
+	// mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
@@ -82,7 +82,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uEFp[] = uEF[];
 	
 	//real timeLS = clock();
-	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
+	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	//timeLS = clock() - timeLS;
 	//mpi(cout<<"Tiempo LS: "<<timeLS<<endl;)
 	

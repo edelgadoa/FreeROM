@@ -49,8 +49,8 @@ else{
 }
 
 varf prodesc([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])=
-		int2d(Th)((1./Refijo + (CS*hTriangle)^2*MOD(uEF))*GradUGradV(uu,v) + uuP*vP)
-					+on(1,2,3,4, uu=0, uuY=0);
+		int3d(Th)((1./Refijo + (CS*hTriangle)^2*MOD(uEF))*GradUGradV(uu,v) + uuP*vP)
+					+ on(1,2,3,4, uu=0, uuY=0, uuZ=0);
 
-matrix Xt = prodesc(Vh4P2,Vh4P2);
+matrix Xt = prodesc(Vh4P2,Vh4P2, tgv = -1);
 X = [[Xt, 0],[0, 1]];	
