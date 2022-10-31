@@ -30,7 +30,7 @@ include "../../Full_Order/VMS_Smago_LPS_pres_3D/Levantamiento_3D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, vReynolds, 0); // TODO: Hacerlo mediante la funcion read
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, vReynolds, 0); 
 int nSnapshots = vReynolds.n;
 
 VhP2[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);

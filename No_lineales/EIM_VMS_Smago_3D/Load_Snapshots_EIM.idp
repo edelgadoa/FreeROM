@@ -10,7 +10,6 @@ for(int i=0; i<nSnapshots; i++){
 	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + vReynolds(i) + ".txt", real, SnapshotVx, 0);
 	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + vReynolds(i) + ".txt", real, SnapshotVy, 0);
 	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + vReynolds(i) + ".txt", real, SnapshotVz, 0);
-	// ifstream SnapshotPFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + vReynolds(i) + ".txt");
 
 
 	

@@ -41,7 +41,7 @@ include "../../Auxiliary/powermethod.idp"
 
 ////////////////////////////////////////////////////////////////
 // Definimos parámetros propios del RBF
-real Ninitpoints = 6; // Numero de puntos de interpolacion inicial
+real Ninitpoints = 5; // Numero de puntos de interpolacion inicial
 real Nmaxpoints = 40; // Numero maximo de puntos de interporlacion
 real Nfine = 5001;  // Puntos de la interpolacion fina del intervalo parametrico
 int RBFcontador = 0;
