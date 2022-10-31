@@ -70,7 +70,7 @@ NewMacro solvesystem(A,b,u)
     names[0] = "velocity";
     names[1] = "pressure";
 	
-	set(MatAVh4P2, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
+	set(MatAVh4P2, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200", fields=uuL[], names=names);
 	// set(MatAVh4P2, prefix = "block_", sparams = "-block_pc_type fieldsplit -block_ksp_type fgmres -block_pc_fieldsplit_type schur -block_pc_fieldsplit_detect_saddle_point "
 	// + " -block_fieldsplit_velocity_pc_type lu -block_fieldsplit_velocity_mat_solver_type mumps"
 	// + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names);
@@ -108,8 +108,8 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
     names[1] = "pressure";
 	//names[2] = "Lagrange";
 	
-	set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
-	// set(MatLPS, sparams=sparamsv);
+	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
+	 set(MatLPS, sparams=sparamsv);
 	
 	real[int] solLPS = MatLPS^-1*b;
 
