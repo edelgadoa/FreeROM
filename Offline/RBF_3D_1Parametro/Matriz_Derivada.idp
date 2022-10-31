@@ -1,0 +1,153 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+/////////////////////////////////////////////////////////////////////////////////////////
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, ReSnapshots, 0);
+
+Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 SnapX, SnapY, SnapZ, SnapP; 
+
+if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+	// Defino las variables que usaremos para obtener la solucion de EF
+
+	VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+	include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_VMS_LPS_3D.idp"
+	
+	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+	ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+	
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+	
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapZ = uEFZ;
+	SnapP = uEFP;
+		
+	// Guardamos los snapshots 
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);	
+	write("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	SnapZ = SnapZ + LevZ;
+	
+	[uEF, uEFY, uEFZ, uEFP] = [SnapX, SnapY, SnapZ, SnapP];
+}
+else{
+
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", real, SolX, 0);
+	SnapX[] = SolX;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", real, SolY, 0);
+	SnapY[] = SolY;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt", real, SolZ, 0);
+	SnapZ[] = SolZ;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt", real, SolP, 0);
+	SnapP[] = SolP;
+	
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	SnapZ = SnapZ + LevZ;
+	
+	[uEF, uEFY, uEFZ, uEFP] = [SnapX, SnapY, SnapZ, SnapP];	
+}
+
+// Calculo las derivadas de la solucion CON LEVANTAMIENTO
+{
+	VhP2 udcAux;
+	udcAux[] = IPhP2P1*SnapX[];
+	uEFdX[] = DXP2*udcAux[]; uEFdY[] = DYP2*udcAux[]; uEFdZ[] = DZP2*udcAux[];
+
+	udcAux[] = IPhP2P1*SnapY[];
+	uEFYdX[] = DXP2*udcAux[]; uEFYdY[] = DYP2*udcAux[]; uEFYdZ[] = DZP2*udcAux[];
+	
+	udcAux[] = IPhP2P1*SnapZ[];
+	uEFZdX[] = DXP2*udcAux[]; uEFZdY[] = DYP2*udcAux[]; uEFZdZ[] = DZP2*udcAux[];
+	
+}
+Vh4P1dc [uEFf, uEFfY, uEFfZ, uEFfP];
+
+////////////////////////////////////////////////////////////////////////////////
+// Calculo la matriz correspondiente a la Derivada direccional del operador fijo
+varf DerA([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)( (1./Reynolds)*GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))// +epspen*uuP*vP)
+									 + on (1,2,3,4, uu=0, uuY=0, uuZ=0); 
+matrix DA = DerA(Vh4P2, Vh4P2, tgv = -1);
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Calculo la matriz correspondiente a la Derivada del término de Smagorinsky
+varf DerSmago([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)((CS*hTriangle)^2*MOD(uEF)*(UporV(uu,v)) 
+	 											    + (CS*hTriangle)^2/MOD(uEF)*UporV(uEFf,uu)*UporV(uEFf,v));
+												   
+
+matrix MS = DerSmago(Vh4P1dc,Vh4P1dc);													 
+matrix DXMS, DYMS, DZMS;
+{
+	matrix Maux; 
+	//COMPONENTE X
+	Maux = DX4P2*IPh4P24P1;
+	uEFf[] = Maux*uEF[];
+	DXMS = (Maux')*MS;
+	DXMS = DXMS*Maux;
+
+	//COMPONENTE Y
+	Maux = DY4P2*IPh4P24P1;
+	uEFf[] = Maux*uEF[];
+	DYMS = (Maux')*MS;
+	DYMS = DYMS*Maux;
+	
+	//COMPONENTE z
+	Maux = DZ4P2*IPh4P24P1;
+	uEFf[] = Maux*uEF[];
+	DZMS = (Maux')*MS;
+	DZMS = DZMS*Maux;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Calculo la Derivada correspondiente al término de estabilización de la presión
+
+varf tauK(unused,v)=int3d(Th)((uEF^2 + uEFY^2 + uEFZ^2)*v);
+varf tauKT(unused,v)=int3d(Th)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+
+tau = ((cc1*(1./Reynolds+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+
+varf DerPres(uuP,vP) = int3d(Th)(tau*uuP*vP);
+matrix TermP = DerPres(VhP1dc,VhP1dc);
+
+matrix DXP, DYP, DZP;
+{
+	DXP = TermP * IPhD4X4P2; 
+	DXP = IPhD4X4P2' * DXP;
+
+	DYP = TermP * IPhD4Y4P2; 
+	DYP = IPhD4Y4P2' * DYP;
+	
+	DZP = TermP * IPhD4Z4P2; 
+	DZP = IPhD4Z4P2' * DZP;
+}
+
+
+matrix Fvb = DA + DXMS + DYMS + DZMS + DXP + DYP + DZP;
+
+/////////////////////////////////////////////////////
+// Calculo el término para la media de la presión = 0
+varf damultb([uu, uuY, uuZ, uuP], [v,vY, vZ, vP]) = int3d(Th)(vP); 
+
+real[int] Fmb=damultb(0,Vh4P2);
+
+Fb = [[Fvb, Fmb],[Fmb', 1]];

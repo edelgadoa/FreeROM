@@ -50,6 +50,9 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 macro pause() mpiBarrier(mpiCommWorld)// EOM
 macro mpi(variable) if(mpirank==0){variable} //EOM
 
+// mpiComm comm(mpiCommWorld, 0, 0);
+
+
 macro reduceSolution(uL,u,D,map)
 {
 	real[int] aux(u[].n); aux = 0;
