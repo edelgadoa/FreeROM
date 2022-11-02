@@ -1,0 +1,228 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para construir EN PARALELO las matrices de base reducida
+
+// TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
+
+// Inicializo las matrices locales para el paralelo
+include "Allocate_matrices_local.idp"
+
+
+// Comienzo el bucle de construccion de las matrices reducidas fijas
+int contFF = 0; // Contador para el paralelo
+for (int j=0; j<=i; j++){
+	if (mpirank==contFF%mpisize){
+		// Matrices
+		DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
+		DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+		
+		if (j<i){
+			DiffRBL(j,i) = DiffRBL(i,j);
+			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
+			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
+			DTRBL(j,i) = DTRBL(i,j);
+			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
+		}	
+	}
+	contFF++;
+}
+pause;
+
+mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
+
+DiffRB += DiffRBG;
+DivPRB += DivPRBG;
+PenRB += PenRBG;
+ConvLevRB += ConvLevRBG;
+DTRB += DTRBG;
+// StabhkRB += StabhkRBG;
+
+// Comienzo el bucle para la construcción de los tensores
+
+// Conveccion
+
+for (int s=0; s<=i; s++){
+	real[int, int] CintL(2*Nbases, 2*Nbases), CintG(2*Nbases, 2*Nbases);
+	CintL = 0; CintG = 0;
+	contFF = 0;
+	for (int j=0; j<=i; j++){
+		if (mpirank==contFF%mpisize){
+			CintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+			if(j<i){
+				CintL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+			}
+			if (s==i && (j!=i)){
+				for (int k=0; k<s; k++){
+					CintL(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
+				}
+			} 
+		}
+		contFF++;		
+	}
+	pause;
+	mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
+	
+	ConvRB[s] += CintG;
+}
+
+// Smagorinsky
+for (int s=0; s<Mbases; s++){
+	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
+	SintL = 0; SintG = 0;
+	contFF = 0;
+	for (int j=0; j<=i; j++){
+		if (mpirank==contFF%mpisize){
+			SintL(i,j) = int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseVZ[j],FBaseV[i],FBaseVY[i],FBaseVZ[i]));
+			if(j<i){
+				SintL(j,i) = SintL(i,j);
+			}
+		}
+		contFF++;		
+	}
+	pause;
+	mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
+	SmagoRB[s] += SintG;
+}
+
+
+
+// LPS
+for (int s=0; s<Taubases; s++){
+	real[int, int] LPSintL(2*Nbases, 2*Nbases), LPSintG(2*Nbases, 2*Nbases);
+	LPSintL = 0; LPSintG = 0;
+	contFF = 0;
+	for (int j=0; j<=i; j++){
+		if (mpirank==contFF%mpisize){
+			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+			if(j<i){
+				LPSintL(j + Nbases,i + Nbases) = LPSintL(i + Nbases,j + Nbases);
+			}
+		}
+		contFF++;		
+	}
+	pause;
+	mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
+	
+	StabPRB[s] += LPSintG;
+}
+
+/// TODO
+
+// Matrices para el EIM de Smago
+for (int s=0; s<Mbases; s++){
+   real[int,int] Dtk = GradPM[s];
+   
+   Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
+   Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
+   Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
+   Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
+   GradPM[s] = Dtk;
+}
+
+
+// Matrices para el EIM LPS (parte del levantamiento)
+real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+NgkL = 0; NggkL = 0;
+contFF = 0;
+for (int s=0; s<Taubases; s++){ 
+	if(mpirank==contFF%mpisize){
+		//real[int,int] Ngk = NUK[s];
+		VhP2 fvel,fvelY;
+		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
+		fvel = BaseVel[i]; fvelY = BaseVelY[i];
+		real[int] ngaux = NG(0,VhP0);
+		NgkL(0,1+i) = ngaux(PuntosMTau(s));		
+	
+		//Matriz simétrica
+		NgkL(1+i,0) = NgkL(0,1+i);
+	
+		NUK[s] += NgkL;
+	
+		///////////////////////////////////////////////
+	
+		//real[int,int] Nggk = NGUK[s];
+		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
+		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
+		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
+		real[int] ndgaux = NDG(0,VhP0);
+		NggkL(0,1+i) = ndgaux(PuntosMTau(s));
+		//Matriz simétrica
+		NggkL(1+i,0) = NggkL(0,1+i);
+	
+		NGUK[s] += NggkL;
+	}
+	contFF++;
+}
+
+pause;
+
+
+for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
+	real[int,int] NgkL(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
+	real[int,int] NggkL(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
+	NgkL = 0; NgkG = 0;
+	NggkL = 0; NggkG = 0;
+	contFF = 0;
+	for (int j=0; j<=i; j++){ 
+		if(mpirank==contFF%mpisize){ 
+
+			VhP2 fvel,fvelY,ffvel,ffvelY;
+			varf NGL(un,v) = int2d(Th)((fvel*ffvel+fvelY*ffvelY)*v);
+			
+			fvel = BaseV[i]; fvelY = BaseVY[i]; ffvel = BaseV[j]; ffvelY = BaseVY[j];
+			
+			real[int] ngaux = NGL(0,VhP0);
+			NgkL(1+i,1+j) = ngaux(PuntosMTau(s));
+			
+								
+			if(j<i){
+				NgkL(1+j,1+i) = NgkL(1+i,1+j);
+			}
+		
+
+			///////////////////////////////////////////////
+			VhP1dc dxfv1, dyfv1, dxfv2, dyfv2, DXFV1, DYFV1, DXFV2, DYFV2;
+			
+		    varf NDG(un,v) = int2d(Th)((dxfv1*DXFV1 + dyfv1*DYFV1 + dxfv2*DXFV2 + dyfv2*DYFV2)*v);
+			dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
+			DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j];
+			real[int] ndgaux = NDG(0,VhP0);
+			NggkL(1+i,1+j) = ndgaux(PuntosMTau(s));
+			
+			if(j<i){
+				NggkL(1+j,1+i) = NggkL(1+i,1+j);
+			}
+			
+
+		}
+		contFF++;
+	}
+	pause;
+	mpiAllReduce(NgkL, NgkG, mpiCommWorld, mpiSUM);
+	mpiAllReduce(NggkL, NggkG, mpiCommWorld, mpiSUM);
+	
+	NUK[s] += NgkG;
+	NGUK[s] += NggkG;
+}
+
+
+// Definicion de segundos miembros
+bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
+bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
+
+for (int s=0; s<Mbases; s++){
+		bSmagoRB(s,i) = innerprodX(FBaseV[i][], FLev[], SmagoPEM[s]);
+}
+

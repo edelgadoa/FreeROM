@@ -1,0 +1,44 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+readvector("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
+readvector("../../No_lineales/EIM_tau_LPS_3D/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
+
+int Mbases = muEIM.n;
+int Taubases = muEIMTau.n;
+
+VhP1dc[int] EIMSmago(Mbases);
+VhP0[int] EIMTau(Taubases);
+
+
+//////////////////////////////////////////
+// Cargo los elementos del EIM SMAGO
+for (int i=0; i<Mbases; i++){
+	readvector("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
+	EIMSmago[i][] = BaseEIM; //Cargo la bases
+}
+readmatrix("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/MatrizEIM_Smago.txt", real, MatrixEIMSmago, 0);
+readvector("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/TintEIM_Smago.txt", real, PuntosMSmago, 0);
+
+matrix MEIMS = MatrixEIMSmago;
+set(MEIMS, solver=sparsesolver);
+
+//////////////////////////////////////////
+//////////////////////////////////////////
+// Cargo los elementos del EIM SMAGO
+
+for (int i=0; i<Taubases; i++){
+
+	readvector("../../No_lineales/EIM_tau_LPS_3D/Bases_EIM/Base_" + muEIMTau(i) + ".txt", real, BaseEIM, 0);
+	EIMTau[i][] = BaseEIM; //Cargo la bases
+
+}
+
+readmatrix("../../No_lineales/EIM_tau_LPS_3D/Bases_EIM/MatrizEIM_LPS.txt", real, MatrixEIMTau, 0);
+readvector("../../No_lineales/EIM_tau_LPS_3D/Bases_EIM/TintEIM_LPS.txt", real, PuntosMTau, 0);
+
+matrix MEIMTau = MatrixEIMTau;
+// real[int,int] MEIMTauinv = MatrixEIMTau^-1;
+set(MEIMTau, solver=sparsesolver);
+///////////////////////////////////////////
