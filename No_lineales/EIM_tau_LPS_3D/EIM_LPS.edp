@@ -93,7 +93,6 @@ BM(0,0) = BEIM[0][](Tmax(0));
 // Guardamos la base calculada 	
 write("Bases_EIM/Base_" + vReynolds(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
-cout<<"aqui"<<endl
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
 	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);

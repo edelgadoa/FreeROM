@@ -26,7 +26,6 @@ for (int imu=0; imu<nSnapshots; imu++){
 		tKcod[] = sqrt(tK);
 		tKTcod[] = sqrt(tKT);
 	
-		
 		gEIM = ((cc1*(1./vReynolds(imu)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
 
 		for (int j=0; j<i; j++){
