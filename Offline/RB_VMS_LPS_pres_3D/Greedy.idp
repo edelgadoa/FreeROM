@@ -43,11 +43,11 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	include "RB_LPS_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
-	Vh2P2 [uRB, uRBY];
+	Vh3P2 [uRB, uRBY, uRBZ];
 	VhP2 uRBP;
 	
-	real[int,int] MBaseVi(Vh2P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
-	MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:I-1);
+	real[int,int] MBaseVi(Vh3P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:I-1);
 	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
@@ -56,8 +56,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	uRB[] += LevV[];
 	
 	if(MuTrain(iRB)==Reynolds){
-		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
-		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		// plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
+		// plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
 		mpi(cout<<uRBv<<endl;)
 	}
 	
