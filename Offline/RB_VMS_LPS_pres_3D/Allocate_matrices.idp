@@ -12,10 +12,13 @@ real[int,int][int] GradPM(Mbases);
 real[int][int] GradPMLev(Mbases); 
 
 for (int i=0;i<Mbases;i++){
-	real[int,int] Aux(4,Nbases);
+	real[int,int] Aux(9,Nbases);
 	Aux=0;
-	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i))];
-	GradPM[i]=Aux(0:3,0:Nbases-1);
+	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevdZ[](PuntosMSmago(i)),
+				  FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i)), FLevYdZ[](PuntosMSmago(i)),
+				  FLevZdX[](PuntosMSmago(i)), FLevZdY[](PuntosMSmago(i)), FLevZdZ[](PuntosMSmago(i))];
+	
+	GradPM[i]=Aux(0:8,0:Nbases-1);
 }
 
 

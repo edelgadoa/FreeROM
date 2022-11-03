@@ -44,10 +44,10 @@ for (int s=0; s<Taubases; s++){
 }
 
 for (int s=0;s<Mbases;s++){
-	real [int,int] GradPMint(4,NRB), aux(4,Nbases); 
+	real [int,int] GradPMint(9,NRB), aux(9,Nbases); 
 	aux = GradPM[s];
-	GradPMint = aux(0:3,0:NRB-1);
-	GradPM[s] = GradPMint(0:3,0:NRB-1);
+	GradPMint = aux(0:8,0:NRB-1);
+	GradPM[s] = GradPMint(0:8,0:NRB-1);
 }
 
 for (int s=0; s<Taubases; s++){
@@ -84,8 +84,8 @@ write("MatricesRB/NGUK.txt", NGukN, 0, 0, 0, 20);
 
 // Guardo los Snapshots calculados
 
-real[int, int] MBaseVN(Vh2P2.ndof, NRB), MBasePN(VhP2.ndof, NRB);
-MBaseVN = MBaseV(0:Vh2P2.ndof-1, 0:NRB-1);
+real[int, int] MBaseVN(Vh3P2.ndof, NRB), MBasePN(VhP2.ndof, NRB);
+MBaseVN = MBaseV(0:Vh3P2.ndof-1, 0:NRB-1);
 MBasePN = MBaseP(0:VhP2.ndof-1, 0:NRB-1);
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);

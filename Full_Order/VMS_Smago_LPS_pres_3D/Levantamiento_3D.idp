@@ -26,6 +26,5 @@ VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLev
 
 
 // Levantamiento filtrado
-
 Vh2P2 [FLev, FLevY, FLevZ];
 FLev[] = IPh3P23P1 * LevV[];

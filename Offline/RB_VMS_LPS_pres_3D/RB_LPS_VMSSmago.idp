@@ -35,11 +35,11 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	}
 
 	// Matiz de Smagorinsky
-	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(I);
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(I);
 	uN = uRBv(0:I-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
-		real[int, int] Gradint(4,I);
-		Gradint = GradPM[s](0:3, 0:I-1);
+		real[int, int] Gradint(9,I);
+		Gradint = GradPM[s](0:8, 0:I-1);
 		GraduN = Gradint * uN;
 		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);

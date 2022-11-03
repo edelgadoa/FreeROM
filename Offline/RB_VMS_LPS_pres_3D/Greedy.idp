@@ -61,14 +61,15 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 		mpi(cout<<uRBv<<endl;)
 	}
 	
-	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;
+	VhP1dc uRBdX, uRBdY, uRBdZ, uRBYdX, uRBYdY, uRBYdZ, uRBZdX, uRBZdY, uRBZdZ;
 	
 	{ 
-		VhP2 uRBvel, uRBvelY;
-		uRBvel = uRB; uRBvelY = uRBY;
+		VhP2 uRBvel, uRBvelY, uRBvelZ;
+		uRBvel = uRB; uRBvelY = uRBY; uRBvelZ = uRBZ;
 	
-		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	
-		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[];
+		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	uRBdZ[] = DZP2IPh * uRBvel[];
+		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[]; uRBYdZ[] = DZP2IPh * uRBvelY[];
+		uRBZdX[] = DXP2IPh * uRBvelZ[]; uRBZdY[] = DYP2IPh * uRBvelZ[];	uRBZdZ[] = DZP2IPh * uRBvelZ[];
 	}
 	
 	// Calculo el estimador de error 

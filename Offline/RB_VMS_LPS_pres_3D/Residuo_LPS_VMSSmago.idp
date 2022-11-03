@@ -4,46 +4,51 @@
 
 // Programa que calcula el residuo de la solución de RBM
 matrix MRes;
-real[int] bRes(Vh3P2.ndof);
+real[int] bRes(Vh4P2.ndof);
 
 // Termino de Navier-Stokes
-real[int] bNSRes(Vh3P2.ndof);
+real[int] bNSRes(Vh4P2.ndof);
 
 {
-	varf NSRes([u,uY,uP],[v,vY,vP]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
+	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
 									// Segundo miembro
-									+ int2d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
-									+ on(1,2,3,4, u=0, uY=0);
-    MRes = NSRes(Vh3P2, Vh3P2);
+									+ int3d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
+									+ on(1,2,3,4, u=0, uY=0, uZ=0);
+    MRes = NSRes(Vh4P2, Vh4P2);
 	set(MRes, solver = sparsesolver);									
-	bNSRes = NSRes(0, Vh3P2);
+	bNSRes = NSRes(0, Vh4P2);
 }
 								
 // Termino residuo VMS-Smagorinsky
-real[int] bSmagoRes(Vh3P2.ndof); 
+real[int] bSmagoRes(Vh4P2.ndof); 
 
 {
-	real[int] bSx(Vh3P2.ndof), bSy(Vh3P2.ndof), bSaux(Vh3P1dc.ndof);
-	VhP1dc uFRB, uFRBY;
+	real[int] bSx(Vh4P2.ndof), bSy(Vh4P2.ndof), bSz(Vh4P2.ndof), bSaux(Vh4P1dc.ndof);
+	VhP1dc uFRB, uFRBY, uFRBZ;
 	VhP1dc GrN = MOD(uRB);
-	varf SmagoRes([u,uY,uP],[v,vY,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
+	varf SmagoRes([u,uY,,uZ,uP],[v,vY,vZ,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
 	
 	// Componente X
-	uFRB = uRBdX; uFRBY = uRBYdX;
-	bSaux = SmagoRes(0, Vh3P1dc);
-	bSx = DX3P2IPh'*bSaux;
+	uFRB = uRBdX; uFRBY = uRBYdX, uFRBZ = uRBZdX;
+	bSaux = SmagoRes(0, Vh4P1dc);
+	bSx = DX4P2IPh'*bSaux;
 	
 	// Componente Y
-	uFRB = uRBdY; uFRBY = uRBYdY;
-	bSaux = SmagoRes(0, Vh3P1dc);
-	bSy = DY3P2IPh'*bSaux;
+	uFRB = uRBdY; uFRBY = uRBYdY, uFRBZ = uRBZdY;
+	bSaux = SmagoRes(0, Vh4P1dc);
+	bSy = DY4P2IPh'*bSaux;
 	
-	bSmagoRes = bSx + bSy;
+	// Componente Z
+	uFRB = uRBdZ; uFRBY = uRBYdZ; uFRBZ = uRBZdZ;
+	bSaux = SmagoRes(0, Vh4P1dc);
+	bSz = DZ4P2IPh'*bSaux;
+	
+	bSmagoRes = bSx + bSy + bsZ;
 	bSmagoRes = bSmagoRes.*cc; // bloqueo de las condiciones de contorno
 
 }
 // Termino LPS
-real[int] bStabPRes(Vh3P2.ndof);
+real[int] bStabPRes(Vh4P2.ndof);
 
 {
 	VhP0 tKres, tKTres, taures;
@@ -58,7 +63,7 @@ real[int] bStabPRes(Vh3P2.ndof);
 	VhP1dc uFRBP;
 	varf StabPRes(unP,vP) = int2d(Th)(taures*uFRBP*vP);
 	
-	real[int] bSPx(Vh3P2.ndof), bSPy(Vh3P2.ndof), bSPaux(VhP1dc.ndof);
+	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof) bSPaux(VhP1dc.ndof);
 	// Componente X
 	uFRBP[] = IPhDXP2 * uRBP[];
 	bSPaux = StabPRes(0, VhP1dc);
@@ -68,8 +73,13 @@ real[int] bStabPRes(Vh3P2.ndof);
 	uFRBP[] = IPhDYP2 * uRBP[];
 	bSPaux = StabPRes(0, VhP1dc);
 	bSPy = IPhD3Y3P2'*bSPaux;  
+	
+	// Componente Z
+	uFRBP[] = IPhDZP2 * uRBP[];
+	bSPaux = StabPRes(0, VhP1dc);
+	bSPz = IPhD3Z3P2'*bSPaux; 
 
-	bStabPRes = bSPx + bSPy;
+	bStabPRes = bSPx + bSPy + bSPz;
 }
 
 bRes = bNSRes;
@@ -77,7 +87,8 @@ bRes += bSmagoRes;
 bRes += bStabPRes;
 
 {
-	Vh3P2 [RES, RESY, RESP];
-	RES[] = MRes^-1*bRes;
+	Vh3P2 [RES, RESY, RESZ, RESP];
+	mpi(cout<<"Resulevo el residuo"<<endl;)
+	RES[] = MRes^-1*bRes;  // ESTO PUEDE QUE NO LO RESUELVA POR MEMORIA
 	ResG(iRB) = normX(RES[], MPescX);
 }
