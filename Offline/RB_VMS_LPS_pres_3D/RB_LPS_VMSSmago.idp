@@ -13,6 +13,7 @@ MRB += ConvLevRBi;
 MRB += PenRBi;	
 // MRB += StabhkRBi;
 
+mpi(cout<<MRB<<endl;)
 
 bDiffRBi = bDiffRB(0:2*I-1);
 	

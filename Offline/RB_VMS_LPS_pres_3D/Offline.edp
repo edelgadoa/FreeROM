@@ -17,6 +17,7 @@ verbosity = 0;
 // Cargamos librerias
 load "iovtk" 
 load "lapack"
+load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
 
 // Creamos la Malla
 include "../../Mallas/CuboNxNyNz.idp"
@@ -102,6 +103,8 @@ MuBest(0) = Reynolds;
 // Calculo la constante de Sobolev
 include "../../Auxiliary/Sobolev_3D.idp"
 
+
+
 VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT
 VhP1dc uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
 
@@ -136,6 +139,7 @@ else{
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"
+
 
 for (int i=0; i<Nbases; i++){
 	
