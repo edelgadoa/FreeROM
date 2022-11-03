@@ -26,15 +26,15 @@ real[int] bSmagoRes(Vh4P2.ndof);
 	real[int] bSx(Vh4P2.ndof), bSy(Vh4P2.ndof), bSz(Vh4P2.ndof), bSaux(Vh4P1dc.ndof);
 	VhP1dc uFRB, uFRBY, uFRBZ;
 	VhP1dc GrN = MOD(uRB);
-	varf SmagoRes([u,uY,,uZ,uP],[v,vY,vZ,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
+	varf SmagoRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
 	
 	// Componente X
-	uFRB = uRBdX; uFRBY = uRBYdX, uFRBZ = uRBZdX;
+	uFRB = uRBdX; uFRBY = uRBYdX; uFRBZ = uRBZdX;
 	bSaux = SmagoRes(0, Vh4P1dc);
 	bSx = DX4P2IPh'*bSaux;
 	
 	// Componente Y
-	uFRB = uRBdY; uFRBY = uRBYdY, uFRBZ = uRBZdY;
+	uFRB = uRBdY; uFRBY = uRBYdY; uFRBZ = uRBZdY;
 	bSaux = SmagoRes(0, Vh4P1dc);
 	bSy = DY4P2IPh'*bSaux;
 	
@@ -43,7 +43,8 @@ real[int] bSmagoRes(Vh4P2.ndof);
 	bSaux = SmagoRes(0, Vh4P1dc);
 	bSz = DZ4P2IPh'*bSaux;
 	
-	bSmagoRes = bSx + bSy + bsZ;
+	bSmagoRes = bSx + bSy;
+	bSmagoRes += bSz;
 	bSmagoRes = bSmagoRes.*cc; // bloqueo de las condiciones de contorno
 
 }
@@ -63,23 +64,24 @@ real[int] bStabPRes(Vh4P2.ndof);
 	VhP1dc uFRBP;
 	varf StabPRes(unP,vP) = int2d(Th)(taures*uFRBP*vP);
 	
-	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof) bSPaux(VhP1dc.ndof);
+	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof), bSPaux(VhP1dc.ndof);
 	// Componente X
 	uFRBP[] = IPhDXP2 * uRBP[];
 	bSPaux = StabPRes(0, VhP1dc);
-	bSPx = IPhD3X3P2'*bSPaux;  
+	bSPx = IPhD4X4P2'*bSPaux;  
 	
 	// Componente Y
 	uFRBP[] = IPhDYP2 * uRBP[];
 	bSPaux = StabPRes(0, VhP1dc);
-	bSPy = IPhD3Y3P2'*bSPaux;  
+	bSPy = IPhD4Y4P2'*bSPaux;  
 	
 	// Componente Z
 	uFRBP[] = IPhDZP2 * uRBP[];
 	bSPaux = StabPRes(0, VhP1dc);
-	bSPz = IPhD3Z3P2'*bSPaux; 
+	bSPz = IPhD4Z4P2'*bSPaux; 
 
-	bStabPRes = bSPx + bSPy + bSPz;
+	bStabPRes = bSPx + bSPy; 
+	bStabPRes += bSPz;
 }
 
 bRes = bNSRes;
@@ -87,7 +89,7 @@ bRes += bSmagoRes;
 bRes += bStabPRes;
 
 {
-	Vh3P2 [RES, RESY, RESZ, RESP];
+	Vh4P2 [RES, RESY, RESZ, RESP];
 	mpi(cout<<"Resulevo el residuo"<<endl;)
 	RES[] = MRes^-1*bRes;  // ESTO PUEDE QUE NO LO RESUELVA POR MEMORIA
 	ResG(iRB) = normX(RES[], MPescX);

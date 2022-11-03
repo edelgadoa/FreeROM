@@ -42,6 +42,16 @@ varf med(unused,v)=intN(Th)(1.*v);
 real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk); 
 
+VhP0 hk = hTriangle;
+real hT = hk[].max; //El máximo de los diámetros de la malla
+
+//Construyo el vector que bloqueará el residuo de SMAGO
+varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2,3,4, un1=1,un2=1,un3=1); 
+
+real[int] cc = CC(0,Vh4P2);
+for (int gf=0; gf<Vh4P2.ndof; gf++){
+	cc(gf) = (cc(gf)>10^10) ? 0 : 1;
+} 
 
 // Parametros para el problema de EF
 real dt = 1;
@@ -65,8 +75,16 @@ int NRB = 0;
 real RBFeps = 1e-5;
 
 // Parametros mu
-real Reynolds; // Esto es perceptible de cambiarlo
-real Remin;
-real Remax;
+real Reynolds; 
+real Remin = 1000;
+real Remax = 2900;
+
 real Refijo = 1000;
 
+
+int Ntrain = 77;
+
+real[int] MuTrain(Ntrain);
+for (int ig=0; ig<Ntrain; ig++){
+	MuTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
+}

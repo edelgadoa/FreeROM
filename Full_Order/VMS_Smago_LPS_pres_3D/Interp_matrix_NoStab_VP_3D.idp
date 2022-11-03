@@ -22,7 +22,7 @@
 matrix IPhP2P1, IPh4P24P1, IPh3P23P1, IPhP1dcP1;
 
 {
-		matrix IdP2,Id4P2,IdP1dc,IdP1; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
+		matrix IdP2,Id4P2,IdP1dc,IdP1,Id3P2; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
 		{
 			VhP2 faux2=1.;
 			VhP1dc faux1=1.;
@@ -125,8 +125,15 @@ matrix IPhD4X4P2 = IPhP1dcP1 * D4X4P2; // (I-πh) de ∂x componente 4 de 4P2 (4
 matrix IPhD4Y4P2 = IPhP1dcP1 * D4Y4P2; // (I-πh) de ∂y componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Z4P2 = IPhP1dcP1 * D4Z4P2; // (I-πh) de ∂z componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 
+matrix IPhDXP2 = IPhP1dcP1 * DXP2; // (I-πh) de ∂x (P2 -> Derivo componente X -> P1dc (filtro) -> P1 -> P1dc) 
+matrix IPhDYP2 = IPhP1dcP1 * DYP2; // (I-πh) de ∂y (P2 -> Derivo componente Y -> P1dc (filtro) -> P1 -> P1dc)   
+matrix IPhDZP2 = IPhP1dcP1 * DZP2; // (I-πh) de ∂z (P2 -> Derivo componente Z -> P1dc (filtro) -> P1 -> P1dc)  
 
 // Matrices filtrado, con derivada (∂x((I-πh u)))
 matrix DXP2IPh = DXP2 * IPhP2P1;
 matrix DYP2IPh = DYP2 * IPhP2P1;
 matrix DZP2IPh = DZP2 * IPhP2P1;
+
+matrix DX4P2IPh = DX4P2 * IPh4P24P1;
+matrix DY4P2IPh = DY4P2 * IPh4P24P1;
+matrix DZ4P2IPh = DZ4P2 * IPh4P24P1;

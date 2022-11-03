@@ -9,6 +9,8 @@
 /////////// NO SUPREMIZER ///////////////
 /////////////////////////////////////////
 
+verbosity = 0;
+
 // Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
 
@@ -26,14 +28,14 @@ include "../../Auxiliary/search.idp"
 include "../../Auxiliary/IO.idp" 
 
 // Definimos los espacios de EF
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_3D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos los parametros a usar
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_3D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_3D.idp"
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_3D_Local.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Incluimos el levantamiento
 include "../../Full_Order/VMS_Smago_LPS_pres_3D/Levantamiento_3D.idp"
@@ -65,7 +67,7 @@ VhP2[int] BaseVel(Nbases);
 VhP2[int] BaseVelY(Nbases);
 VhP2[int] BaseVelZ(Nbases);
 
-Vh2P3[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
 VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
@@ -98,7 +100,7 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
-include "../../Auxiliary/Sobolev.idp"
+include "../../Auxiliary/Sobolev_3D.idp"
 
 VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT
 VhP1dc uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
@@ -112,7 +114,7 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	// Si no lo he calculado todavía, lo calculo
 	Reynolds = Refijo;
-	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_3D.idp"	
+	include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_VMS_LPS_3D.idp"	
 	
 	uFijo = uEF + Lev;
 	uFijoY = uEFY + LevY;

@@ -5,4 +5,4 @@ read NP
 
 verbosity=0
 rm freefem++.pref 
-ff-mpirun -np $NP ./Offline.edp -glut ffglut
+ff-mpirun -np $NP ./Offline.edp 

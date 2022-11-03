@@ -213,7 +213,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
 			
 			DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
-			DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j]
+			DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
 			DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
 			
 			real[int] ndgaux = NDG(0,VhP0);

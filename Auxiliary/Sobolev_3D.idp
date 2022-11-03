@@ -6,7 +6,7 @@ include "powermethod.idp"
 
 VhP2 uF,uFY, uFZ;
 VhP1dc uFdX, uFdY,uFdZ, uFYdX, uFYdY, uFYdZ, uFZdX, uFZdY, uFZdZ;
-VhP2 SnapX, SnapY, SnapP;
+VhP2 SnapX, SnapY, SnapZ, SnapP;
 
 // Cargo o calculo el snapshot para el Reynolds fijo de la norma T
 if (search(ReSnapshots, Refijo, 1.e-9)==-1){
@@ -40,13 +40,13 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	SnapZ = SnapZ + LevZ;
 	
 	uF[] = IPhP2P1*SnapX[];
-	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ = DZP2*uF[];
+	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
 	
 	uFY[] = IPhP2P1*SnapY[];
-	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ = DZP2*uFY[];
+	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
 	
 	uFZ[] = IPhP2P1*SnapZ[];
-	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ = DZP2*uFZ[];
+	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
 }
 else{
 
@@ -64,13 +64,13 @@ else{
 	SnapZ = SnapZ + LevZ;
 	
 	uF[] = IPhP2P1*SnapX[];
-	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ = DZP2*uF[];
+	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
 	
 	uFY[] = IPhP2P1*SnapY[];
-	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ = DZP2*uFY[];
+	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
 	
 	uFZ[] = IPhP2P1*SnapZ[];
-	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ = DZP2*uFZ[];
+	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
 	
 }
 
