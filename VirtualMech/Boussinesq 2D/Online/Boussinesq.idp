@@ -1,0 +1,172 @@
+
+
+
+
+
+////////////////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad Boussinesq 2D//
+///////////////////////////////////////////////////////
+
+VhP2 SnapUXnew,SnapUYnew,SnapTnew,SnapPnew;
+VhP1dc SnapVisnew;
+
+
+//BUCLE RESOLVER EL PROBLEMA
+
+
+	
+	
+	
+	cout<<"Ra: "<<Ra<<endl;
+	
+	//Incluimos el levantamiento para la temperatura
+	
+
+	//Incluimos la matriz fija 
+
+	include "../EF/Matrices_fijas_B_2D.idp"
+	
+	//Definimos la solucion y la solucion en la etapa anterior 
+	
+	Vh4P2 [u1,u2,t,p]; //Solucion
+	VhP2 u1tmp,u2tmp,ttmp; //Solucion en la etapa anterior;
+	VhP2 u1tmpp,u2tmpp,ttmpp; //Solucion en la etapa n-2 
+	
+	
+	//[u1,u2,t,p] = [UX,UY,t,p];
+	u1[] = 1;
+	
+	// Preliminares a la iteracion
+	real itercontrol1 = 2.*epsError + 1.;
+
+	real iterrelative1 = itercontrol1;
+
+	 //Solucion en la etapa anterior 
+	{
+		u1tmp=u1;
+		u2tmp=u2;
+	}
+	
+	//Derivadas en la etapa anterior para el VMS-SMago
+	VhP2 udcAux;
+	VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,Gr;
+
+	udcAux[] = IPhP2P1*u1tmp[];
+	u1dcX[]  = DXP2*udcAux[];		
+	u1dcY[]  = DYP2*udcAux[];
+	 
+	udcAux[] = IPhP2P1*u2tmp[];
+	u2dcX[]  = DXP2*udcAux[];
+	u2dcY[]  = DYP2*udcAux[];
+
+	Gr=mod(u1dcX,u1dcY,u2dcX,u2dcY);
+	//Bucle para llegar a la estabilizacion 
+	for(int ii=0;ii<=nIterations && (iterrelative1 > epsError); ii++)
+	{
+	
+	
+		///////////////////////////////////
+		//Matriz término de Conveccion N-S
+		///////////////////////////////////
+		include "../EF/Matrices_variables_B_2D.idp"
+	
+		////////////////////////////////////
+		////MATRIZ SMAGORINSKY VEL FILTRADA
+		////////////////////////////////////
+		
+		include "../EF/Matriz_VMSSmago_vel_2D.idp"
+		
+		////////////////////////////////////
+		////MATRIZ SMAGORINSKY TEMP FILTRADA
+		////////////////////////////////////
+		
+		include "../EF/Matriz_VMSSmago_temp_2D.idp"
+		
+		////////////////////////////////////
+		/////MATRIZ LPS 
+		////////////////////////////////////
+		
+		matrix LPSpres; 
+		include "../EF/Matriz_LPS_pres_2D.idp"
+		
+		///////////////////////////
+		//Matriz final 
+		///////////////////////////
+		
+		matrix Afinal;
+		Afinal=AvNSb + AvNS;
+		Afinal+= Sma;
+		Afinal+= SmaT;
+		Afinal+= LPSpres;
+		
+		////////////////////////
+		//Segundo miembro
+		///////////////////////
+		real[int] bNS = vNSb(0,Vh4P2);
+		bNS += bNSf;
+		bNS += bTx;
+		bNS += bTy;
+		set(Afinal, solver=UMFPACK);
+		u1[] = Afinal^-1*bNS;
+		
+		//Pintamos la solucion de cada iteracion
+	
+	//	VhP2 TEMP=t+G;
+	
+	//	plot(TEMP,wait=0,cmm="Solucion en la iteracion "+ii);
+	
+	    VhP2 eu1,eu2;
+		eu1=u1-u1tmp;
+		eu2=u2-u2tmp;
+	
+		//Inicio calculo normas
+		itercontrol1 = sqrt(int2d(Th)(gradugradv(eu1,eu2,eu1,eu2)));  		    	 
+	    real itertmp1 = sqrt(int2d(Th)(gradugradv(u1,u2,u1,u2))); 
+	
+		iterrelative1 = itercontrol1;///itertmp1;	
+		cout << itercontrol1 << endl;
+	//
+	//	cout << "------------------------------------" << endl;	
+	//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+	//ACTUALIZ.
+	u1tmpp = u1tmp;
+	u2tmpp = u2tmp;
+	ttmpp = ttmp;
+	u1tmp=u1;
+	u2tmp=u2;
+	ttmp = t;
+						
+		udcAux[] = IPhP2P1*u1tmp[];
+		u1dcX[]  = DXP2*udcAux[];		
+		u1dcY[]  = DYP2*udcAux[];
+	 
+		udcAux[] = IPhP2P1*u2tmp[];
+		u2dcX[]  = DXP2*udcAux[];
+		u2dcY[]  = DYP2*udcAux[];
+	
+		Gr=mod(u1dcX,u1dcY,u2dcX,u2dcY);
+		
+	
+	}
+ 	SnapUXnew = u1;
+	SnapUYnew = u2;
+	SnapTnew = t;
+	SnapPnew = p;
+	SnapVisnew = Gr;
+	
+	
+	VhP2 T = t+G;
+	/*
+	plot(T,cmm="Temperatura para Ra="+Ra,fill=1,value=1);
+	plot(u1,cmm="Velocidad x para Ra="+Ra,fill=1,value=1);
+	plot(u2,cmm="Velocidad y para Ra="+Ra,fill=1,value=1);
+	//plot([u1,u2],cmm="Modulo velocidad para Ra = "+Ra,wait=1);
+	plot(p,cmm="Presion para Ra = "+Ra,fill=1,value=1);
+	*/
+	int[int] Order=[1];
+	savevtk("Temperature_"+ Ra +".vtk",Th,T,dataname="Temperature",order=Order);
+	savevtk("Velocity_"+ Ra +".vtk",Th,[u1,u2],dataname="Velocity Magnitude",order=Order);
+	savevtk("Pressure_"+ Ra +".vtk",Th,p,dataname="Pressure",order=Order);
+	
+	

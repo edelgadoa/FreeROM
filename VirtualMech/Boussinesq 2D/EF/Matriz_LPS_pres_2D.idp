@@ -1,0 +1,38 @@
+///////////////
+// FreeROM 
+///////////////
+
+//COEF. ESTAB. CODINA
+varf tauK(unused,v)=int2d(Th)((u1tmp^2+u2tmp^2)*v);
+varf tauKT(unused,v)=int2d(Th)(((u1dcX)^2+(u1dcY)^2+(u2dcX)^2+(u2dcY)^2)*v);
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+
+tau = ((cc1*(Pr+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+/////////////////////////////
+//MATRIZ ESTAB. PRES.
+/////////////////////////////
+
+varf termPres(pp,q) = int2d(Th)(tau*pp*q);
+
+
+matrix TermP = termPres(VhP1dc,VhP1dc);
+
+matrix DDxx;
+{
+	DDxx = TermP * IPhD4X4P2; 
+	DDxx = IPhD4X4P2' * DDxx;
+}
+
+matrix DDyy;
+{
+	DDyy = TermP * IPhD4Y4P2; 
+	DDyy = IPhD4Y4P2' * DDyy;
+}
+
+LPSpres = DDxx + DDyy;
