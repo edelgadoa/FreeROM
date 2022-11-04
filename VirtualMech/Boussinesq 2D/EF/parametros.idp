@@ -18,13 +18,13 @@ real Pr=0.71; //Prandlt aire
 int ni=100;
 
 //El intervalo de Rayleigh que se quiera coger
-real Ramin=1.e6;//1.e6
-real Ramax=1.e7;//1.e7
+real Ramin=1.e5;//rayleigh minimo
+real Ramax=1.e6;// rayleigh maximo
 
 //El paso de tiempo para Rayleigh entre [10^3,10^5] es dt = 1.e-2
 //El paso de tiempo para Rayleigh entre [10^5,10^6] es dt = 2.e-3
 //El paso de tiempo para Rayleigh entre [10^6,10^7] es dt = 2.e-4
-real dt=2.e-4;//2.e-3 //2.e-4
+real dt=2.e-3;
 real dtt = 1./dt;
 
 
@@ -34,10 +34,10 @@ real dtt = 1./dt;
 //Rayleigh entre [10^6,10^7] podemos llegar hasta 10^-7
 
 
-real epspen=1.e-7;//1.e-8 // 1.e-7 
+real epspen=1.e-8;
 
 int nIterations=2000;
-real epsError = 1.e-7;//1.e-7
+real epsError = 1.e-8;
 
 
 //Esquema de tiempo BDF2 de orden 2 para que el modelo con los valores entre [10^6,10^7] converge mas rapidamente

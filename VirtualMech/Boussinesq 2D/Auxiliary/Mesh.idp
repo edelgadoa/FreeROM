@@ -6,7 +6,7 @@
 //Para Reyaleigh entre [10^5,10^6] malla de 60 divisiones
 
 
-mesh Th=square(60,60,flags=3); 
+mesh Th=square(50,50,flags=3); 
 
 //Esta función lo que hace es refinar la malla en los bordes
 func fx = 0.5*(1 + (tanh(2*(2*x-1)))/(tanh(2)));
