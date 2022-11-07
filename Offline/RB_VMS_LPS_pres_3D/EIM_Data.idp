@@ -22,7 +22,7 @@ readmatrix("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/MatrizEIM_Smago.txt", r
 readvector("../../No_lineales/EIM_VMS_Smago_3D/Bases_EIM/TintEIM_Smago.txt", real, PuntosMSmago, 0);
 
 matrix MEIMS = MatrixEIMSmago;
-set(MEIMS, solver=sparsesolver);
+set(MEIMS, solver= UMFPACK);
 
 //////////////////////////////////////////
 //////////////////////////////////////////
@@ -40,5 +40,5 @@ readvector("../../No_lineales/EIM_tau_LPS_3D/Bases_EIM/TintEIM_LPS.txt", real, P
 
 matrix MEIMTau = MatrixEIMTau;
 // real[int,int] MEIMTauinv = MatrixEIMTau^-1;
-set(MEIMTau, solver=sparsesolver);
+set(MEIMTau, solver=UMFPACK);
 ///////////////////////////////////////////

@@ -26,7 +26,7 @@ real[int] bSmagoRes(Vh4P2.ndof);
 	real[int] bSx(Vh4P2.ndof), bSy(Vh4P2.ndof), bSz(Vh4P2.ndof), bSaux(Vh4P1dc.ndof);
 	VhP1dc uFRB, uFRBY, uFRBZ;
 	VhP1dc GrN = MOD(uRB);
-	varf SmagoRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int2d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
+	varf SmagoRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)((CS*hTriangle)^2*GrN*UporV(uFRB,v));
 	
 	// Componente X
 	uFRB = uRBdX; uFRBY = uRBYdX; uFRBZ = uRBZdX;
@@ -53,8 +53,8 @@ real[int] bStabPRes(Vh4P2.ndof);
 
 {
 	VhP0 tKres, tKTres, taures;
-	varf tauKres(un,v) = int2d(Th)(UporV(uRB, uRB)*v);
-	varf tauKTres(un,v) = int2d(Th)((MOD(uRB)^2)*v);
+	varf tauKres(un,v) = int3d(Th)(UporV(uRB, uRB)*v);
+	varf tauKTres(un,v) = int3d(Th)((MOD(uRB)^2)*v);
 	real[int] tK = tauKres(0, VhP0);
 	real[int] tKT = tauKTres(0, VhP0);
 	tKres[] = sqrt(tK); tKTres[] = sqrt(tKT);
@@ -62,7 +62,7 @@ real[int] bStabPRes(Vh4P2.ndof);
 	taures = ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
 	
 	VhP1dc uFRBP;
-	varf StabPRes(unP,vP) = int2d(Th)(taures*uFRBP*vP);
+	varf StabPRes(unP,vP) = int3d(Th)(taures*uFRBP*vP);
 	
 	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof), bSPaux(VhP1dc.ndof);
 	// Componente X

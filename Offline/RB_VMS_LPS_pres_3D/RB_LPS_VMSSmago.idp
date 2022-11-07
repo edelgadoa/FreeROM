@@ -13,9 +13,8 @@ MRB += ConvLevRBi;
 MRB += PenRBi;	
 // MRB += StabhkRBi;
 
-mpi(cout<<MRB<<endl;)
-
 bDiffRBi = bDiffRB(0:2*I-1);
+
 	
 for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	real[int, int] MRBF = MRB;
@@ -45,7 +44,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	
+	mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	//cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
@@ -55,7 +54,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
 		SmagoRBi += SmagoRBint; 
 	}
-
+	mpi(cout<<SmagoRBi<<endl;)
 		
 	// Segundo miembro Smago
 	for (int s=0; s<I; s++){
@@ -93,7 +92,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		StabPRBint = sigmaEIMTau(s)*StabPRBint;
 		StabPRBi += StabPRBint; 
 	}
-	
+
 	
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
