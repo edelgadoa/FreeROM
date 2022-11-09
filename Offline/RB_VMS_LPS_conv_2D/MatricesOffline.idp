@@ -123,22 +123,22 @@ for (int s=0; s<Taubases; s++){
 for (int s=0; s<Taubases; s++){
 	for (int ui=0; ui<Nbases; ui++){
 		for (int uj=0; uj<Nbases; uj++){
-			real[int, int] LPSCintL(2*Nbases, 2*Nbases), LPSCintG(2*Nbases, 2*Nbases);
+			real[int, int] LPSCUUintL(2*Nbases, 2*Nbases), LPSCUUintG(2*Nbases, 2*Nbases);
 			LPSCintL = 0; LPSCintG = 0;
 			contFF = 0;
 			for (int j=0; j<=i; j++){
 				if (mpirank==contFF%mpisize){
-					LPSCintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+					LPSCUUintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
 					if(j<i){
-						LPSCintL(j,i) = LPSCintL(i,j)
+						LPSCUUintL(j,i) = LPSCUUintL(i,j)
 					}
 				}
 				contFF++;
 			}
 			pause;
-			mpiAllReduce(LPSCintL, LPSCintG, mpiCommWorld, mpiSUM);
+			mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
 			
-			StabCRB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCintG;
+			StabCRB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUintG;
 		}
 	}
 }
