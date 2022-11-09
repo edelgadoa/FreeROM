@@ -42,9 +42,8 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 3. El resto del equipo puede acceder a la rama remota creada haciendo:
 	
-	`git fetch
-	
-	 git checkout origin/branch-name `
+	`git fetch`
+	 `git checkout origin/branch-name `
 	 
 4. Ya se trabaja normalmente en esa rama
 
