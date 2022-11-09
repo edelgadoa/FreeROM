@@ -2,53 +2,53 @@
 // FreeROM 
 ///////////////
 
+verbosity = 0;
 // Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
 
 // Cargamos librerias
 load "lapack"
 
 // Cargamos macros y funciones i/o
-include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/Macros_3D.idp"
+include "../../Auxiliary/IO.idp" 
 
-// Creamos la matriz
-include "../../Mallas/CuadradoNxNy.idp"
+// Creamos la malla
+include "../../Mallas/CuboNxNyNz.idp"
 
 // Definimos los espacios de EF
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Interp_matrix_NoStab_VP_3D.idp"
 
 // Definimos los parametros a usar
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Parametros_3D.idp"
 
 // Incluimos el levantamiento
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
+include "../../Full_Order/VMS_Smago_LPS_pres_3D/Levantamiento_3D.idp"
 
 
-//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots; // numero de Snapshots que voy a querer calcular 
-ifstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
-nSnapshotFILE>>nSnapshots;
-real[int] vReynolds(nSnapshots);
 
-VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
-// VhP1[int] BP(nSnapshots); //Cambiar a P2 cuando funcione todo
-VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVYdX(nSnapshots), BVYdY(nSnapshots); //las calculo TODAS de una vez
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, vReynolds, 0); 
+int nSnapshots = vReynolds.n;
+
+VhP2[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);
+
+VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots), 
+			BVYdX(nSnapshots), BVYdY(nSnapshots), BVYdZ(nSnapshots),
+			BVZdX(nSnapshots), BVZdY(nSnapshots), BVZdZ(nSnapshots); 
 
 // Definimos las cantidades que usaremos para el segundo miembro del EIM
 //VhP0 tKcod,tKTcod,tau,mk;
-VhP1dc UXdX,UXdY,UYdX,UYdY;	
-VhP2 UX,UY;
+VhP1dc UXdX, UXdY, UXdZ, UYdX, UYdY, UYdZ, UZdX, UZdY, UZdZ;	
+VhP2 UX, UY, UZ;
 
 // varf med(unused,v)=int2d(Th)(1.*v);
 // real[int] medk=med(0,VhP0);
 // mk[]=sqrt(medk);
 
-varf tauK(unused,v)=int2d(Th)((UX^2+UY^2)*v);
-varf tauKT(unused,v)=int2d(Th)((UXdX^2+UXdY^2+UYdX^2+UYdY^2)*v);
-
-
+varf tauK(unused,v) = int3d(Th)((UX^2+UY^2+UZ^2)*v);
+varf tauKT(unused,v) = int3d(Th)((UXdX^2+UXdY^2+UXdZ^2+ UYdX^2+UYdY^2+UYdZ^2 + UZdX^2+UZdY^2+UZdZ^2)*v);
 
 include "Load_Snapshots_EIM.idp"
 
@@ -69,11 +69,13 @@ VhP0 gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 // Primera iteración //Tomamos el primer valor del parametro aleatorio
 muEIM(0) = vReynolds(0); //Almacenamos el valor de Reynolds escogido
 
-UX = BVX[0]; UY = BVY[0];
-UXdX = BVdX[0]; UXdY = BVdY[0]; UYdX = BVYdX[0]; UYdY = BVYdY[0]; 
+UX = BVX[0]; UY = BVY[0]; UZ=BVZ[0];
+UXdX = BVdX[0]; UXdY = BVdY[0]; UXdZ = BVdZ[0]; 
+UYdX = BVYdX[0]; UYdY = BVYdY[0]; UYdZ = BVYdZ[0];
+UZdX = BVZdX[0]; UZdY = BVZdY[0]; UZdZ = BVZdZ[0];
 
-real[int] tK=tauK(0,VhP0);
-real[int] tKT=tauKT(0,VhP0);
+real[int] tK = tauK(0,VhP0);
+real[int] tKT = tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 
@@ -88,9 +90,8 @@ BEIM[0][] /= BEIM[0][].max;
 
 BM(0,0) = BEIM[0][](Tmax(0));
 
-// Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
-ofstream BaseEIMFILE("Bases_EIM/Base_" + vReynolds(0) + ".txt");
-BaseEIMFILE<<BEIM[0][]<<endl;
+// Guardamos la base calculada 	
+write("Bases_EIM/Base_" + vReynolds(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
@@ -108,24 +109,20 @@ for (int i=1; i<Mmax; i++){
 // Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
 real[int] muEIMF(M);
 muEIMF = muEIM(0:M-1);
-ofstream muFILE("Bases_EIM/muEIM_LPS.txt");
-muFILE.precision(20);
-muFILE<<muEIMF<<endl;
+write("Bases_EIM/muEIM_LPS.txt", muEIMF, 0, 0);
 
-ofstream MatrizFILE("Bases_EIM/MatrizEIM_LPS.txt");
+
 real[int, int] BFinal(M,M);
 BFinal = BM(0:M-1,0:M-1);
-MatrizFILE.precision(20);
-MatrizFILE<<BFinal<<endl;
+write("Bases_EIM/MatrizEIM_LPS.txt", BFinal, 0, 0, 0, 20);
 
 real[int] TM(M);
 TM = Tmax(0:M-1);
-ofstream TmaxFILE("Bases_EIM/TintEIM_LPS.txt");
-TmaxFILE.precision(20);
-TmaxFILE<<TM<<endl;
+write("Bases_EIM/TintEIM_LPS.txt", TM, 0, 0);
+
 
 real[int] ErrorEIM(M);
 ErrorEIM=ErrorMaxEIM(0:M-1);
-ofstream ErrorFILE("Bases_EIM/ErrorEIM_LPS.txt");
-ErrorFILE<<ErrorEIM<<endl;
+write("Bases_EIM/ErrorEIM_LPS.txt", ErrorEIM, 0, 0);
+
 
