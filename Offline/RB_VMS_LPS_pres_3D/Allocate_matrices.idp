@@ -14,11 +14,11 @@ real[int][int] GradPMLev(Mbases);
 for (int i=0;i<Mbases;i++){
 	real[int,int] Aux(9,Nbases);
 	Aux=0;
-	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevdZ[](PuntosMSmago(i)),
-				  FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i)), FLevYdZ[](PuntosMSmago(i)),
-				  FLevZdX[](PuntosMSmago(i)), FLevZdY[](PuntosMSmago(i)), FLevZdZ[](PuntosMSmago(i))];
+	GradPMLev[i] = [FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevdZ[](PuntosMSmago(i)),
+				    FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i)), FLevYdZ[](PuntosMSmago(i)),
+				    FLevZdX[](PuntosMSmago(i)), FLevZdY[](PuntosMSmago(i)), FLevZdZ[](PuntosMSmago(i))];
 	
-	GradPM[i]=Aux(0:8,0:Nbases-1);
+	GradPM[i] = Aux(0:8,0:Nbases-1);
 }
 
 
@@ -33,9 +33,9 @@ for (int i=0; i<Taubases; i++){
 	Aux(0,0) = ngk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NUK[i] = Aux(0:Nbases,0:Nbases);
 	
-	varf Ngradgk(un1,v)=int3d(Th)((FLevdX^2 + FLevdY^2 + FLevdZ^2 
-								 + FLevYdX^2 + FLevYdY^2 + FLevYdZ^2
-								 + FLevZdX^2 + FLevZdY^2 + FLevZdZ^2)*v);
+	varf Ngradgk(un1,v) = int3d(Th)((FLevdX^2 + FLevdY^2 + FLevdZ^2 
+								   + FLevYdX^2 + FLevYdY^2 + FLevYdZ^2
+								   + FLevZdX^2 + FLevZdY^2 + FLevZdZ^2)*v);
 	real[int] nggk = Ngradgk(0,VhP0); 
 	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);
@@ -68,17 +68,17 @@ real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases);
 
 for (int k=0; k<Nbases; k++){
 	real[int,int] aux(2*Nbases, 2*Nbases);
-	aux=0;
+	aux = 0;
 	ConvRB[k] = aux(0:2*Nbases-1, 0:2*Nbases-1);
 }
 
 for (int k=0;k<Mbases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
-	aux=0;
-	SmagoRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+	aux = 0;
+	SmagoRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
 }
 for (int k=0;k<Taubases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
-	aux=0;
-	StabPRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+	aux = 0;
+	StabPRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
 }

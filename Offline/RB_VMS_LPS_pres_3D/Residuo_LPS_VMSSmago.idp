@@ -9,11 +9,12 @@ real[int] bRes(Vh4P2.ndof);
 // Termino de Navier-Stokes
 real[int] bNSRes(Vh4P2.ndof);
 
+
 {
 	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
-									// Segundo miembro
-									+ int3d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
-									+ on(1,2,3,4, u=0, uY=0, uZ=0);
+											// Segundo miembro
+										  + int3d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
+										  + on(1,2, u=0, uY=0, uZ=0);
     MRes = NSRes(Vh4P2, Vh4P2);
 	set(MRes, solver = sparsesolver);									
 	bNSRes = NSRes(0, Vh4P2);
@@ -48,6 +49,8 @@ real[int] bSmagoRes(Vh4P2.ndof);
 	bSmagoRes = bSmagoRes.*cc; // bloqueo de las condiciones de contorno
 
 }
+
+//mpi(cout<<bSmagoRes<<endl;)
 // Termino LPS
 real[int] bStabPRes(Vh4P2.ndof);
 
@@ -83,6 +86,7 @@ real[int] bStabPRes(Vh4P2.ndof);
 	bStabPRes = bSPx + bSPy; 
 	bStabPRes += bSPz;
 }
+//mpi(cout<<bStabPRes<<endl;)
 
 bRes = bNSRes;
 bRes += bSmagoRes;
@@ -90,7 +94,7 @@ bRes += bStabPRes;
 
 {
 	Vh4P2 [RES, RESY, RESZ, RESP];
-	mpi(cout<<"Resulevo el residuo"<<endl;)
+	mpi(cout<<"Resuelvo el residuo"<<endl;)
 	RES[] = MRes^-1*bRes;  // ESTO PUEDE QUE NO LO RESUELVA POR MEMORIA
 	ResG(iRB) = normX(RES[], MPescX);
 }

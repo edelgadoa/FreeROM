@@ -46,7 +46,7 @@ VhP0 hk = hTriangle;
 real hT = hk[].max; //El máximo de los diámetros de la malla
 
 //Construyo el vector que bloqueará el residuo de SMAGO
-varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2,3,4, un1=1,un2=1,un3=1); 
+varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2, un1=1,un2=1,un3=1); 
 
 real[int] cc = CC(0,Vh4P2);
 for (int gf=0; gf<Vh4P2.ndof; gf++){

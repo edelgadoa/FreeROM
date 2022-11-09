@@ -131,6 +131,7 @@ for (int s=0; s<Mbases; s++){
    GradPM[s] = Dtk;
 }
 
+mpi(cout<<GradPM<<endl;)
 
 // Matrices para el EIM LPS (parte del levantamiento)
 real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
