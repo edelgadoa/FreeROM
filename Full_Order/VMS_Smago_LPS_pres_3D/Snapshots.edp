@@ -42,12 +42,12 @@ include "Interp_matrix_NoStab_VP_3D_Local.idp"
 include "../../Auxiliary/Normas.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 11; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 
 Remin = 1000;
-Remax = 5100;
+Remax = 1500;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
@@ -79,7 +79,7 @@ for (int i=0; i<nSnapshots; i++){
 		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
 		TFE = clock() - TFE;
-		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<endl;)
+		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<", ERROR:"<<ERROR<<endl;)
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -103,7 +103,7 @@ for (int i=0; i<nSnapshots; i++){
 		int[int] fforder=[1,1,1,1];
 		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
 		
-		//real mediaP = intN(Th)(uEFP);
-		//mpi(cout<<"Media Presion: "<<mediaP<<endl;)
+		real mediaP = intN(Th)(uEFP);
+		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
 }
