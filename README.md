@@ -31,7 +31,7 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 	`git push` -- sube los archivos
 	
-** TRABAJAR CON RAMAS (BRANCHES) **
+**TRABAJAR CON RAMAS (BRANCHES)**
 1. Crear una rama LOCAL (solo se ve en tu ordenador)
 	
 	`git checkout -b branch-name` -- crea una rama en local llamada branch-name
