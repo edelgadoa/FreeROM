@@ -15,8 +15,10 @@ real [int] bEIM(i), sigmai(i);
 //pause; //Hacemos el siguiente for en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
 	//if (mpirank==imu%mpisize){
-		UX = BVX[imu]; UY = BVY[imu];
-		UXdX = BVdX[imu]; UXdY = BVdY[imu]; UYdX = BVYdX[imu]; UYdY = BVYdY[imu]; 
+		UX = BVX[imu]; UY = BVY[imu]; UZ = BVZ[imu];
+		UXdX = BVdX[imu]; UXdY = BVdY[imu]; UXdZ = BVdZ[imu]; 
+		UYdX = BVYdX[imu]; UYdY = BVYdY[imu]; UYdZ = BVYdZ[imu];
+		UZdX = BVZdX[imu]; UZdY = BVZdY[imu]; UZdZ = BVZdZ[imu];
 		
 		real[int] tK=tauK(0,VhP0);
 		real[int] tKT=tauKT(0,VhP0);
@@ -24,7 +26,6 @@ for (int imu=0; imu<nSnapshots; imu++){
 		tKcod[] = sqrt(tK);
 		tKTcod[] = sqrt(tKT);
 	
-		
 		gEIM = ((cc1*(1./vReynolds(imu)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
 
 		for (int j=0; j<i; j++){
@@ -51,14 +52,17 @@ for (int imu=0; imu<nSnapshots; imu++){
 	
 }
 
-	cout<<muEIM<<endl;
+	mpi(cout<<muEIM<<endl;)
 // Calculamos la base escogida
 int iReynolds = Errorit.imax;
-UX = BVX[Errorit.imax]; UY = BVY[Errorit.imax];  // Tomo la base donde se encuentra el Reynolds con mayor error
-UXdX = BVdX[Errorit.imax]; UXdY = BVdY[Errorit.imax]; UYdX = BVYdX[Errorit.imax]; UYdY = BVYdY[Errorit.imax]; 
 
-real[int] tK=tauK(0,VhP0);
-real[int] tKT=tauKT(0,VhP0);
+UX = BVX[Errorit.imax]; UY = BVY[Errorit.imax]; UZ = BVZ[Errorit.imax];
+UXdX = BVdX[Errorit.imax]; UXdY = BVdY[Errorit.imax]; UXdZ = BVdZ[Errorit.imax]; 
+UYdX = BVYdX[Errorit.imax]; UYdY = BVYdY[Errorit.imax]; UYdZ = BVYdZ[Errorit.imax];
+UZdX = BVZdX[Errorit.imax]; UZdY = BVZdY[Errorit.imax]; UZdZ = BVZdZ[Errorit.imax];
+
+real[int] tK = tauK(0,VhP0);
+real[int] tKT = tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);
@@ -84,7 +88,6 @@ for (int j=0; j<=i; j++){
 }
 
 // Almacenamos la base escogida 
-ofstream BaseEIMFILE("Bases_EIM/Base_" + vReynolds(Errorit.imax) + ".txt");
-BaseEIMFILE<<BEIM[i][]<<endl;
+write("Bases_EIM/Base_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 
 muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	

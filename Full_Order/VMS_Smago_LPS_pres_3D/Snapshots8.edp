@@ -42,16 +42,17 @@ include "Interp_matrix_NoStab_VP_3D_Local.idp"
 include "../../Auxiliary/Normas.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 10; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 4; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 
-Remin = 4650;
+Remin = 4950;
 Remax = 5100;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
 
+mpi(cout<<vReynolds<<endl;)
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
 
 
@@ -79,14 +80,14 @@ for (int i=0; i<nSnapshots; i++){
 		real TFE = clock();
 		include "FE_VMS_LPS_3D.idp"
         
-        VhP2 medP = 1, uEFpres;
-        medP[] *= intN(Th)(uEFP);
+        //VhP2 medP = 1, uEFpres;
+        //medP[] *= intN(Th)(uEFP);
         
-		uEFpres = uEFP - medP;
+		//uEFpres = uEFP - medP;
         // uEFP = uEFP - medP; // Media de la presion cero
         // mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
 
-        mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+        //mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
 
         
 		TFE = clock() - TFE;
@@ -101,7 +102,7 @@ for (int i=0; i<nSnapshots; i++){
 		SnapX = uEF;
 		SnapY = uEFY;
 		SnapZ = uEFZ;
-		SnapP = uEFpres;
+		SnapP = uEFP;
 	
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
 		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);

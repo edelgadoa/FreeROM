@@ -1,0 +1,38 @@
+////////////////
+// FreeROM
+///////////////
+
+
+///////////////////////////////////
+//Matriz término de Conveccion Boussinesq
+///////////////////////////////////
+
+	varf vNSb([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+			int2d(Th)(b0*((ugradv(u1tmp,u2tmp,uu1,uu2)'*[v1,v2])))
+			+int2d(Th)(b1*((ugradv(u1tmp,u2tmp,uu1,uu2)'*[v1,v2])))
+			+int2d(Th)(b0*(([u1tmp,u2tmp]'*Grad(tt))*zt))
+			+int2d(Th)(b1*(([u1tmpp,u2tmpp]'*Grad(tt))*zt))
+			//Seg miembro
+			-int2d(Th)(a1*(1./dt)*(u1tmp*v1+u2tmp*v2+ttmp*zt))
+			-int2d(Th)(a2*(1./dt)*(u1tmpp*v1+u2tmpp*v2+ttmpp*zt))
+	   		-int2d(Th)(b0*(([u1tmp,u2tmp]'*Grad(G))*zt))
+			-int2d(Th)(b1*(([u1tmpp,u2tmpp]'*Grad(G))*zt))
+			;
+
+
+
+			/*
+			
+			varf vNSb([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+					 int2d(Th)(ugradv(u1,u2,uu1,uu2)'*[v1,v2])
+					+int2d(Th)((([u1,u2]'*Grad(tt))*zt))
+					//Seg miembro
+					+int2d(Th)((1./dt)*(u1*v1+u2*v2+t*zt))
+					-int2d(Th)((([u1,u2]'*Grad(G))*zt))
+					;
+			
+		*/
+					
+	matrix AvNSb=vNSb(Vh4P2,Vh4P2);
+	real[int] bNSb = vNSb(0,Vh4P2);
+	

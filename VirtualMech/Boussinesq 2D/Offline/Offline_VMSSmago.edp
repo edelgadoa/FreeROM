@@ -1,0 +1,184 @@
+/////////////////////////////////////////
+//// Boussinesq + VMS-Smago + LPS ///
+/////////////////////////////////////////
+
+macro dimension () 2//
+include "macro_ddm.idp"
+
+macro Grad(u) [dx(u),dy(u)] //
+macro div(u,v) (dx(u)+dy(v)) //
+//Codigo para la parte offline de Boussinesq 
+
+load "lapack"
+load "iovtk"
+// Creamos la matriz
+include "../Auxiliary/Mesh.idp"
+
+// Definimos los espacios de EF
+include "../EF/FE_Spaces_NoStab_2D.idp"
+
+// Definimos los parametros a usar
+include "../EF/parametros.idp"
+
+//Definimos las matrices de interpolacion
+include "../EF/Interp_matrix_NoStab_2D.idp"
+
+////////////////////////////////////////////////////////////////////////////////
+// READING Data
+////////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////
+//POD basis
+///////////////////////
+
+
+int ndof,dU,dVis,dT; //ndof and dU,dP,dT, dVis are, respectively, the number of FE scalar space dof (EO) and dimension of ensemble of velocity, pressure, temperature, turbulence viscosity snapshots 
+
+ifstream introPODu("../Data/PODbasis/PODbasis_107/BasePODvelocity1.txt"); // Importing u POD basis
+introPODu>>ndof;introPODu>>dU;
+real[int,int] Phiu(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODu>>Phiu(i,j);}}
+
+ifstream introPODv("../Data/PODbasis/PODbasis_107/BasePODvelocity2.txt"); // Importing v POD basis
+introPODv>>ndof;introPODv>>dU;
+real[int,int] Phiv(ndof,dU);
+for(int i=0;i<ndof;i++){for(int j=0;j<dU;j++){introPODv>>Phiv(i,j);}}
+
+ifstream introPODvis("../Data/PODbasis/PODbasis_107/BasePODviscosity.txt"); // Importing p POD basis
+introPODvis>>ndof;introPODvis>>dVis;
+real[int,int] Phivis(ndof,dVis);
+for(int i=0;i<ndof;i++){for(int j=0;j<dVis;j++){introPODvis>>Phivis(i,j);}}
+
+ifstream introPODt("../Data/PODbasis/PODbasis_107/BasePODtemperature.txt"); // Importing t POD basis
+introPODt>>ndof;introPODt>>dT;
+real[int,int] Phit(ndof,dT);
+for(int i=0;i<ndof;i++){for(int j=0;j<dT;j++){introPODt>>Phit(i,j);}}
+
+// OFFLINE TENSOR VEL/TEMP for VMS SMAGO
+
+real[int,int][int] D(dVis); //Vector of matrices of velocity RBF 
+
+real[int,int][int] DT(dVis); //Vector of matrices of temperature RBF
+
+real[int,int] auxD(dU,dU), auxDT(dT,dT); //Aux matrix for trilinears terms
+
+//Initialization
+
+for(int i = 0;i<dVis;i++)
+{
+	auxD = 0.;
+	auxDT = 0.;
+	D[i] = auxD(0:dU-1,0:dU-1);
+	DT[i] = auxDT(0:dT-1,0:dT-1);
+}
+
+//Construct the derivative modes of the temperature and the velocity
+
+//Temperature
+real[int,int] xPhit(VhP1dc.ndof,dT),yPhit(VhP1dc.ndof,dT),Phitfil(VhP2.ndof,dT);
+VhP2 modet;
+for(int i = 0;i<dT;i++)
+{
+	modet[] = Phit(:,i);
+	xPhit(:,i) = DXP2IPh*modet[];
+	yPhit(:,i) = DYP2IPh*modet[];
+	Phitfil(:,i) = IPhP2P1*modet[];
+}
+
+
+//Velocity
+real[int,int] xPhiu(VhP1dc.ndof,dU),xPhiv(VhP1dc.ndof,dU),yPhiu(VhP1dc.ndof,dU),yPhiv(VhP1dc.ndof,dU);
+real[int,int] Phiufil(VhP2.ndof,dU),Phivfil(VhP2.ndof,dU);
+
+VhP2 modeu,modev;
+for(int i=0;i<dU;i++)
+{
+	modeu[] = Phiu(:,i); modev[] = Phiv(:,i);
+	xPhiu(:,i) = DXP2IPh*modeu[];
+	xPhiv(:,i) = DXP2IPh*modev[];
+	yPhiu(:,i) = DYP2IPh*modeu[];
+	yPhiv(:,i) = DYP2IPh*modev[];
+	Phiufil(:,i) = IPhP2P1*modeu[];
+	Phivfil(:,i) = IPhP2P1*modev[];
+}
+
+
+
+
+//Tensor for temperature 
+
+matrix DTaux;
+VhP1dc modeviss;
+real[int,int] auxDTL = auxDT;
+real cteDT = 1/Pr*(CS)^2;
+for(int s=0;s<dVis;s++)
+{
+	auxDTL=0;auxDT=0;
+	modeviss[] = Phivis(:,s);
+	varf a(t,tt) = intN(Th)(hTriangle^2*modeviss*t*tt);
+	DTaux = a(VhP1dc,VhP1dc);
+	for(int i = 0;i<dT;i++)
+	{
+		if(mpirank==i%mpisize)
+		{
+			real[int] auxtensorTX = DTaux*xPhit(:,i);
+			real[int] auxtensorTY = DTaux*yPhit(:,i);
+		
+		for(int j = 0;j<dT;j++)
+		{ 
+			auxDTL(i,j) =
+			 cteDT*(xPhit(:,j)'*auxtensorTX + yPhit(:,j)'*auxtensorTY);
+			 
+		}
+	}
+	}
+	mpiAllReduce(auxDTL,auxDT,mpiCommWorld,mpiSUM);
+	DT[s] = auxDT(0:dT-1,0:dT-1);
+}
+
+//Tensor for velocity
+
+matrix Daux;
+real[int,int] auxDL = auxD;
+real cteD = (CS)^2;
+for(int s = 0;s<dVis;s++)
+{
+	auxDL = 0;auxD=0;
+	modeviss[] = Phivis(:,s);
+	varf a(u,v) = intN(Th)(hTriangle^2*modeviss*u*v);
+	Daux = a(VhP1dc,VhP1dc);
+	for(int i=0;i<dU;i++)
+	{
+		if(mpirank==i%mpisize)
+		{
+			
+			real[int] auxtensorXX = Daux*xPhiu(:,i);
+			real[int] auxtensorXY = Daux*yPhiu(:,i);
+			real[int] auxtensorYX = Daux*xPhiv(:,i);
+			real[int] auxtensorYY = Daux*yPhiv(:,i);
+			
+			for(int j = 0;j<dU;j++)
+			{
+				auxDL(i,j) = cteD*(xPhiu(:,j)'*auxtensorXX + yPhiu(:,j)'*auxtensorXY + xPhiv(:,j)'*auxtensorYX + yPhiv(:,j)'*auxtensorYY);
+			}
+			
+		}
+	}
+	mpiAllReduce(auxDL,auxD,mpiCommWorld,mpiSUM);
+	D[s] = auxD(0:dU-1,0:dU-1);
+}
+
+
+if(mpirank==0){
+cout << "Built Trilinear Tensor D" << endl;
+
+cout << "Built Trilinear Tensor DT" << endl;		  
+}
+//------------Export data----------------
+
+ofstream outputD("../Data/Offline/Offline_107/MatrixOff/D.txt");		outputD<<D;		
+ofstream outputDT("../Data/Offline/Offline_107/MatrixOff/DT.txt");      outputDT<<DT;
+
+
+ 

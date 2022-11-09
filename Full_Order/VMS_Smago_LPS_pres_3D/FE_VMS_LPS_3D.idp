@@ -14,9 +14,11 @@ include "Matrices_fijas_NS_3D.idp"
 
 
 ERROR = 10;
+int itFE = 0;
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
-	
+	itFE++;
+	// mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
 	uprevL = uEF + Lev;
@@ -78,13 +80,12 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// Actualizamos la solución
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[] = uEF[];
-
-	// real timeIt = clock();
-	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
-	// timeIt = clock() - timeIt; 
-
-	// mpi(cout<<"Tiempo en una iteracion: "<<timeIt<<endl;)
-
+	
+	//real timeLS = clock();
+	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
+	//timeLS = clock() - timeLS;
+	//mpi(cout<<"Tiempo LS: "<<timeLS<<endl;)
+	
 	// Calculamos el error cometido (en velocidad)
 	Vh4P2 [errEF, errEFY, errEFZ, errEFP];
 	errEF[] = uEF[] - uEFp[];
@@ -92,8 +93,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	real ERRORabs = sqrt(intN(Th)(errEF^2 + errEFY^2 + errEFZ^2));
 	ERROR = ERRORabs / sqrt(intN(Th)(uEF^2 + uEFY^2 + uEFZ^2));
 	
-	// mpi(cout<<ERROR<<endl;)
+	mpi(cout<<ERROR<<endl;)
 
 
 }
-
+mpi(cout<<"It FE: "<<itFE<<", Error: "<<ERROR<<endl;)

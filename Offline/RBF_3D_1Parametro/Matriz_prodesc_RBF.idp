@@ -1,0 +1,56 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, ReSnapshots, 0);
+
+Vh4P2 [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 SnapX, SnapY, SnapZ; 
+
+if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+	// Si no lo he calculado todavía, lo calculo
+	Reynolds = Refijo;
+	VhP2 uprevL, uprevLY, uprevLZ;
+	VhP1dc Gr;
+	include "../../Full_Order/VMS_Smago_LPS_pres_3D/FE_VMS_LPS_3D.idp"	
+	
+	SnapX = uEF + Lev;
+	SnapY = uEFY + LevY;
+	SnapZ = uEFZ + LevZ;
+}
+else{
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Refijo + ".txt", real, SolX, 0);
+	SnapX[] = SolX;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Refijo + ".txt", real, SolY, 0);
+	SnapY[] = SolY;
+	readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Refijo + ".txt", real, SolZ, 0);
+	SnapZ[] = SolZ;
+
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	SnapZ = SnapZ + LevZ;
+	
+}
+
+// Calculo las derivadas de la solucion CON LEVANTAMIENTO
+{
+	VhP2 udcAux;
+	udcAux[] = IPhP2P1*SnapX[];
+	uEFdX[] = DXP2*udcAux[]; uEFdY[] = DYP2*udcAux[]; uEFdZ[] = DZP2*udcAux[];
+
+	udcAux[] = IPhP2P1*SnapY[];
+	uEFYdX[] = DXP2*udcAux[]; uEFYdY[] = DYP2*udcAux[]; uEFYdZ[] = DZP2*udcAux[];
+	
+	udcAux[] = IPhP2P1*SnapZ[];
+	uEFZdX[] = DXP2*udcAux[]; uEFZdY[] = DYP2*udcAux[]; uEFZdZ[] = DZP2*udcAux[];
+	
+}
+
+varf prodesc([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])=
+		int3d(Th)((1./Refijo + (CS*hTriangle)^2*MOD(uEF))*GradUGradV(uu,v) + uuP*vP)
+					+ on(1,2,3,4, uu=0, uuY=0, uuZ=0);
+
+matrix Xt = prodesc(Vh4P2,Vh4P2, tgv = -1);
+X = [[Xt, 0],[0, 1]];	
