@@ -65,12 +65,12 @@ NewMacro solvesystem(A,b,u)
 	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
 	MatAVh4P2 = A;
 	
-     	Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
-     	string[int] names(2);
-     	names[0] = "velocity";
-     	names[1] = "pressure";
+ 	Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
+ 	string[int] names(2);
+ 	names[0] = "velocity";
+ 	names[1] = "pressure";
 	
-	set(MatAVh4P2,sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200", fields=uuL[], names=names););
+	set(MatAVh4P2,sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200", fields=uuL[], names=names);
 	u#L[] = MatAVh4P2^-1*b;
 	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
 }

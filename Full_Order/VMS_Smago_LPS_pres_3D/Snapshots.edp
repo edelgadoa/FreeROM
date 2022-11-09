@@ -51,6 +51,7 @@ Remax = 1500;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
+mpi(cout<<vReynolds<<endl;)
 
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
 
