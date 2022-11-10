@@ -3,8 +3,7 @@
 ///////////////
 
 // Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
-/////////////////////////////////////////////////////////////////////////////////////////
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
 Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
 VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
@@ -15,42 +14,29 @@ if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 
 	VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
-
-	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
 	
-	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
-	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
-	ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+	Reynolds = Refijo;
+	include "../FOM/FE_VMS_LPS_2D.idp"
 	
-	write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
-	
-	SnapX = uEF;
-	SnapY = uEFY;
-	SnapP = uEFP;
-		
-	// Guardamos los snapshots 
-	write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
-	write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
-	write("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
-
-	SnapX = SnapX + Lev;
-	SnapY = SnapY + LevY;
+	SnapX = uEF + Lev;
+	SnapY = uEFY + LevY;
 	
 	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];
 }
 else{
-
-	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", real, SolX, 0);
+	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
 	SnapX[] = SolX;
-	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", real, SolY, 0);
+	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
 	SnapY[] = SolY;
-	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", real, SolP, 0);
+	readvector("../Snapshots/P_" + Refijo + ".txt", real, SolP, 0);
 	SnapP[] = SolP;
 	
 	SnapX = SnapX + Lev;
 	SnapY = SnapY + LevY;
 	
-	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];	
+	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];
+	
+
 }
 
 // Calculo las derivadas de la solucion CON LEVANTAMIENTO
@@ -66,7 +52,7 @@ Vh3P1dc [uEFf, uEFfY, uEFfP];
 
 ////////////////////////////////////////////////////////////////////////////////
 // Calculo la matriz correspondiente a la Derivada direccional del operador fijo
-varf DerA([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)( (1./Reynolds)*GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))// +epspen*uuP*vP)
+varf DerA([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)(1./Reynolds * GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))
 									 + on (1,2,3,4, uu=0, uuY=0); 
 matrix DA = DerA(Vh3P2, Vh3P2);
 
@@ -129,4 +115,9 @@ varf damultb([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)(vP);
 
 real[int] Fmb=damultb(0,Vh3P2);
 
+
 Fb = [[Fvb, Fmb],[Fmb', 1]];
+											 
+									 
+												
+

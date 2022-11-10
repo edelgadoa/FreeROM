@@ -3,7 +3,7 @@
 ///////////////
 
 // Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
 Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
 VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
@@ -14,15 +14,15 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	Reynolds = Refijo;
 	VhP2 uprevL, uprevLY;
 	VhP1dc Gr;
-	include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"	
+	include "../FOM/FE_VMS_LPS_2D.idp"	
 	
 	SnapX = uEF + Lev;
 	SnapY = uEFY + LevY;
 }
 else{
-	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Refijo + ".txt", real, SolX, 0);
+	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
 	SnapX[] = SolX;
-	readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Refijo + ".txt", real, SolY, 0);
+	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
 	SnapY[] = SolY;
 
 	SnapX = SnapX + Lev;

@@ -8,27 +8,27 @@
 load "iovtk" 
 
 // Cargamos macros y funciones i/o
-include "../../Auxiliary/Macros_2D.idp"
-include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
-include "../../Auxiliary/search.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../../Mallas/CuadradoNxNy.idp"
+include "../Auxiliary/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
+include "../FOM/Levantamiento.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
-include "../../Auxiliary/Normas.idp"
+include "../Auxiliary/Normas.idp"
 
 varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
 matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
@@ -37,7 +37,7 @@ matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
 include "Load_Basis_Data.idp"
 
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
-include "../../Offline/RB_VMS_LPS_pres_2D/EIM_Data.idp"
+include "../Offline/EIM_Data.idp"
 
 Reynolds = 4892;
 
@@ -50,7 +50,7 @@ VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CO
 VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_VMS_LPS_2D.idp"
+include "../FOM/FE_VMS_LPS_2D.idp"
 
 uEF[] = uEF[] + Lev[];
 

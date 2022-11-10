@@ -14,10 +14,10 @@
 load "iovtk" 
 
 // Cargamos macros
-include "../../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/Macros_2D.idp"
 
 // Creamos la malla
-include "../../Mallas/CuadradoNxNy.idp"
+include "../Auxiliary/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF y de los EF globales
 include "FE_Spaces_NoStab_VP_2D.idp"
@@ -26,7 +26,7 @@ include "FE_Spaces_NoStab_VP_2D.idp"
 include "Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "Parametros_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
 include "Levantamiento.idp"

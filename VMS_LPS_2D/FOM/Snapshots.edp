@@ -14,12 +14,12 @@
 load "iovtk" 
 
 // Cargamos macros y funciones i/o
-include "../../Auxiliary/Macros_2D.idp"
-include "../../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
-include "../../Auxiliary/search.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../../Mallas/CuadradoNxNy.idp"
+include "../Auxiliary/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
 include "FE_Spaces_NoStab_VP_2D.idp"
@@ -28,7 +28,7 @@ include "FE_Spaces_NoStab_VP_2D.idp"
 include "Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "Parametros_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
 include "Levantamiento.idp"
@@ -61,7 +61,7 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 VhP2 SnapX, SnapY;
 VhP2 SnapP;
-readvector("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", real, ReSnapshots, 0);
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
 for (int i=0; i<nSnapshots; i++){
 	Reynolds = vReynolds(i);
@@ -75,7 +75,7 @@ for (int i=0; i<nSnapshots; i++){
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 		
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 		
 		SnapX = uEF;
 		SnapY = uEFY;
@@ -83,9 +83,9 @@ for (int i=0; i<nSnapshots; i++){
 
 
 		// Guardamos los snapshots 
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
-		write("../../Snapshots/VMS_Smago_LPS_pres_2D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		write("../Snapshots/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../Snapshots/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+		write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
 
 		// Dibujamos la solucion, con levantamiento
 

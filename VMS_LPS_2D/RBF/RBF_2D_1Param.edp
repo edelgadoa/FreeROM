@@ -12,27 +12,27 @@
 load "lapack"
 
 // Cargamos macros y funciones varias
-include "../../Auxiliary/Macros_2D.idp"
-include "../../Auxiliary/search.idp"
-include "../../Auxiliary/IO.idp"
-include "../../Auxiliary/powermethod.idp"
-include "../../Auxiliary/betas.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/powermethod.idp"
+include "../Auxiliary/betas.idp"
 
 
 // Creamos la malla
-include "../../Mallas/CuadradoNxNy.idp"
+include "../Auxiliary/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF y de los EF globales
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/FE_Spaces_NoStab_VP_2D.idp"
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Interp_matrix_NoStab_VP_2D.idp"
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Parametros_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
-include "../../Full_Order/VMS_Smago_LPS_pres_2D/Levantamiento.idp"
+include "../FOM/Levantamiento.idp"
 
 
 ////////////////////////////////////////////////////////////////
