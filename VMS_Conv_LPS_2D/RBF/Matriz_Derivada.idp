@@ -1,0 +1,132 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Codigo que calcula las matrices usadas para el RBF modelo VMS_Smago con LPS en presion 
+/////////////////////////////////////////////////////////////////////////////////////////
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
+
+Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 SnapX, SnapY, SnapP; 
+
+if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+	// Defino las variables que usaremos para obtener la solucion de EF
+
+	VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+	include "../FOM/FE_VMS_LPS_2D.idp"
+	
+	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+	ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+	
+	write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+	
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapP = uEFP;
+		
+	// Guardamos los snapshots 
+	write("../Snapshots/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+	write("../Snapshots/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+	write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	
+	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];
+}
+else{
+
+	readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
+	SnapX[] = SolX;
+	readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
+	SnapY[] = SolY;
+	readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
+	SnapP[] = SolP;
+	
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	
+	[uEF, uEFY, uEFP] = [SnapX, SnapY, SnapP];	
+}
+
+// Calculo las derivadas de la solucion CON LEVANTAMIENTO
+{
+	VhP2 udcAux;
+	udcAux[] = IPhP2P1*SnapX[];
+	uEFdX[] = DXP2*udcAux[]; uEFdY[] = DYP2*udcAux[];
+
+	udcAux[] = IPhP2P1*SnapY[];
+	uEFYdX[] = DXP2*udcAux[]; uEFYdY[] = DYP2*udcAux[];
+}
+Vh3P1dc [uEFf, uEFfY, uEFfP];
+
+////////////////////////////////////////////////////////////////////////////////
+// Calculo la matriz correspondiente a la Derivada direccional del operador fijo
+varf DerA([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)( (1./Reynolds)*GradUGradV(uu,v) + Div(uu)*vP -  Div(v)*uuP  + Antisimetric(uEF, uu, v) + Antisimetric(uu, uEF, v))// +epspen*uuP*vP)
+									 + on (1,2,3,4, uu=0, uuY=0); 
+matrix DA = DerA(Vh3P2, Vh3P2);
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Calculo la matriz correspondiente a la Derivada del término de Smagorinsky
+varf DerSmago([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)((CS*hTriangle)^2*MOD(uEF)*(uu*v + uuY*vY) 
+	 											   + (CS*hTriangle)^2/MOD(uEF)*(uEFf*uu+uEFY*uuY)*(uEFf*v+uEFY*vY));
+												   
+
+matrix MS = DerSmago(Vh3P1dc,Vh3P1dc);													 
+matrix DXMS,DYMS;
+{
+	matrix Maux; 
+	//COMPONENTE X
+	Maux=DX3P2*IPh3P23P1;
+	uEFf[] = Maux*uEF[];
+	DXMS=(Maux')*MS;
+	DXMS=DXMS*Maux;
+
+	//COMPONENTE Y
+	Maux=DY3P2*IPh3P23P1;
+	uEFf[] = Maux*uEF[];
+	DYMS=(Maux')*MS;
+	DYMS=DYMS*Maux;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+// Calculo la Derivada correspondiente al término de estabilización de la presión
+
+varf tauK(unused,v)=int2d(Th)((uEF^2+uEFY^2)*v);
+varf tauKT(unused,v)=int2d(Th)(((uEFdX)^2+(uEFdY)^2+(uEFYdX)^2+(uEFYdY)^2)*v);
+real[int] tK=tauK(0,VhP0);
+real[int] tKT=tauKT(0,VhP0);
+
+tKcod[] = sqrt(tK);
+tKTcod[] = sqrt(tKT);
+
+tau = ((cc1*(1./Reynolds+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+
+varf DerPres(uuP,vP) = int2d(Th)(tau*uuP*vP);
+matrix TermP = DerPres(VhP1dc,VhP1dc);
+
+matrix DXP, DYP;
+{
+	DXP = TermP * IPhD3X3P2; 
+	DXP = IPhD3X3P2' * DXP;
+
+	DYP = TermP * IPhD3Y3P2; 
+	DYP = IPhD3Y3P2' * DYP;
+}
+
+
+matrix Fvb = DA + DXMS + DYMS + DXP + DYP;
+
+/////////////////////////////////////////////////////
+// Calculo el término para la media de la presión = 0
+varf damultb([uu, uuY, uuP], [v,vY,vP]) = int2d(Th)(vP); 
+
+real[int] Fmb=damultb(0,Vh3P2);
+
+Fb = [[Fvb, Fmb],[Fmb', 1]];
