@@ -1,0 +1,46 @@
+///////////////
+// FreeROM 
+///////////////
+
+
+
+for(int i=0; i<nSnapshots; i++){
+	// vReynolds(i) = Remin + i*(Remax-Remin)/(nSnapshots-1);
+
+	// Cargamos los Snapshots 
+	readvector("../../Snapshots/Vx_" + vReynolds(i) + ".txt", real, SnapshotVx, 0);
+	readvector("../../Snapshots/Vy_" + vReynolds(i) + ".txt", real, SnapshotVy, 0);
+	readvector("../../Snapshots/Vz_" + vReynolds(i) + ".txt", real, SnapshotVz, 0);
+
+
+	
+	BVX[i][] =  SnapshotVx;
+	BVX[i] = BVX[i] + Lev;
+	
+	BVY[i][] =  SnapshotVy;
+	BVY[i] = BVY[i] + LevY;
+	
+	
+	BVZ[i][] =  SnapshotVz;
+	BVZ[i] = BVZ[i] + LevZ;
+
+	{
+		VhP2 udcAux;
+		udcAux[] = IPhP2P1*BVX[i][];
+		BVdX[i][] = DXP2*udcAux[];
+		BVdY[i][] = DYP2*udcAux[];
+		BVdZ[i][] = DZP2*udcAux[];
+
+		udcAux[] = IPhP2P1*BVY[i][];
+		BVYdX[i][] = DXP2*udcAux[];
+		BVYdY[i][] = DYP2*udcAux[];
+		BVYdZ[i][] = DZP2*udcAux[];
+		
+		udcAux[] = IPhP2P1*BVZ[i][];
+		BVZdX[i][] = DXP2*udcAux[];
+		BVZdY[i][] = DYP2*udcAux[];
+		BVZdZ[i][] = DZP2*udcAux[];
+
+	}
+
+}
