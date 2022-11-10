@@ -3,8 +3,6 @@
 ///////////////
 
 
-
-
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
 real[int] bFija(Vh4P2L.ndof);
@@ -12,6 +10,10 @@ real[int] bFija(Vh4P2L.ndof);
 
 include "Matrices_fijas_NS_3D.idp"
 
+// incluimos la matriz de estabilizacion LPS de la presion 
+matrix LPSpres;
+
+include "Matriz_LPS_Pres_3D.idp"
 
 ERROR = 10;
 int itFE = 0;
@@ -58,20 +60,14 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	include "Matriz_VMSSmago_3D.idp"
 	
 	
-	// incluimos la matriz de estabilizacion LPS de la presion
-	matrix LPSpres;
-	
-	include "Matriz_LPS_Pres_3D.idp"
-	
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
 	real[int] bFinal(Vh4P2L.ndof);
 	
-	MFinal = MFija;
+	MFinal = MFija + LPSpres;
 	MFinal = MFinal + MNS;
 	MFinal = MFinal + Smago;
-	MFinal = MFinal + LPSpres;
 	
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
