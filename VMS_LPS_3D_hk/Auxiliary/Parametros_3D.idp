@@ -54,7 +54,7 @@ for (int gf=0; gf<Vh4P2.ndof; gf++){
 } 
 
 // Parametros para el problema de EF
-real dt = 1;
+real dt = 0.5;
 real epspen = 1e-8;
 
 real ERROR = 10; // inicializacion del error para el bucle

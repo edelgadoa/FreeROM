@@ -14,12 +14,12 @@ verbosity = 0;
 load "iovtk" 
 
 // Cargamos macros y funciones i/o
-include "../../Auxiliary/Macros_3D.idp"
-include "../../Auxiliary/IO.idp" 
-include "../../Auxiliary/search.idp"
+include "../Auxiliary/Macros_3D.idp"
+include "../Auxiliary/IO.idp" 
+include "../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../../Mallas/CuboNxNyNz.idp"
+include "../Auxiliary/CuboNxNyNz.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
@@ -28,7 +28,7 @@ real techo = 2; //para las condiciones de contorno
 include "FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos los parametros a usar
-include "Parametros_3D.idp"
+include "../Auxiliary/Parametros_3D.idp"
 
 
 // Incluimos el levantamiento
@@ -39,7 +39,7 @@ include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Incluimos funciones para calcular normas
-include "../../Auxiliary/Normas.idp"
+include "../Auxiliary/Normas_3D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots = 11; // numero de Snapshots que voy a querer calcular 
@@ -69,7 +69,7 @@ VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 VhP2 SnapX, SnapY, SnapZ;
 VhP2 SnapP;
 
-readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, ReSnapshots, 0);
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
 for (int i=0; i<nSnapshots; i++){
 
@@ -86,17 +86,17 @@ for (int i=0; i<nSnapshots; i++){
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
 		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
 		
-		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 
 		SnapX = uEF;
 		SnapY = uEFY;
 		SnapZ = uEFZ;
 		SnapP = uEFP;
 	
-		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
-		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
-		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);		
-		write("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		write("../Snapshots/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../Snapshots/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
+		write("../Snapshots/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);		
+		write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
 		
 		Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
 		uEFL[] = uEF[] + Lev[];
