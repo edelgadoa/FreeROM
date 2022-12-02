@@ -20,7 +20,7 @@ for (int j=0; j<=i; j++){
 		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
-		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+		StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 		
 		if (j<i){
 			DiffRBL(j,i) = DiffRBL(i,j);
@@ -28,7 +28,7 @@ for (int j=0; j<=i; j++){
 			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
 			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRBL(j,i) = DTRBL(i,j);
-			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
+			StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
 	}
 	contFF++;

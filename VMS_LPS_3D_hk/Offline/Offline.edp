@@ -27,6 +27,7 @@ include "../Auxiliary/CuboNxNyNz.idp"
 include "../Auxiliary/Macros_3D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp" 
+include "../Auxiliary/powermethod.idp"
 
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
@@ -101,6 +102,7 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
+mpi(cout<<"Compute the Sovolev embedding constant"<<endl;)
 include "Sobolev_3D.idp"
 
 
@@ -113,7 +115,7 @@ VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //la
 VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-
+mpi(cout<<"Compute the Fixed parameter solution"<<endl;)
 if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	// Si no lo he calculado todavía, lo calculo
 	Reynolds = Refijo;
@@ -124,6 +126,7 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	uFijoZ = uEFZ + LevZ;
 }
 else{
+	mpi(cout<<"Read an already computed snapshot"<<endl;)
 	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
 	uFijo[] = SolX;
 	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
@@ -140,7 +143,7 @@ else{
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"
 
-
+mpi(cout<<"Start with Greedy Algorithm"<<endl;)
 for (int i=0; i<Nbases; i++){
 	
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
@@ -174,6 +177,7 @@ for (int i=0; i<Nbases; i++){
 		
 	}
 	else{
+		mpi(cout<<"Read an already computed snapshot"<<endl;)
 		readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
 		BaseVel[i][] = SolX;
 		readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
