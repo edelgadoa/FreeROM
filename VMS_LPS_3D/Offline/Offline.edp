@@ -101,6 +101,7 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
+mpi(cout<<"Computation of Sobolev embedding constant"<<endl;)
 include "Sobolev_3D.idp"
 
 
@@ -216,6 +217,7 @@ for (int i=0; i<Nbases; i++){
 	include "MatricesOffline.idp"
 		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
+	mpi(cout<<"Start Greedy Algorithm"<<endl;)
 	include "Greedy.idp"
 	
 	// Actualizo el nuevo Reynolds
