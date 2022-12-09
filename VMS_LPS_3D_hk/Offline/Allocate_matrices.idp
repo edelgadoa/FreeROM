@@ -5,7 +5,7 @@
 ///////////////////////////
 // Codigo donde inicializo las matrices que almacenaré de manera offline
 ///////////////////////////
-
+/*
 
 // Definicion del array de matrices del gradiente en los Puntos mágicos
 real[int,int][int] GradPM(Mbases);
@@ -40,6 +40,7 @@ for (int i=0; i<Taubases; i++){
 	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);
 }
+*/
 
 // Definicion de las Matrices Reducidas fijas
 real[int,int] DiffRB(2*Nbases, 2*Nbases), DivPRB(2*Nbases, 2*Nbases), PenRB(2*Nbases, 2*Nbases), 
@@ -54,24 +55,24 @@ StabhkRB = 0;
 
 // Definicion de los segundos miembros
 real[int] bDiffRB(2*Nbases), bConvRB(2*Nbases), bDTRB(2*Nbases), bSmagoRBi(2*Nbases);			   
-real[int,int] bSmagoRB(Mbases, 2*Nbases);
+// real[int,int] bSmagoRB(Mbases, 2*Nbases);
 
 bDiffRB = 0;
 bConvRB = 0;
 bDTRB = 0;
-bSmagoRBi = 0;
-bSmagoRB = 0;
+//bSmagoRBi = 0;
+//bSmagoRB = 0;
 
 
 // Definicion de Matrices y Tensores variables
-real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases);
+real[int,int][int] ConvRB(Nbases); //, SmagoRB(Mbases), StabPRB(Taubases);
 
 for (int k=0; k<Nbases; k++){
 	real[int,int] aux(2*Nbases, 2*Nbases);
 	aux = 0;
 	ConvRB[k] = aux(0:2*Nbases-1, 0:2*Nbases-1);
 }
-
+/*
 for (int k=0;k<Mbases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
 	aux = 0;
@@ -81,4 +82,4 @@ for (int k=0;k<Taubases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
 	aux = 0;
 	StabPRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
-}
+}*/

@@ -57,7 +57,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix Smago;
 	real[int] bSmago(Vh4P2L.ndof);
 	
-	include "Matriz_VMSSmago_3D.idp"
+	// include "Matriz_VMSSmago_3D.idp"
 	
 	
 	
@@ -67,18 +67,18 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	MFinal = MFija + LPSpres;
 	MFinal = MFinal + MNS;
-	MFinal = MFinal + Smago;
+	// MFinal = MFinal + Smago;
 	
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
-	bFinal = bFinal + bSmago;
+	// bFinal = bFinal + bSmago;
 	
 	// Actualizamos la solución
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[] = uEF[];
 	
 	//real timeLS = clock();
-	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
+	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	//timeLS = clock() - timeLS;
 	//mpi(cout<<"Tiempo LS: "<<timeLS<<endl;)
 	

@@ -60,11 +60,11 @@ real epspen = 1e-8;
 real ERROR = 10; // inicializacion del error para el bucle
 
 int niterFE = 1500; 
-real epsFE = 1e-8;
+real epsFE = 1e-6;
 
 // Parametros para el problema ROM
 int niterRB = 2000;
-real epsRB = 1e-8; //parada de problema reducido
+real epsRB = 1e-6; //parada de problema reducido
 
 real epsGreedy = 5e-5;
 real epsEIM = 1e-5;

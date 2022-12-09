@@ -73,7 +73,8 @@ else{
 	
 }
 
-varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*GradUGradV(uu,v)) + on(1,2,3,4, uu=0,uuY=0, uuZ=0);
+varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(//((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*
+GradUGradV(uu,v)) + on(1,2,3,4, uu=0,uuY=0, uuZ=0);
 
 matrix T, Zu;
 T = prodT(Vh3P2, Vh3P2);
@@ -96,8 +97,6 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 {
 	zuk = UporV(u0,u0);
 	zuk[] /= sqrt(int3d(Th)(zuk^2));
-//	 {real normL2=int2d(Th)(zuk^2);
-//	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
 	varf prodzu([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh3P2, Vh3P2);
@@ -108,7 +107,7 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 	u0[] = autovec(1:autovec.n-1);
 
 	CSerror = abs((rhok1-rhok0)/rhok1);
-	mpi(cout << "PM: " << CSerror<< endl;)
+	// mpi(cout << "PM: " << CSerror<< endl;)
 	rhok0 = rhok1;
 }
 

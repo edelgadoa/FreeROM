@@ -6,12 +6,19 @@
 real errRB = 1.;	
 	
 MRB = nuRB * DiffRBi;
+mpi(cout<<MRB<<endl;)
 MRB += DivPRBi;
+mpi(cout<<MRB<<endl;)
 MRB += DivPRBTi;
+mpi(cout<<MRB<<endl;)
 MRB += (1./dt) * DTRBi;
+mpi(cout<<MRB<<endl;)
 MRB += ConvLevRBi;
+mpi(cout<<MRB<<endl;)
 MRB += PenRBi;	
-// MRB += StabhkRBi;
+mpi(cout<<MRB<<endl;)
+MRB += StabhkRBi;
+mpi(cout<<MRB<<endl;)
 
 bDiffRBi = bDiffRB(0:2*I-1);
 
@@ -33,7 +40,8 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		ConvRBint = uRBv(s)*ConvRBint;
 		ConvRBi += ConvRBint;
 	}
-
+	mpi(cout<<ConvRBi<<endl;)
+	/*
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(I);
 	uN = uRBv(0:I-1); //solo las componentes de la velocidad
@@ -44,7 +52,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	mpi(cout<<bEIMS<<endl;)
+	//mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	//cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
@@ -54,7 +62,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
 		SmagoRBi += SmagoRBint; 
 	}
-	mpi(cout<<SmagoRBi<<endl;)
+	//mpi(cout<<SmagoRBi<<endl;)
 		
 	// Segundo miembro Smago
 	for (int s=0; s<I; s++){
@@ -101,18 +109,20 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
 	}
-	
+	*/
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBF += ConvRBi;
-	MRBF += SmagoRBi; 
-	MRBF += StabPRBi;
+	// MRBF += SmagoRBi; 
+	// MRBF += StabPRBi;
 	
 	
 	bRB = (1./dt) * bDTRBi(0:2*I-1);
 	bRB -= nuRB * bDiffRBi(0:2*I-1);
 	bRB -= bConvRBi(0:2*I-1);
-	bRB -= bSmagoRBi(0:2*I-1);
+	// bRB -= bSmagoRBi(0:2*I-1);
 	
+	mpi(cout<<"MAtrix"<<endl<<MRBF<<endl;)
+	mpi(cout<<"second Member"<<endl<<bRB<<endl;)
 	
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;

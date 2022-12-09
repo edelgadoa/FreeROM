@@ -31,20 +31,23 @@ matrix DTPEM = DTPE(Vh3P2, Vh3P2);
 
 
 varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
-matrix FiltroX, FiltroY;
+matrix FiltroX, FiltroY, FiltroZ;
 matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
 {
 	FiltroX = SPPEM2 * IPhDXP2;
 	FiltroX = (IPhDXP2') * FiltroX;
 	FiltroY = SPPEM2 * IPhDYP2;
 	FiltroY = (IPhDYP2') * FiltroY;	
+	FiltroZ = SPPEM2 * IPhDZP2;
+	FiltroZ = (IPhDZP2') * FiltroZ;	
 }
 matrix StabhkPEM = FiltroX + FiltroY;
+StabhkPEM += FiltroZ;
 
 
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
-
+/*
 matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
@@ -74,7 +77,7 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	// 		//}
 	// 	contS++;
 	// }
-}
+}*/
 
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(Th)(GradUGradV(Lev, v));
 real[int] bDiffPEv = bDiffPE(0, Vh3P2);

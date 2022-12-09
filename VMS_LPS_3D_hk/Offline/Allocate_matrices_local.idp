@@ -15,12 +15,12 @@ StabhkRBG = 0;
 
 // Definicion de los segundos miembros Globales
 real[int] bDiffRBG(2*Nbases), bConvRBG(2*Nbases), bDTRBG(2*Nbases);			   
-real[int,int] bSmagoRBG(Mbases, 2*Nbases);
+// real[int,int] bSmagoRBG(Mbases, 2*Nbases);
 
 bDiffRBG = 0;
 bConvRBG = 0;
 bDTRBG = 0;
-bSmagoRBG = 0;
+// bSmagoRBG = 0;
 
 // Definicion de las Matrices Reducidas fijas locales para el cálculo en paralelo
 real[int,int] DiffRBL(2*Nbases, 2*Nbases), DivPRBL(2*Nbases, 2*Nbases), PenRBL(2*Nbases, 2*Nbases), 
@@ -35,13 +35,14 @@ StabhkRBL = 0;
 
 // Definicion de los segundos miembros
 real[int] bDiffRBL(2*Nbases), bConvRBL(2*Nbases), bDTRBL(2*Nbases);			   
-real[int,int] bSmagoRBL(Mbases, 2*Nbases);
+// real[int,int] bSmagoRBL(Mbases, 2*Nbases);
 
 bDiffRBL = 0;
 bConvRBL = 0;
 bDTRBL = 0;
-bSmagoRBL = 0;
+// bSmagoRBL = 0;
 
+/*
 // Definicion de Matrices y Tensores variables globales y locales
 real[int,int][int] SmagoRBL(Mbases), StabPRBL(Taubases);
 real[int,int][int] SmagoRBG(Mbases), StabPRBG(Taubases);
@@ -59,5 +60,5 @@ for (int nn = 0; nn<Taubases; nn++){
 	StabPRBL[nn] = maux(0:Nbases-1, 0:Nbases-1);
 	StabPRBG[nn] = maux(0:Nbases-1, 0:Nbases-1);
 }
-
+*/
 
