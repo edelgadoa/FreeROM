@@ -57,6 +57,7 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 		contS++;
 	}
 	
+	mpi(cout<<"Smago done, lets go to LPS"<<endl;)
 	contS = 0;
 	for (int s=0; s<Taubases; s++){
 		if(mpirank==contS%mpisize){
@@ -79,5 +80,6 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	}
 }
 
+mpi(cout<<"RHS pesc"<<endl;)
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(Th)(GradUGradV(Lev, v));
 real[int] bDiffPEv = bDiffPE(0, Vh3P2);
