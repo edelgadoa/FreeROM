@@ -52,7 +52,7 @@ DTRB += DTRBG;
 // Comienzo el bucle para la construcción de los tensores
 
 // Conveccion
-
+mpi(cout<<"Convection matrix"<<endl;)
 for (int s=0; s<=i; s++){
 	real[int, int] CintL(2*Nbases, 2*Nbases), CintG(2*Nbases, 2*Nbases);
 	CintL = 0; CintG = 0;
@@ -78,6 +78,7 @@ for (int s=0; s<=i; s++){
 }
 
 // Smagorinsky
+mpi(cout<<"Smago matrix"<<endl;)
 for (int s=0; s<Mbases; s++){
 	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
 	SintL = 0; SintG = 0;
@@ -99,6 +100,7 @@ for (int s=0; s<Mbases; s++){
 
 
 // LPS
+mpi(cout<<"Stab matrix"<<endl;)
 for (int s=0; s<Taubases; s++){
 	real[int, int] LPSintL(2*Nbases, 2*Nbases), LPSintG(2*Nbases, 2*Nbases);
 	LPSintL = 0; LPSintG = 0;
@@ -118,7 +120,8 @@ for (int s=0; s<Taubases; s++){
 	StabPRB[s] += LPSintG;
 }
 
-/// TODO
+
+mpi(cout<<"EIM matrix"<<endl;)
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
@@ -131,7 +134,6 @@ for (int s=0; s<Mbases; s++){
    GradPM[s] = Dtk;
 }
 
-mpi(cout<<GradPM<<endl;)
 
 // Matrices para el EIM LPS (parte del levantamiento)
 real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
@@ -236,7 +238,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	NGUK[s] += NggkG;
 }
 
-
+mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
 bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
 bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
