@@ -139,6 +139,7 @@ else{
 }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
+mpi(cout<<"Scalar products"<<endl;)
 include "Scalar_Product_Matrices.idp"
 
 
