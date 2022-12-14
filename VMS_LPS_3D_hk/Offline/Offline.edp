@@ -64,6 +64,7 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
 VhP2[int] BaseP(Nbases);
 Vh3P2[int] [BaseV, BaseVY, BaseVZ](Nbases);
+Vh3P2L[int] [BaseVL, BaseVYL, BaseVZL](Nbases);
 
 VhP2[int] BaseVel(Nbases);
 VhP2[int] BaseVelY(Nbases);
@@ -232,7 +233,9 @@ for (int i=0; i<Nbases; i++){
 	// BaseP[i][] -= MP[];
 
 	
-	// include "GramSchmidt.idp"
+	include "GramSchmidt.idp"
+	ChangeNumbering(MatAVh4P2, BaseV[], BaseVL[], inverse=true);
+	
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];

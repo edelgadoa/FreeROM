@@ -17,6 +17,9 @@ matrix MNormaVel = NormaVel(Vh3P2, Vh3P2);
 varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(GradUGradV(uu,v));
 matrix DiffPEM = DiffPE(Vh3P2,Vh3P2);
 
+varf DiffPEL([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+matrix DiffPEML = DiffPEL(Vh3P2L,Vh3P2L);
+
 varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(Th)(Div(uu)*vP);
 matrix DivPPEM = DivPPE(Vh3P2, VhP2);
 

@@ -15,7 +15,7 @@ int contFF = 0; // Contador para el paralelo
 for (int j=0; j<=i; j++){
 	//if (mpirank==contFF%mpisize){
 		// Matrices
-		DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
+		DiffRB(i,j) = innerprodX(BaseVL[i][], BaseVL[j][], DiffPEML); 
 		DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
 		PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 		ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
