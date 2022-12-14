@@ -34,6 +34,8 @@ for (int j=0; j<=i; j++){
 	contFF++;
 }
 pause;
+
+mpi(cout<<DiffRB<<endl;)
 /*
 mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);

@@ -231,10 +231,16 @@ for (int i=0; i<Nbases; i++){
 	// real mediaP = intN(Th)(BaseP[i]);
 	// VhP2 MP = mediaP;
 	// BaseP[i][] -= MP[];
-
 	
+	BaseVL[i][] = BaseV[i][] ; 
+	real[int] basev = BaseV[i][];
+	
+	real[int] BVL;
 	include "GramSchmidt.idp"
-	ChangeNumbering(MatAVh4P2, BaseV[], BaseVL[], inverse=true);
+	Mat AA=DiffPEM;
+	ChangeNumbering(MatAVh3P2, BaseV[i][], BVL);
+	
+	BaseVL[i][] = BVL;
 	
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
