@@ -1,0 +1,57 @@
+
+
+// Parametros del PETSC
+int petsc = 1; //Para usar el paralelo = 1
+
+macro dimension()3 //EOM
+include "macro_ddm.idp";
+
+load "PETSc";
+Mat MatAVh5P2;
+int[int] mapVh5P2;
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+if(petsc){	
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	buildDmesh(ThL);
+	mapVh5P2 = restrict(Vh5P2L,Vh5P2,myN2o);  
+	{
+		macro def(i) [i, iY, iZ, iT, iP] //
+		macro init(i) [i, i, i, i, i] // EOM
+		createMat(ThL, MatAVh5P2, [P2, P2, P2, P2, P2]); 
+	}	
+}
+
+
+
+VhP0 mk,tKcod,tKTcod,tau,h;
+
+
+varf med(unused,v)=int3d(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk); 
+
+h = hTriangle;
+//Constantes varias
+real CS=0.1;
+real cc1=16.;
+real cc2=sqrt(cc1);
+
+
+real Pr=0.71; //Prandlt aire
+
+real dt=1.e-2;
+real dtt = 1./dt;
+real epspen=1e-8;
+
+real Ramin=1.e3;
+real Ramax=1.e5;
+
+
+int ni=100;
+
+
+int nIterations=2000;
+real epsError = 1.e-8;
+
