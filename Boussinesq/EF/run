@@ -1,0 +1,9 @@
+#!/bin/bash
+echo 'Numero de procesadores:'
+read NP
+
+verbosity=0
+
+ff-mpirun -np $NP ./EF.edp
+
+
