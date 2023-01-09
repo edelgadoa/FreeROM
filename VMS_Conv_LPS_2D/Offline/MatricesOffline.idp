@@ -70,7 +70,7 @@ for (int s=0; s<=i; s++){
 			} 
 			//}
 		//contFF++;		
-		//}
+	}
 	//pause;
 	//mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
 	
@@ -101,7 +101,7 @@ for (int s=0; s<Mbases; s++){
 // LPS
 for (int s=0; s<Taubases; s++){
 	real[int, int] LPSint(2*Nbases, 2*Nbases); //LPSintG(2*Nbases, 2*Nbases);
-	LPSintL = 0; LPSintG = 0;
+	LPSint = 0; //LPSintG = 0;
 	contFF = 0;
 	for (int j=0; j<=i; j++){
 		//if (mpirank==contFF%mpisize){
@@ -121,16 +121,26 @@ for (int s=0; s<Taubases; s++){
 
 // LPS Conveccion
 for (int s=0; s<Taubases; s++){
+	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
+	LPSCLLint = 0;
 	for (int ui=0; ui<Nbases; ui++){
+		real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
+		LPSCULint = 0;	LPSCLUint = 0;
 		for (int uj=0; uj<Nbases; uj++){
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
-			LPSCint = 0;// LPSCintG = 0;
+			LPSCUUint = 0;// LPSCintG = 0;
 			contFF = 0;
 			for (int j=0; j<=i; j++){
 				//if (mpirank==contFF%mpisize){
 					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+					LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
+					LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
+					LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
 					if(j<i){
-						LPSCUUint(j,i) = LPSCUUint(i,j)
+						LPSCUUint(j,i) = LPSCUUint(i,j);
+						LPSCULint(j,i) = LPSCULint(i,j);
+						LPSCLUint(j,i) = LPSCLUint(i,j);
+						LPSCLLint(j,i) = LPSCLLint(i,j);
 					}
 					//}
 				contFF++;
@@ -138,9 +148,12 @@ for (int s=0; s<Taubases; s++){
 			//pause;
 			//mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
 			
-			StabCRB[s + ui*Taubases + uj*Taubases*Nbases] =  LPSCUUint;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUint;
 		}
+		StabCLURB[s + ui*Taubases] +=  LPSCLUint;
+		StabCULRB[s + ui*Taubases] +=  LPSCULint;
 	}
+	StabCLLRB[s] +=  LPSCLLint;
 }
 	
 

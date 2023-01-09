@@ -60,7 +60,7 @@ bSmagoRB = 0;
 
 // Definicion de Matrices y Tensores variables
 real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases), StabCUURB(Taubases*Nbases^2),
-				   StabCULRB(Taubases*Nbases),StabCLURB(Taubases*Nbases),StabCLLRB(Taubases);
+				   StabCULRB(Taubases*Nbases), StabCLURB(Taubases*Nbases), StabCLLRB(Taubases);
 
 for (int k=0; k<Nbases; k++){
 	real[int,int] aux(2*Nbases, 2*Nbases);
