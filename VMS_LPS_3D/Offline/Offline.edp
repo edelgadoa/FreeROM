@@ -93,6 +93,7 @@ readvector("../RBF/gammaI.txt", real, gammaI, 0);
 
 // Inicializo las matrices para la fase offline
 include "Allocate_matrices.idp"
+mpi(cout<<"matrices alocadas"<<endl;)
 
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
@@ -102,7 +103,7 @@ MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
 include "Sobolev_3D.idp"
-
+mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
 VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT

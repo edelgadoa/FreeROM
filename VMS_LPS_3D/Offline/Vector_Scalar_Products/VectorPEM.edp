@@ -20,32 +20,32 @@ load "lapack"
 load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
 
 // Creamos la Malla
-include "../Auxiliary/CuboNxNyNz.idp"
+include "../../Auxiliary/CuboNxNyNz.idp"
 
 
 // Cargamos macros, funciones i/o
-include "../Auxiliary/Macros_3D.idp"
-include "../Auxiliary/search.idp"
-include "../Auxiliary/IO.idp" 
+include "../../Auxiliary/Macros_3D.idp"
+include "../../Auxiliary/search.idp"
+include "../../Auxiliary/IO.idp" 
 
 // Definimos los espacios de EF
-include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
+include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos los parametros a usar
-include "../Auxiliary/Parametros_3D.idp"
+include "../../Auxiliary/Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../FOM/Interp_matrix_NoStab_VP_3D.idp"
-include "../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
+include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Incluimos el levantamiento
-include "../FOM/Levantamiento_3D.idp"
+include "../../FOM/Levantamiento_3D.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
-include "../Auxiliary/Normas_3D.idp"
+include "../../Auxiliary/Normas_3D.idp"
 
 // Cargo las funciones del RBF
-include "../Auxiliary/betas.idp"
+include "../../Auxiliary/betas.idp"
 
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
@@ -75,6 +75,9 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 		StabPPEM[s] = StabPPEM[s] + FiltroZ;
 	}
 }
+
+write("SmagoPEM.txt", SmagoPEM, 0, 0);
+write("StabPPEM.txt", StabPPEM, 0, 0);
 
 
 
