@@ -48,7 +48,7 @@ macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
-macro mpi(variable) if(mpirank==0){variable} //EOM
+macro mpi(variable) if(mpirank==0) variable //EOM
 
 // mpiComm comm(mpiCommWorld, 0, 0);
 

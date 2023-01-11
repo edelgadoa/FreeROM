@@ -16,7 +16,7 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
 	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 	
-	include "FE_VMS_LPS_3D.idp"
+	include "../FOM/FE_VMS_LPS_3D.idp"
 	
 	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -81,7 +81,7 @@ T = prodT(Vh3P2, Vh3P2);
 
 //macro normsup(vh) int2d(Th)(vh^2)//EOM
 
-real CSerror = 10, CSeps = 1.e-5;
+real CSerror = 10, CSeps = 1.e-3;
 
 real rhok0 = 20, rhok1;
 
