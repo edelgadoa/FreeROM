@@ -18,7 +18,7 @@ tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 //MATRIZ ESTAB. PRES.
 /////////////////////////////
 
-varf termPres(pp,q) = int3d(ThL)(tau*pp*q);
+varf termPres(pp,q) = int3d(ThL)(hTriangle^2*pp*q);
 
 
 matrix TermP = termPres(VhP1dcL,VhP1dcL);
