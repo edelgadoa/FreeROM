@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --time=00:20:00
+#SBATCH --ntasks=64
+#SBATCH --mem=0
+#SBATCH --partition=cpu
+#SBATCH --exclusive
+
+module load freefem/4.9
+
+name=NSE_3D_MPI
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" -log_view > "terminal${SLURM_JOB_ID}.txt"
