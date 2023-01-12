@@ -78,6 +78,3 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 
 write("SmagoPEM.txt", SmagoPEM, 0, 0);
 write("StabPPEM.txt", StabPPEM, 0, 0);
-
-
-
