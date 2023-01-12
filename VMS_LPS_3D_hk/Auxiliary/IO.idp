@@ -36,7 +36,9 @@ int result#n; // necesitamos definir esta variable pero que no se repita en el c
 type [int] result(result#n);
 {
 	ifstream file(filename);
-	file >> result;
+	for (int i=0; i<result#n;i++){
+		file >> result(i);
+	}
 	if(show==1)cout << result << endl;
 }
 EndMacro
