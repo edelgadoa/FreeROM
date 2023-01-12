@@ -17,7 +17,6 @@ VhP0[int] EIMTau(Taubases);
 for (int i=0; i<Mbases; i++){
 	readvector("../../EIM/EIM_VMSSmago/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
 	EIMSmago[i][] = BaseEIM; //Cargo la bases
-	mpi(cout<<"----"<<int3d(Th)(EIMSmago[i])<<"---- Re="<< muEIM(i)<<endl;)
 }
 	
 readmatrix("../../EIM/EIM_VMSSmago/Bases_EIM/MatrizEIM_Smago.txt", real, MatrixEIMSmago, 0);

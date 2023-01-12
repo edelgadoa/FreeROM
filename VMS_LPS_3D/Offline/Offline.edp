@@ -102,7 +102,8 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
-include "Sobolev_3D.idp"
+real CSobolev;
+// include "Sobolev_3D.idp"
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
