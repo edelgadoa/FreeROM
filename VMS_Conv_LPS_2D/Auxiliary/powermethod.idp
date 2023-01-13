@@ -1,0 +1,275 @@
+func real[int] powermethod(real[int,int] & A)
+{
+	real lambda0=100.,lambda1,err=10.,eps=1.e-9;
+	real[int] v(A.n),v1(A.n),v0(A.n),aux(A.n);v0=1.;
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v=A*v0;
+		v1=v/v.l2;
+		aux=A*v1;
+		lambda1=v1'*aux;lambda1/=v1'*v1;
+		// lambda1=v1.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+func real[int] powermethod(matrix & A)
+{//A*v=lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-9;
+	real[int] v(A.n),v1(A.n),v0(A.n),aux(A.n);v0=1.;
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v=A*v0;
+		v1=v/v.l2;
+		aux=A*v1;
+		lambda1=v1'*aux;lambda1/=v1'*v1;
+		// lambda1=v1.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethod(real[int,int] & A,real[int,int] & B)
+{//A*v=B*lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-9;
+	load "lapack";
+	real[int,int] B1=B^-1;
+	real[int] v(A.n),v1(A.n),v0(A.n),aux(A.n);
+	for[i,ui:v0] ui=randreal1();
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v=B1*v1;
+		v1=v/v.l2;
+		aux=A*v1;
+		aux=B1*aux;
+		lambda1=v1'*aux;lambda1/=v1'*v1;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethod(matrix & A,matrix & B)//,real[int] & meanP,real[int] & pres)
+{//A*v=B*lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-9,meanPs;
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	real[int] v(A.n),v1(A.n),v0(A.n),aux(A.n);
+	for[i,ui:v0] ui=randreal1();
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v=B^-1*v1;
+		// meanPs=v'*meanP;// Calculamos la media
+		// v-=meanPs*pres;// Se la restamos
+		v1=v/v.l2;
+		// v=A*v1;
+		// aux=B^-1*v;
+		// lambda1=v1'*aux;lambda1/=v1'*v1;
+		lambda1=v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		// cout << err << endl;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+func real[int] powermethodRBF(matrix & A,matrix & B)
+{   //(B^-1)A(Bt^-1)A*v = lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-5;
+	matrix Bt=B';
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	set(Bt,solver=sparsesolver);
+	real[int] v(A.n),v2(A.n),v3(A.n),v1(A.n),v0(A.n);
+	for[i,ui:v0] ui=randreal1();
+	// v0=1;
+	// v0=ini;
+	for(int ii=0;ii<5000 & err>eps; ii++)
+	{	
+		v1=A*v0;
+		v2=Bt^-1*v1;
+		v3=A*v2;
+		v=B^-1*v3;		
+		v1 = v/v.l2;
+		lambda1 = v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethodRBFmpi(matrix & A,matrix & B)
+{   //(B^-1)A(Bt^-1)A*v = lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-5;
+	matrix Bt=B';
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	set(Bt,solver=sparsesolver);
+	real[int] v(A.n),v2(A.n),v3(A.n),v1(A.n),v0(A.n);
+	for[i,ui:v0] ui=randreal1();
+	// v0=1;
+	// v0=ini;
+	for(int ii=0;ii<5000 & err>eps; ii++)
+	{	
+		v1=A*v0;
+		v2=Bt^-1*v1;
+		v3=A*v2;
+		v=B^-1*v3;		
+		mpi(
+			v1 = v/v.l2;
+			lambda1 = v.sum/v0.sum;
+			err=abs(lambda1-lambda0)/abs(lambda1);
+			v0=v1;
+			lambda0=lambda1;
+			if(ii==4999)cout << "max iteration achieved" << endl;
+		)
+		broadcast(processor(0, mpiCommWorld), err); // Paso la información del procesador 0 al resto
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+
+func real[int] powermethodmpi(matrix & A,matrix & B)
+{   //A*v=B*lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-9;
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	real[int] v(A.n),v1(A.n),v0(A.n),aux(A.n);
+	for[i,ui:v0] ui=randreal1();
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v=B^-1*v1;
+		mpi(
+		v1=v/v.l2;
+		lambda1=v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		// cout << err << endl;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+		)
+		broadcast(processor(0, mpiCommWorld), err); // Paso la información del procesador 0 al resto
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethodRBF(matrix & A,matrix & B,real[int] & init)
+{//B^-1*A*Bt^-1*A*v=lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-5;
+	matrix Bt=B';
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	set(Bt,solver=sparsesolver);
+	real[int] v(A.n),v2(A.n),v3(A.n),v1(A.n),v0(A.n);
+	for[i,ui:v0] ui=randreal1();
+	// v0=1;
+	v0=init/init.l2;
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v2=Bt^-1*v1;
+		v3=A*v2;
+		v=B^-1*v3;
+		v1=v/v.l2;
+		lambda1=v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		// cout << "lambda0: " << lambda0 << ", err: " << err << endl;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethodRBF(matrix & A,matrix & B,real[int] & meanP,real[int] & pres)
+{//B^-1*A*Bt^-1*A*v=lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-5;
+	matrix Bt=B';
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	set(Bt,solver=sparsesolver);
+	real[int] v(A.n),v2(A.n),v3(A.n),v1(A.n),v0(A.n);
+	for[i,ui:v0] ui=randreal1();
+//	v0=1;
+	// v0=ini;
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v2=Bt^-1*v1;
+		v3=A*v2;
+		v=B^-1*v3;
+		real meanPs=v'*meanP;// Calculamos la media
+		v-=meanPs*pres;// Se la restamos
+		v1=v/v.l2;
+		lambda1=v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		cout << "lambda0: " << lambda0 << ", err: " << err << endl;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+func real[int] powermethodRBF(matrix & A,matrix & B,real[int] & meanP,real[int] & pres,real[int] & init)
+{//B^-1*A*Bt^-1*A*v=lambda*v
+	real lambda0=100.,lambda1,err=10.,eps=1.e-5,meanPs;
+	matrix Bt=B';
+	set(A,solver=sparsesolver);
+	set(B,solver=sparsesolver);
+	set(Bt,solver=sparsesolver);
+	real[int] v(A.n),v2(A.n),v3(A.n),v1(A.n),v0(A.n),aux(A.n);
+	// for[i,ui:v0] ui=randreal1();
+	// v0=1;
+	v0=init/init.l2;
+	for(int ii=0;ii<5000 && err > eps; ii++)
+	{
+		v1=A*v0;
+		v2=Bt^-1*v1;
+		v3=A*v2;
+		v=B^-1*v3;
+		meanPs=v'*meanP;// Calculamos la media
+		v-=meanPs*pres;// Se la restamos
+		v1=v/v.l2;
+		lambda1=v.sum/v0.sum;
+		err=abs(lambda1-lambda0)/abs(lambda1);
+		v0=v1;
+		lambda0=lambda1;
+		cout << "lambda0: " << lambda0 << ", err: " << err << endl;
+		if(ii==4999)cout << "max iteration achieved" << endl;
+	}
+	real[int] result(A.n+1);
+	result=[lambda1,v1];
+	return result;
+}
+
+
