@@ -66,18 +66,21 @@ matrix <type> result;
 EndMacro
 
 NewMacro readvectorsparse(filename,result,show)
-int result#s;
+mpi(cout<<"comenzamos macro"<<endl;)
+int result#ii;
 {
 	ifstream file(filename);
-	file >> result#s;
+	file >> result#ii;
 }
-matrix[int] result(result#s);
+mpi(cout<<"allocamos matriz"<<endl;)
+matrix[int] result(result#ii);
 {
 	ifstream file(filename);
-	file >> result#s;
-	for(int i=0;i<result#s;i++)
+	file >> result#ii;
+	for(int i=0;i<result#ii;i++)
 	{
 		file >> result[i];
+		mpi(cout<<"matriz asignada"<<endl;)
 		if(show==1)cout << result[i] << endl;
 	}
 	
