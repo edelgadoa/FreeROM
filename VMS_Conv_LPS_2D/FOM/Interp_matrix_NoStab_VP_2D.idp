@@ -61,6 +61,8 @@ matrix DX2P2, DY2P2; // ∂x, ∂y 3P2 -> 3P1dc en las 2 componentes de la veloc
 matrix DXP2, DYP2;   // ∂x, ∂y P2 -> P1dc (El elemento finito solo tiene una componente)
 matrix D1X3P2, D2X3P2, D3X3P2; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 matrix D1Y3P2, D2Y3P2, D3Y3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix D1X2P2, D2X2P2; // ∂x 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
+matrix D1Y2P2, D2Y2P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 3P2
 
 {
 	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
@@ -99,10 +101,16 @@ matrix D1Y3P2, D2Y3P2, D3Y3P2; // ∂y 3P2 -> P1dc en la componente 1, 2 y 3 de 
 	int[int] cs2=[0];
 	D1X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
 	D1Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);	
+	
+	D1X2P2 = interpolate(VhP1dc,Vh2P2,U2Vc=cs2,op=1);
+	D1Y2P2 = interpolate(VhP1dc,Vh2P2,U2Vc=cs2,op=2);
 
 	cs2=[1];
 	D2X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
-	D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);	
+	D2Y3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=2);
+	
+	D2X2P2 = interpolate(VhP1dc,Vh2P2,U2Vc=cs2,op=1);
+	D2Y2P2 = interpolate(VhP1dc,Vh2P2,U2Vc=cs2,op=2);	
 
 	cs2=[2];
 	D3X3P2 = interpolate(VhP1dc,Vh3P2,U2Vc=cs2,op=1);
