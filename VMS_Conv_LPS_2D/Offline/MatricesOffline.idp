@@ -7,7 +7,7 @@
 // TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
 
 // Inicializo las matrices locales para el paralelo
-include "Allocate_matrices_local.idp"
+// include "Allocate_matrices_local.idp"
 
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
@@ -119,6 +119,7 @@ for (int s=0; s<Taubases; s++){
 }
 
 
+
 // LPS Conveccion
 for (int s=0; s<Taubases; s++){
 	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
@@ -129,7 +130,6 @@ for (int s=0; s<Taubases; s++){
 		for (int uj=0; uj<Nbases; uj++){
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
 			LPSCUUint = 0;// LPSCintG = 0;
-			contFF = 0;
 			for (int j=0; j<=i; j++){
 				//if (mpirank==contFF%mpisize){
 					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
@@ -143,7 +143,6 @@ for (int s=0; s<Taubases; s++){
 						LPSCLLint(j,i) = LPSCLLint(i,j);
 					}
 					//}
-				contFF++;
 			}
 			//pause;
 			//mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
