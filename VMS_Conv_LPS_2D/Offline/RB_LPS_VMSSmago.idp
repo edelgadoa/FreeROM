@@ -111,13 +111,13 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		SConvint =  sigmaEIMTau(s)*SConvint;
 		StabCRBi += SConvint;
 		for (int ui=0; ui<I; ui++){
-			SConvRBN = StabCLURB[s + ui*Nbases];
+			SConvRBN = StabCLURB[s + ui*Taubases];
 			SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
 			SConvint =  sigmaEIMTau(s)*SConvint;
 			SConvint =  uRBv(ui)*SConvint;
 			StabCRBi += SConvint;
 			
-			SConvRBN = StabCULRB[s + ui*Nbases];
+			SConvRBN = StabCULRB[s + ui*Taubases];
 			SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
 			SConvint =  sigmaEIMTau(s)*SConvint;
 			SConvint =  uRBv(ui)*SConvint;
