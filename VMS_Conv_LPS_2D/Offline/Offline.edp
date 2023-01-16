@@ -57,9 +57,7 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 ////DEFINICION DE LOS ESPACIOS DE BR//////
 //////////////////////////////////////////
-cout<<"P2 dim="<<VhP2.ndof<<endl;
-cout<<"3P2 dim="<<Vh3P2.ndof<<endl;
-cout<<"P1dc dim="<<VhP1dc.ndof<<endl;
+
 VhP2[int] BaseP(Nbases);
 Vh2P2[int] [BaseV, BaseVY](Nbases);
 
@@ -175,11 +173,11 @@ for (int i=0; i<Nbases; i++){
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
+	// plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
 	
 	// include "GramSchmidt.idp"
 	
-	plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
+	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];

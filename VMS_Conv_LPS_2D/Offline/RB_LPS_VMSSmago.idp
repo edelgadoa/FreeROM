@@ -23,6 +23,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	StabPRBi = 0;
 	bDTRBi = 0;
 	bSmagoRBi = 0;
+	StabCRBi = 0;
 	bRB = 0;
 	
 	// Matriz de conveccion
@@ -102,10 +103,42 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		bDTRBi += bDTRBint;
 	}
 	
+	// Matriz de conveccion
+	for (int s=0; s<Taubases; s++){
+		real[int,int] SConvint(2*I, 2*I), SConvRBN(2*Nbases, 2*Nbases);
+		SConvRBN = StabCLLRB[s];
+		SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
+		SConvint =  sigmaEIMTau(s)*SConvint;
+		StabCRBi += SConvint;
+		for (int ui=0; ui<I; ui++){
+			SConvRBN = StabCLURB[s + ui*Nbases];
+			SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
+			SConvint =  sigmaEIMTau(s)*SConvint;
+			SConvint =  uRBv(ui)*SConvint;
+			StabCRBi += SConvint;
+			
+			SConvRBN = StabCULRB[s + ui*Nbases];
+			SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
+			SConvint =  sigmaEIMTau(s)*SConvint;
+			SConvint =  uRBv(ui)*SConvint;
+			StabCRBi += SConvint;
+			for (int uj=0; uj<I; uj++){
+				SConvRBN = StabCULRB[s + ui*Taubases + uj*Taubases*Nbases];
+				SConvint = SConvRBN(0:2*Nbases-1, 0:2*Nbases-1);
+				SConvint =  sigmaEIMTau(s)*SConvint;
+				SConvint =  uRBv(ui)*SConvint;
+				SConvint =  uRBv(uj)*SConvint;
+				StabCRBi += SConvint;	
+			}
+		}
+	}
+	
+
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
 	MRBF += StabPRBi;
+	MRBF += StabCRBi;
 	
 	
 	bRB = (1./dt) * bDTRBi(0:2*I-1);
