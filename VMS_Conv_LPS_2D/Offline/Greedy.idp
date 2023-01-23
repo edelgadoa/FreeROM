@@ -13,7 +13,7 @@ real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(
 			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I), StabCRBi(2*I, 2*I); 
 			   			   			 			  
 // Inicializamos los segundos miembros
-real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 
+real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I), bStabCRBi(2*I); 
 
 // Matrices fijas 
 DiffRBi = DiffRB(0:2*I-1, 0:2*I-1);

@@ -34,15 +34,15 @@ include "../Auxiliary/Parametros_2D.idp"
 include "Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 21; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 Remin = 1000;
-Remax = 5100;
+Remax = 2000;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
-
+// cout<<vReynolds<<endl;
 // Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
 // {
 // 	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");

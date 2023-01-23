@@ -2,7 +2,6 @@
 // FreeROM 
 ///////////////
 
-
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 

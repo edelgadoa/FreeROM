@@ -57,6 +57,9 @@ bDTRB = 0;
 bSmagoRBi = 0;
 bSmagoRB = 0;
 
+// segundos miembros de estab Conv
+real[int,int] bStabCUURB(Taubases*Nbases^2,2*Nbases), bStabCULRB(Taubases*Nbases,2*Nbases), bStabCLURB(Taubases*Nbases,2*Nbases), bStabCLLRB(Taubases,2*Nbases);
+
 
 // Definicion de Matrices y Tensores variables
 real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases), StabCUURB(Taubases*Nbases^2),
@@ -77,20 +80,28 @@ for (int k=0;k<Taubases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
 	aux=0;
 	StabPRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+
 }
 for (int k=0;k<Taubases*Nbases^2;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
-	aux=0;
-	StabCUURB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+	real[int,int] baux(Taubases*Nbases^2,2*Nbases);
+	aux=0; baux=0;
+	StabCUURB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
+	bStabCUURB = baux;
 }
 for (int k=0;k<Taubases*Nbases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
-	aux=0;
+	real[int,int] baux(Taubases*Nbases,2*Nbases);
+	aux=0; baux=0;
 	StabCULRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
 	StabCLURB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+	bStabCULRB = baux;
+	bStabCLURB = baux;
 }
 for (int k=0;k<Taubases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
-	aux=0;
-	StabCLLRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+	real[int,int] baux(Taubases, 2*Nbases);
+	aux=0; baux=0;
+	StabCLLRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
+	bStabCLLRB = baux;
 }

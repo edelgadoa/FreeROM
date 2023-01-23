@@ -76,5 +76,5 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 }
 
 
-include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
+
 

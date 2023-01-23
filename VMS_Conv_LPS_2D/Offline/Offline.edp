@@ -46,7 +46,7 @@ include "../Auxiliary/betas.idp"
 
 
 //Definicion de Constantes y variables varias
-int Nbases = 10; 
+int Nbases = 2; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -199,6 +199,8 @@ for (int i=0; i<Nbases; i++){
 	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
 	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
 	
+	include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
+	
 	// Construyo las matrices
 	include "MatricesOffline.idp"
 		
@@ -217,5 +219,3 @@ for (int i=0; i<Nbases; i++){
 		break;
 	}
 }
-
-
