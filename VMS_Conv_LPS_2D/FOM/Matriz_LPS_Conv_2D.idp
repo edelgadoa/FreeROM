@@ -8,20 +8,20 @@
 
 VhP1dc funcLev;
 
-varf termConv(uu1,v) = int2d(Th)(tau*uu1*v);
+varf termConv(uu1,v) = int2d(Th)(hTriangle^2*uu1*v);
 varf btermConv(uu1,v) = int2d(Th)(-tau*funcLev*v);
 
 matrix TermC = termConv(VhP1dc,VhP1dc);
 
-VhP1dc uEFdc = uEF + Lev;
-VhP1dc uEFYdc = uEFY + LevY;
+VhP1dc uEFdc = uEF; // + Lev;
+VhP1dc uEFYdc = uEFY; // + LevY;
 
 matrix UEFdc = uEFdc[];
 matrix UEFYdc = uEFYdc[];
 
 // Primera componente
 matrix EC1;
-real[int] bLPSConv1(Vh3P2.ndof);
+// real[int] bLPSConv1(Vh3P2.ndof);
 {
 	matrix UXD1X = UEFdc * D1X3P2;
 	matrix UYD1Y = UEFYdc * D1Y3P2;
@@ -31,18 +31,18 @@ real[int] bLPSConv1(Vh3P2.ndof);
 	EC1 = TermC * IPhUD1;
 	EC1 = IPhUD1' * EC1;
 	
-	VhP1dc AUX;
-	AUX[] = UEFdc * LevdX[];
-	AUX[] += UEFYdc * LevdY[];
-	funcLev[] = IPhP1dcP1 * AUX[];
+	// VhP1dc AUX;
+	// AUX[] = UEFdc * LevdX[];
+	// AUX[] += UEFYdc * LevdY[];
+	// funcLev[] = IPhP1dcP1 * AUX[];
 	
-	real[int] bConv1 = btermConv(0, VhP1dc);
-	bLPSConv1 = IPhUD1' * bConv1;
+	// real[int] bConv1 = btermConv(0, VhP1dc);
+	// bLPSConv1 = IPhUD1' * bConv1;
 }
 
 // Segunda componente
 matrix EC2;
-real[int] bLPSConv2(Vh3P2.ndof);
+// real[int] bLPSConv2(Vh3P2.ndof);
 {
 	matrix UXD2X = UEFdc * D2X3P2;
 	matrix UYD2Y = UEFYdc * D2Y3P2;
@@ -52,15 +52,15 @@ real[int] bLPSConv2(Vh3P2.ndof);
 	EC2 = TermC * IPhUD2;
 	EC2 = IPhUD2' * EC2;
 	
-	VhP1dc AUX;
-	AUX[] = UEFdc * LevYdX[];
-	AUX[] += UEFYdc * LevYdY[];
-	funcLev[] = IPhP1dcP1 * AUX[];
+	// VhP1dc AUX;
+	// AUX[] = UEFdc * LevYdX[];
+	// AUX[] += UEFYdc * LevYdY[];
+	// funcLev[] = IPhP1dcP1 * AUX[];
 	
-	real[int] bConv2 = btermConv(0, VhP1dc);
-	bLPSConv2 = IPhUD2' * bConv2;
+	// real[int] bConv2 = btermConv(0, VhP1dc);
+	// bLPSConv2 = IPhUD2' * bConv2;
 	
 }
 
 LPSConv = EC1 + EC2;
-bLPSConv = bLPSConv1 + bLPSConv2;
+// bLPSConv = bLPSConv1 + bLPSConv2;

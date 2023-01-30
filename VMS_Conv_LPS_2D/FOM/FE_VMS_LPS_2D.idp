@@ -59,13 +59,13 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	MFinal = MFija;
 	MFinal += MNS;
- 	MFinal += Smago;
+ 	// MFinal += Smago;
 	MFinal += LPSpres;
 	MFinal += LPSConv;
 	
 	bFinal = bFija;
 	bFinal += bNS;
-	bFinal += bSmago;
+	// bFinal += bSmago;
 	// bFinal += bLPSConv;
 	
 	set(MFinal, solver=sparsesolver);

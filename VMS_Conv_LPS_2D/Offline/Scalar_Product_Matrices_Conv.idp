@@ -3,74 +3,76 @@
 ///////////////
 
 // Productos escalares para el término convectivo
-matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
+// matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
+matrix[int] StabCUUPEM(Nbases^2);
+// for (int s=0; s<Taubases; s++){
+// 	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
+// 	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 	
-for (int s=0; s<Taubases; s++){
-	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
-	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
-	
-	VhP1dc Levdc = Lev; 
-	VhP1dc LevYdc = LevY;
-	matrix LEVdc = Levdc[]; matrix LEVYdc = LevYdc[];
-	
-	
-	matrix ConvUUX, ConvUUY, ConvULX, ConvULY, ConvLUX, ConvLUY, ConvLLX, ConvLLY;
-	
-	matrix IPhLD1, IPhLD2;
-	{
-		matrix LXD1X = LEVdc * D1X2P2;
-		matrix LYD1Y = LEVYdc * D1Y2P2;
-		matrix LD1 = LXD1X + LYD1Y;
-		IPhLD1 = IPhP1dcP1 * LD1;
-		
-		matrix LXD2X = LEVdc * D2X2P2;
-		matrix LYD2Y = LEVYdc * D2Y2P2;
-		matrix LD2 = LXD2X + LYD2Y;
-		IPhLD2 = IPhP1dcP1 * LD2;
-		
-		ConvLLX = SCPEM * IPhLD1;
-		ConvLLX = (IPhLD1')* ConvLLX;
-		
-		ConvLLY = SCPEM * IPhLD2;
-		ConvLLY = (IPhLD2')* ConvLLY;
-	}
-	StabCLLPEM[s] = ConvLLX + ConvLLY;
+	// VhP1dc Levdc = Lev;
+	// VhP1dc LevYdc = LevY;
+	// matrix LEVdc = Levdc[]; matrix LEVYdc = LevYdc[];
+	//
+	//
+	// matrix ConvUUX, ConvUUY;// , ConvULX, ConvULY, ConvLUX, ConvLUY, ConvLLX, ConvLLY;
+	//
+	// matrix IPhLD1, IPhLD2;
+	// {
+	// 	matrix LXD1X = LEVdc * D1X2P2;
+	// 	matrix LYD1Y = LEVYdc * D1Y2P2;
+	// 	matrix LD1 = LXD1X + LYD1Y;
+	// 	IPhLD1 = IPhP1dcP1 * LD1;
+	//
+	// 	matrix LXD2X = LEVdc * D2X2P2;
+	// 	matrix LYD2Y = LEVYdc * D2Y2P2;
+	// 	matrix LD2 = LXD2X + LYD2Y;
+	// 	IPhLD2 = IPhP1dcP1 * LD2;
+	//
+	// 	ConvLLX = SCPEM * IPhLD1;
+	// 	ConvLLX = (IPhLD1')* ConvLLX;
+	//
+	// 	ConvLLY = SCPEM * IPhLD2;
+	// 	ConvLLY = (IPhLD2')* ConvLLY;
+	// }
+	// StabCLLPEM[s] = ConvLLX + ConvLLY;
 	
 	for (int ui=0; ui<Nbases; ui++){
+		varf StabCPE(u,v) = int2d(Th)(hTriangle^2*u*v);
+		matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 		
 		VhP1dc BaseVdci = BaseV[ui];
 		VhP1dc BaseVYdci = BaseVY[ui];
 		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
 		
 		matrix IPhUiD1, IPhUiD2;
-		
+		//
 		{
 			matrix UXD1Xi = BVdci * D1X2P2;
 			matrix UYD1Yi = BVYdci * D1Y2P2;
 			matrix UD1i = UXD1Xi + UYD1Yi;
 			IPhUiD1 = IPhP1dcP1 * UD1i;
-			
+
 			matrix UXD2Xi = BVdci * D2X2P2;
 			matrix UYD2Yi = BVYdci * D2Y2P2;
 			matrix UD2i = UXD2Xi + UYD2Yi;
 			IPhUiD2 = IPhP1dcP1 * UD2i;
-			
-			ConvLUX = SCPEM * IPhLD1;
-			ConvLUX = (IPhUiD1') * ConvLUX;
-		
-			ConvULX = SCPEM * IPhUiD1;
-			ConvULX = (IPhLD1') * ConvULX;
-			
-			ConvLUY = SCPEM * IPhLD2;
-			ConvLUY = (IPhUiD2') * ConvLUY;
-		
-			ConvULY = SCPEM * IPhUiD2;
-			ConvULY = (IPhLD2') * ConvULY;		
-		}
-		
 
-		StabCULPEM[s + ui*Taubases] = ConvULX + ConvULY;
-		StabCLUPEM[s + ui*Taubases] = ConvLUX + ConvLUY;
+		// 	ConvLUX = SCPEM * IPhLD1;
+		// 	ConvLUX = (IPhUiD1') * ConvLUX;
+		//
+		// 	ConvULX = SCPEM * IPhUiD1;
+		// 	ConvULX = (IPhLD1') * ConvULX;
+		//
+		// 	ConvLUY = SCPEM * IPhLD2;
+		// 	ConvLUY = (IPhUiD2') * ConvLUY;
+		//
+		// 	ConvULY = SCPEM * IPhUiD2;
+		// 	ConvULY = (IPhLD2') * ConvULY;
+		}
+		//
+		//
+		// StabCULPEM[s + ui*Taubases] = ConvULX + ConvULY;
+		// StabCLUPEM[s + ui*Taubases] = ConvLUX + ConvLUY;
 		
 		for (int uj=0; uj<Nbases; uj++){
 
@@ -79,6 +81,7 @@ for (int s=0; s<Taubases; s++){
 			matrix BVdcj = BaseVdcj[]; matrix BVYdcj = BaseVYdcj[];
 			
 			matrix IPhUjD1, IPhUjD2;
+			matrix ConvUUX, ConvUUY;
 			{
 				
 				matrix UXD1Xj = BVdcj * D1X2P2;
@@ -92,17 +95,17 @@ for (int s=0; s<Taubases; s++){
 				matrix UD2j = UXD2Xj + UYD2Yj;
 				IPhUjD2 = IPhP1dcP1 * UD2j;
 				
-				ConvUUX = SCPEM * IPhUjD1;
-				ConvUUX = (IPhUiD1') * ConvUUX;
+				ConvUUX = SCPEM * IPhUiD1;
+				ConvUUX = (IPhUjD1') * ConvUUX;
 				
-				ConvUUY = SCPEM * IPhUjD2;
-				ConvUUY = (IPhUiD2') * ConvUUY;				
+				ConvUUY = SCPEM * IPhUiD2;
+				ConvUUY = (IPhUjD2') * ConvUUY;				
 			}
 
-			StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases] = ConvUUX + ConvUUY;	
+			StabCUUPEM[ui + uj*Nbases] = ConvUUX + ConvUUY;	
 			// cout<<"M dim= "<<StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases].n<<"x"<<StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases].m<<endl;					
 		}
 	}		
-}
+	//}
 
 mpi(cout<<"Matr scalar product conv Done"<<endl;)
