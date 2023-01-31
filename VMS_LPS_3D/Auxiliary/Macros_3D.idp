@@ -109,7 +109,7 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
     string[int] names(2);
     names[0] = "velocity";
     names[1] = "pressure";
-	//names[2] = "Lagrange";
+	names[2] = "Lagrange";
 	
 	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
 	 set(MatLPS, sparams=sparamsv);

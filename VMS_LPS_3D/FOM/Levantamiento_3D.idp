@@ -8,10 +8,10 @@ func g=x*(x-1.)*y*(y-1.)*16.;
 func gfunc = g*z*(z-0.75)*(z>=0.75) + 0;
 func g1=1.*(z>=1);
 
-Vh4P2 [Lev, LevY, LevZ, LevP];
-Vh3P2 [LevV, LevVY, LevVZ];
-VhP2 GP2 = g1;
-VhP2 GzeroP2 = 0.;
+Vh4P2L [Lev, LevY, LevZ, LevP];
+Vh3P2L [LevV, LevVY, LevVZ];
+VhP2L GP2 = g1;
+VhP2L GzeroP2 = 0.;
 
 
 [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
@@ -19,14 +19,14 @@ VhP2 GzeroP2 = 0.;
 
 // Filtro el levantamiento y lo derivo
 VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
-
+/*
 {
-	FLevdX[] = DXP2IPh * GP2[]; FLevdY[] = DYP2IPh * GP2[]; FLevdZ[] = DZP2IPh * GP2[];
-	FLevYdX[] = DXP2IPh * GzeroP2[]; FLevYdY[] = DYP2IPh * GzeroP2[]; FLevYdZ[] = DZP2IPh * GzeroP2[];
-	FLevZdX[] = DXP2IPh * GzeroP2[]; FLevZdY[] = DYP2IPh * GzeroP2[]; FLevZdZ[] = DZP2IPh * GzeroP2[];
+	FLevdX[] = DXP2IPhL * GP2[]; FLevdY[] = DYP2IPhL * GP2[]; FLevdZ[] = DZP2IPhL * GP2[];
+	FLevYdX[] = DXP2IPhL * GzeroP2[]; FLevYdY[] = DYP2IPhL * GzeroP2[]; FLevYdZ[] = DZP2IPhL * GzeroP2[];
+	FLevZdX[] = DXP2IPhL * GzeroP2[]; FLevZdY[] = DYP2IPhL * GzeroP2[]; FLevZdZ[] = DZP2IPhL * GzeroP2[];
 }
 
 
 // Levantamiento filtrado
-Vh3P2 [FLev, FLevY, FLevZ];
-FLev[] = IPh3P23P1 * LevV[];
+Vh3P2L [FLev, FLevY, FLevZ];
+FLev[] = IPh3P23P1L * LevV[];*/

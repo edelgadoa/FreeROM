@@ -1,0 +1,56 @@
+load "PETSc"
+
+
+
+
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
+
+// Creamos la Malla
+//include "../Auxiliary/CuboNxNyNz.idp"
+
+
+// Cargamos macros, funciones i/o
+// include "../Auxiliary/Macros_3D.idp"
+// include "../Auxiliary/search.idp"
+include "../../Auxiliary/IO.idp"
+
+// Definimos los espacios de EF
+// include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
+
+// Definimos los parametros a usar
+//include "../Auxiliary/Parametros_3D.idp"
+
+include "EIM_Data.idp"
+
+
+Mat[int] A(Mbases);
+for(int s=0; s<Mbases; s++){
+	MatLoad(A[s], name="MatrixOutput_"+s+".txt", format="binary");
+}
+
+// ObjectView(A,format="info");
+// cout<<A.n<<endl;
+
+// cout<<A.range[0]<<" "<<A.range[1]<<endl;
+
+real[int,int] EIMSmago(A[0].n, Mbases);
+
+for (int i=0; i<Mbases; i++){
+	// VhP1dc EIMSmagoG;
+	readvector("../../EIM/EIM_VMSSmago/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
+	// EIMSmagoG = BaseEIM;
+	EIMSmago(:,i) = BaseEIM(A[i].range[0]:A[i].range[1]); //Cargo la bases EN LOCAL
+}
+
+real[int,int] TEMP(0,0);
+MatMatMult(A[0], EIMSmago, TEMP);
+real[int, int] TBaseV2D = EIMSmago';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);

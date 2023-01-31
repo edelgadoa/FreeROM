@@ -35,7 +35,7 @@ include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 include "../../Auxiliary/Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
+// include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
 include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Incluimos el levantamiento
@@ -50,13 +50,22 @@ include "../../Auxiliary/betas.idp"
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
 
+int Nbases=10;
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	for (int s=0; s<Mbases; s++){
 		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-		SmagoPEM[s] = SmagoPE(Vh3P2, Vh3P2);
+		if (s!=0){
+			matrix TMP = SmagoPE(Vh3P2L,Vh3P2L);
+			Mat TMP2(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+			SmagoPEM[s] = TMP2; 
+		}
+		else{
+			SmagoPEM[0] = MatAVh3P2;
+			SmagoPEM[s] = SmagoPE(Vh3P2L,Vh3P2L);
+		}
 	}
 	/*
 	for (int s=0; s<Taubases; s++){
@@ -76,5 +85,27 @@ Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	}*/
 }
 
-write("SmagoPEM.txt", SmagoPEM, 0, 0);
-write("StabPPEM.txt", StabPPEM, 0, 0);
+for (int i=0; i<Mbases; i++){
+	ObjectView(SmagoPEM[i], name="MatrixOutput_"+i+".txt",format="binary");
+
+}
+/*
+real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
+real[int,int] BaseV2D(Vh.ndof, Nbases);
+for (int s=0;s<Nbases;s++){
+	BaseV2D(:,s) = BaseV[s][];
+}
+ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
+
+
+real[int,int] TEMP(0,0);
+MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
+real[int, int] TBaseV2D = BaseVMPI';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);
+*/
+// write("SmagoPEM.txt", SmagoPEM, 0, 0);
+// write("StabPPEM.txt", StabPPEM, 0, 0);

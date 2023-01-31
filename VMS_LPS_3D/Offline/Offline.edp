@@ -61,22 +61,22 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 ////DEFINICION DE LOS ESPACIOS DE BR//////
 //////////////////////////////////////////
 
-VhP2[int] BaseP(Nbases);
-Vh3P2[int] [BaseV, BaseVY, BaseVZ](Nbases);
+VhP2L[int] BaseP(Nbases);
+Vh3P2L[int] [BaseV, BaseVY, BaseVZ](Nbases);
 
-VhP2[int] BaseVel(Nbases);
-VhP2[int] BaseVelY(Nbases);
-VhP2[int] BaseVelZ(Nbases);
+VhP2L[int] BaseVel(Nbases);
+VhP2L[int] BaseVelY(Nbases);
+VhP2L[int] BaseVelZ(Nbases);
 
-Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
-VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
+VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
-VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
+VhP1dcL[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
-VhP1dc[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
-VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
-VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
+VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
+VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
+VhP1dcL[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(Vh3P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
@@ -107,42 +107,42 @@ real CSobolev;
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
-VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT
-VhP1dc uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
+VhP2L uFijo, uFijoY, uFijoZ; //Para la normaT
+VhP1dcL uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
 
-Vh4P2 [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el Re_fijo
-VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+Vh4P2L [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2L uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
 
 
-if (search(ReSnapshots, Refijo, 1.e-9)==-1){
-	// Si no lo he calculado todavía, lo calculo
-	Reynolds = Refijo;
-	include "../FOM/FE_VMS_LPS_3D.idp"	
-	
-	uFijo = uEF + Lev;
-	uFijoY = uEFY + LevY;
-	uFijoZ = uEFZ + LevZ;
-}
-else{
-	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
-	uFijo[] = SolX;
-	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
-	uFijoY[] = SolY;
-	readvector("../Snapshots/Vz_" + Refijo + ".txt", real, SolZ, 0);
-	uFijoZ[] = SolZ;
-
-	uFijo = uFijo + Lev;
-	uFijoY = uFijoY + LevY;
-	uFijoZ = uFijoZ + LevZ;
-	
-}
+// if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+// 	// Si no lo he calculado todavía, lo calculo
+// 	Reynolds = Refijo;
+// 	include "../FOM/FE_VMS_LPS_3D.idp"
+//
+// 	uFijo = uEF + Lev;
+// 	uFijoY = uEFY + LevY;
+// 	uFijoZ = uEFZ + LevZ;
+// }
+// else{
+// 	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
+// 	uFijo[] = SolX;
+// 	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
+// 	uFijoY[] = SolY;
+// 	readvector("../Snapshots/Vz_" + Refijo + ".txt", real, SolZ, 0);
+// 	uFijoZ[] = SolZ;
+//
+// 	uFijo = uFijo + Lev;
+// 	uFijoY = uFijoY + LevY;
+// 	uFijoZ = uFijoZ + LevZ;
+//
+// }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"
 
-
+/*
 for (int i=0; i<Nbases; i++){
 	
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
@@ -233,4 +233,4 @@ for (int i=0; i<Nbases; i++){
 	}
 }
 
-
+*/

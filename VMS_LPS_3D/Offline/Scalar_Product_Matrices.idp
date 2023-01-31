@@ -3,31 +3,31 @@
 /////////////// 
 
 // Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
-varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
-matrix MPescT = pescT(Vh3P2, Vh3P2);
+varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+matrix MPescT = pescT(Vh3P2L, Vh3P2L);
 
-varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
-matrix MPescX = pescX(Vh4P2, Vh4P2);
+varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
+matrix MPescX = pescX(Vh4P2L, Vh4P2L);
 
-varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(Th)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh3P2, Vh3P2);
+varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
+matrix MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
 
 ///////////////////////////////////////////////////////
 
-varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(GradUGradV(uu,v));
-matrix DiffPEM = DiffPE(Vh3P2,Vh3P2);
+varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+matrix DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
 
-varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(Th)(Div(uu)*vP);
-matrix DivPPEM = DivPPE(Vh3P2, VhP2);
+varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
+matrix DivPPEM = DivPPE(Vh3P2L, VhP2L);
 
-varf PenPE(uP, vP) = int3d(Th)(epspen*uP*vP);
-matrix PenPEM = PenPE(VhP2, VhP2);
+varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
+matrix PenPEM = PenPE(VhP2L, VhP2L);
 
-varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(Th)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
-matrix ConvLevPEM = ConvLevPE(Vh3P2, Vh3P2);
+varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+matrix ConvLevPEM = ConvLevPE(Vh3P2L, Vh3P2L);
 
-varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(UporV(uu,v));
-matrix DTPEM = DTPE(Vh3P2, Vh3P2);
+varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
+matrix DTPEM = DTPE(Vh3P2L, Vh3P2L);
 
 /*
 varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
@@ -42,55 +42,69 @@ matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
 matrix StabhkPEM = FiltroX + FiltroY;
 */
 mpi(cout<<"matriz convectiva"<<endl;)
-matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
+Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 mpi(cout<<"leemos Matrices PEM"<<endl;)
-// matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
+Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 
-readvectorsparse("Vector_Scalar_Products/SmagoPEM.txt", SmagoPEM, 0);
-readvectorsparse("Vector_Scalar_Products/StabPPEM.txt", StabPPEM, 0);
+//readvectorsparse("Vector_Scalar_Products/SmagoPEM.txt", SmagoPEM, 0);
+//readvectorsparse("Vector_Scalar_Products/StabPPEM.txt", StabPPEM, 0);
 
-cout<<"Matrices PEM leidas"<<endl;
-cout<<"transferir al resto de procesadores"<<endl;
 // for (int i=0;i<SmagoPEM.n;i++){
 // 	cout<<i<<endl;
 // 	SmagoPEM[i] = SmagoPEMp0[i];
 // }
-mpi(cout<<"TODO OK"<<endl;)
-if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
-/*
+mpi(cout<<"START"<<endl;)
+// if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
+
 { 
-	int contS = 0; 
 	for (int s=0; s<Mbases; s++){
-		//if(mpirank==contS%mpisize){ //Si lo pongo para que lo haga en paralelo, me da un segmentation fault
-			// Matrices Smago
-			varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-			SmagoPEM[s] = SmagoPE(Vh3P2, Vh3P2);
-			//}
-		contS++;
+		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+		if (s!=0){
+			matrix TMP = SmagoPE(Vh3P2L,Vh3P2L);
+			Mat TMP2(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+			SmagoPEM[s] = TMP2; 
+		}
+		else{
+			SmagoPEM[0] = MatAVh3P2;
+			SmagoPEM[s] = SmagoPE(Vh3P2L,Vh3P2L);
+		}
 	}
-	
-	contS = 0;
+	/*
 	for (int s=0; s<Taubases; s++){
-		//if(mpirank==contS%mpisize){
-			// Matrices LPS
-			varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
-			matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
-			matrix FiltroX, FiltroY, FiltroZ;
-			{
-				FiltroX = SPPEM * IPhDXP2;
-				FiltroX = (IPhDXP2') * FiltroX;
-				FiltroY = SPPEM * IPhDYP2;
-				FiltroY = (IPhDYP2') * FiltroY;	
-				FiltroZ = SPPEM * IPhDZP2;
-				FiltroZ = (IPhDZP2') * FiltroZ;	
-			}
-			StabPPEM[s] = FiltroX + FiltroY;
-			StabPPEM[s] = StabPPEM[s] + FiltroZ;
-			//}
-		contS++;
-	}
-}*/
+		varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
+		matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
+		matrix FiltroX, FiltroY, FiltroZ;
+		{
+			FiltroX = SPPEM * IPhDXP2;
+			FiltroX = (IPhDXP2') * FiltroX;
+			FiltroY = SPPEM * IPhDYP2;
+			FiltroY = (IPhDYP2') * FiltroY;	
+			FiltroZ = SPPEM * IPhDZP2;
+			FiltroZ = (IPhDZP2') * FiltroZ;	
+		}
+		StabPPEM[s] = FiltroX + FiltroY;
+		StabPPEM[s] = StabPPEM[s] + FiltroZ;
+	}*/
+}
+mpi(cout<<"END"<<endl;)
+
+real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
+real[int,int] BaseV2D(Vh3P2L.ndof, Nbases);
+for (int s=0;s<Nbases;s++){
+	BaseV2D(:,s) = BaseV[s][];
+}
+ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
+
+
+real[int,int] TEMP(0,0);
+MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
+real[int, int] TBaseV2D = BaseVMPI';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);
 
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(Th)(GradUGradV(Lev, v));
 real[int] bDiffPEv = bDiffPE(0, Vh3P2);
