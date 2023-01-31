@@ -79,21 +79,15 @@ for (int s=0; s<=i; s++){
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
-	SintL = 0; SintG = 0;
-	contFF = 0;
+	real[int, int] Sint(2*Nbases, 2*Nbases);
 	for (int j=0; j<=i; j++){
-		if (mpirank==contFF%mpisize){
-			SintL(i,j) = int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseVZ[j],FBaseV[i],FBaseVY[i],FBaseVZ[i]));
-			if(j<i){
-				SintL(j,i) = SintL(i,j);
-			}
+		Sint(i,j) = innerprodX(BaseV[j][], BaseV[i][], SmagoPEM[s]);
+		if(j<i){
+			Sint(j,i) = SintL(i,j);
 		}
-		contFF++;		
+		
 	}
-	pause;
-	mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
-	SmagoRB[s] += SintG;
+	SmagoRB[s] += SintL;
 }
 
 
