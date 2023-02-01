@@ -45,9 +45,58 @@ NewMacro solvesystem(A,b,u)
 {
 	Vh4P2L [u#L, u#LY, u#LT, u#LP]; 
 	MatAVh4P2 = A;
-	set(MatAVh4P2,sparams=sparamsv);
+	set(MatAVh4P2, sparams=sparamsv);
 	u#L[]=MatAVh4P2^-1*b;
 	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
+}
+EndMacro
+
+NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
+{
+	Vh4P2L [u#L, u#LY, u#LT, u#LP]; 
+	u#L[] = 0;
+	MatAVh4P2 = A;
+	
+	if (mpirank==0) {
+		b.resize(b.n + 1);
+		b(b.n - 1) = 0;
+	}
+		
+	varf Lagrange([uu,uuY,uuT,uuP],[v,vY,vT,vP]) = intN(ThL)(vP) +on(suelo,paredd,paredi,techo, uu=0., uuY=0.)
+			   +on(paredi, uuT=0.) +on(paredd, uuT=0.);;
+			   
+	varf LagrangeT([uu,uuY,uuT,uuP],[v,vY,vT,vP]) = intN(ThL)(vP) ;
+			   
+			   		   
+	real[int] Lag = Lagrange(0,Vh4P2L, tgv=-1);
+	real[int] LagT = LagrangeT(0, Vh4P2L);
+	real[int] pLag, pLagT;
+	ChangeNumbering(MatAVh4P2, Lag, pLag);
+	ChangeNumbering(MatAVh4P2, LagT, pLagT);
+
+	Mat MatLPS = [[MatAVh4P2,pLag], [pLagT',1]];
+	
+	// Vh4P2L [uu#L, uu#LY, uu#LT, uu#LP] = [1.0, 1.0, 1.0, 2.0];
+	real[int] Fields(MatLPS.n);
+	Fields = 1.0;
+	if (mpirank==0){
+		Fields(Fields.n - 1) = 2.0;
+	}
+		
+    string[int] names(2);
+    names[0] = "NS";
+    names[1] = "Lagrange";
+	// names[2] = "Lagrange";
+	
+	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
+	 set(MatLPS, sparams=sparamsv, fields=Fields, names=names);
+	
+	real[int] solLPS = MatLPS^-1*b;
+
+	//u#L[] = 0.;
+	u#L[] = solLPS(0: Vh4P2L.ndof -1);
+	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
+
 }
 EndMacro
 
