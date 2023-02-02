@@ -1,0 +1,46 @@
+Computation of Sobolev embedding constant
+Scalar products
+Prodesc EIM
+Smago done, lets go to LPS
+RHS pesc
+Matrices offline
+Convection matrix
+Smago matrix
+Stab matrix
+EIM matrix
+RHS
+Start Greedy Algorithm
+----Reynolds= 1000-----------
+31	
+	  0	  0	89.9578221	  0	  0
+	  0	89.96681924	  0	  0	  0
+	  0	  0	  0	  0	  0
+	  0	  0	  0	  0	  0
+	  0	  0	  0	  0	  0
+	  0	  0	  0	  0	  0
+	  0	
+2 2	
+	 -nan   0
+	   0   0
+	
+2	
+	-nan	-nan	
+-nan != -nan diff -nan => Sorry error in Optimization (q) add:  int2d(Th,optimize=0)(...)
+ remark if you add  (..  ,   optimize=2) then  you remove this check (be carefull); 
+  current line = 20 mpirank 0 / 1
+Exec error : In Optimized version 
+   -- number :1
+Exec error : In Optimized version 
+   -- number :1
+ err code 8 ,  mpirank 0
+-------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code.. Per user-direction, the job has been aborted.
+-------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun detected that one or more processes exited with non-zero status, thus causing
+the job to be terminated. The first process to do so was:
+
+  Process name: [[4194,1],0]
+  Exit code:    8
+--------------------------------------------------------------------------

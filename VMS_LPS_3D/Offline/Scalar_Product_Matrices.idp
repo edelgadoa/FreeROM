@@ -49,18 +49,18 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
 	int contS = 0; 
 	for (int s=0; s<Mbases; s++){
-		if(mpirank==contS%mpisize){ //Si lo pongo para que lo haga en paralelo, me da un segmentation fault
+		//if(mpirank==contS%mpisize){ //Si lo pongo para que lo haga en paralelo, me da un segmentation fault
 			// Matrices Smago
 			varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
 			SmagoPEM[s] = SmagoPE(Vh3P2, Vh3P2);
-		}
+		//}
 		contS++;
 	}
 	
 	mpi(cout<<"Smago done, lets go to LPS"<<endl;)
 	contS = 0;
 	for (int s=0; s<Taubases; s++){
-		if(mpirank==contS%mpisize){
+		//if(mpirank==contS%mpisize){
 			// Matrices LPS
 			varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
 			matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
@@ -75,7 +75,7 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 			}
 			StabPPEM[s] = FiltroX + FiltroY;
 			StabPPEM[s] += FiltroZ;
-		}
+		//}
 		contS++;
 	}
 }
