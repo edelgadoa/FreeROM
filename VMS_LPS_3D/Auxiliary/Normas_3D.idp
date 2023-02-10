@@ -11,10 +11,12 @@ func real innerprodX(real[int] &u, real[int] &v, matrix &X){
 	return result;
 }
 
-func real innerprodX(real[int] &u, real[int] &v, Mat &X){
+func real innerprodX(real[int] &u, real[int] &v, Mat &X){ 
 	real[int] aux;
-	MatMult(X, v ,aux)
-	real result = u'*aux;
+	MatMult(X, v ,aux);
+	real resultL = u'*aux;
+	real result;
+	mpiAllReduce(result, resultL, mpiCommWorld, mpiSUM);
 	return result;
 }
 

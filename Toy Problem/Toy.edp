@@ -1,0 +1,56 @@
+load "msh3"
+load "PETSc"
+load "lapack"
+// verbosity = 0;
+
+macro dimension()3 //
+
+include "macro_ddm.idp"
+
+mesh3 Th = cube(30,30,30);
+int Nbases = 50;
+
+buildDmesh(Th);
+
+fespace Vh(Th, P2);
+
+Vh[int] BaseV(Nbases);
+Vh[int] BSmago(Nbases);
+
+for (int s=0; s<Nbases;s++){
+	BaseV[s] = randreal1();
+	BSmago[s] = randreal1();
+}
+
+Mat[int] SmagoPEM(Nbases);
+
+createMat(Th, SmagoPEM[0], P2);  //only for the first matrix of the array
+
+for (int s=0; s<Nbases; s++){
+	varf VSmago(u,v) = int3d(Th)(hTriangle*BSmago[s]*u*v);
+	if (s!=0){
+		matrix TMP = VSmago(Vh,Vh);
+		Mat TMP2(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+		SmagoPEM[s] = TMP2; 
+	}
+	else{
+		SmagoPEM[s] = VSmago(Vh,Vh);
+	}
+}
+
+real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
+real[int,int] BaseV2D(Vh.ndof, Nbases);
+for (int s=0;s<Nbases;s++){
+	BaseV2D(:,s) = BaseV[s][];
+}
+ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
+
+
+real[int,int] TEMP(0,0);
+MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
+real[int, int] TBaseV2D = BaseVMPI';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);
