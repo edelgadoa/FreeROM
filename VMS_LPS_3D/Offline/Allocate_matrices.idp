@@ -21,8 +21,8 @@ for (int i=0;i<Mbases;i++){
 	GradPM[i] = Aux(0:8,0:Nbases-1);
 }
 
-/*
-//Definicion de los arrays para calcular el tauk en el EIM de Tau
+
+//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO TENGO QUE VER LA NUMERACION
 real[int,int][int] NUK(Taubases), NGUK(Taubases);
 for (int i=0; i<Taubases; i++){
 	real [int,int] Aux (Nbases+1,Nbases+1);
@@ -39,7 +39,7 @@ for (int i=0; i<Taubases; i++){
 	real[int] nggk = Ngradgk(0,VhP0); 
 	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);
-}*/
+}
 
 // Definicion de las Matrices Reducidas fijas
 real[int,int] DiffRB(2*Nbases, 2*Nbases), DivPRB(2*Nbases, 2*Nbases), PenRB(2*Nbases, 2*Nbases), 

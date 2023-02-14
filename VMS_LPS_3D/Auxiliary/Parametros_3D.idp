@@ -12,7 +12,7 @@ include "macro_ddm.idp";
 load "PETSc";
 Mat MatAVh4P2;
 Mat MatAVh3P2;
-int[int] mapVh4P2, mapVhP1dc;
+int[int] mapVh4P2, mapVhP1dc, mapVhP0;
 
 string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
 
@@ -23,7 +23,8 @@ if(petsc){
 	macro ThLN2O() myN2o // EOM
 	buildDmesh(ThL);
 	mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);  
-	mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);  
+	mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
+	mapVhP0 = restrict(VhP0L, VhP0, myN2o);  
 	{
 		macro def(i) [i, iY, iZ, iP] //
 		macro init(i) [i, i, i, i] // EOM

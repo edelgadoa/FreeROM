@@ -116,33 +116,33 @@ VhP2L uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
 VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
 
 
-// if (search(ReSnapshots, Refijo, 1.e-9)==-1){
-// 	// Si no lo he calculado todavía, lo calculo
-// 	Reynolds = Refijo;
-// 	include "../FOM/FE_VMS_LPS_3D.idp"
-//
-// 	uFijo = uEF + Lev;
-// 	uFijoY = uEFY + LevY;
-// 	uFijoZ = uEFZ + LevZ;
-// }
-// else{
-// 	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
-// 	uFijo[] = SolX;
-// 	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
-// 	uFijoY[] = SolY;
-// 	readvector("../Snapshots/Vz_" + Refijo + ".txt", real, SolZ, 0);
-// 	uFijoZ[] = SolZ;
-//
-// 	uFijo = uFijo + Lev;
-// 	uFijoY = uFijoY + LevY;
-// 	uFijoZ = uFijoZ + LevZ;
-//
-// }
+if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+	// Si no lo he calculado todavía, lo calculo
+	Reynolds = Refijo;
+	include "../FOM/FE_VMS_LPS_3D.idp"
+
+	uFijo = uEF + Lev;
+	uFijoY = uEFY + LevY;
+	uFijoZ = uEFZ + LevZ;
+}
+else{
+	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
+	uFijo[] = SolX;
+	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
+	uFijoY[] = SolY;
+	readvector("../Snapshots/Vz_" + Refijo + ".txt", real, SolZ, 0);
+	uFijoZ[] = SolZ;
+
+	uFijo = uFijo + Lev;
+	uFijoY = uFijoY + LevY;
+	uFijoZ = uFijoZ + LevZ;
+
+}
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices.idp"
 
-/*
+
 for (int i=0; i<Nbases; i++){
 	
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
@@ -191,7 +191,7 @@ for (int i=0; i<Nbases; i++){
 	VhP2 UL, ULY, ULZ;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
 	
-	// include "GramSchmidt.idp"
+	include "GramSchmidt.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
@@ -199,20 +199,20 @@ for (int i=0; i<Nbases; i++){
 
 
 	// Actualizo las soluciones filtradas
-	FBaseV[i][] = IPh3P23P1 * BaseV[i][];
+	FBaseV[i][] = IPh3P23P1L * BaseV[i][];
 	
-	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][]; 
+	FBaseVel[i][] = IPhP2P1L*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1L*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1L*BaseVelZ[i][]; 
 	
-	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
-	FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
-	FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	FVdX[i][] = DXP2L*FBaseVel[i][]; FVdY[i][] = DYP2L*FBaseVel[i][]; FVdZ[i][] = DZP2L*FBaseVel[i][];
+	FVYdX[i][] = DXP2L*FBaseVelY[i][]; FVYdY[i][] = DYP2L*FBaseVelY[i][]; FVYdZ[i][] = DZP2L*FBaseVelY[i][];
+	FVZdX[i][] = DXP2L*FBaseVelZ[i][]; FVZdY[i][] = DYP2L*FBaseVelZ[i][]; FVZdZ[i][] = DZP2L*FBaseVelZ[i][];
 	
-	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
+	FPdX[i][] = IPhDXP2L*BaseP[i][]; FPdY[i][] = IPhDYP2L*BaseP[i][];
 	
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
-	ConvPEM[i] = ConvPE(Vh3P2, Vh3P2);
+	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
+	ConvPEM[i] = ConvPE(Vh3P2L, Vh3P2L);
 	
 	// Construyo las matrices
 	include "MatricesOffline.idp"
@@ -233,4 +233,4 @@ for (int i=0; i<Nbases; i++){
 	}
 }
 
-*/
+
