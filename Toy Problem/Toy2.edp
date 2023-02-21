@@ -1,0 +1,79 @@
+load "msh3"
+load "PETSc"
+load "lapack"
+// verbosity = 0;
+
+macro dimension()3 //
+
+include "macro_ddm.idp"
+
+macro Div(U) (dx(U) + dy(U#Y) + dz(U#Z)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
+					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
+					 + dx(U#Z)*dx(V#Z) + dy(U#Z)*dy(V#Z) + dz(U#Z)*dz(V#Z)) //EOM
+
+macro UGradV(U,V)  [[U, U#Y, U#Z]'*[dx(V),   dy(V),   dz(V)], 
+				    [U, U#Y, U#Z]'*[dx(V#Y), dy(V#Y), dz(V#Y)],
+				    [U, U#Y, U#Z]'*[dx(V#Z), dy(V#Z), dz(V#Z)]] //EOM
+				   
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y, W#Z]) //EOM
+macro UGradT(U,temp) ([U, U#Y, U#Z]'*Grad(temp)) //EOM
+macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
+macro MOD(U) (sqrt(U#dX^2 + U#dY^2 + U#dZ^2 + 
+				   U#YdX^2 + U#YdY^2 + U#YdZ^2 +
+				   U#ZdX^2 + U#ZdY^2 + U#ZdZ^2)) //EOM
+macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+
+
+mesh3 Th = cube(32,32,32);
+int Nbases = 100;
+
+buildDmesh(Th);
+func Pk = [P2, P2, P2];
+fespace Vh(Th, Pk);
+fespace VhP1dc(Th, P1dc);
+
+Vh[int] [BaseV, BaseVY, BaseVZ](Nbases);
+VhP1dc[int] BSmago(Nbases);
+
+for (int s=0; s<Nbases;s++){
+	BaseV[s][] = randreal1();
+	BSmago[s] = randreal1();
+}
+
+Mat[int] SmagoPEM(Nbases);
+
+{
+	macro def(u) [u, u#Y, u#Z] //
+	macro init(i) [i, i, i]// 
+	createMat(Th, SmagoPEM[0], Pk);  //only for the first matrix of the array
+}
+
+for (int s=0; s<Nbases; s++){
+	varf VSmago([u,uY,uZ],[v,vY,vZ]) = int3d(Th)(0.1*hTriangle*BSmago[s]*GradUGradV(u,v));
+	if (s!=0){
+		matrix TMP = VSmago(Vh,Vh);
+		Mat TMP2(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+		SmagoPEM[s] = TMP2; 
+	}
+	else{
+		SmagoPEM[s] = VSmago(Vh,Vh);
+	}
+}
+
+real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
+real[int,int] BaseV2D(Vh.ndof, Nbases);
+for (int s=0;s<Nbases;s++){
+	BaseV2D(:,s) = BaseV[s][];
+}
+ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
+
+
+real[int,int] TEMP(0,0);
+MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
+real[int, int] TBaseV2D = BaseVMPI';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);

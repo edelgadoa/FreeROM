@@ -19,10 +19,10 @@
 
 
 // Matrices de filtrado. 
-matrix IPhP2P1L, IPh4P24P1L, IPhP1dcP1L;
+matrix IPhP2P1L, IPh4P24P1L, IPhP1dcP1L, IPh3P23P1L;
 
 {
-		matrix IdP2L,Id4P2L,IdP1dcL,IdP1L; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
+		matrix IdP2L,Id4P2L,IdP1dcL,IdP1L,Id3P2L; // IdEFX: Matriz Identidad con dim(EFX) grados de libertad
 		{
 			VhP2L faux2=1.;
 			VhP1dcL faux1=1.;
@@ -30,6 +30,7 @@ matrix IPhP2P1L, IPh4P24P1L, IPhP1dcP1L;
 			IdP1dcL = faux1[];
             VhP1L fauxp1 = 1.;
             IdP1L = fauxp1[];
+			Id3P2L=[[IdP2L, 0, 0],[0, IdP2L, 0],[0, 0, IdP2L]];
 			Id4P2L=[[IdP2L, 0, 0, 0],[0, IdP2L, 0, 0],[0, 0, IdP2L, 0],[0, 0, 0, IdP2L]]; 
 		}
 		
@@ -42,6 +43,11 @@ matrix IPhP2P1L, IPh4P24P1L, IPhP1dcP1L;
 		matrix IP=interpolate(VhP2L,VhP1L);
 		matrix IPPI=IP*PI;
 		IPhP2P1L = IdP2L + (-1.)*IPPI;  // (Id-πh) P2->P1->P2 
+		
+		matrix PI3=interpolate(Vh3P1L,Vh3P2L);
+		matrix IP3=interpolate(Vh3P2L,Vh3P1L);
+		matrix IPPI3=IP3*PI3;
+		IPh3P23P1L = Id3P2L + (-1)*IPPI3; // (Id-πh) 3P2->3P1->3P2
 		
 		matrix PI4=interpolate(Vh4P1L,Vh4P2L);
 		matrix IP4=interpolate(Vh4P2L,Vh4P1L);
@@ -118,3 +124,17 @@ matrix D1Z4P2L, D2Z4P2L, D3Z4P2L, D4Z4P2L; // ∂z 4P2 -> P1dc en la componente 
 matrix IPhD4X4P2L = IPhP1dcP1L * D4X4P2L; // (I-πh) de ∂x componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Y4P2L = IPhP1dcP1L * D4Y4P2L; // (I-πh) de ∂y componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Z4P2L = IPhP1dcP1L * D4Z4P2L; // (I-πh) de ∂z componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
+
+
+matrix IPhDXP2L = IPhP1dcP1L * DXP2L; // (I-πh) de ∂x (P2 -> Derivo componente X -> P1dc (filtro) -> P1 -> P1dc) 
+matrix IPhDYP2L = IPhP1dcP1L * DYP2L; // (I-πh) de ∂y (P2 -> Derivo componente Y -> P1dc (filtro) -> P1 -> P1dc)   
+matrix IPhDZP2L = IPhP1dcP1L * DZP2L; // (I-πh) de ∂z (P2 -> Derivo componente Z -> P1dc (filtro) -> P1 -> P1dc)  
+
+// Matrices filtrado, con derivada (∂x((I-πh u)))
+matrix DXP2IPhL = DXP2L * IPhP2P1L;
+matrix DYP2IPhL = DYP2L * IPhP2P1L;
+matrix DZP2IPhL = DZP2L * IPhP2P1L;
+
+matrix DX4P2IPhL = DX4P2L * IPh4P24P1L;
+matrix DY4P2IPhL = DY4P2L * IPh4P24P1L;
+matrix DZ4P2IPhL = DZ4P2L * IPh4P24P1L;

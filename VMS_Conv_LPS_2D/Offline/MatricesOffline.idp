@@ -13,40 +13,40 @@ include "Allocate_matrices_local.idp"
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 int contFF = 0; // Contador para el paralelo
 for (int j=0; j<=i; j++){
-	if (mpirank==contFF%mpisize){
+	//if (mpirank==contFF%mpisize){
 		// Matrices
-		DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
-		DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
-		PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
-		ConvLevRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
-		DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+		DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
+		DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+		PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+		ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+		DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
 		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 		
 		if (j<i){
-			DiffRBL(j,i) = DiffRBL(i,j);
-			DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
-			PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
-			ConvLevRBL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
-			DTRBL(j,i) = DTRBL(i,j);
+			DiffRB(j,i) = DiffRB(i,j);
+			DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+			PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
+			ConvLevRB(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
+			DTRB(j,i) = DTRB(i,j);
 			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
-	}
-	contFF++;
+		//}
+	//contFF++;
 }
 pause;
 
-mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
-DiffRB += DiffRBG;
-DivPRB += DivPRBG;
-PenRB += PenRBG;
-ConvLevRB += ConvLevRBG;
-DTRB += DTRBG;
+// DiffRB += DiffRBG;
+// DivPRB += DivPRBG;
+// PenRB += PenRBG;
+// ConvLevRB += ConvLevRBG;
+// DTRB += DTRBG;
 // StabhkRB += StabhkRBG;
 
 // Comienzo el bucle para la construcción de los tensores
@@ -54,93 +54,106 @@ DTRB += DTRBG;
 // Conveccion
 
 for (int s=0; s<=i; s++){
-	real[int, int] CintL(2*Nbases, 2*Nbases), CintG(2*Nbases, 2*Nbases);
-	CintL = 0; CintG = 0;
+	real[int, int] Cint(2*Nbases, 2*Nbases);
+	Cint = 0;
 	contFF = 0;
 	for (int j=0; j<=i; j++){
-		if (mpirank==contFF%mpisize){
-			CintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+		//if (mpirank==contFF%mpisize){
+			Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
 			if(j<i){
-				CintL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+				Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
 			}
 			if (s==i && (j!=i)){
 				for (int k=0; k<s; k++){
-					CintL(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
+					Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
 				}
 			} 
-		}
-		contFF++;		
+			//}
+		//contFF++;		
 	}
-	pause;
-	mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
+	//pause;
+	//mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
 	
-	ConvRB[s] += CintG;
+	ConvRB[s] = Cint;
 }
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-	real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
-	SintL = 0; SintG = 0;
-	contFF = 0;
+	real[int, int] Sint(2*Nbases, 2*Nbases); //, SintG(2*Nbases, 2*Nbases);
+	Sint = 0; // SintG = 0;
+	// contFF = 0;
 	for (int j=0; j<=i; j++){
-		if (mpirank==contFF%mpisize){
-			SintL(i,j) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
+		// if (mpirank==contFF%mpisize){
+			Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); //int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
 			if(j<i){
-				SintL(j,i) = SintL(i,j);
+				Sint(j,i) = Sint(i,j);
 			}
-		}
-		contFF++;		
+			//}
+		//contFF++;		
 	}
-	pause;
-	mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
-	SmagoRB[s] += SintG;
+	// pause;
+	// mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);
+	SmagoRB[s] = Sint;
 }
 
 
 
 // LPS
 for (int s=0; s<Taubases; s++){
-	real[int, int] LPSintL(2*Nbases, 2*Nbases), LPSintG(2*Nbases, 2*Nbases);
-	LPSintL = 0; LPSintG = 0;
+	real[int, int] LPSint(2*Nbases, 2*Nbases); //LPSintG(2*Nbases, 2*Nbases);
+	LPSint = 0; //LPSintG = 0;
 	contFF = 0;
 	for (int j=0; j<=i; j++){
-		if (mpirank==contFF%mpisize){
-			LPSintL(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+		//if (mpirank==contFF%mpisize){
+			LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
 			if(j<i){
-				LPSintL(j + Nbases,i + Nbases) = LPSintL(i + Nbases,j + Nbases);
+				LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
 			}
-		}
-		contFF++;		
+			//}
+		//contFF++;		
 	}
-	pause;
-	mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
+	//pause;
+	//mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
 	
-	StabPRB[s] += LPSintG;
+	StabPRB[s] = LPSint;
 }
 
 
 // LPS Conveccion
 for (int s=0; s<Taubases; s++){
+	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
+	LPSCLLint = 0;
 	for (int ui=0; ui<Nbases; ui++){
+		real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
+		LPSCULint = 0;	LPSCLUint = 0;
 		for (int uj=0; uj<Nbases; uj++){
-			real[int, int] LPSCUUintL(2*Nbases, 2*Nbases), LPSCUUintG(2*Nbases, 2*Nbases);
-			LPSCintL = 0; LPSCintG = 0;
+			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
+			LPSCUUint = 0;// LPSCintG = 0;
 			contFF = 0;
 			for (int j=0; j<=i; j++){
-				if (mpirank==contFF%mpisize){
-					LPSCUUintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+				//if (mpirank==contFF%mpisize){
+					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+					LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
+					LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
+					LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
 					if(j<i){
-						LPSCUUintL(j,i) = LPSCUUintL(i,j)
+						LPSCUUint(j,i) = LPSCUUint(i,j);
+						LPSCULint(j,i) = LPSCULint(i,j);
+						LPSCLUint(j,i) = LPSCLUint(i,j);
+						LPSCLLint(j,i) = LPSCLLint(i,j);
 					}
-				}
+					//}
 				contFF++;
 			}
-			pause;
-			mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
+			//pause;
+			//mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
 			
-			StabCRB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUintG;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUint;
 		}
+		StabCLURB[s + ui*Taubases] +=  LPSCLUint;
+		StabCULRB[s + ui*Taubases] +=  LPSCULint;
 	}
+	StabCLLRB[s] +=  LPSCLLint;
 }
 	
 

@@ -113,4 +113,4 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 	rhok0 = rhok1;
 }
 
-real CSobolev = rhok1;
+CSobolev = rhok1;

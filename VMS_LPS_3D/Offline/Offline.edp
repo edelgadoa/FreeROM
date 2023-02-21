@@ -61,12 +61,12 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 ////DEFINICION DE LOS ESPACIOS DE BR//////
 //////////////////////////////////////////
 
-VhP2[int] BaseP(Nbases);
-Vh3P2[int] [BaseV, BaseVY, BaseVZ](Nbases);
+VhP2L[int] BaseP(Nbases);
+Vh3P2L[int] [BaseV, BaseVY, BaseVZ](Nbases);
 
-VhP2[int] BaseVel(Nbases);
-VhP2[int] BaseVelY(Nbases);
-VhP2[int] BaseVelZ(Nbases);
+VhP2L[int] BaseVel(Nbases);
+VhP2L[int] BaseVelY(Nbases);
+VhP2L[int] BaseVelZ(Nbases);
 
 Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
@@ -79,10 +79,11 @@ VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
 VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
-real[int, int] MBaseV(Vh3P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+real[int, int] MBaseV(Vh3P2L.ndof, Nbases), MBaseP(VhP2L.ndof, Nbases);
 
 /////////////////////////////////////////
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
+mpi(cout<<"EIM DATA"<<endl;)
 include "EIM_Data.idp"
 
 
@@ -93,6 +94,7 @@ readvector("../RBF/gammaI.txt", real, gammaI, 0);
 
 // Inicializo las matrices para la fase offline
 include "Allocate_matrices.idp"
+mpi(cout<<"matrices alocadas"<<endl;)
 
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
@@ -101,25 +103,29 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
-mpi(cout<<"Computation of Sobolev embedding constant"<<endl;)
-include "Sobolev_3D.idp"
+
+
+real CSobolev;
+// include "Sobolev_3D.idp"
+mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
 
-VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT
-VhP1dc uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
 
-Vh4P2 [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el Re_fijo
-VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+VhP2L uFijo, uFijoY, uFijoZ; //Para la normaT
+VhP1dcL uFijodX, uFijodY, uFijodZ, uFijoYdX, uFijoYdY, uFijoYdZ, uFijoZdX, uFijoZdY, uFijoZdZ;
+
+Vh4P2L [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2L uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
 
 
 if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	// Si no lo he calculado todavía, lo calculo
 	Reynolds = Refijo;
-	include "../FOM/FE_VMS_LPS_3D.idp"	
-	
+	include "../FOM/FE_VMS_LPS_3D.idp"
+
 	uFijo = uEF + Lev;
 	uFijoY = uEFY + LevY;
 	uFijoZ = uEFZ + LevZ;
@@ -135,7 +141,7 @@ else{
 	uFijo = uFijo + Lev;
 	uFijoY = uFijoY + LevY;
 	uFijoZ = uFijoZ + LevZ;
-	
+
 }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
@@ -191,8 +197,11 @@ for (int i=0; i<Nbases; i++){
 	VhP2 UL, ULY, ULZ;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
 	
-	// include "GramSchmidt.idp"
+	mpi(cout<<"GramSchmidt"<<endl;)
+	include "GramSchmidt.idp"
 	
+	
+
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseP(:,i) = BaseP[i][];
@@ -211,9 +220,14 @@ for (int i=0; i<Nbases; i++){
 	
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
-	ConvPEM[i] = ConvPE(Vh3P2, Vh3P2);
+	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
+	{
+		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
+		Mat ConvTemp = TMP;
+		ConvPEM[i] = ConvTemp; 
+	}
 	
+	mpi(cout<<"Matrices Offline"<<endl;)
 	// Construyo las matrices
 	mpi(cout<<"Matrices offline"<<endl;)
 	include "MatricesOffline.idp"

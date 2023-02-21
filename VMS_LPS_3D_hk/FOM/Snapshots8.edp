@@ -1,0 +1,122 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+verbosity = 0;
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../../Auxiliary/Macros_3D.idp"
+include "../../Auxiliary/IO.idp" 
+include "../../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../../Mallas/CuboNxNyNz.idp"
+
+real paredes = 1;
+real techo = 2; //para las condiciones de contorno
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_3D.idp"
+
+// Definimos los parametros a usar
+include "Parametros_3D.idp"
+
+
+// Incluimos el levantamiento
+include "Levantamiento_3D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_3D.idp"
+include "Interp_matrix_NoStab_VP_3D_Local.idp"
+
+// Incluimos funciones para calcular normas
+include "../../Auxiliary/Normas.idp"
+
+//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+int nSnapshots = 4; // numero de Snapshots que voy a querer calcular 
+real[int] vReynolds(nSnapshots);
+
+
+Remin = 4950;
+Remax = 5100;
+for(int i=0; i<nSnapshots; i++){
+	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
+}
+
+mpi(cout<<vReynolds<<endl;)
+// Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
+
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 3D//
+/////////////////////////////////////////////
+
+Vh4P2 [uEF, uEFY, uEFZ, uEFP];
+Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+VhP2 SnapX, SnapY, SnapZ;
+VhP2 SnapP;
+
+readvector("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", real, ReSnapshots, 0);
+
+for (int i=0; i<nSnapshots; i++){
+
+	Reynolds = vReynolds(i);
+	mpi(cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;)
+	
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		real TFE = clock();
+		include "FE_VMS_LPS_3D.idp"
+        
+        //VhP2 medP = 1, uEFpres;
+        //medP[] *= intN(Th)(uEFP);
+        
+		//uEFpres = uEFP - medP;
+        // uEFP = uEFP - medP; // Media de la presion cero
+        // mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+
+        //mpi(cout<<"Media presion: "<<intN(Th)(uEFP)<<endl;)
+
+        
+		TFE = clock() - TFE;
+		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<endl;)
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+		
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+
+		SnapX = uEF;
+		SnapY = uEFY;
+		SnapZ = uEFZ;
+		SnapP = uEFP;
+	
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);		
+		write("../../Snapshots/VMS_Smago_LPS_pres_3D/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		
+		Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
+		uEFL[] = uEF[] + Lev[];
+		
+        
+		int[int] fforder=[1,1,1,1];
+		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFL, uEFLY, uEFLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
+		
+		real mediaP = intN(Th)(uEFP);
+		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
+	}
+}

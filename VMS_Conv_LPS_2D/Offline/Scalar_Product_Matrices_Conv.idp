@@ -11,7 +11,7 @@ for (int s=0; s<Taubases; s++){
 	
 	VhP1dc Levdc = Lev; 
 	VhP1dc LevYdc = LevY;
-	matrix LEVdc = Levdc[]; matrix LEVYdc[] = LevYdc[];
+	matrix LEVdc = Levdc[]; matrix LEVYdc = LevYdc[];
 	
 	
 	matrix ConvUUX, ConvUUY, ConvULX, ConvULY, ConvLUX, ConvLUY, ConvLLX, ConvLLY;
@@ -29,10 +29,10 @@ for (int s=0; s<Taubases; s++){
 		IPhLD2 = IPhP1dcP1 * LD2;
 		
 		ConvLLX = SCPEM * IPhLD1;
-		ConvLLX = IPhLD1 * ConvLLX;
+		ConvLLX = (IPhLD1')* ConvLLX;
 		
 		ConvLLY = SCPEM * IPhLD2;
-		ConvLLY = IPhLD2 * ConvLLY;
+		ConvLLY = (IPhLD2')* ConvLLY;
 	}
 	
 	StabCLLPEM[s] = ConvLLX + ConvLLY;
@@ -57,16 +57,16 @@ for (int s=0; s<Taubases; s++){
 			IPhUiD2 = IPhP1dcP1 * UD2i;
 			
 			ConvLUX = SCPEM * IPhLD1;
-			ConvLUX = IPhUiD1 * ConvLUX;
+			ConvLUX = (IPhUiD1') * ConvLUX;
 		
 			ConvULX = SCPEM * IPhUiD1;
-			ConvULX = IPhLD1 * ConvLUX;
+			ConvULX = (IPhLD1') * ConvULX;
 			
 			ConvLUY = SCPEM * IPhLD2;
-			ConvLUY = IPhUiD2 * ConvLUY;
+			ConvLUY = (IPhUiD2') * ConvLUY;
 		
 			ConvULY = SCPEM * IPhUiD2;
-			ConvULY = IPhLD2 * ConvLUY;		
+			ConvULY = (IPhLD2') * ConvULY;		
 		}
 
 		StabCULPEM[s + ui*Taubases] = ConvULX + ConvULY;
@@ -89,16 +89,18 @@ for (int s=0; s<Taubases; s++){
 				
 				matrix UXD2Xj = BVdcj * D2X3P2;
 				matrix UYD2Yj = BVYdcj * D2Y3P2;
-				matrix UD2j = UXD2Xj + UYD2Yij;
+				matrix UD2j = UXD2Xj + UYD2Yj;
 				IPhUjD2 = IPhP1dcP1 * UD2j;
 				
 				ConvUUX = SCPEM * IPhUjD1;
-				ConvUUX = IPhUiD1 * ConvUUX;
+				ConvUUX = (IPhUiD1') * ConvUUX;
 				
 				ConvUUY = SCPEM * IPhUjD2;
-				ConvUUY = IPhUiD2 * ConvUUY;				
+				ConvUUY = (IPhUiD2') * ConvUUY;				
 			}
 			StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases] = ConvUUX + ConvUUY;								
 		}
 	}		
 }
+
+mpi(cout<<"Matr scalar product conv Done"<<endl;)

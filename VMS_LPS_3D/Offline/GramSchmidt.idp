@@ -7,7 +7,7 @@
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-real[int, int] MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
+real[int, int] MBasePi = MBaseP(0:VhP2L.ndof-1, 0:i-1);
 
 BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
@@ -17,7 +17,7 @@ BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 ////////////////////////////////////////////
 
 
-real[int,int] MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:i-1);
+real[int,int] MBaseVi = MBaseV(0:Vh3P2L.ndof-1, 0:i-1);
 
 BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 

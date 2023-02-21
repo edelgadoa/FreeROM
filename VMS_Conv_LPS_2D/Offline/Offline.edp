@@ -33,7 +33,7 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "../FOM/Parametros_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
 include "../FOM/Levantamiento.idp"

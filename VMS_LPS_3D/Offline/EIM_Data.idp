@@ -8,16 +8,20 @@ readvector("../EIM/EIM_LPS/Bases_EIM/muEIM_LPS.txt", real, muEIMTau, 0);
 int Mbases = muEIM.n;
 int Taubases = muEIMTau.n;
 
-VhP1dc[int] EIMSmago(Mbases);
-VhP0[int] EIMTau(Taubases);
+VhP1dcL[int] EIMSmago(Mbases);
+VhP0L[int] EIMTau(Taubases);
 
 
 //////////////////////////////////////////
 // Cargo los elementos del EIM SMAGO
 for (int i=0; i<Mbases; i++){
+	VhP1dc EIMSmagoG;
 	readvector("../EIM/EIM_VMSSmago/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
-	EIMSmago[i][] = BaseEIM; //Cargo la bases
+	EIMSmagoG[] = BaseEIM;
+	EIMSmago[i][] = EIMSmagoG[](mapVhP1dc); //Cargo la bases EN LOCAL
 }
+
+
 readmatrix("../EIM/EIM_VMSSmago/Bases_EIM/MatrizEIM_Smago.txt", real, MatrixEIMSmago, 0);
 readvector("../EIM/EIM_VMSSmago/Bases_EIM/TintEIM_Smago.txt", real, PuntosMSmago, 0);
 
@@ -30,8 +34,11 @@ set(MEIMS, solver= UMFPACK);
 
 for (int i=0; i<Taubases; i++){
 
+	VhP0 EIMTauG;
 	readvector("../EIM/EIM_LPS/Bases_EIM/Base_" + muEIMTau(i) + ".txt", real, BaseEIM, 0);
-	EIMTau[i][] = BaseEIM; //Cargo la bases
+	EIMTauG[] = BaseEIM;
+	EIMTau[i][] = EIMTauG[](mapVhP0); //Cargo la bases EN LOCAL
+
 
 }
 
