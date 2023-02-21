@@ -18,14 +18,18 @@ VhP2L GzeroP2 = 0.;
 [LevV, LevVY, LevVZ] = [GP2, GzeroP2, GzeroP2];
 
 // Filtro el levantamiento y lo derivo
-VhP1dcL FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
+VhP1dcL FLevdXL, FLevdYL, FLevdZL, FLevYdXL, FLevYdYL, FLevYdZL, FLevZdXL, FLevZdYL, FLevZdZL;
 
 {
-	FLevdX[] = DXP2IPhL * GP2[]; FLevdY[] = DYP2IPhL * GP2[]; FLevdZ[] = DZP2IPhL * GP2[];
-	FLevYdX[] = DXP2IPhL * GzeroP2[]; FLevYdY[] = DYP2IPhL * GzeroP2[]; FLevYdZ[] = DZP2IPhL * GzeroP2[];
-	FLevZdX[] = DXP2IPhL * GzeroP2[]; FLevZdY[] = DYP2IPhL * GzeroP2[]; FLevZdZ[] = DZP2IPhL * GzeroP2[];
+	FLevdXL[] = DXP2IPhL * GP2[]; FLevdYL[] = DYP2IPhL * GP2[]; FLevdZL[] = DZP2IPhL * GP2[];
+//	FLevYdXL[] = DXP2IPhL * GzeroP2[]; FLevYdYL[] = DYP2IPhL * GzeroP2[]; FLevYdZL[] = DZP2IPhL * GzeroP2[];
+//	FLevZdXL[] = DXP2IPhL * GzeroP2[]; FLevZdYL[] = DYP2IPhL * GzeroP2[]; FLevZdZL[] = DZP2IPhL * GzeroP2[];
 }
 
+VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
+Local2Global(FLevdX, MatAVhP1dc.D, mapVhP1dc);
+Local2Global(FLevdY, MatAVhP1dc.D, mapVhP1dc);
+Local2Global(FLevdZ, MatAVhP1dc.D, mapVhP1dc);
 
 // Levantamiento filtrado
 Vh3P2L [FLev, FLevY, FLevZ];

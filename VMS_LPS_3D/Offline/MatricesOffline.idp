@@ -6,32 +6,31 @@
 
 
 // Inicializo las matrices locales para el paralelo
-// include "Allocate_matrices_local.idp"
-
+include "Allocate_matrices_local.idp"
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 for (int j=0; j<=i; j++){
-		// Matrices
-		DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
-		DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
-		PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
-		ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
-		DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
-		// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+
 		
-		if (j<i){
-			DiffRB(j,i) = DiffRB(i,j);
-			DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
-			PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
-			ConvLevRB(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
-			DTRB(j,i) = DTRB(i,j);
-			// StabhkRB(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
-		}	
+	// Matrices
+	DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
+	DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+	PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+	ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
+	DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+	
+	if (j<i){
+		DiffRB(j,i) = DiffRB(i,j);
+		DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+		PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
+		ConvLevRB(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
+		DTRB(j,i) = DTRB(i,j);
+		// StabhkRB(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
+	}	
 
 }
 
-cout<<DiffRB<<endl;
-pause;
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
@@ -40,7 +39,7 @@ pause;
 // mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
-// DiffRB += DiffRBG;
+//DiffRB += DiffRBG;
 // DivPRB += DivPRBG;
 // PenRB += PenRBG;
 // ConvLevRB += ConvLevRBG;
@@ -66,8 +65,6 @@ for (int s=0; s<=i; s++){
 		} 
 	
 	}
-	// pause;
-	// mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
 	
 	ConvRB[s] += Cint;
 }
