@@ -103,9 +103,13 @@ Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para reso
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
+
+
 real CSobolev;
 // include "Sobolev_3D.idp"
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
+
+
 
 
 VhP2L uFijo, uFijoY, uFijoZ; //Para la normaT
@@ -141,6 +145,7 @@ else{
 }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
+mpi(cout<<"Scalar products"<<endl;)
 include "Scalar_Product_Matrices.idp"
 
 
@@ -224,9 +229,11 @@ for (int i=0; i<Nbases; i++){
 	
 	mpi(cout<<"Matrices Offline"<<endl;)
 	// Construyo las matrices
+	mpi(cout<<"Matrices offline"<<endl;)
 	include "MatricesOffline.idp"
 		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
+	mpi(cout<<"Start Greedy Algorithm"<<endl;)
 	include "Greedy.idp"
 	
 	// Actualizo el nuevo Reynolds

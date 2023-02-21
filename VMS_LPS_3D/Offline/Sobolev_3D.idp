@@ -109,7 +109,7 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 	u0[] = autovec(1:autovec.n-1);
 	// plot(defVel(u0),value=1,wait=1);
 	CSerror = abs((rhok1-rhok0)/rhok1);
-	// cout << "PM: " << CSerror<< endl;
+ 	// mpi(cout << "PM: " << CSerror<< endl;)
 	rhok0 = rhok1;
 }
 
