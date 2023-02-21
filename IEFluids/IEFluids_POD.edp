@@ -1,0 +1,107 @@
+///////////////
+// FreeROM 
+/////////////// 
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack" // Eigenvalue problem solving
+include "IO.idp" // Para leer y guardar 
+
+// Defino algun macro que necesitare
+macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
+					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
+					 + dx(U#Z)*dx(V#Z) + dy(U#Z)*dy(V#Z) + dz(U#Z)*dz(V#Z)) //EOM
+
+int[int] fforder=[1,1,1,1];
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+include "IE2FF.idp"
+
+// Cargo las funciones para el calculo de productos escalares y normas
+include "Normas_3d.idp"
+
+mesh3 Th = readmesh3("IEfluids.mesh"); 
+
+fespace VhP1(Th, P1);
+fespace Vh3P1(Th, [P1,P1,P1]);
+
+varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(GradUGradV(u,v));
+matrix H1PEM = NormH1(Vh3P1, Vh3P1);
+
+varf NormL2(p,q) = int3d(Th)(p*q);
+matrix L2PEM = NormL2(VhP1, VhP1);
+
+
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+
+// Variables donde guardo los snapshots que cargo
+Vh3P1[int] [Vh,VhY,VhZ](Nsnap);
+VhP1[int] Ph(Nsnap);
+
+// Comienzo bucle de lectura de snapshots
+
+for (int NRe=1; NRe<=ReSnap; NRe++){
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+		cout<<"MEANFILE"<<NRe<<"/field_mean"<<NTemp<<endl;
+		ifstream ReadSnapshot("DATABASE/MEANFILE"+NRe+"/field_mean"+NTemp+".dat");
+		int mx=272, my = 88, mz=128; //Si cambio la malla estos valores hay que cambiarlos
+		real[int] Vx(mx*my*mz), Vy(mx*my*mz), Vz(mx*my*mz), Pp(mx*my*mz);
+		for (int i=0; i<mx*my*mz; i++){
+			ReadSnapshot>>Vx(i);
+			ReadSnapshot>>Vy(i);
+			ReadSnapshot>>Vz(i);
+			ReadSnapshot>>Pp(i);
+		}
+		Pp = IE2FF(Pp);
+		Vx = IE2FF(Vx);
+		Vy = IE2FF(Vy);
+		Vz = IE2FF(Vz);
+		
+		VhP1 Vxh,Vyh,Vzh;
+		Vxh[] = Vx;
+		Vyh[] = Vy;
+		Vzh[] = Vz;
+		[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]] = [Vxh, Vyh, Vzh];
+		Ph[(NTemp-1) + (NRe-1)*TimeSnap][] = Pp;
+		
+		write("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", Vh[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 0);
+		write("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", Ph[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 1); //lo hago en "paralelo", un procesador para vel y otro para pres
+//		savevtk("Snapshots/IEfluidsSnapshot"+(NTemp-1) + (NRe-1)*TimeSnap+".vtu", Th, Ph[(NTemp-1) + (NRe-1)*TimeSnap], 
+//				[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]], dataname="Pressure Velocity", order=fforder);
+	}
+}
+
+
+
+// Creamos las matrices de Correlacion
+real [int,int] CV(Nsnap, Nsnap), CP(Nsnap, Nsnap);
+
+
+for (int i=0; i<Nsnap; i++){
+	for (int j=0; j<i; j++){
+		CV(i,j) = 1./Nsnap*innerprodX(Vh[i][], Vh[j][], H1PEM);
+		CP(i,j) = 1./Nsnap*innerprodX(Ph[i][], Ph[j][], L2PEM);
+		if(j<i){
+			CV(j,i) = CV(i,j); //Matriz simetrica 
+			CP(j,i) = CP(i,j);
+		}
+	}
+}
+
+// Calculo los eigenvalues y eigenvectors 
+real[int] SU(Nsnap), SP(Nsnap);
+real[int,int] UU(Nsnap, Nsnap), UP(Nsnap, Nsnap), VTU(Nsnap, Nsnap), VTP(Nsnap, Nsnap);
+
+// Calculo el SVD --> C = U*S*VT 
+dgesdd(CV,UU,SU,VTU);
+dgesdd(CP,UP,SP,VTP);
+
+// Guardo el valor de los autovalores
+ofstream eigenV("EigenV.txt");
+eigenV<<SU<<endl;
+ofstream eigenP("EigenP.txt");
+eigenP<<SP<<endl;
+
+
+
