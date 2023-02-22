@@ -1,0 +1,63 @@
+///////////////
+// FreeROM 
+/////////////// 
+load "msh3"
+load "gmsh"
+load "iovtk"
+
+int[int] fforder=[1,1,1,1];
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+include "IE2FF.idp"
+
+// Cargo las funciones de lectura y guardado
+include "IO.idp" 
+
+mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
+
+fespace VhP1(Th, P1);
+fespace Vh3P1(Th, [P1,P1,P1]);
+
+
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+
+// Variables donde guardo los snapshots que cargo
+Vh3P1[int] [Vh,VhY,VhZ](Nsnap);
+VhP1[int] Ph(Nsnap);
+
+// Comienzo bucle de lectura de snapshots
+
+for (int NRe=1; NRe<=ReSnap; NRe++){
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+		cout<<"MEANFILE"<<NRe<<"/field_mean"<<NTemp<<endl;
+		ifstream ReadSnapshot("DATABASE/MEANFILE"+NRe+"/field_mean"+NTemp+".dat");
+		int mx=272, my = 88, mz=128; //Si cambio la malla estos valores hay que cambiarlos
+		real[int] Vx(mx*my*mz), Vy(mx*my*mz), Vz(mx*my*mz), Pp(mx*my*mz);
+		for (int i=0; i<mx*my*mz; i++){
+			ReadSnapshot>>Vx(i);
+			ReadSnapshot>>Vy(i);
+			ReadSnapshot>>Vz(i);
+			ReadSnapshot>>Pp(i);
+		}
+		Pp = IE2FF(Pp);
+		Vx = IE2FF(Vx);
+		Vy = IE2FF(Vy);
+		Vz = IE2FF(Vz);
+		
+		VhP1 Vxh,Vyh,Vzh;
+		Vxh[] = Vx;
+		Vyh[] = Vy;
+		Vzh[] = Vz;
+		[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]] = [Vxh, Vyh, Vzh];
+		Ph[(NTemp-1) + (NRe-1)*TimeSnap][] = Pp;
+		
+		write("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", Vh[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 0);
+		write("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", Ph[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 1); //lo hago en "paralelo", un procesador para vel y otro para pres
+//		savevtk("Snapshots/IEfluidsSnapshot"+(NTemp-1) + (NRe-1)*TimeSnap+".vtu", Th, Ph[(NTemp-1) + (NRe-1)*TimeSnap], 
+//				[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]], dataname="Pressure Velocity", order=fforder);
+	}
+}
+
+
+
