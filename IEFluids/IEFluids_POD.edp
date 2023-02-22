@@ -80,8 +80,8 @@ real [int,int] CV(Nsnap, Nsnap), CP(Nsnap, Nsnap);
 
 for (int i=0; i<Nsnap; i++){
 	for (int j=0; j<i; j++){
-		CV(i,j) = 1./Nsnap*innerprodX(Vh[i][], Vh[j][], H1PEM);
-		CP(i,j) = 1./Nsnap*innerprodX(Ph[i][], Ph[j][], L2PEM);
+		CV(i,j) = (1./Nsnap)*innerprodX(Vh[i][], Vh[j][], H1PEM);
+		CP(i,j) = (1./Nsnap)*innerprodX(Ph[i][], Ph[j][], L2PEM);
 		if(j<i){
 			CV(j,i) = CV(i,j); //Matriz simetrica 
 			CP(j,i) = CP(i,j);
