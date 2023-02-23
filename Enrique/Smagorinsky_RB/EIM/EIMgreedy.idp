@@ -1,0 +1,36 @@
+
+real [int,int] BMi(i,i);
+BMi=BM(0:i-1,0:i-1);
+
+real[int] Errs(hm+1);
+for (int eim=0;eim<=hm;eim++){
+	VhP1dc geim,Ig;
+	VhP1dc dxu1,dyu1,dxu2,dyu2;
+	
+	dxu1[]=DXun*u1[eim][];
+	dyu1[]=DYun*u1[eim][];
+	dxu2[]=DXun*u2[eim][];
+	dyu2[]=DYun*u2[eim][];
+
+	geim=moddc(dxu1,dyu1,dxu2,dyu2);
+
+	
+	real [int] xii(i),sigmai(i);
+	for (int j=0;j<i;j++){
+		xii(j)=geim[](Tmax(j));
+	}
+	matrix Bm;
+	Bm=BMi;
+	set(Bm,solver=sparsesolver);
+	sigmai=Bm^-1*xii;
+	for (int j=0;j<i;j++){
+		Ig[]+=sigmai(j)*WL[j][];
+	}
+	VhP1dc linf=abs(geim-Ig);
+	Errs(eim)=linf[].max/geim[].max;
+
+	ErrMax(i-1)=Errs.max;
+	REim(i)=vReimh(Errs.imax);
+	Rei(i)=Errs.imax;
+
+}

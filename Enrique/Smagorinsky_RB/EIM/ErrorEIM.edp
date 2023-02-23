@@ -1,0 +1,75 @@
+mesh Th=readmesh("Th.msh");
+
+fespace VhP1dc(Th,P1dc);
+
+ifstream BaseGL("BaseGL150.txt");
+int mbases;
+BaseGL>>mbases;
+
+VhP1dc[int] WL(mbases);
+for (int i=0;i<mbases;i++){
+	BaseGL>>WL[i][];
+}
+
+ifstream Sol("BaseGh150.txt");
+int ni;
+Sol>>ni;
+
+VhP1dc[int] Gh(ni);
+for (int i=0;i<ni;i++){
+	Sol>>Gh[i][];
+}
+
+ifstream MatrixB("MatrixBM150.txt");
+int ib,jb;
+MatrixB>>ib;
+MatrixB>>jb;
+real[int,int] B(ib,jb);
+for (int i=0;i<ib;i++){
+	for(int j=0;j<jb;j++){
+		MatrixB>>B(i,j);
+	}
+}
+matrix BM=B;
+set(BM,solver=sparsesolver);
+
+ifstream PT("Tint150.txt");
+int nt;
+PT>>nt;
+real[int] T(nt);
+for (int i=0;i<nt;i++){
+	PT>>T(i);
+}
+
+
+real Remin=50;
+real Remax=350;
+
+real[int] vRe(ni);
+
+for(int i=0;i<ni;i++){
+	vRe(i)=Remin+i*(Remax-Remin)/(ni-1);
+}
+
+cout<<vRe<<endl;
+
+VhP1dc[int] W(ni),Err(ni);
+real[int] err(ni);
+for(int i=0;i<ni;i++){
+	//cout<<"-------"<<i<<"-------"<<endl;
+	real[int] segmg(mbases),sigmai(mbases);
+	for (int j=0;j<mbases;j++){
+		segmg(j)=Gh[i][](T(j));
+	}
+	sigmai=BM^-1*segmg;
+	for (int k=0;k<mbases;k++){
+		W[i][]=W[i][]+sigmai(k)*WL[k][];
+	}
+	Err[i][]=W[i][]-Gh[i][];
+	err(i)=sqrt(int2d(Th)(Err[i]^2));
+}
+plot(WL[mbases-1],cmm="WL0");
+plot(Gh[ni-1],cmm="Gh0");
+plot(Err[ni-1],cmm="err");
+ofstream ERR("Errl2.txt");
+ERR<<err<<endl;

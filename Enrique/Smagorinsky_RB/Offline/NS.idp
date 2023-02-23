@@ -1,0 +1,297 @@
+//Definimos la cond. de contorno para el inlet
+
+//real umedia=Re*nuH2O/Dh; //velocidad media de entrada.
+//real umedia=1./Dh;
+//real umedia=0.1;
+
+//real nu=1./Re; //viscosidad de nuestro fluido.
+
+//cout<<"Velocidad media de entrada: "<<umedia<<endl;
+
+//func inlet=-6*umedia/(hl^2)*y*(y+hl); //perfil parabólico de entrada (depende de la velocidad media de entrada)
+
+
+
+//Parametros varios.
+nIterations=2000;
+ epsError = 1.e-5;
+//real dt = 100;
+ nu=1./Re;
+cout<<"-----Re: "<<Re<<"------"<<endl;
+//FUNCION DE LEVANTAMIENTO DE FRONTERA
+
+//Vh3P2 [G1,G2,Gp]=[inlet*(-hl<y),0,0];
+
+
+//plot([G1,G2],wait=1);
+
+
+///////////////////////////////////////
+//MATRIZ FIJA PARA STOKES
+//////////////////////////////////////	
+//Construimos las matrices fijas, dependientes o no del parámetro
+
+Vh3P2 [u1,u2,p]; //u_0 inicial para el método de Euler que resuelva las N-Stokes es la sol del pb de Stokes
+
+varf aRe([uu1,uu2,pp],[v1,v2,q])=int2d(Th)(nu*(GradGrad(uu1,uu2,v1,v2)))
+								-int2d(Th)(pp*div(v1,v2)) + int2d(Th)(div(uu1,uu2)*q)
+								+on(3, uu1=inlet, uu2=0)
+								+on(1,2,4, uu1=0., uu2=0.);
+
+
+//Definimos las matrices asociadas y segundos miembros a la F.Var
+
+matrix A=aRe(Vh3P2,Vh3P2);
+//matrix AF=af(Vh3P2,Vh3P2);
+
+//real [int] b=af(0,Vh3P2);
+
+real [int] b=aRe(0,Vh3P2);
+//b=b+bRe;
+
+//matrix A=ARE+AF; //matriz que resuelve stokes!
+
+set(A,solver=sparsesolver);
+u1[]=A^-1*b;  //La solución del problema de Stokes!
+
+//plot([u1,u2]);
+
+
+VhP1dc u1dcX,u1dcY,u2dcX,u2dcY;
+
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+
+////Matriz fija (Casi igual que la de stokes)
+
+varf vNS([uu1,uu2,pp],[v1,v2,q])=int2d(Th)((1./dt)*(uu1*v1+uu2*v2)-div(v1,v2)*pp+div(uu1,uu2)*q)
+								+int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2))
+								//+int2d(Th)((UgradV(uu1,uu2,G1,G2)+UgradV(G1,G2,uu1,uu2))'*[v1,v2])
+								//-int2d(Th)(UgradV(G1,G2,G1,G2)'*[v1,v2]) //Segundo miembro
+								//+int1d(Th,6)(pp*v2)
+								+on(3, uu1=inlet, uu2=0.)
+								+on(1,2,4, uu1=0., uu2=0.); 
+					
+//varf vNSnu([uu1,uu2,pp],[v1,v2,q])=int2d(Th)(dx(uu1)*dx(v1)+dy(uu1)*dy(v1)+dx(uu2)*dx(v2)+dy(uu2)*dy(v2));
+							
+matrix AvNS,Anu;
+
+AvNS=vNS(Vh3P2,Vh3P2);
+//Anu=vNSnu(Vh3P2,Vh3P2);
+
+real[int] bNSf=vNS(0,Vh3P2);
+//real[int] bNSnu=vNSnu(0,Vh3P2);
+
+
+real OldX1S = -30000;
+real NewX1S = -15000;
+
+
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+real mediap;
+real cpu0=clock();
+//for (int ii=1; ii<=nIterations && ( (iterrelative1 > epsError) || (OldX1S < NewX1S) ); ii++) {
+for (int ii=1; ii<=nIterations &&  (iterrelative1 > epsError) ; ii++) {
+//	cout << endl;
+//	cout << "------------------------------------" << endl;	
+//	cout << "Starting iteration number " << ii << endl;	
+//	cout << "------------------------------------" << endl;	
+
+//////////////////////////	
+//Matriz de Smagorinsky
+/////////////////////////
+//Vh3P1dc [G1p,G2p,Gpprev];
+	
+VhP2 utmp1,utmp2,u1prev,u2prev;
+utmp1=u1;
+utmp2=u2;
+u1prev=u1;
+u2prev=u2;
+
+u1dcX[]=DXun*utmp1[];
+u1dcY[]=DYun*utmp1[];
+u2dcX[]=DXun*utmp2[];
+u2dcY[]=DYun*utmp2[];
+
+varf VMSSma([u1l,u2l,unused],[v1l,v2l,ql])=
+int2d(Th)(((CS*hTriangle)^2)*sqrt(u1dcX^2+u1dcY^2+u2dcX^2+u2dcY^2)*GradGrad(u1l,u2l,v1l,v2l));
+
+//varf bVMSSma([u1l,u2l,unused],[v1l,v2l,ql])=
+//-int2d(Th)(((CS*hTriangle)^2)*sqrt(u1dcX^2+u1dcY^2+u2dcX^2+u2dcY^2)*GradGrad(G1,G2,v1l,v2l));				
+					
+//cout << "Build A VMS-Smag." << endl;
+matrix Sma = VMSSma(Vh3P2,Vh3P2);
+
+//real[int] bSmago=bVMSSma(0,Vh3P2);
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	varf vNSb([uu1,uu2,pp],[v1,v2,q])=
+						int2d(Th)((1./dt)*(uu1*v1+uu2*v2)-div(v1,v2)*pp+div(uu1,uu2)*q)
+						+int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2))
+						+int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+						+int2d(Th)((1./dt)*(u1*v1+u2*v2))
+		//+int2d(Th)(((CS*hTriangle)^2)*sqrt(u1dcX^2+u1dcY^2+u2dcX^2+u2dcY^2)*GradGrad(uu1,uu2,v1,v2))
+								//+int2d(Th)((UgradV(uu1,uu2,G1,G2)+UgradV(G1,G2,uu1,uu2))'*[v1,v2])
+								//-int2d(Th)(UgradV(G1,G2,G1,G2)'*[v1,v2]) //Segundo miembro
+								//+int1d(Th,6)(pp*v2)
+						+on(3, uu1=inlet, uu2=0.)
+						+on(1,2,4, uu1=0., uu2=0.);
+
+
+	varf vNSseg([unu1,unu2,unp],[v1,v2,q])=int2d(Th)((1./dt)*(u1*v1+u2*v2));
+	
+	matrix AvNSb=vNSb(Vh3P2,Vh3P2);
+	real [int] bNS=vNSb(0,Vh3P2);
+	
+	bNS=bNS;//+bNSf;
+	//bNS=bNS+nu*bNSnu;
+	//bNS=bNS+bSmago;
+	
+	matrix Afinal;
+	Afinal=AvNSb;//+Sma;
+	
+	set(Afinal,solver=UMFPACK);
+	
+	u1[]=Afinal^-1*bNS;
+	
+
+	
+	//Pintamos la solucion de cada iteracion
+	//plot([u1,u2],wait=0,cmm="Solucion en la iteracion "+ii);
+	
+	
+    VhP2 eu1,eu2;
+	eu1=u1-u1prev;
+	eu2=u2-u2prev;
+	//Inicio calculo normas
+	itercontrol1 = sqrt(int2d(Th)([eu1,eu2]'*[eu1,eu2])+int2d(Th)(GradGrad(eu1,eu2,eu1,eu2)));  		    	 
+    real itertmp1 = sqrt(int2d(Th)([u1,u2]'*[u1,u2])); 
+	
+	iterrelative1 = itercontrol1/itertmp1;	
+
+	
+	
+//
+//	cout << "------------------------------------" << endl;	
+//	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+	/*
+	//Comprobamos si se alcanza el estado estacionario!!
+	real xEps = 1.e-4;
+	real totLength = L-l; //parte baja del escalón
+	real nDivisiones = (1./xEps)*totLength;
+	
+	
+	real yEps = -H+1.e-3;
+	real[int] xEpsArray(nDivisiones);
+	real[int] xEpsArrayU1(nDivisiones);
+	
+	for(int iii = 0; iii<nDivisiones;iii++) {
+		xEpsArray[iii]=l+(iii+1)*xEps;
+		xEpsArrayU1[iii]=u1(xEpsArray[iii],yEps);
+	}	
+		
+	real ris      = -1.e+4;
+	real risPunto = -1.e+4;
+	real risVal   = -1.e+4;
+	
+	real x1PartidoPorS;
+	
+	int puntoDeCambioEncontrado=0;
+	
+	for(int iii = 1; iii<nDivisiones; iii++) {*/
+		
+		/*
+		if ( xEpsArrayU1[iii-1] < 0 && xEpsArrayU1[iii] > 0 && puntoDeCambioEncontrado==0){ */ //lo siguiente estaba comentado
+			/*cout << "--------------------------------" << endl;
+			cout << "Encontrado punto de cambio en x=" << xEpsArray[iii] << endl;			
+			cout << "Antes u1(x,yeps) vale: " << xEpsArrayU1[iii-1] << " y luego: " << xEpsArrayU1[iii] << endl;
+		    cout << "--------------------------------" << endl;*/
+			
+			/*risVal = xEpsArrayU1[iii];
+			risPunto = xEpsArray[iii];
+			ris = iii;
+			
+			OldX1S = NewX1S;
+			NewX1S = risPunto;
+			
+			puntoDeCambioEncontrado=1;
+
+		} else if ( xEpsArrayU1[iii-1] < 0 && xEpsArrayU1[iii] > 0 && puntoDeCambioEncontrado>0){
+			puntoDeCambioEncontrado++;*/ //lo siguiente estaba comentado
+			/*cout << "---------------------" << endl;
+			cout << "Encontrado otro punto de cambio (vez numero " << puntoDeCambioEncontrado << ") en x=" << xEpsArray[iii] << endl;
+    		cout << "x1/hlast=" << xEpsArray[iii]/h << endl;*/
+    		
+			/*
+			NewX1S = xEpsArray[iii];
+			
+		    //cout << "---------------------" << endl;
+		}
+		
+	}
+	
+	if(risPunto == -1.e+4){
+		cout << "----------------------------------------------------"<< endl;
+		cout << "No ha sido encontrado ningun cambio de direccion!!!!"<< endl;
+		cout << "----------------------------------------------------"<< endl;
+		OldX1S = NewX1S;
+		NewX1S = risPunto;
+	}
+	
+	cout << "x1: de " << OldX1S << " a " << NewX1S << endl;
+
+	//cout << "------------------------------------" << endl;	
+	
+	
+	cout << "------------------------------------" << endl;
+	cout << "Fin de la iteracion " << ii << endl;
+	cout << "------------------------------------" << endl << endl;	
+
+	//mediap=int2d(Th)(p);
+	//cout << "Mean Pressure = " << mediap << endl;
+	}
+	
+	cout<< "-------------------------------------"<<endl;
+	cout<< "x1/S: "<<(NewX1S-l)/hl<<endl;*/
+} 
+
+cpu0=-cpu0+clock();
+cout<<cpu0<<endl;
+VhP2 gradU;
+
+gradU=sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2);
+
+
+cout<<"outlflow press:"<<int1d(Th,3)(p)<<endl;
+cout<<"norm der:"<<int1d(Th,3)(nu*(dx(u1)))<<endl;
+//VhP2 uu1,uu2;
+
+//uu1=u1+G1;
+//uu2=u2+G2;
+//plot(gradU,wait=1,value=1,cmm="FE");
+plot([u1,u2],cmm="Velocidades para Re= "+Re,value=1);
+//plot(u1,dim=3,wait=1,fill=1);
+//plot(p,cmm="Presion para Re= "+Re);
+
+
+//VhP2 fi,si;
+//solve strline(fi,si)=int2d(Th)(Grad(fi)'*Grad(si))+int2d(Th)(-si*(dy(uu1)-dx(uu2)))
+	//+ int1d(Th,1,3)	(+uu2*si)
+	//+ int1d(Th,2,4)	(-uu1*si)
+	//+ int1d(Th,5)			(-uu2*si)
+	//+ int1d(Th,6)			(+uu1*si)
+//	+on(2,3,4, fi=0)
+//	;
+
+//plot(fi,cmm="Streamlines");

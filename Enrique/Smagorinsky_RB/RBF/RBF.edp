@@ -1,0 +1,313 @@
+////CALCULO DE LAS CONSTANTES ß
+
+load "iovtk"
+//Fase off-line fuera del programa principal---> solo las calculo una vez...
+
+int[int] fforder=[1,1,1]; // 0 save a cell value, 1 save point value
+
+
+macro Grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt((dx(u1))^2+(dy(u2))^2+0.5*(dx(u2)+dy(u1))^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+//Constantes de Smago
+real CS=0.1;
+real dt=10;
+real epspen=1e-14;
+
+mesh Th=readmesh("CavThNE.msh");
+include "betas.idp" //para cargar las funciones para beta
+
+//Declaración del parámetro
+real Re;
+real nu;
+
+////////////////////////////////
+//Constantes para el Reynolds//
+///////////////////////////////
+
+real hl=5.2;
+real Dh=2*hl; //Diametro hidraulico
+real umedia=1./Dh;	
+func inlet=4*x*(1-x);
+
+
+
+
+fespace Vh3P2(Th,[P2,P2,P1]); 
+fespace VhP0(Th,P0); 
+fespace VhP1(Th,P1);
+fespace VhP1dc(Th,P1dc);
+fespace VhP2(Th,P2);
+fespace Vh2P2(Th,[P2,P2]);
+
+matrix DXun = interpolate(VhP1dc,VhP2,op=1);
+matrix DYun = interpolate(VhP1dc,VhP2,op=2);
+
+////////////////////////////////////////////////////////////////////////////
+//La solucion al pb de Stokes como levantamiento de frontera
+
+VhP2 u1sto,u2sto,v1sto,v2sto;
+VhP1 psto,qsto;
+solve stokes(u1sto,u2sto,psto,v1sto,v2sto,qsto)=
+		 int2d(Th)((1./1000)*GradGrad(u1sto,u2sto,v1sto,v2sto))
+		-int2d(Th)(psto*div(v1sto,v2sto))+int2d(Th)(qsto*(div(u1sto,u2sto)))
+		+int2d(Th)(epspen*psto*qsto)
+		+on(3, u1sto=inlet, u2sto=0)+on(1,2,4, u1sto=0,u2sto=0);
+
+VhP2 G1=u1sto;
+VhP2 G2=u2sto;
+//////////////////////////////////////////////////////////////////////////////
+
+real ni=5; //numero de puntos de interpolación inicial - 1
+real nimax=40; //numero máximo de puntos para la interpolación
+real N=10000; //puntos de la discretiazcion fina del intervalo
+
+real[int] betaI(nimax+1); //vector donde guardo los valores de beta de los ptos de interpolacion	
+real[int] gamma0(nimax+1+2); //vector donde guardo los coeficientes del RBF
+
+real Remin=1000;
+real Remax=5100;
+
+
+real [int] vReI(nimax+1); //Vector con los valores de los parametros en los puntos de interpolacion inicial
+real [int] vRefine(N+1); //Vector con los valores de los parametros para la discretizacion fina
+
+for (int ig=0; ig<=ni; ig++){
+	vReI(ig)=Remin+ig*(Remax-Remin)/ni;
+	//vReI(ig)=Remin*(Remax/Remin)^(ig/ni);
+	//vReI(ig)=400+(Remin-400)*((-Remax+400)/(-Remin+400))^(ig/ni);
+}
+for (int ig=0; ig<=N; ig++){
+	vRefine(ig)=Remin+ig*(Remax-Remin)/N;
+}
+
+cout<<vReI<<endl;
+
+
+//Defino la matriz para el producto escalar mu barra
+
+real mub=1000;
+matrix Fb,Fbt,X;
+{	
+	Re=mub;
+	nu=1./mub;
+	include "Smago.idp"; //Resuelvo el pb de EF
+	plot([u1,u2]);
+	VhP2 U1,U2;
+	//U1=u1-G1;
+	//U2=u2-G2;
+	//SOLO SI CONSIDERO LA NORMA MU BARRA!!
+	varf da([uu1,uu2,pp],[v1,v2,q])=int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2)) 
+					+int2d(Th)(div(uu1,uu2)*q)-int2d(Th)(div(v1,v2)*pp) 
+					//+int2d(Th)(UgradV(G1,G2,uu1,uu2)'*[v1,v2])
+					//+int2d(Th)(UgradV(uu1,uu2,G1,G2)'*[v1,v2])
+					+int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+					+int2d(Th)(UgradV(uu1,uu2,u1,u2)'*[v1,v2])
+					+int2d(Th)((CS*hTriangle)^2*mod(u1,u2)*GradGrad(uu1,uu2,v1,v2))
+					+int2d(Th)(((CS*hTriangle)^2/mod(u1,u2))
+								*GradGrad(u1,u2,uu1,uu2)*GradGrad(u1,u2,v1,v2))
+					//+int2d(Th)(epspen*pp*q)
+					//+on(1, uu1=inlet,uu2=0)
+					+on(1,2,3,4, uu1=0,uu2=0)
+					;
+	Fb=da(Vh3P2,Vh3P2);
+	varf prodesc([uu1,uu2,pp],[v1,v2,q])=
+			int2d(Th)((nu+((CS*hTriangle)^2)*mod(u1,u2))*
+			GradGrad(uu1,uu2,v1,v2))
+						+int2d(Th)(pp*q)
+						//+on(1, uu1=inlet,uu2=0)
+						+on(1,2,3,4, uu1=0,uu2=0)
+						;
+	
+	X=prodesc(Vh3P2,Vh3P2);
+
+}
+
+Fbt=Fb';
+set(X,solver=UMFPACK);
+set(Fb,solver=UMFPACK);
+set(Fbt,solver=UMFPACK);
+//comienzo el bucle donde calculo los ß de cada uno de los ni valores de mu:
+
+for (int i=0;i<=ni; i++){
+	
+	int I=i;
+	real tauto=clock();
+	
+	//Metodo de la potencia.
+	include "potencia.idp";
+
+	tauto=clock()-tauto;
+	cout<<"T autoval: "<<tauto<<endl;
+	cout<<"Re: "<<Re<<",beta: "<<betaI(i)<<endl;
+} 
+/////FIN DEL CÁLCULO DE LOS BETAS "INTERPOLADORES"
+
+cout<<betaI<<endl;
+real[int] gamma1(ni+3);
+//real[int] vReI1=vReI(0:ni);
+//////////////////////////////////////
+{
+	//Calculo los beta_h(i)
+	real[int] lbeta(ni+1+2);
+	lbeta=0; //las dos ultimas componentes son 0!
+	for (int i=0;i<=ni;i++){
+		lbeta(i)=betaI(i);
+	}
+
+	real[int,int] Blbeta(ni+1+2,ni+1+2);
+	Blbeta=0;
+	//Primera parte de la matriz!
+	for (int i=0;i<=ni;i++){
+		for (int jj=0;jj<=ni;jj++){
+			Blbeta(i,jj)=(vReI(i)-vReI(jj))^2*log(abs(vReI(i)-vReI(jj))+1);
+		}
+	}
+
+	for(int i=0;i<=ni;i++){
+		Blbeta(i,ni+1)=vReI(i);
+		Blbeta(i,ni+1+1)=1;
+	}
+	for(int jj=0;jj<=ni;jj++){
+		Blbeta(ni+1,jj)=vReI(jj);
+		Blbeta(ni+2,jj)=1;
+	}
+
+	cout<<Blbeta<<endl;
+	cout<<lbeta<<endl;
+	
+	//Ya puedo obtener los valores para la RBF
+	matrix BLbeta=Blbeta;
+
+	set(BLbeta,solver=UMFPACK);
+	gamma1=BLbeta^-1*lbeta;
+}
+
+//////////////////////////////////
+cout<<gamma1<<endl; //gamma0(0:ni)--->gamma_j(mu), gamma0(ni+1)--->omega1, gamma0(ni+2)---->omega0
+
+//Construyo la beta continua
+real[int] Betak(N+1),Betak1(N+1);
+for (int k=0;k<=N;k++){
+	Betak(k)=fbeta(gamma1,vReI(0:ni),vRefine(k));
+}
+
+for (int k=0;k<=ni+2;k++){
+	gamma0(k)=gamma1(k); //actualizo los valores de gamma0
+}
+		
+//ofstream BETA("betaI.txt");
+//BETA<<Betak<<endl;
+
+//Comienzo el algoritmo adaptativo
+real Ej=1;
+real I;
+for (int j=ni+1;j<nimax;j++){
+	if (Ej<1e-5){
+		break; //test de parada
+	}
+	else{
+		real[int] gamma0i=gamma0(0:j+1);
+		real[int] vReIi=vReI(0:j-1);
+
+		cout<<"vReI"<<vReIi<<endl;
+		//Primero calculamos la funcion h(mu)
+		real[int] h(N+1);
+		for (int k=0;k<=N;k++){
+			h(k)=hadapt(vReIi,vRefine(k));
+	}
+
+	real hmax=h.max;
+	
+	//Calculamos el argmax del criterio C(mu)
+	real[int] C(N+1);
+	real maxC;
+	real maxRe;
+	for (int k=0;k<=N;k++){
+		C(k)=(abs(derbeta(gamma0i,vReIi,vRefine(k)))+1e-6)
+			*(abs(der2beta(gamma0i,vReIi,vRefine(k)))+1e-6)
+			*(h(k)/hmax)^2*gneg(Betak(k));
+		if (maxC<C(k)){
+			maxC=C(k);
+			maxRe=vRefine(k);
+		}
+	}
+	
+	vReI(j)=maxRe;
+
+	I=j;
+	include "potencia.idp";
+
+	//Calculo los beta_h(i)
+	real[int] lbeta(j+1+2);
+	lbeta=0; //las dos ultimas componentes son 0!
+	for (int ii=0;ii<=j;ii++){
+		lbeta(ii)=betaI(ii);
+	}
+
+	real[int,int] Blbeta(j+1+2,j+1+2);
+	Blbeta=0;
+	//Primera parte de la matriz!
+	for (int ii=0;ii<=j;ii++){
+		for (int jj=0;jj<=j;jj++){
+			Blbeta(ii,jj)=(vReI(ii)-vReI(jj))^2*log(abs(vReI(ii)-vReI(jj))+1);
+		}
+	}
+
+	for(int ii=0;ii<=j;ii++){
+		Blbeta(ii,j+1)=vReI(ii);
+		Blbeta(ii,j+2)=1;
+	}
+	for(int jj=0;jj<=j;jj++){
+		Blbeta(j+1,jj)=vReI(jj);
+		Blbeta(j+2,jj)=1;
+	}
+
+	cout<<Blbeta<<endl;
+	cout<<lbeta<<endl;
+	
+	//Ya puedo obtener los valores para la RBF
+	matrix BLbeta=Blbeta;
+
+	set(BLbeta,solver=sparsesolver);
+	real[int] gamma1i(j+3);
+	gamma1i=BLbeta^-1*lbeta;
+	
+	for (int k=0;k<j+3;k++){
+		gamma0(k)=gamma1i(k);
+	}
+
+	for (int k=0;k<=N;k++){
+		Betak1(k)=fbeta(gamma1i,vReI(0:j),vRefine(k));
+	}
+
+	//ofstream Betakk("Beta-"+j+".txt");
+	//Betakk<<Betak1<<endl;
+
+	real[int] Errbeta(N+1);
+	Errbeta=Betak1-Betak;
+	Errbeta=abs(Errbeta);
+	Ej=Errbeta.l2/Betak.l2; //norma infinito
+	cout<<"Ej= "<<Ej<<endl;
+	Betak=Betak1;
+	}
+}
+real [int] gammaf=gamma0(0:I+2);
+real [int] vReIf=vReI(0:I);
+real [int] betaIf=betaI(0:I);
+
+ofstream gammat("gammaI.txt");
+gammat<<gammaf<<endl;
+
+ofstream nus("vReI.txt");
+nus<<vReIf<<endl;
+
+ofstream betainter("BetamuI.txt");  //Esta contiene los datos para la fase offline
+betainter<<betaIf<<endl;
+	
+ofstream Betafin("BetaTSmago.txt"); //función ß total interpolada.
+Betafin<<Betak<<endl;			

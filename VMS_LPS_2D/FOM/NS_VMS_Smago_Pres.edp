@@ -19,7 +19,7 @@ include "../Auxiliary/Macros_2D.idp"
 // Creamos la malla
 include "../Auxiliary/CuadradoNxNy.idp"
 
-// Definimos los espacios de EF y de los EF globales
+// Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
