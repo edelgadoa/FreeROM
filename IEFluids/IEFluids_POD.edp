@@ -122,6 +122,10 @@ for (int i=0; i<Nsnap; i++){
 	}
 }
 
+// Guardo la matriz de correlacion
+write("Correl_U_"+mpisize+".txt", CV, 0, 0);
+write("Correl_P_"+mpisize+".txt", CP, 0, 0);
+
 // Calculo los eigenvalues y eigenvectors 
 real[int] SU(Nsnap), SP(Nsnap);
 real[int,int] UU(Nsnap, Nsnap), UP(Nsnap, Nsnap), VTU(Nsnap, Nsnap), VTP(Nsnap, Nsnap);
@@ -131,5 +135,5 @@ dgesdd(CV,UU,SU,VTU);
 dgesdd(CP,UP,SP,VTP);
 
 // Guardo el valor de los autovalores
-write("EigenV.txt", SU, 0, 0);
-write("EigenP.txt", SP, 0, 0);
+write("EigenV"+mpisize+".txt", SU, 0, 0);
+write("EigenP"+mpisize+".txt", SP, 0, 0);

@@ -14,6 +14,7 @@ func real innerprodX(real[int] &u, real[int] &v, matrix &X){
 func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 	real[int] aux;
 	MatMult(X, v, aux);
+	aux .*= X.D;
 	real resultL = u'*aux;
 	real result;
 	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);

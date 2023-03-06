@@ -15,12 +15,12 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 	// cout<<"X.nm="<<X.n<<"x"<<", v.n="<<v.n<<endl;
 	real[int] aux;
 	MatMult(X, v, aux);
-	real result = u'*aux;
+	real resultL = u'*aux;
 	// cout<<resultL<<endl;
-	// real result;
-	// mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
+	real result;
+	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
 	// cout<<result<<endl;
-	return result;
+	return resultL;
 }
 
 func real innerprodL2(real[int] &u, real[int] &v){
@@ -45,6 +45,11 @@ func real normX(real[int] &u, matrix &X){
 	return sqrt(result);
 }
 
+func real normX(real[int] &u, Mat &X){
+	real result = innerprodX(u,u,X);
+	return sqrt(result);
+}
+
 /*
 func real normL2Vh4P2(real[int] &u){
 	real result = innerprodL2Vh4P2(u, u);
@@ -58,6 +63,20 @@ func real normL2(real[int] &u){
 }
 
 func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
+	real[int] Proy(u.n);
+	Proy = 0;
+	
+	for (int j=0; j<M.m; j++){
+		real Pesc = innerprodX(u, M(:,j), X);
+		Proy += Pesc*M(:,j);
+	}
+	u -= Proy;
+	real[int] result = u / normX(u, X);
+	return result;
+	
+}
+
+func real[int] OrtoX(real[int] &u, real[int,int] &M, Mat &X){
 	real[int] Proy(u.n);
 	Proy = 0;
 	

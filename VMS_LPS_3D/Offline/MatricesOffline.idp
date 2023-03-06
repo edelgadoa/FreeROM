@@ -7,11 +7,14 @@
 
 // Inicializo las matrices locales para el paralelo
 include "Allocate_matrices_local.idp"
+// real[int] BaseVi;
+//ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi);
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 for (int j=0; j<=i; j++){
-
-		
+	
+	//real[int] BaseVj;
+	//ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);	
 	// Matrices
 	DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
 	DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
@@ -31,6 +34,7 @@ for (int j=0; j<=i; j++){
 
 }
 
+cout<< DiffRB(0,0)<<endl;
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
@@ -210,7 +214,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	NGUK[s] += Nggk;
 }
 
-mpi(cout<<"RHS"<<endl;)
+// mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
 bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
 bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz

@@ -208,16 +208,16 @@ for (int i=0; i<Nbases; i++){
 
 
 	// Actualizo las soluciones filtradas
-	FBaseV[i][] = IPh3P23P1 * BaseV[i][];
-	
-	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][]; 
-	
-	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
-	FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
-	FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
-	
-	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
-	
+	// FBaseV[i][] = IPh3P23P1 * BaseV[i][];
+	//
+	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
+	//
+	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
+	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
+	// FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	//
+	// FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
+	//
 	
 	// Defino el nuevo producto escalar para la convección
 	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
