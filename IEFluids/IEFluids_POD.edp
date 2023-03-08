@@ -26,14 +26,21 @@ int[int] fforder=[1,1,1,1];
 include "IE2FF.idp"
 
 // Cargo las funciones para el calculo de productos escalares y normas
-include "Normas_3d.idp"
+func real innerprodX(real[int] &u, real[int] &v, Mat &X){
+	real[int] aux;
+	MatMult(X, v, aux);
+	real resultL = u'*aux;
+	real result;
+	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
+	return result;
+}
 
 mesh3 Th = readmesh3("IEfluids.mesh"); 
 mesh3 ThL = Th;
 
-// Preparo el paralelo
-Mat MatAVh3P1;
-Mat MatAVhP1;
+// PETSc matrices
+Mat MatNormL2;
+Mat MatNormH1;
 int[int] mapVh3P1, mapVhP1;
 
 int[int] myN2o;
@@ -53,23 +60,23 @@ mapVhP1 = restrict(VhP1L,VhP1,myN2o);
 {
 	macro def(i) [i, iY, iZ] //
 	macro init(i) [i, i, i] // EOM
-	createMat(ThL, MatAVh3P1, [P1, P1, P1]);
+	createMat(ThL, MatNormH1, [P1, P1, P1]);
 }
 {
-	createMat(ThL, MatAVhP1, P1);
+	createMat(ThL, MatNormL2, P1);
 }
 
 
-varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(ThL)(GradUGradV(u,v));
-matrix H1PEM = NormH1(Vh3P1L, Vh3P1L);
-MatAVh3P1 = H1PEM;
+{
+	varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(ThL)(GradUGradV(u,v));
+	MatNormH1 = NormH1(Vh3P1L, Vh3P1L); //H1PEMat;
 
-varf NormL2(p,q) = int3d(ThL)(p*q);
-matrix L2PEM = NormL2(VhP1L, VhP1L);
-MatAVhP1 = L2PEM;
+	varf NormL2(p,q) = int3d(ThL)(p*q);
+	MatNormL2 = NormL2(VhP1L, VhP1L); //L2PEMat;
+}
 
 
-int ReSnap = 20; // numero de Snapshots de Reynolds
+int ReSnap = 1; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
@@ -81,21 +88,21 @@ Vh3P1L[int] [VhL,VhLY,VhLZ](Nsnap);
 VhP1L[int] PhL(Nsnap);
 
 // Comienzo bucle de lectura de snapshots
-if (mpirank==0 || mpirank==1){ 		//lo hago en "paralelo", un procesador para vel y otro para pres
+if (mpirank==0 || mpirank==1){ 		// one process to read velocity and another to read pressure
 	for (int NRe=1; NRe<=ReSnap; NRe++){
 		for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
 			int i = (NTemp-1) + (NRe-1)*TimeSnap;
-			if(mpirank==0){ 
+			if(mpirank==1){ 
 				cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
 				readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
 				Vh[i][] = Vel;
-				[VhL[i], VhLY[i], VhLZ[i]] = [Vh[i], VhY[i], VhZ[i]];
+				VhL[i][] = Vh[i][](mapVh3P1); // Load in the local mesh
 			}
-			if(mpirank==1){
+			if(mpirank==0){
 				cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
 				readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
 				Ph[i][] = Pres; 
-				PhL[i] = Ph[i];
+				PhL[i][] = Ph[i][](mapVhP1); // Load in the local mesh
 			}
 		}
 	}
@@ -107,14 +114,14 @@ real [int,int] CV(Nsnap, Nsnap), CP(Nsnap, Nsnap);
 
 for (int i=0; i<Nsnap; i++){
 	real[int] Vhi, Phi;
-	ChangeNumbering(MatAVh3P1, VhL[i][], Vhi);
-	ChangeNumbering(MatAVhP1, PhL[i][], Phi);
+	ChangeNumbering(MatNormH1, VhL[i][], Vhi);
+	ChangeNumbering(MatNormL2, PhL[i][], Phi);
 	for (int j=0; j<=i; j++){
-		 real[int] Vhj, Phj;
-		ChangeNumbering(MatAVh3P1, VhL[j][], Vhj);
-		ChangeNumbering(MatAVhP1, PhL[j][], Phj);
-		CV(i,j) = (1./Nsnap)*innerprodX(Vhi, Vhj, MatAVh3P1);
-		CP(i,j) = (1./Nsnap)*innerprodX(Phi, Phj, MatAVhP1);
+		real[int] Vhj, Phj;
+		ChangeNumbering(MatNormH1, VhL[j][], Vhj);
+		ChangeNumbering(MatNormL2, PhL[j][], Phj);
+		CV(i,j) = (1./Nsnap)*innerprodX(Vhi, Vhj, MatNormH1);
+		CP(i,j) = (1./Nsnap)*innerprodX(Phi, Phj, MatNormL2);
 		if(j<i){
 			CV(j,i) = CV(i,j); //Matriz simetrica 
 			CP(j,i) = CP(i,j);
@@ -122,7 +129,7 @@ for (int i=0; i<Nsnap; i++){
 	}
 }
 
-// Guardo la matriz de correlacion
+// Write the correlation matrix
 write("Correl_U_"+mpisize+".txt", CV, 0, 0);
 write("Correl_P_"+mpisize+".txt", CP, 0, 0);
 
@@ -134,6 +141,6 @@ real[int,int] UU(Nsnap, Nsnap), UP(Nsnap, Nsnap), VTU(Nsnap, Nsnap), VTP(Nsnap, 
 dgesdd(CV,UU,SU,VTU);
 dgesdd(CP,UP,SP,VTP);
 
-// Guardo el valor de los autovalores
+// Save the Eigenvalues
 write("EigenV"+mpisize+".txt", SU, 0, 0);
 write("EigenP"+mpisize+".txt", SP, 0, 0);
