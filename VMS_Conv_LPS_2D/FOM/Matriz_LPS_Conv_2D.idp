@@ -9,7 +9,7 @@
 VhP1dc funcLev;
 
 varf termConv(uu1,v) = int2d(Th)(hTriangle^2*uu1*v);
-varf btermConv(uu1,v) = int2d(Th)(-tau*funcLev*v);
+// varf btermConv(uu1,v) = int2d(Th)(-tau*funcLev*v);
 
 matrix TermC = termConv(VhP1dc,VhP1dc);
 

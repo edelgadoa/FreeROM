@@ -147,7 +147,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 			// cout<<"	"<<ui<<endl;
 			for (int uj=0; uj<I; uj++){
 				// SConvRBN = StabCULRB[s + ui*Taubases + uj*Taubases*Nbases];
-				SConvRBN = StabCULRB[ui + uj*Nbases];
+				SConvRBN = StabCUURB[ui + uj*Nbases];
 				SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
 				//SConvint =  sigmaEIMTau(s)*SConvint;
 				SConvint =  uRBv(ui)*SConvint;
