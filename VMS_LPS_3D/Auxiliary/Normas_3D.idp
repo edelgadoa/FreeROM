@@ -20,7 +20,7 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 	real result;
 	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
 	// cout<<result<<endl;
-	return resultL;
+	return result;
 }
 
 func real innerprodL2(real[int] &u, real[int] &v){

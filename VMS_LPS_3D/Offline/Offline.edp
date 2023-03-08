@@ -49,7 +49,7 @@ include "../Auxiliary/betas.idp"
 
 
 //Definicion de Constantes y variables varias
-int Nbases = 40; 
+int Nbases = 3; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -182,14 +182,20 @@ for (int i=0; i<Nbases; i++){
 		
 	}
 	else{
+		VhP2 SnapX, SnapY, SnapZ, SnapP;
+		
 		readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
-		BaseVel[i][] = SolX;
+		SnapX[] = SolX;
+		BaseVel[i][] = SnapX[](mapVhP2); //Cargo las bases en local
 		readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
-		BaseVelY[i][] = SolY;
+		SnapY[] = SolY;
+		BaseVelY[i][] = SnapY[](mapVhP2);
 		readvector("../Snapshots/Vz_" + Reynolds + ".txt", real, SolZ, 0);
-		BaseVelZ[i][] = SolZ;
+		SnapZ[] = SolZ;
+		BaseVelZ[i][] = SnapZ[](mapVhP2);
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
-		BaseP[i][] = SolP;		
+		SnapP[] = SolP;
+		BaseP[i][] = SnapP[](mapVhP2);		
 		
 		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
 			
