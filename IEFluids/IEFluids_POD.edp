@@ -81,8 +81,6 @@ int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
 // Variables donde guardo los snapshots que cargo
-Vh3P1[int] [Vh,VhY,VhZ](Nsnap);
-VhP1[int] Ph(Nsnap);
 
 Vh3P1L[int] [VhL,VhLY,VhLZ](Nsnap);
 VhP1L[int] PhL(Nsnap);
@@ -92,16 +90,21 @@ VhP1L[int] PhL(Nsnap);
 for (int NRe=1; NRe<=ReSnap; NRe++){
 	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
 		int i = (NTemp-1) + (NRe-1)*TimeSnap;
-		
-			// cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+		if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+		{
+			Vh3P1 [Vh,VhY,VhZ];			
 			readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
-			Vh[i][] = Vel;
-			VhL[i][] = Vh[i][](mapVh3P1); // Load in the local mesh
-
-			// cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
+			Vh[] = Vel;
+			VhL[i][] = Vh[](mapVh3P1); // Load in the local mesh
+		}	
+			
+		if(mpirank==0)cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
+		{
+			VhP1 Ph;	
 			readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
-			Ph[i][] = Pres; 
-			PhL[i][] = Ph[i][](mapVhP1); // Load in the local mesh
+			Ph[] = Pres; 
+			PhL[i][] = Ph[](mapVhP1); // Load in the local mesh
+		}
 	}
 }
 
@@ -110,7 +113,7 @@ mpiBarrier(mpiCommWorld);
 // Creamos las matrices de Correlacion
 real [int,int] CV(Nsnap, Nsnap), CP(Nsnap, Nsnap);
 
-for (int i=0; i<Nsnap; i++){
+for (int i=0; i<Nsnap; i++){ //CAMBIAR ESTO
 	real[int] Vhi, Phi;
 	ChangeNumbering(MatNormH1, VhL[i][], Vhi);
 	ChangeNumbering(MatNormL2, PhL[i][], Phi);
