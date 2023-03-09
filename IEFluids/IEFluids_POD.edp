@@ -76,7 +76,7 @@ mapVhP1 = restrict(VhP1L,VhP1,myN2o);
 }
 
 
-int ReSnap = 1; // numero de Snapshots de Reynolds
+int ReSnap = 20; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
@@ -88,25 +88,23 @@ Vh3P1L[int] [VhL,VhLY,VhLZ](Nsnap);
 VhP1L[int] PhL(Nsnap);
 
 // Comienzo bucle de lectura de snapshots
-if (mpirank==0 || mpirank==1){ 		// one process to read velocity and another to read pressure
-	for (int NRe=1; NRe<=ReSnap; NRe++){
-		for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
-			int i = (NTemp-1) + (NRe-1)*TimeSnap;
-			if(mpirank==1){ 
-				cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
-				readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
-				Vh[i][] = Vel;
-				VhL[i][] = Vh[i][](mapVh3P1); // Load in the local mesh
-			}
-			if(mpirank==0){
-				cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
-				readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
-				Ph[i][] = Pres; 
-				PhL[i][] = Ph[i][](mapVhP1); // Load in the local mesh
-			}
-		}
+
+for (int NRe=1; NRe<=ReSnap; NRe++){
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+		int i = (NTemp-1) + (NRe-1)*TimeSnap;
+		
+			// cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+			readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
+			Vh[i][] = Vel;
+			VhL[i][] = Vh[i][](mapVh3P1); // Load in the local mesh
+
+			// cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
+			readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
+			Ph[i][] = Pres; 
+			PhL[i][] = Ph[i][](mapVhP1); // Load in the local mesh
 	}
 }
+
 mpiBarrier(mpiCommWorld);
 
 // Creamos las matrices de Correlacion
