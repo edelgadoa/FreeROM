@@ -106,6 +106,6 @@ for (int s=0; s<Taubases; s++){
 			// cout<<"M dim= "<<StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases].n<<"x"<<StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases].m<<endl;					
 		}
 	}		
-	//}
+}
 
 mpi(cout<<"Matr scalar product conv Done"<<endl;)
