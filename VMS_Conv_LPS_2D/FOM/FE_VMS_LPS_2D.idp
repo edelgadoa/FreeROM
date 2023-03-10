@@ -43,6 +43,18 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	include "Matriz_VMSSmago_2D.idp"
 	
+	
+	//COEF. ESTAB. CODINA
+	varf tauK(unused,v)=int2d(Th)((uprevL^2+uprevLY^2)*v);
+	varf tauKT(unused,v)=int2d(Th)(((uEFdX)^2+(uEFdY)^2+(uEFYdX)^2+(uEFYdY)^2)*v);
+	real[int] tK=tauK(0,VhP0);
+	real[int] tKT=tauKT(0,VhP0);
+
+	tKcod[] = sqrt(tK);
+	tKTcod[] = sqrt(tKT);
+
+
+	tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
 
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
@@ -66,14 +78,14 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal = bFija;
 	bFinal += bNS;
 	bFinal += bSmago;
-	bFinal += bLPSConv;
+	// bFinal += bLPSConv;
 	
 	set(MFinal, solver=sparsesolver);
 	
 	Vh3P2 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
-	uEFp[]=uEF[];
+	uEFp[] = uEF[];
 	
-	uEF[]=MFinal^-1*bFinal;
+	uEF[] = MFinal^-1*bFinal;
 
 	
 	// Calculamos el error cometido (en velocidad)
