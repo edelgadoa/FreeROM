@@ -108,27 +108,21 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 	}
 }
 
-mpiBarrier(mpiCommWorld);
+real[int,int] Vhi(MatNormH1.n, Nsnap), Phi(MatNormL2.n, Nsnap);
+ChangeNumbering(MatNormH1, VhL, Vhi);
+ChangeNumbering(MatNormL2, PhL, Phi);
 
-// Creamos las matrices de Correlacion
-real [int,int] CV(Nsnap, Nsnap), CP(Nsnap, Nsnap);
+// Calculo de matrices de Correlacion
+real[int, int] AuxC(MatNormH1.n,VhL.m), AuxP(MatNormL2.n, PhL.m); 
+MatMatMult(MatNormH1, VhL, AuxC);
+MatMatMult(MatNormL2, PhL, AuxP);		
 
-for (int i=0; i<Nsnap; i++){ //CAMBIAR ESTO
-	real[int] Vhi, Phi;
-	ChangeNumbering(MatNormH1, VhL[i][], Vhi);
-	ChangeNumbering(MatNormL2, PhL[i][], Phi);
-	for (int j=0; j<=i; j++){
-		real[int] Vhj, Phj;
-		ChangeNumbering(MatNormH1, VhL[j][], Vhj);
-		ChangeNumbering(MatNormL2, PhL[j][], Phj);
-		CV(i,j) = (1./Nsnap)*innerprodX(Vhi, Vhj, MatNormH1);
-		CP(i,j) = (1./Nsnap)*innerprodX(Phi, Phj, MatNormL2);
-		if(j<i){
-			CV(j,i) = CV(i,j); //Matriz simetrica 
-			CP(j,i) = CP(i,j);
-		}
-	}
-}
+real [int,int] CV(Nsnap, Nsnap) = VhL'*AuxC;
+real [int,int] CP(Nsnap, Nsnap) = PhL'*AuxP;
+
+CV *= (1./Nsnap);
+CP *= (1./Nsnap);
+		
 
 // Write the correlation matrix
 write("Correl_U_"+mpisize+".txt", CV, 0, 0);
