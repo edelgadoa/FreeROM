@@ -8,7 +8,7 @@
 //MATRIZ ESTAB. PRES.
 /////////////////////////////
 
-varf termPres(pp,q) = int2d(Th)(tau*pp*q);
+varf termPres(pp,q) = int2d(Th)(hTriangle^2*pp*q);
 
 
 matrix TermP = termPres(VhP1dc,VhP1dc);

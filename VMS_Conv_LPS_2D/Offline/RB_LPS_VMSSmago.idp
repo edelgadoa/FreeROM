@@ -11,7 +11,7 @@ MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += ConvLevRBi;
 MRB += PenRBi;	
-// MRB += StabhkRBi;
+MRB += StabhkRBi;
 
 
 bDiffRBi = bDiffRB(0:2*I-1);
@@ -109,57 +109,57 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	for (int s=0; s<Taubases; s++){
 		real[int,int] SConvint(2*I, 2*I), SConvRBN(2*Nbases, 2*Nbases);
 		real[int] bSConvint(2*I), bSConvRBN(2*Nbases);
-		SConvRBN = StabCLLRB[s];
-		SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-		SConvint =  sigmaEIMTau(s)*SConvint;
-		StabCRBi += SConvint;
+		// SConvRBN = StabCLLRB[s];
+		// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+		// SConvint =  sigmaEIMTau(s)*SConvint;
+		// StabCRBi += SConvint;
 		// cout<<"0"<<endl;
 		// bSConvRBN = bStabCLLRB[s](0:2*I-1);
 		// bSConvint = bSConvRBN(0:2*I-1);
-		bSConvint = sigmaEIMTau(s)*bStabCLLRB(s, 0:2*I-1);
-		bStabCRBi += bSConvint;
+		// bSConvint = sigmaEIMTau(s)*bStabCLLRB(s, 0:2*I-1);
+		// bStabCRBi += bSConvint;
 		// cout<<s<<endl;
 		for (int ui=0; ui<I; ui++){
 			real[int,int] SConvint(2*I, 2*I), SConvRBN(2*Nbases, 2*Nbases);
-			SConvRBN = StabCLURB[s + ui*Taubases];
-			SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-			SConvint =  sigmaEIMTau(s)*SConvint;
-			SConvint =  uRBv(ui)*SConvint;
-			StabCRBi += SConvint;
+			// SConvRBN = StabCLURB[s + ui*Taubases];
+			// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+			// SConvint =  sigmaEIMTau(s)*SConvint;
+			// SConvint =  uRBv(ui)*SConvint;
+			// StabCRBi += SConvint;
 
 			// bSConvRBN = bStabCLURB[s + ui*Taubases];
 			// bSConvint = bSConvRBN(0:2*I-1);
-			bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCLURB(s + ui*Taubases, 0:2*I-1);
+			// bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCLURB(s + ui*Taubases, 0:2*I-1);
 			// bSConvint = uRBv(ui)*bSConvint;
-			bStabCRBi += bSConvint;
+			// bStabCRBi += bSConvint;
 
-			SConvRBN = StabCULRB[s + ui*Taubases];
-			SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-			SConvint =  sigmaEIMTau(s)*SConvint;
-			SConvint =  uRBv(ui)*SConvint;
-			StabCRBi += SConvint;
+			// SConvRBN = StabCULRB[s + ui*Taubases];
+			// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+			// SConvint =  sigmaEIMTau(s)*SConvint;
+			// SConvint =  uRBv(ui)*SConvint;
+			// StabCRBi += SConvint;
 
 			// bSConvRBN = bStabCULRB[s + ui*Taubases];
 			// bSConvint = bSConvRBN(0:2*I-1);
-			bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCULRB(s + ui*Taubases, 0:2*I-1);
+			// bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCULRB(s + ui*Taubases, 0:2*I-1);
 			// bSConvint =  uRBv(ui)*bSConvint;
-			bStabCRBi += bSConvint;
+			// bStabCRBi += bSConvint;
 			// cout<<"	"<<ui<<endl;
 			for (int uj=0; uj<I; uj++){
-				SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
-				// SConvRBN = StabCUURB[ui + uj*Nbases];
+				// SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
+				SConvRBN = StabCUURB[ui + uj*Nbases];
 				SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-				SConvint =  sigmaEIMTau(s)*SConvint;
+				// SConvint =  sigmaEIMTau(s)*SConvint;
 				SConvint =  uRBv(ui)*SConvint;
 				SConvint =  uRBv(uj)*SConvint;
 				StabCRBi += SConvint;	
 				
 				// bSConvRBN = bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
 				// bSConvint = bSConvRBN(0:2*I-1);
-				bSConvint =  uRBv(uj)*uRBv(ui)*sigmaEIMTau(s)*bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, 0: 2*I-1);
+				// bSConvint =  uRBv(uj)*uRBv(ui)*sigmaEIMTau(s)*bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, 0: 2*I-1);
 				// bSConvint =  uRBv(ui)*bSConvint;
 				// bSConvint =  uRBv(uj)*bSConvint;
-				bStabCRBi += bSConvint;
+				// bStabCRBi += bSConvint;
 				// cout<<"   "<<uj<<endl;
 			}
 		}
@@ -169,7 +169,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
-	MRBF += StabPRBi;
+	// MRBF += StabPRBi;
 	MRBF += StabCRBi;
 	//cout<<MRBF<<endl;
 	
@@ -177,7 +177,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	bRB -= nuRB * bDiffRBi(0:2*I-1);
 	bRB -= bConvRBi(0:2*I-1);
 	bRB -= bSmagoRBi(0:2*I-1);
-	bRB -= bStabCRBi(0:2*I-1);
+	// bRB -= bStabCRBi(0:2*I-1);
 	
 	//cout<<bRB<<endl;
 	

@@ -1,6 +1,7 @@
 ///////////////
 // FreeROM 
 ///////////////
+Remax=2100;
 
 
 for(int i=0; i<nSnapshots; i++){

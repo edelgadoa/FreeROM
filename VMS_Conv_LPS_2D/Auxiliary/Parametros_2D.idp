@@ -54,7 +54,7 @@ real RBFeps = 1e-5;
 real Reynolds; // Esto es perceptible de cambiarlo
 
 real Remin = 1000;
-real Remax = 5100;
+real Remax = 2100;
 
 int Ntrain = 165;
 
