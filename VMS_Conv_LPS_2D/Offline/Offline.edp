@@ -45,7 +45,7 @@ include "../Auxiliary/Normas.idp"
 include "../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
-int Nbases = 2; 
+int Nbases = 3; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
