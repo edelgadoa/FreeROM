@@ -85,10 +85,10 @@ for (int s=0; s<Taubases; s++){
 	StabPRB[s] = LPSint;
 }
 
-
-
+//
+//
 // LPS Conveccion
-// for (int s=0; s<Taubases; s++){
+for (int s=0; s<Taubases; s++){
 	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
 	real[int] bLLint(2*Nbases);
 	LPSCLLint = 0;
@@ -104,8 +104,8 @@ for (int s=0; s<Taubases; s++){
 			LPSCUUint = 0;// LPSCintG = 0;
 			bUUint = 0;
 			for (int j=0; j<=i; j++){
-					// LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
-					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[ui + uj*Nbases]); 
+					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+					// LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[ui + uj*Nbases]);
 					// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
 					// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
 					// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
@@ -117,12 +117,12 @@ for (int s=0; s<Taubases; s++){
 					}
 
 			}
-			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
+			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
 			//bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
-			
-			// StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUint;
-			StabCUURB[ui + uj*Nbases] = LPSCUUint;
-			
+
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUint;
+			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
+
 		}
 		// bStabCULRB(s + ui*Taubases, i) = innerprodX(BaseV[i][], LevV[], StabCULPEM[s + ui*Taubases]);
 		// bStabCLURB(s + ui*Taubases, i) = innerprodX(BaseV[i][], LevV[], StabCLUPEM[s + ui*Taubases]);
@@ -135,10 +135,11 @@ for (int s=0; s<Taubases; s++){
 	//bLLint(i) = innerprodX(BaseV[i][], LevV[], StabCLLPEM[s]);
 	// bStabCLLRB(s, i) =  innerprodX(BaseV[i][], LevV[], StabCLLPEM[s]); //bLLint(i);
 
-	
-	// StabCLLRB[s] +=  LPSCLLint;
-	// }
 
+	// StabCLLRB[s] +=  LPSCLLint;
+}
+
+cout<<StabCUURB<<endl;
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
@@ -157,7 +158,6 @@ for (int s=0; s<Mbases; s++){
 //NgkL = 0; NggkL = 0;
 for (int s=0; s<Taubases; s++){ 
 		real[int, int] NgkL = NUK[s], NggkL = NGUK[s];
-		//real[int,int] Ngk = NUK[s];
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
 		fvel = BaseVel[i]; fvelY = BaseVelY[i];
@@ -185,12 +185,7 @@ for (int s=0; s<Taubases; s++){
 }
 
 
-for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
-	// real[int,int] NgkL(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
-	// real[int,int] NggkL(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
-	// NgkL = 0; NgkG = 0;
-	// NggkL = 0; NggkG = 0;
-	
+for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2	
 	real[int, int] NgkL = NUK[s], NggkL = NGUK[s];
 	for (int j=0; j<=i; j++){ 
 

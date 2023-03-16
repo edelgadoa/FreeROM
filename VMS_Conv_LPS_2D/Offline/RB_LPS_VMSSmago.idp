@@ -11,7 +11,7 @@ MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += ConvLevRBi;
 MRB += PenRBi;	
-MRB += StabhkRBi;
+// MRB += StabhkRBi;
 
 
 bDiffRBi = bDiffRB(0:2*I-1);
@@ -146,10 +146,10 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 			// bStabCRBi += bSConvint;
 			// cout<<"	"<<ui<<endl;
 			for (int uj=0; uj<I; uj++){
-				// SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
-				SConvRBN = StabCUURB[ui + uj*Nbases];
+				SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
+				//SConvRBN = StabCUURB[ui + uj*Nbases];
 				SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-				// SConvint =  sigmaEIMTau(s)*SConvint;
+				SConvint =  sigmaEIMTau(s)*SConvint;
 				SConvint =  uRBv(ui)*SConvint;
 				SConvint =  uRBv(uj)*SConvint;
 				StabCRBi += SConvint;	
@@ -169,7 +169,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
-	// MRBF += StabPRBi;
+	MRBF += StabPRBi;
 	MRBF += StabCRBi;
 	//cout<<MRBF<<endl;
 	

@@ -3,11 +3,10 @@
 ///////////////
 
 // Productos escalares para el término convectivo
-// matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
-matrix[int] StabCUUPEM(Nbases^2);
-// for (int s=0; s<Taubases; s++){
-	varf StabCPE(u,v) = int2d(Th)(hTriangle^2*u*v);
-	// varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
+matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
+
+for (int s=0; s<Taubases; s++){
+	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
 	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 
 	VhP1dc Levdc = Lev;
@@ -35,11 +34,8 @@ matrix[int] StabCUUPEM(Nbases^2);
 		ConvLLY = SCPEM * IPhLD2;
 		ConvLLY = (IPhLD2')* ConvLLY;
 	}
-	// StabCLLPEM[s] = ConvLLX + ConvLLY;
 	
 	for (int ui=0; ui<Nbases; ui++){
-		varf StabCPE(u,v) = int2d(Th)(hTriangle^2*u*v);
-		matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 		
 		VhP1dc BaseVdci = BaseV[ui];
 		VhP1dc BaseVYdci = BaseVY[ui];
@@ -102,11 +98,9 @@ matrix[int] StabCUUPEM(Nbases^2);
 				ConvUUY = SCPEM * IPhUiD2;
 				ConvUUY = (IPhUjD2') * ConvUUY;				
 			}
-			StabCUUPEM[ui + uj*Nbases] = ConvUUX + ConvUUY;	
-			// StabCUUPEM[s + ui*Taubases + uj*Nbases*Taubases] = ConvUUX + ConvUUY;	
+			// StabCUUPEM[ui + uj*Nbases] = ConvUUX + ConvUUY;	
+			StabCUUPEM[s + ui*Taubases + uj*Nbases*Taubases] = ConvUUX + ConvUUY;	
 			
 		}
 	}		
-	// }
-
-mpi(cout<<"Matr scalar product conv Done"<<endl;)
+}
