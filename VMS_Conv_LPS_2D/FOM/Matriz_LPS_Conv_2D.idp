@@ -13,8 +13,8 @@ varf termConv(uu1,v) = int2d(Th)(tau*uu1*v);
 
 matrix TermC = termConv(VhP1dc,VhP1dc);
 
-VhP1dc uEFdc = uEF;// + Lev;
-VhP1dc uEFYdc = uEFY;// + LevY;
+VhP1dc uEFdc = uEF; // + Lev;
+VhP1dc uEFYdc = uEFY; // + LevY;
 
 matrix UEFdc = uEFdc[];
 matrix UEFYdc = uEFYdc[];

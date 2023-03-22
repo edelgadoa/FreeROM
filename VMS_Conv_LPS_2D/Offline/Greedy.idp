@@ -59,7 +59,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	[uRBNL, uRBNLY, uRBNLP] = [uRBNLaux, uRBNLYaux, uRBP];
 	uRB[] += LevV[];
 	
-	if(MuTrain(iRB)==1000){
+	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
 		//plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
 		mpi(cout<<uRBv<<endl;)
