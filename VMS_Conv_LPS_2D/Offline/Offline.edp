@@ -12,6 +12,8 @@
 // Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
 
+verbosity=0;
+
 // Cargamos librerias
 load "iovtk" 
 load "lapack"
@@ -45,7 +47,7 @@ include "../Auxiliary/Normas.idp"
 include "../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
-int Nbases = 3; 
+int Nbases = 10; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -174,7 +176,7 @@ for (int i=0; i<Nbases; i++){
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
 	// plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
 	
-	// include "GramSchmidt.idp"
+	include "GramSchmidt.idp"
 	
 	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
 	

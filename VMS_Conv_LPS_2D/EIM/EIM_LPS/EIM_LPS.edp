@@ -53,7 +53,7 @@ varf tauKT(unused,v)=int2d(Th)((UXdX^2+UXdY^2+UYdX^2+UYdY^2)*v);
 include "Load_Snapshots_EIM.idp"
 
 // Defino las variables para el EIM
-int Mmax = 23; //numero maximo de bases del EIM
+int Mmax = 83; //numero maximo de bases del EIM
 int M; //numero de bases que voy a considerar finalmente
 real[int] Tmax(Mmax), muEIM(Mmax); //Donde almaceno los puntos magicos y los valores de parámetros que voy escogiendo
 real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa del EIM

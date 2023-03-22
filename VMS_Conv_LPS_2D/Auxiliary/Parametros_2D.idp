@@ -54,9 +54,9 @@ real RBFeps = 1e-5;
 real Reynolds; // Esto es perceptible de cambiarlo
 
 real Remin = 1000;
-real Remax = 2100;
+real Remax = 5100;
 
-int Ntrain = 16; //165
+int Ntrain = 165;
 
 real[int] MuTrain(Ntrain);
 for (int ig=0; ig<Ntrain; ig++){

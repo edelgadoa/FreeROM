@@ -37,8 +37,6 @@ for (int j=0; j<=i; j++){
 
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
-	Cint = 0;
-	contFF = 0;
 	for (int j=0; j<=i; j++){
 			Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
 			if(j<i){
@@ -105,32 +103,31 @@ for (int s=0; s<Taubases; s++){
 			bUUint = 0;
 			
 			for (int j=0; j<=i; j++){
-					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
-					// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
-					// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
-					// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
-					cout<<"i="<<i<<", j="<<j<<", valor (i,j)="<<LPSCUUint(i,j)<<endl;
-					if(j<i){
-						LPSCUUint(j,i) = LPSCUUint(i,j);
-						// LPSCULint(j,i) = LPSCULint(i,j);
-						// LPSCLUint(j,i) = LPSCLUint(i,j);
-						// LPSCLLint(j,i) = LPSCLLint(i,j);
-						if((ui==i || uj==i) && i>0){
-							for(int k=0; k<i; k++){
-								LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
-								cout<<"j="<<j<<", k="<<k<<", valor (j,k)="<<LPSCUUint(j,k)<<endl;
-									if(j<k){
-										LPSCUUint(j,k) = LPSCUUint(k,j);
-									}
+				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
+				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
+				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
+				cout<<"i="<<i<<", j="<<j<<", valor (i,j)="<<LPSCUUint(i,j)<<endl;
+				if(j<i){
+					LPSCUUint(j,i) = LPSCUUint(i,j);
+					// LPSCULint(j,i) = LPSCULint(i,j);
+					// LPSCLUint(j,i) = LPSCLUint(i,j);
+					// LPSCLLint(j,i) = LPSCLLint(i,j);
+					if((ui==i || uj==i) && i>0){
+						for(int k=0; k<i; k++){
+							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+							cout<<"j="<<j<<", k="<<k<<", valor (j,k)="<<LPSCUUint(j,k)<<endl;
+							if(j<k){
+								LPSCUUint(k,j) = LPSCUUint(j,k);
 							}
 						}
 					}
-
+				}
 			}
 			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
 			//bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
 
-			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] =  LPSCUUint;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] = LPSCUUint;
 			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
 			cout<<"s="<<s<<", ui="<<ui<<", uj="<<uj<<endl<<StabCUURB[s + ui*Taubases + uj*Taubases*Nbases]<<endl;
 			

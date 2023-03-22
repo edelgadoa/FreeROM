@@ -44,6 +44,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
 	Vh2P2 [uRB, uRBY];
+	Vh2P2 [uRBNLaux, uRBNLYaux];
+	Vh3P2 [uRBNL, uRBNLY, uRBNLP];
 	VhP2 uRBP;
 	
 	real[int,int] MBaseVi(Vh2P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
@@ -51,13 +53,15 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
+	uRBNLaux[] = MBaseVi*uRBv(0:I-1);
 	uRBP[] = MBasePi*uRBv(I:2*I-1);
 	
+	[uRBNL, uRBNLY, uRBNLP] = [uRBNLaux, uRBNLYaux, uRBP];
 	uRB[] += LevV[];
 	
-	if(MuTrain(iRB)==Reynolds){
+	if(MuTrain(iRB)==1000){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
-		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		//plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
 		mpi(cout<<uRBv<<endl;)
 	}
 	
@@ -69,6 +73,16 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	
 		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[];
+	}
+	
+	VhP1dc uRBNLdX, uRBNLdY, uRBYNLdX, uRBYNLdY;
+	
+	{ 
+		VhP2 uRBvel, uRBvelY;
+		uRBvel = uRB - Lev; uRBvelY = uRBY - LevY;
+	
+		uRBNLdX[] = DXP2IPh * uRBvel[]; uRBNLdY[] = DYP2IPh * uRBvel[];	
+		uRBYNLdX[] = DXP2IPh * uRBvelY[]; uRBYNLdY[] = DYP2IPh * uRBvelY[];
 	}
 	
 	// Calculo el estimador de error 

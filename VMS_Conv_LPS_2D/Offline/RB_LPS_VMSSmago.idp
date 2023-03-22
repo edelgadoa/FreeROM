@@ -21,9 +21,9 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	ConvRBi = 0;
 	SmagoRBi = 0;
 	StabPRBi = 0;
+	StabCRBi = 0;
 	bDTRBi = 0;
 	bSmagoRBi = 0;
-	StabCRBi = 0;
 	bStabCRBi = 0;
 	bRB = 0;
 	
@@ -149,9 +149,9 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 				SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
 				//SConvRBN = StabCUURB[ui + uj*Nbases];
 				SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
-				SConvint =  sigmaEIMTau(s)*SConvint;
-				SConvint =  uRBv(ui)*SConvint;
-				SConvint =  uRBv(uj)*SConvint;
+				SConvint = uRBv(uj)*uRBv(ui)*sigmaEIMTau(s)*SConvint;
+				//SConvint =  uRBv(ui)*SConvint;
+				//SConvint =  uRBv(uj)*SConvint;
 				StabCRBi += SConvint;	
 				
 				// bSConvRBN = bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
@@ -184,10 +184,11 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
-	set(MRBs, solver=UMFPACK);
-	// real[int,int] MRBinv = MRB^-1;
+	set(MRBs, solver=sparsesolver, factorize=1);
+	//real[int,int] MRBinv = MRB^-1;
 	
 	uRBv = MRBs^-1*bRB;
+	// uRBv = MRBinv*bRB;
 	//mpi(cout<<"uRB:"<<uRBv<<endl;)
 	// Actualizo el error 
 	real[int] uRBerr(I); 

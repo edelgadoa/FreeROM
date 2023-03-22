@@ -42,8 +42,10 @@ real[int] bSmagoRes(Vh3P2.ndof);
 	bSmagoRes = bSmagoRes.*cc; // bloqueo de las condiciones de contorno
 
 }
-// Termino LPS
+// Termino LPS Pres + Conv
 real[int] bStabPRes(Vh3P2.ndof);
+real[int] bStabConv(Vh3P2.ndof);
+bStabConv = 0;
 
 {
 	VhP0 tKres, tKTres, taures;
@@ -55,28 +57,66 @@ real[int] bStabPRes(Vh3P2.ndof);
 	
 	taures = ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
 	
-	VhP1dc uFRBP;
-	varf StabPRes(unP,vP) = int2d(Th)(taures*uFRBP*vP);
+	
+	// PRESION
+	VhP1dc uFRB;
+	varf StabRes(un,v) = int2d(Th)(taures*uFRB*v);
 	
 	real[int] bSPx(Vh3P2.ndof), bSPy(Vh3P2.ndof), bSPaux(VhP1dc.ndof);
 	// Componente X
-	uFRBP[] = IPhDXP2 * uRBP[];
-	bSPaux = StabPRes(0, VhP1dc);
+	uFRB[] = IPhDXP2 * uRBP[];
+	bSPaux = StabRes(0, VhP1dc);
 	bSPx = IPhD3X3P2'*bSPaux;  
 	
 	// Componente Y
-	uFRBP[] = IPhDYP2 * uRBP[];
-	bSPaux = StabPRes(0, VhP1dc);
+	uFRB[] = IPhDYP2 * uRBP[];
+	bSPaux = StabRes(0, VhP1dc);
 	bSPy = IPhD3Y3P2'*bSPaux;  
 
 	bStabPRes = bSPx + bSPy;
+	//////////////////////////
+	// //CONVECCION
+	VhP1dc uRBdc = uRBNL, uRBYdc = uRBNLY; // - LevY;
+	matrix URBdc = uRBdc[];
+	matrix URBYdc = uRBYdc[];
+
+	real[int] bSCx(Vh3P2.ndof), bSCy(Vh3P2.ndof);
+	
+	//Componente X
+	matrix UXD1X = URBdc * D1X3P2;
+	matrix UYD1Y = URBYdc * D1Y3P2;
+	matrix UD1 = UXD1X + UYD1Y;
+	matrix IPhUD1 = IPhP1dcP1 * UD1;
+	
+	
+	uFRB[] = IPhUD1 * uRBNL[];
+	real[int] bConv1 = StabRes(0, VhP1dc);
+	bSCx = IPhUD1'* bConv1;
+	
+	
+	// Componente Y
+	matrix UXD2X = URBdc * D2X3P2;
+	matrix UYD2Y = URBYdc * D2Y3P2;
+	matrix UD2 = UXD2X + UYD2Y;
+	matrix IPhUD2 = IPhP1dcP1 * UD2;
+	
+	
+	uFRB[] = IPhUD2 * uRBNL[];
+	real[int] bConv2 = StabRes(0, VhP1dc);
+	bSCy = IPhUD2'* bConv2;
+	
+	bStabConv = bSCx + bSCy;
+	// bStabConv = bStabConv .* cc; //bloqueo de las condiciones de contorno
+
 }
 
 bRes = bNSRes;
 bRes += bSmagoRes;
 bRes += bStabPRes;
+bRes += bStabConv;
 
 {
+	
 	Vh3P2 [RES, RESY, RESP];
 	RES[] = MRes^-1*bRes;
 	ResG(iRB) = normX(RES[], MPescX);
