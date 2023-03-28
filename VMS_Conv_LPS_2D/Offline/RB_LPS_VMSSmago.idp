@@ -3,14 +3,15 @@
 /////////////// 	
 
 // Comenzamos a resolver el problema reducido	
-real errRB = 1.;	
+real errRB = 1.;
+// dt=10;	
 	
-MRB = nuRB * DiffRBi;
-MRB += DivPRBi;
-MRB += DivPRBTi;
-MRB += (1./dt) * DTRBi;
-MRB += ConvLevRBi;
-MRB += PenRBi;	
+MRB = dt * nuRB * DiffRBi;
+MRB += dt * DivPRBi;
+MRB += dt * DivPRBTi;
+MRB += DTRBi; //(1./dt) * DTRBi;
+MRB += dt * ConvLevRBi;
+MRB += dt * PenRBi;	
 // MRB += StabhkRBi;
 
 
@@ -21,8 +22,11 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	ConvRBi = 0;
 	SmagoRBi = 0;
 	StabPRBi = 0;
+	StabCRBi = 0;
 	bDTRBi = 0;
 	bSmagoRBi = 0;
+	bStabCRBi = 0;
+
 	bRB = 0;
 	
 	// Matriz de conveccion
@@ -88,7 +92,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBint(2*I,2*I), StabPRBN(2*Nbases, 2*Nbases);
 		StabPRBN = StabPRB[s];
-		StabPRBint = StabPRBN(Nbases-I:Nbases+I-1,Nbases-I:Nbases+I-1);
+		StabPRBint = StabPRBN(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
 		StabPRBint = sigmaEIMTau(s)*StabPRBint;
 		StabPRBi += StabPRBint; 
 	}
@@ -97,31 +101,100 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
 		real[int] bDTRBint(2*I);
-		bDTRBint = DTRB(s,:);
+		bDTRBint = DTRB(s,0:2*I-1);
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
 	}
 	
+	// cout<<"Matriz conv"<<endl;
+	// Matriz de conveccion
+	for (int s=0; s<Taubases; s++){
+		// real[int] bSConvint(2*I), bSConvRBN(2*Nbases);
+		// SConvRBN = StabCLLRB[s];
+		// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+		// SConvint =  sigmaEIMTau(s)*SConvint;
+		// StabCRBi += SConvint;
+		// cout<<"0"<<endl;
+		// bSConvRBN = bStabCLLRB[s](0:2*I-1);
+		// bSConvint = bSConvRBN(0:2*I-1);
+		// bSConvint = sigmaEIMTau(s)*bStabCLLRB(s, 0:2*I-1);
+		// bStabCRBi += bSConvint;
+		// cout<<s<<endl;
+		for (int ui=0; ui<I; ui++){
+
+			// SConvRBN = StabCLURB[s + ui*Taubases];
+			// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+			// SConvint =  sigmaEIMTau(s)*SConvint;
+			// SConvint =  uRBv(ui)*SConvint;
+			// StabCRBi += SConvint;
+
+			// bSConvRBN = bStabCLURB[s + ui*Taubases];
+			// bSConvint = bSConvRBN(0:2*I-1);
+			// bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCLURB(s + ui*Taubases, 0:2*I-1);
+			// bSConvint = uRBv(ui)*bSConvint;
+			// bStabCRBi += bSConvint;
+
+			// SConvRBN = StabCULRB[s + ui*Taubases];
+			// SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+			// SConvint =  sigmaEIMTau(s)*SConvint;
+			// SConvint =  uRBv(ui)*SConvint;
+			// StabCRBi += SConvint;
+
+			// bSConvRBN = bStabCULRB[s + ui*Taubases];
+			// bSConvint = bSConvRBN(0:2*I-1);
+			// bSConvint = uRBv(ui)*sigmaEIMTau(s)*bStabCULRB(s + ui*Taubases, 0:2*I-1);
+			// bSConvint =  uRBv(ui)*bSConvint;
+			// bStabCRBi += bSConvint;
+			// cout<<"	"<<ui<<endl;
+			for (int uj=0; uj<I; uj++){
+				real[int,int] SConvint(2*I, 2*I), SConvRBN(2*Nbases, 2*Nbases);
+				SConvRBN = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
+				// SConvint = 0;
+				//SConvRBN = StabCUURB[ui + uj*Nbases];
+				SConvint = SConvRBN(0:2*I-1, 0:2*I-1);
+				SConvint = uRBv(ui)*uRBv(uj)*sigmaEIMTau(s)*SConvint;
+				//SConvint = uRBv(ui)*SConvint;
+				//SConvint = uRBv(uj)*SConvint;
+				StabCRBi += SConvint;	
+				
+				// bSConvRBN = bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
+				// bSConvint = bSConvRBN(0:2*I-1);
+				// bSConvint =  uRBv(uj)*uRBv(ui)*sigmaEIMTau(s)*bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, 0: 2*I-1);
+				// bSConvint =  uRBv(ui)*bSConvint;
+				// bSConvint =  uRBv(uj)*bSConvint;
+				// bStabCRBi += bSConvint;
+				// cout<<"   "<<uj<<endl;
+			}
+		}
+	}
+	
+	// cout<<"done"<<endl;
 	// Construyo la matriz y Segundo miembros para el problema reducido
-	MRBF += ConvRBi;
-	MRBF += SmagoRBi; 
-	MRBF += StabPRBi;
+	MRBF += dt * ConvRBi;
+	MRBF += dt * SmagoRBi; 
+	MRBF += dt * StabPRBi;
+	MRBF += dt * StabCRBi;
 	
+
+	//cout<<MRBF<<endl;
 	
-	bRB = (1./dt) * bDTRBi(0:2*I-1);
-	bRB -= nuRB * bDiffRBi(0:2*I-1);
-	bRB -= bConvRBi(0:2*I-1);
-	bRB -= bSmagoRBi(0:2*I-1);
+	bRB = bDTRBi(0:2*I-1) ; // (1./dt) * bDTRBi(0:2*I-1);
+	bRB -= dt * nuRB * bDiffRBi(0:2*I-1);
+	bRB -= dt * bConvRBi(0:2*I-1);
+	bRB -= dt * bSmagoRBi(0:2*I-1);
+	// bRB -= bStabCRBi(0:2*I-1);
 	
-	
+
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
 	set(MRBs, solver=UMFPACK);
-	// real[int,int] MRBinv = MRB^-1;
+
+	// real[int,int] MRBinv = MRBF^-1;
 	
 	uRBv = MRBs^-1*bRB;
-	//mpi(cout<<"uRB:"<<uRBv<<endl;)
+	// uRBv = MRBinv*bRB;
+
 	// Actualizo el error 
 	real[int] uRBerr(I); 
 	uRBerr = uRBv(0:I-1) - uRBvp(0:I-1);

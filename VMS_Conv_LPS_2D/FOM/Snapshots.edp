@@ -34,6 +34,7 @@ include "../Auxiliary/Parametros_2D.idp"
 include "Levantamiento.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+
 int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 

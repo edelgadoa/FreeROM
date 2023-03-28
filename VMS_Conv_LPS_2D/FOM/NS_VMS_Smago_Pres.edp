@@ -31,7 +31,7 @@ include "../Auxiliary/Parametros_2D.idp"
 // Incluimos el levantamiento
 include "Levantamiento.idp"
 
-Reynolds = 1000;
+Reynolds = 10000;
 
 
 /////////////////////////////////////////////
@@ -48,7 +48,11 @@ include "FE_VMS_LPS_2D.idp"
 // Dibujamos la solucion, con levantamiento
 
 Vh3P2 [uEFL, uEFLY, uEFLP];
-uEFL[]=uEF[] + Lev[];
+uEFL[] = uEF[] + Lev[];
 
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+
+load "iovtk"
+int[int] fforder = [1,1,1,1];
+savevtk("VMS_LPS_Conv"+Reynolds+".vtu", Th, [uEFL, uEFLY, 0], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);

@@ -11,9 +11,12 @@ real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain);
 real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(2*I, 2*I),
 			   ConvLevRBi(2*I, 2*I), DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I),
 			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I), StabCRBi(2*I, 2*I); 
-			   			   			 			  
+
+DiffRBi = 0; DivPRBi = 0; DivPRBTi = 0; PenRBi = 0;		  
+ConvLevRBi = 0; DTRBi = 0; ConvRBi = 0; SmagoRBi = 0;
+StabPRBi = 0; StabCRBi = 0; 			   			 			  
 // Inicializamos los segundos miembros
-real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 
+real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I), bStabCRBi(2*I); 
 
 // Matrices fijas 
 DiffRBi = DiffRB(0:2*I-1, 0:2*I-1);
@@ -21,8 +24,10 @@ DivPRBi = DivPRB(Nbases-I:Nbases+I-1, 0:2*I-1);
 DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
 PenRBi = PenRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
 ConvLevRBi = ConvLevRB(0:2*I-1, 0:2*I-1);
-DTRBi = DTRB(0:2*I, 0:2*I);
-// StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
+
+DTRBi = DTRB(0:2*I-1, 0:2*I-1);
+StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
+
 bDiffRBi = bDiffRB(0:2*I-1);
 bConvRBi = bConvRB(0:2*I-1);
 
@@ -32,7 +37,8 @@ bConvRBi = bConvRB(0:2*I-1);
 
 for (int iRB=0; iRB<Ntrain; iRB++){
 	
-	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+
+	cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;
 	real nuRB = 1./MuTrain(iRB);
 	
 	// Resuelvo el problema 
@@ -44,6 +50,9 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
 	Vh2P2 [uRB, uRBY];
+
+	Vh2P2 [uRBNLaux, uRBNLYaux];
+	Vh3P2 [uRBNL, uRBNLY, uRBNLP];
 	VhP2 uRBP;
 	
 	real[int,int] MBaseVi(Vh2P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
@@ -51,14 +60,18 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
+
+	uRBNLaux[] = MBaseVi*uRBv(0:I-1);
 	uRBP[] = MBasePi*uRBv(I:2*I-1);
 	
+	[uRBNL, uRBNLY, uRBNLP] = [uRBNLaux, uRBNLYaux, uRBP];
 	uRB[] += LevV[];
 	
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
-		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
-		mpi(cout<<uRBv<<endl;)
+		//plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		cout<<uRBv<<endl;
+
 	}
 	
 	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;
@@ -71,11 +84,24 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[];
 	}
 	
+
+	VhP1dc uRBNLdX, uRBNLdY, uRBYNLdX, uRBYNLdY;
+	
+	{ 
+		VhP2 uRBvel, uRBvelY;
+		uRBvel = uRB - Lev; uRBvelY = uRBY - LevY;
+	
+		uRBNLdX[] = DXP2IPh * uRBvel[]; uRBNLdY[] = DYP2IPh * uRBvel[];	
+		uRBYNLdX[] = DXP2IPh * uRBvelY[]; uRBYNLdY[] = DYP2IPh * uRBvelY[];
+	}
+	
 	// Calculo el estimador de error 
 
 	// Norma del Residuo
 	include "Residuo_LPS_VMSSmago.idp"	
-	mpi(cout<<"ResN = "<<ResG(iRB)<<endl;)
+
+	cout<<"ResN = "<<ResG(iRB)<<endl;
+
 
 	
 	// Beta_h
@@ -86,7 +112,9 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 	// Tau_N
 	TauG(iRB) = (4 * RhoT * ResG(iRB))/(Betah^2);
-	mpi(cout<<"TauN = "<< TauG(iRB)<<endl;)
+
+	cout<<"TauN = "<< TauG(iRB)<<endl;
+
 	
 	// DeltaN
 	if (TauG(iRB) < 1){
@@ -98,7 +126,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 }
 
-mpi(cout<<"Delta"<<DeltaG<<endl;)
+cout<<"Delta"<<DeltaG<<endl;
+
 DeltaN(i) = DeltaG.max;
 TauN(i) = TauG.max;
 MuBest(i+1) = MuTrain(DeltaG.imax);

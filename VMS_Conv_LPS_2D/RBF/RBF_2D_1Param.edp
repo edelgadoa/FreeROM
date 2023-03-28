@@ -52,7 +52,11 @@ for(int i=0; i<Ninitpoints; i++){
 	vmuI(i)=Remin+i*(Remax-Remin)/(Ninitpoints-1);
 }
 
+<<<<<<< HEAD
+cout<<vmuI<<endl;
+=======
 mpi(cout<<vmuI<<endl;)
+>>>>>>> de2565e23ae61c7000f99c7fd7b44c6a7f194040
 
 for(int i=0; i<Nfine; i++){
 	vmufine(i)=Remin+i*(Remax-Remin)/(Nfine-1);
@@ -75,7 +79,11 @@ for (int ni=0; ni<Ninitpoints; ni++){
 	real[int] Potencia = powermethodRBF(X, Fb);
 	
 	betaI(ni) = sqrt(1./Potencia[0]); //La raíz cuadrada del inverso del máximo autovalor
+<<<<<<< HEAD
+	cout<<", beta_h = "<<betaI(ni)<<" -----------"<<endl;
+=======
 	mpi(cout<<", beta_h = "<<betaI(ni)<<" -----------"<<endl;)
+>>>>>>> de2565e23ae61c7000f99c7fd7b44c6a7f194040
 }
 
 // Comienzo con el método adaptativo para mejorar el beta_h "continuo"
@@ -103,12 +111,20 @@ for (int k=RBFcontador; k<Nmaxpoints; k++){
 	// Calculamos el nuevo betah
 	{
 		Reynolds = vmuI(k);
+<<<<<<< HEAD
+		cout<<"----------- Re = "<<Reynolds;
+=======
 		mpi(cout<<"----------- Re = "<<Reynolds;)
+>>>>>>> de2565e23ae61c7000f99c7fd7b44c6a7f194040
 		include "Matriz_Derivada.idp"
 		
 		real[int] Potencia = powermethodRBF(X, Fb);
 		betaI(k) = sqrt(1./Potencia[0]);
+<<<<<<< HEAD
+		cout<<", beta_h = "<<betaI(k)<<" -----------"<<endl;
+=======
 		mpi(cout<<", beta_h = "<<betaI(k)<<" -----------"<<endl;)
+>>>>>>> de2565e23ae61c7000f99c7fd7b44c6a7f194040
 	}
 	// Actualizamos Betak para calcular el error cometido
 	{

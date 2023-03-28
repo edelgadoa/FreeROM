@@ -8,27 +8,30 @@
 load "lapack"
 
 // Cargamos macros y funciones i/o
-include "../Auxiliary/Macros_2D.idp"
+
+include "../../Auxiliary/Macros_2D.idp"
 
 // Creamos la matriz
-include "../Auxiliary/CuadradoNxNy.idp"
+include "../../Auxiliary/CuadradoNxNy.idp"
 
 // Definimos los espacios de EF
-include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+include "../../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+include "../../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
 // Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
+include "../../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
-include "../FOM/Levantamiento.idp"
+include "../../FOM/Levantamiento.idp"
+
 
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 int nSnapshots; // numero de Snapshots que voy a querer calcular 
-ifstream nSnapshotFILE("../Snapshots/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
+ifstream nSnapshotFILE("../../Snapshots/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
+
 nSnapshotFILE>>nSnapshots;
 real[int] vReynolds(nSnapshots);
 

@@ -18,4 +18,13 @@ mesh Th;
 		// nflag = 4 --> Malla tipo 2 con dos esquinas donde cambia la diagonal
 	
 	Th=square(Nx,Ny,flags=nflag);
+
+	
+	// func fx = 0.5*(1 + (tanh(1.5*(2*x-1)))/(tanh(1.5)));
+	// func fy = 0.5*(1 + (tanh(1.5*(2*y-1)))/(tanh(1.5)));
+	
+	// Th = movemesh(Th, [fx,fy]);
+	
+	// plot(Th);
+
 }

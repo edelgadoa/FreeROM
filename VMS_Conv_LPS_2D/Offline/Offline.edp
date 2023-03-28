@@ -2,15 +2,18 @@
 // FreeROM 
 /////////////// 
 
-/////////////////////////////////////////
-/////////// FASE OFFLINE ////////////////
-//// NS + VMS-Smago + Estab Pres (LPS)///
-/////////////////////////////////////////
-/////////// NO SUPREMIZER ///////////////
-/////////////////////////////////////////
+//////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////
+//// NS + VMS-Smago + Estab Pres-Conv (LPS)///
+//////////////////////////////////////////////
+/////////// NO SUPREMIZER ////////////////////
+//////////////////////////////////////////////
+
 
 // Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
+
+verbosity=0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -44,9 +47,8 @@ include "../Auxiliary/Normas.idp"
 // Cargo las funciones del RBF
 include "../Auxiliary/betas.idp"
 
-
 //Definicion de Constantes y variables varias
-int Nbases = 40; 
+int Nbases = 30; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -173,12 +175,12 @@ for (int i=0; i<Nbases; i++){
 	VhP2 UL, ULY;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
+	// plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
 	
 	include "GramSchmidt.idp"
 	
-	plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
-	
+	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
+
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseP(:,i) = BaseP[i][];
@@ -199,6 +201,8 @@ for (int i=0; i<Nbases; i++){
 	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
 	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
 	
+	include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
+	
 	// Construyo las matrices
 	include "MatricesOffline.idp"
 		
@@ -207,15 +211,14 @@ for (int i=0; i<Nbases; i++){
 	
 	// Actualizo el nuevo Reynolds
 	Reynolds = MuBest(i+1);
-	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
-	
-	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
-	
+
+	//mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
+	cout<<"New Reynolds: "<<Reynolds<<endl;
+	//mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
+	cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;
 	if (DeltaN(i)<epsGreedy){
 		NRB = i + 1;
-		include "Save_Matrices.idp"
+		// include "Save_Matrices.idp"
 		break;
 	}
 }
-
-

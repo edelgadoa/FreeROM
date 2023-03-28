@@ -28,7 +28,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 		udcAux[] = IPhP2P1*uprevLY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
-	
+
 	}
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
@@ -52,7 +52,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 
 	tKcod[] = sqrt(tK);
 	tKTcod[] = sqrt(tKT);
-
 
 	tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
 
@@ -83,9 +82,9 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	set(MFinal, solver=sparsesolver);
 	
 	Vh3P2 [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
-	uEFp[]=uEF[];
+	uEFp[] = uEF[];
 	
-	uEF[]=MFinal^-1*bFinal;
+	uEF[] = MFinal^-1*bFinal;
 
 	
 	// Calculamos el error cometido (en velocidad)
@@ -95,6 +94,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
-
+	// cout<<ERROR<<endl;
 }
 

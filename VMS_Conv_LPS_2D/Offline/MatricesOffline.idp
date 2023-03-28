@@ -6,14 +6,11 @@
 
 // TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
 
-// Inicializo las matrices locales para el paralelo
-include "Allocate_matrices_local.idp"
-
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
-int contFF = 0; // Contador para el paralelo
+
 for (int j=0; j<=i; j++){
-	//if (mpirank==contFF%mpisize){
+
 		// Matrices
 		DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
 		DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
@@ -21,7 +18,7 @@ for (int j=0; j<=i; j++){
 		ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 		DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
 		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
-		
+
 		if (j<i){
 			DiffRB(j,i) = DiffRB(i,j);
 			DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
@@ -30,132 +27,132 @@ for (int j=0; j<=i; j++){
 			DTRB(j,i) = DTRB(i,j);
 			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
-		//}
-	//contFF++;
 }
 pause;
-
-// mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(ConvLevRBL, ConvLevRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
-
-// DiffRB += DiffRBG;
-// DivPRB += DivPRBG;
-// PenRB += PenRBG;
-// ConvLevRB += ConvLevRBG;
-// DTRB += DTRBG;
-// StabhkRB += StabhkRBG;
 
 // Comienzo el bucle para la construcción de los tensores
 
 // Conveccion
 
+
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
-	Cint = 0;
-	contFF = 0;
+	Cint = ConvRB[s];
 	for (int j=0; j<=i; j++){
-		//if (mpirank==contFF%mpisize){
-			Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
-			if(j<i){
-				Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+		
+		Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+		if(j<i){
+			
+			Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+		}
+		if (s==i && (j!=i)){
+			for (int k=0; k<s; k++){
+				
+				Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
 			}
-			if (s==i && (j!=i)){
-				for (int k=0; k<s; k++){
-					Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
-				}
-			} 
-			//}
-		//contFF++;		
-	}
-	//pause;
-	//mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
+		} 
 	
-	ConvRB[s] = Cint;
+	}
+	ConvRB[s] += Cint;
 }
+
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-	real[int, int] Sint(2*Nbases, 2*Nbases); //, SintG(2*Nbases, 2*Nbases);
-	Sint = 0; // SintG = 0;
-	// contFF = 0;
+	real[int, int] Sint(2*Nbases, 2*Nbases); 
+	Sint = SmagoRB[s]; 
 	for (int j=0; j<=i; j++){
-		// if (mpirank==contFF%mpisize){
-			Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); //int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
+
+			Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); 
 			if(j<i){
 				Sint(j,i) = Sint(i,j);
 			}
-			//}
-		//contFF++;		
 	}
-	// pause;
-	// mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);
+
 	SmagoRB[s] = Sint;
 }
 
 
-
 // LPS
 for (int s=0; s<Taubases; s++){
-	real[int, int] LPSint(2*Nbases, 2*Nbases); //LPSintG(2*Nbases, 2*Nbases);
-	LPSint = 0; //LPSintG = 0;
-	contFF = 0;
+	real[int, int] LPSint(2*Nbases, 2*Nbases); 
+	LPSint = StabPRB[s];
 	for (int j=0; j<=i; j++){
-		//if (mpirank==contFF%mpisize){
-			LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+
+			LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); 
 			if(j<i){
 				LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
 			}
-			//}
-		//contFF++;		
+
 	}
-	//pause;
-	//mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
-	
 	StabPRB[s] = LPSint;
 }
 
-
+//
+//
 // LPS Conveccion
 for (int s=0; s<Taubases; s++){
 	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
+	real[int] bLLint(2*Nbases);
 	LPSCLLint = 0;
-	for (int ui=0; ui<Nbases; ui++){
-		real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
-		LPSCULint = 0;	LPSCLUint = 0;
-		for (int uj=0; uj<Nbases; uj++){
+	bLLint = 0;
+	for (int ui=0; ui<=i; ui++){
+		// real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
+		// real[int] bULint(2*Nbases), bLUint(2*Nbases);
+		// LPSCULint = 0;	LPSCLUint = 0;
+		// bULint = 0; bLUint = 0;
+		for (int uj=0; uj<=i; uj++){
+
+			// real[int] bUUint(2*Nbases);
+//
+// 			bUUint = 0;
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
-			LPSCUUint = 0;// LPSCintG = 0;
-			contFF = 0;
-			for (int j=0; j<=i; j++){
-				//if (mpirank==contFF%mpisize){
-					LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); 
-					LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
-					LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
-					LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
-					if(j<i){
-						LPSCUUint(j,i) = LPSCUUint(i,j);
-						LPSCULint(j,i) = LPSCULint(i,j);
-						LPSCLUint(j,i) = LPSCLUint(i,j);
-						LPSCLLint(j,i) = LPSCLLint(i,j);
+			LPSCUUint = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
+
+			for (int j=0; j<=i; j++){//LO QUE ESTÁ CORRIENDO ES CON LOS ÍNDICES CAMBIADOS
+				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
+				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
+				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
+				
+				if(j<i){
+					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); //LPSCUUint(i,j);
+					// LPSCULint(j,i) = LPSCULint(i,j);
+					// LPSCLUint(j,i) = LPSCLUint(i,j);
+					// LPSCLLint(j,i) = LPSCLLint(i,j);
+					if((ui==i || uj==i) && j!=i){
+						for(int k=0; k<i; k++){
+							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+							
+							if(j<k){
+								LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); // LPSCUUint(j,k);
+							}
+						}
 					}
-					//}
-				contFF++;
+				}
 			}
-			//pause;
-			//mpiAllReduce(LPSCUUintL, LPSCUUintG, mpiCommWorld, mpiSUM);
+			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+			// bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] = LPSCUUint;
+			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
 			
-			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  LPSCUUint;
+			
+			
 		}
-		StabCLURB[s + ui*Taubases] +=  LPSCLUint;
-		StabCULRB[s + ui*Taubases] +=  LPSCULint;
+		// bStabCULRB(s + ui*Taubases, i) = innerprodX(BaseV[i][], LevV[], StabCULPEM[s + ui*Taubases]);
+		// bStabCLURB(s + ui*Taubases, i) = innerprodX(BaseV[i][], LevV[], StabCLUPEM[s + ui*Taubases]);
+		// // bStabCLURB[s + ui*Taubases] +=  bLUint;
+		// // bStabCULRB[s + ui*Taubases] +=  bULint;
+		//
+		// StabCLURB[s + ui*Taubases] +=  LPSCLUint;
+		// StabCULRB[s + ui*Taubases] +=  LPSCULint;
 	}
-	StabCLLRB[s] +=  LPSCLLint;
+	//bLLint(i) = innerprodX(BaseV[i][], LevV[], StabCLLPEM[s]);
+	// bStabCLLRB(s, i) =  innerprodX(BaseV[i][], LevV[], StabCLLPEM[s]); //bLLint(i);
+
+
+	// StabCLLRB[s] +=  LPSCLLint;
 }
-	
 
 
 // Matrices para el EIM de Smago
@@ -171,12 +168,12 @@ for (int s=0; s<Mbases; s++){
 
 
 // Matrices para el EIM LPS (parte del levantamiento)
-real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
-NgkL = 0; NggkL = 0;
-contFF = 0;
+
+//NgkL = 0; NggkL = 0;
 for (int s=0; s<Taubases; s++){ 
-	if(mpirank==contFF%mpisize){
-		//real[int,int] Ngk = NUK[s];
+		real[int, int] NgkL = NUK[s]; 
+
+
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
 		fvel = BaseVel[i]; fvelY = BaseVelY[i];
@@ -186,35 +183,28 @@ for (int s=0; s<Taubases; s++){
 		//Matriz simétrica
 		NgkL(1+i,0) = NgkL(0,1+i);
 	
-		NUK[s] += NgkL;
+		NUK[s] = NgkL;
 	
 		///////////////////////////////////////////////
 	
-		//real[int,int] Nggk = NGUK[s];
+		real[int,int] Nggk = NGUK[s];
 		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
 		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
 		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
 		real[int] ndgaux = NDG(0,VhP0);
-		NggkL(0,1+i) = ndgaux(PuntosMTau(s));
+		Nggk(0,1+i) = ndgaux(PuntosMTau(s));
 		//Matriz simétrica
-		NggkL(1+i,0) = NggkL(0,1+i);
+		Nggk(1+i,0) = Nggk(0,1+i);
 	
-		NGUK[s] += NggkL;
-	}
-	contFF++;
+		NGUK[s] = Nggk;
+
 }
 
-pause;
 
-
-for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
-	real[int,int] NgkL(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
-	real[int,int] NggkL(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
-	NgkL = 0; NgkG = 0;
-	NggkL = 0; NggkG = 0;
-	contFF = 0;
+for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2	
+	real[int, int] NgkL = NUK[s], NggkL = NGUK[s];
 	for (int j=0; j<=i; j++){ 
-		if(mpirank==contFF%mpisize){ 
+
 
 			VhP2 fvel,fvelY,ffvel,ffvelY;
 			varf NGL(un,v) = int2d(Th)((fvel*ffvel+fvelY*ffvelY)*v);
@@ -242,17 +232,11 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			if(j<i){
 				NggkL(1+j,1+i) = NggkL(1+i,1+j);
 			}
-			
-
-		}
-		contFF++;
 	}
-	pause;
-	mpiAllReduce(NgkL, NgkG, mpiCommWorld, mpiSUM);
-	mpiAllReduce(NggkL, NggkG, mpiCommWorld, mpiSUM);
 	
-	NUK[s] += NgkG;
-	NGUK[s] += NggkG;
+	NUK[s] = NgkL;
+	NGUK[s] = NggkL;
+
 }
 
 

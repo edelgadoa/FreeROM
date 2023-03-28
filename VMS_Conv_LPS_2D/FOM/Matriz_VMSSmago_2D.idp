@@ -6,6 +6,7 @@
 //Matriz SMAGORINSKY filtrada
 ///////////////////////////////////	
 
+
 Gr = MOD(uEF); // Tiene incorporado el levantamiento
 
 
