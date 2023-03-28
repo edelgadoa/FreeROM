@@ -1,0 +1,141 @@
+///////////////
+// FreeROM 
+///////////////
+verbosity = 0;
+ 
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack" // Eigenvalue problem solving
+include "IO.idp" // Para leer y guardar 
+
+// Calculo en paralelo
+macro dimension()3 //EOM
+include "macro_ddm.idp";
+load "PETSc";
+
+
+
+// Defino algun macro que necesitare
+macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
+					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
+					 + dx(U#Z)*dx(V#Z) + dy(U#Z)*dy(V#Z) + dz(U#Z)*dz(V#Z)) //EOM
+
+int[int] fforder=[1,1,1,1];
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+include "IE2FF.idp"
+
+// Cargo las funciones para el calculo de productos escalares y normas
+func real innerprodX(real[int] &u, real[int] &v, Mat &X){
+	real[int] aux;
+	MatMult(X, v, aux);
+	real resultL = u'*aux;
+	real result;
+	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
+	return result;
+}
+
+mesh3 Th = readmesh3("IEfluids.mesh"); 
+mesh3 ThL = Th;
+
+// PETSc matrices
+Mat MatNormL2;
+Mat MatNormH1;
+int[int] mapVh3P1, mapVhP1;
+
+int[int] myN2o;
+macro ThLN2O() myN2o //EOM
+buildDmesh(ThL);
+
+fespace VhP1(Th, P1);
+fespace Vh3P1(Th, [P1,P1,P1]);
+
+fespace VhP1L(ThL, P1);
+fespace Vh3P1L(ThL, [P1,P1,P1]);
+
+
+mapVh3P1 = restrict(Vh3P1L,Vh3P1,myN2o);
+mapVhP1 = restrict(VhP1L,VhP1,myN2o);
+
+{
+	macro def(i) [i, iY, iZ] //
+	macro init(i) [i, i, i] // EOM
+	createMat(ThL, MatNormH1, [P1, P1, P1]);
+}
+{
+	createMat(ThL, MatNormL2, P1);
+}
+
+
+{
+	varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(ThL)(GradUGradV(u,v));
+	MatNormH1 = NormH1(Vh3P1L, Vh3P1L); //H1PEMat;
+
+	varf NormL2(p,q) = int3d(ThL)(p*q);
+	MatNormL2 = NormL2(VhP1L, VhP1L); //L2PEMat;
+}
+
+
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+
+// Variables donde guardo los snapshots que cargo
+
+Vh3P1L[int] [VhL,VhLY,VhLZ](Nsnap);
+VhP1L[int] PhL(Nsnap);
+
+// Comienzo bucle de lectura de snapshots
+
+for (int NRe=1; NRe<=ReSnap; NRe++){
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+		int i = (NTemp-1) + (NRe-1)*TimeSnap;
+		if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+		{
+			Vh3P1 [Vh,VhY,VhZ];			
+			readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
+			Vh[] = Vel;
+			VhL[i][] = Vh[](mapVh3P1); // Load in the local mesh
+		}	
+			
+		if(mpirank==0)cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
+		{
+			VhP1 Ph;	
+			readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
+			Ph[] = Pres; 
+			PhL[i][] = Ph[](mapVhP1); // Load in the local mesh
+		}
+	}
+}
+
+real[int,int] Vhi(MatNormH1.n, Nsnap), Phi(MatNormL2.n, Nsnap);
+ChangeNumbering(MatNormH1, VhL, Vhi);
+ChangeNumbering(MatNormL2, PhL, Phi);
+
+// Calculo de matrices de Correlacion
+real[int, int] AuxC(MatNormH1.n,VhL.m), AuxP(MatNormL2.n, PhL.m); 
+MatMatMult(MatNormH1, VhL, AuxC);
+MatMatMult(MatNormL2, PhL, AuxP);		
+
+real [int,int] CV(Nsnap, Nsnap) = VhL'*AuxC;
+real [int,int] CP(Nsnap, Nsnap) = PhL'*AuxP;
+
+CV *= (1./Nsnap);
+CP *= (1./Nsnap);
+		
+
+// Write the correlation matrix
+write("Correl_U_"+mpisize+".txt", CV, 0, 0);
+write("Correl_P_"+mpisize+".txt", CP, 0, 0);
+
+// Calculo los eigenvalues y eigenvectors 
+real[int] SU(Nsnap), SP(Nsnap);
+real[int,int] UU(Nsnap, Nsnap), UP(Nsnap, Nsnap), VTU(Nsnap, Nsnap), VTP(Nsnap, Nsnap);
+
+// Calculo el SVD --> C = U*S*VT 
+dgesdd(CV,UU,SU,VTU);
+dgesdd(CP,UP,SP,VTP);
+
+// Save the Eigenvalues
+write("EigenV"+mpisize+".txt", SU, 0, 0);
+write("EigenP"+mpisize+".txt", SP, 0, 0);

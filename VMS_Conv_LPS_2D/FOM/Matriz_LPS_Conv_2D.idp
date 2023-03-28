@@ -6,6 +6,7 @@
 //MATRIZ ESTAB. CONV.
 /////////////////////////////
 
+
 VhP1dc funcLev;
 
 varf termConv(uu1,v) = int2d(Th)(tau*uu1*v);
@@ -35,14 +36,13 @@ matrix EC1;
 	// AUX[] = UEFdc * LevdX[];
 	// AUX[] += UEFYdc * LevdY[];
 	// funcLev[] = IPhP1dcP1 * AUX[];
-	
 	// real[int] bConv1 = btermConv(0, VhP1dc);
 	// bLPSConv1 = IPhUD1' * bConv1;
 }
 
 // Segunda componente
 matrix EC2;
-//real[int] bLPSConv2(Vh3P2.ndof);
+
 {
 	matrix UXD2X = UEFdc * D2X3P2;
 	matrix UYD2Y = UEFYdc * D2Y3P2;
@@ -56,11 +56,11 @@ matrix EC2;
 	// AUX[] = UEFdc * LevYdX[];
 	// AUX[] += UEFYdc * LevYdY[];
 	// funcLev[] = IPhP1dcP1 * AUX[];
-	
+
 	// real[int] bConv2 = btermConv(0, VhP1dc);
 	// bLPSConv2 = IPhUD2' * bConv2;
 	
 }
 
 LPSConv = EC1 + EC2;
-//bLPSConv = bLPSConv1 + bLPSConv2;
+

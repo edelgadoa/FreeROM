@@ -1,0 +1,137 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
+varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+matrix MPescT = pescT(Vh3P2L, Vh3P2L);
+
+varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
+matrix MPescX = pescX(Vh4P2L, Vh4P2L);
+
+varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
+Mat MNormaVel = MatAVh3P2;
+
+MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
+
+///////////////////////////////////////////////////////
+Mat DiffPEM = MatAVh3P2;
+
+Mat DivPPEM, PenPEM, ConvLevPEM, DTPEM;
+
+varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+{
+	DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
+	// matrix DiffPEML = DiffPE(Vh3P2L,Vh3P2L);
+  	// Mat DiffPEMTemp = DiffPEML;
+	// DiffPEM = DiffPEMTemp;
+}
+
+varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
+{
+	matrix DivPPEMT = DivPPE(Vh3P2L,VhP2L);
+    Mat DivPPEMTemp(MatAVhP2, MatAVh3P2, DivPPEMT);
+	DivPPEM = DivPPEMTemp;
+}
+
+varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
+{
+	matrix PenPEML = PenPE(VhP2L,VhP2L);
+    Mat PenPEMTemp = PenPEML;
+	PenPEM = PenPEMTemp;
+}
+
+varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+{
+	matrix ConvLevPEML = ConvLevPE(Vh3P2L,Vh3P2L);
+    Mat ConvLevPEMTemp = ConvLevPEML;
+	ConvLevPEM = ConvLevPEMTemp;
+}
+
+varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
+{
+	matrix DTPEML = DTPE(Vh3P2L,Vh3P2L);
+    Mat DTPEMTemp = DTPEML;
+	DTPEM = DTPEMTemp;
+}
+
+/*
+varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
+matrix FiltroX, FiltroY;
+matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
+{
+	FiltroX = SPPEM2 * IPhDXP2;
+	FiltroX = (IPhDXP2') * FiltroX;
+	FiltroY = SPPEM2 * IPhDYP2;
+	FiltroY = (IPhDYP2') * FiltroY;	
+}
+matrix StabhkPEM = FiltroX + FiltroY;
+*/
+Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
+// {
+// 	ConvPEM[0] = MatAVh3P2; //Inicializo la estructura de la Mat PETSc
+// }
+
+
+
+Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
+
+
+mpi(cout<<"START"<<endl;)
+// if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
+
+
+{ 
+	for (int s=0; s<Mbases; s++){
+		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+		{
+			matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
+			Mat SmagoPEMTemp = SmagoPEML; //(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+			SmagoPEM[s] = SmagoPEMTemp; 
+		}
+
+	}
+	
+	for (int s=0; s<Taubases; s++){
+		varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
+
+		{
+			matrix FiltroX, FiltroY, FiltroZ;
+			matrix SPPEML = StabPPE(VhP1dcL, VhP1dcL);
+			{
+				FiltroX = SPPEML * IPhDXP2L;
+				FiltroX = (IPhDXP2L') * FiltroX;
+				FiltroY = SPPEML * IPhDYP2L;
+				FiltroY = (IPhDYP2L') * FiltroY;	
+				FiltroZ = SPPEML * IPhDZP2L;
+				FiltroZ = (IPhDZP2L') * FiltroZ;	
+			}
+			matrix TMP = FiltroX + FiltroY + FiltroZ;
+			Mat StabPPEMTemp = TMP; //copy the distribution of SMAGOPEM
+			StabPPEM[s] = StabPPEMTemp; 
+		}
+
+	}
+}
+mpi(cout<<"END"<<endl;)
+
+// real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
+// real[int,int] BaseV2D(Vh3P2L.ndof, Nbases);
+// for (int s=0;s<Nbases;s++){
+// 	BaseV2D(:,s) = BaseV[s][];
+// }
+// ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
+
+
+/*real[int,int] TEMP(0,0);
+MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
+real[int, int] TBaseV2D = BaseVMPI';
+// cout<<BaseVMPI.n<<endl;
+// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
+real[int, int] innerprodL = TBaseV2D*TEMP;
+real[int, int] innerprod (innerprodL.n, innerprodL.m);
+mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);*/
+
+varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));
+real[int] bDiffPEv = bDiffPE(0, Vh3P2L);
+

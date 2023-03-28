@@ -1,0 +1,76 @@
+    	
+	//CONSTRUCCION DE LA CONSTANTE DE INYECCION DE SOBOLEV
+    real epsl=1e-10; 
+
+	varf prodT([uu1,uu2],[v1,v2])=
+				int2d(Th)(((1./Refijo)+((CS*hTriangle)^2)
+							*moddc(U1Ndx,U1Ndy,U2Ndx,U2Ndy))*GradGrad(uu1,uu2,v1,v2))
+							+on(1,2,3,4, uu1=0,uu2=0);//+on(1, uu1=inlet,uu2=0);
+	
+	matrix T=prodT(Vh2P2,Vh2P2);
+	set(T,solver=sparsesolver);
+	
+	real epsrho=1e-5; 
+	real errRHO=10;
+	Vh2P2 [uh1k,uh2k],[uh1k1,uh2k1];	
+	real rhok,rhok1=20;
+	uh1k1[]=1;
+	for (int ir=0;ir<1000;ir++){
+		rhok=rhok1;
+		real normTuk=int2d(Th)(((1./Refijo)+((CS*hTriangle)^2)*moddc(U1Ndx,U1Ndy,U2Ndx,U2Ndy))
+							*(GradGrad(uh1k1,uh2k1,uh1k1,uh2k1)));
+
+		if(errRHO<epsrho){
+			break;
+		}
+		else{
+			uh1k[]=uh1k1[];
+
+			VhP2 zuk;
+			real normL4=int2d(Th)((uh1k^2+uh2k^2)^2);
+			zuk=(uh1k^2+uh2k^2)/sqrt(normL4);
+
+			real normL2=int2d(Th)(zuk^2);
+
+			varf nolin([uu1,uu2],[v1,v2])=int2d(Th)(zuk*([uu1,uu2]'*[v1,v2]))
+											+on(1,2,3,4, uu1=0,uu2=0);
+			
+			matrix Zu=nolin(Vh2P2,Vh2P2);
+
+			//Empezamos el metodo de la potencia
+			real errl=10;
+			real lambdak,lambdak1=10;
+			Vh2P2 [u1l,u2l],[u1l1,u2l1];
+			u1l1[]=[U1N[],U2N[]];
+			for (int il=0;il<1000;il++){
+				if (errl<epsl){
+					uh1k1[]=u1l1[];
+					rhok1=lambdak1;
+					break;
+				}
+				else{
+					u1l[]=1;
+					real [int] w1(Vh2P2.ndof);
+					w1=Zu*u1l[];
+					u1l1[]=T^-1*w1;
+					lambdak=lambdak1;
+					real[int] phik1(Vh2P2.ndof),phik(Vh2P2.ndof);
+					phik1=u1l1[];
+					phik=u1l[];
+					lambdak1=phik1.sum/phik.sum;
+					real normX=int2d(Th)(((1./Refijo)+((CS*hTriangle)^2)*moddc(U1Ndx,U1Ndy,U2Ndx,U2Ndy))
+												*(GradGrad(u1l1,u2l1,u1l1,u2l1)));
+					u1l1[]/=sqrt(normX);
+					errl=abs(lambdak-lambdak1)/abs(lambdak);
+				}
+			}
+		errRHO=abs((rhok-rhok1)/rhok1);
+		
+		}
+	
+	}
+	real rhoT=rhok1;
+
+	cout<<"rhoT= "<<rhoT<<endl;
+	romub=(2*rhoT+4*CS^2*hT);	
+	cout<<"RHOB="<<romub<<endl;

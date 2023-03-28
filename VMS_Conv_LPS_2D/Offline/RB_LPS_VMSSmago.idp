@@ -26,6 +26,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	bDTRBi = 0;
 	bSmagoRBi = 0;
 	bStabCRBi = 0;
+
 	bRB = 0;
 	
 	// Matriz de conveccion
@@ -36,7 +37,6 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		ConvRBint = uRBv(s)*ConvRBint;
 		ConvRBi += ConvRBint;
 	}
-	
 
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(I);
@@ -189,6 +189,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
 	set(MRBs, solver=UMFPACK);
+
 	// real[int,int] MRBinv = MRBF^-1;
 	
 	uRBv = MRBs^-1*bRB;

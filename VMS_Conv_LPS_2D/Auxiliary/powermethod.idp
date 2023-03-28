@@ -118,6 +118,7 @@ func real[int] powermethodRBF(matrix & A,matrix & B)
 	return result;
 }
 
+
 // func real[int] powermethodRBFmpi(matrix & A,matrix & B)
 // {   //(B^-1)A(Bt^-1)A*v = lambda*v
 // 	real lambda0=100.,lambda1,err=10.,eps=1.e-5;
@@ -177,6 +178,7 @@ func real[int] powermethodRBF(matrix & A,matrix & B)
 // 	result=[lambda1,v1];
 // 	return result;
 // }
+
 
 func real[int] powermethodRBF(matrix & A,matrix & B,real[int] & init)
 {//B^-1*A*Bt^-1*A*v=lambda*v

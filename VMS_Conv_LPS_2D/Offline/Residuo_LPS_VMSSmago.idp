@@ -42,10 +42,12 @@ real[int] bSmagoRes(Vh3P2.ndof);
 	bSmagoRes = bSmagoRes.*cc; // bloqueo de las condiciones de contorno
 
 }
+
 // Termino LPS Pres + Conv
 real[int] bStabPRes(Vh3P2.ndof);
 real[int] bStabConv(Vh3P2.ndof);
 bStabConv = 0;
+
 
 {
 	VhP0 tKres, tKTres, taures;
@@ -56,7 +58,7 @@ bStabConv = 0;
 	tKres[] = sqrt(tK); tKTres[] = sqrt(tKT);
 	
 	taures = ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
-	
+
 	
 	// PRESION
 	VhP1dc uFRB;
@@ -107,6 +109,7 @@ bStabConv = 0;
 	
 	bStabConv = bSCx + bSCy;
 	// bStabConv = bStabConv .* cc; //bloqueo de las condiciones de contorno
+
 
 }
 

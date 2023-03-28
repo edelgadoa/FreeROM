@@ -9,7 +9,8 @@
 
 varf VMSSmaT([un1l,un2l,TT,unusedpp],[v1l,v2l,zl,ql]) = 
 		intN(ThL)((1./Pr)*((CS*hTriangle)^2)*Gr*(TT*zl))
-	   -intN(ThL)((1./Pr)*((CS*hTriangle)^2)*Gr*(GfT*zl));
+	   -intN(ThL)((1./Pr)*((CS*hTriangle)^2)*Gr*(GfT*zl))
+	   ;
 		//FALTA SEGUNDO MIEMBRO DEL LEVANTAMIENTO DE LA TEMPERATURA
 						
 										
@@ -39,6 +40,6 @@ real[int] bTx(Vh4P2L.ndof),bTy(Vh4P2L.ndof);
 		Gfv1[]=MauxG*GG1[];
 		bTs=VMSSmaT(0,Vh4P1dcL);
 		bTy=(Maux')*bTs;
-	
+
 	}
 SmaT = DXXT + DYYT;

@@ -6,30 +6,29 @@
 
 // TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
 
-// Inicializo las matrices locales para el paralelo
-// include "Allocate_matrices_local.idp"
-
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
-int contFF = 0; // Contador para el paralelo
+
 for (int j=0; j<=i; j++){
+
 		// Matrices
 		DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
 		DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
 		PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 		ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 		DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
-		StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
-		
+		// StabhkRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
+
 		if (j<i){
 			DiffRB(j,i) = DiffRB(i,j);
 			DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
 			PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
 			ConvLevRB(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
 			DTRB(j,i) = DTRB(i,j);
-			StabhkRB(j+Nbases, i+Nbases) = StabhkRB(i+Nbases, j+Nbases);
+			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
 }
+pause;
 
 // Comienzo el bucle para la construcción de los tensores
 
@@ -69,6 +68,7 @@ for (int s=0; s<Mbases; s++){
 				Sint(j,i) = Sint(i,j);
 			}
 	}
+
 	SmagoRB[s] = Sint;
 }
 
@@ -173,6 +173,7 @@ for (int s=0; s<Mbases; s++){
 for (int s=0; s<Taubases; s++){ 
 		real[int, int] NgkL = NUK[s]; 
 
+
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
 		fvel = BaseVel[i]; fvelY = BaseVelY[i];
@@ -204,6 +205,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	real[int, int] NgkL = NUK[s], NggkL = NGUK[s];
 	for (int j=0; j<=i; j++){ 
 
+
 			VhP2 fvel,fvelY,ffvel,ffvelY;
 			varf NGL(un,v) = int2d(Th)((fvel*ffvel+fvelY*ffvelY)*v);
 			
@@ -230,11 +232,11 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 			if(j<i){
 				NggkL(1+j,1+i) = NggkL(1+i,1+j);
 			}
-			
 	}
 	
 	NUK[s] = NgkL;
 	NGUK[s] = NggkL;
+
 }
 
 

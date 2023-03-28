@@ -1,0 +1,101 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros y funciones i/o
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../Auxiliary/CuadradoNxNy.idp"
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Incluimos el levantamiento
+include "Levantamiento.idp"
+
+//Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
+int nSnapshots = 83; // numero de Snapshots que voy a querer calcular 
+real[int] vReynolds(nSnapshots);
+
+Remin = 1000;
+Remax = 5100;
+for(int i=0; i<nSnapshots; i++){
+	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
+}
+
+// Guardamos en un archivo el numero de Snapshots que vamos a calcular y los valores Reynolds que hemos calculado
+// {
+// 	ofstream nSnapshotFILE("../../Snapshots/VMS_Smago_LPS_pres_2D/Snapshots.txt");
+// 	nSnapshotFILE<<vReynolds<<endl;
+// }
+// Esto lo he quitado, porque debo ir añadiendo a medida que los voy calculando
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP]; 
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+VhP2 SnapX, SnapY;
+VhP2 SnapP;
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
+
+for (int i=0; i<nSnapshots; i++){
+	Reynolds = vReynolds(i);
+	cout<<"----------- Reynolds = "<< Reynolds<<" ------------"<<endl;
+	
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		
+		include "FE_VMS_LPS_2D.idp"
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+		
+		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+		
+		SnapX = uEF;
+		SnapY = uEFY;
+		SnapP = uEFP;
+
+
+		// Guardamos los snapshots 
+		write("../Snapshots/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../Snapshots/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+		write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+
+		// Dibujamos la solucion, con levantamiento
+
+		Vh3P2 [uEFL, uEFLY, uEFLP];
+		uEFL[]= uEF[] + Lev[];
+
+		plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+		plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+
+		//
+	}
+	// Si ya está calculado, no hace nada
+}

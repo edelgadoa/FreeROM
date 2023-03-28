@@ -9,6 +9,7 @@
 /////////// NO SUPREMIZER ////////////////////
 //////////////////////////////////////////////
 
+
 // Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
 
@@ -179,7 +180,7 @@ for (int i=0; i<Nbases; i++){
 	include "GramSchmidt.idp"
 	
 	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
-	
+
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseP(:,i) = BaseP[i][];
@@ -210,6 +211,7 @@ for (int i=0; i<Nbases; i++){
 	
 	// Actualizo el nuevo Reynolds
 	Reynolds = MuBest(i+1);
+
 	//mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
 	cout<<"New Reynolds: "<<Reynolds<<endl;
 	//mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)

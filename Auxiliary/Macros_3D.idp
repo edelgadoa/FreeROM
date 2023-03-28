@@ -79,6 +79,7 @@ NewMacro solvesystem(A,b,u)
 	// + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names);
 	
 	set(MatAVh4P2,sparams=sparamsv);
+
 	u#L[] = MatAVh4P2^-1*b;
 	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
 }

@@ -99,9 +99,9 @@ for (int i=0;i<=ni;i++)
 	VhP1dc u1dcX,u1dcY,u2dcX,u2dcY,Gr;
 
 	udcAux[] = IPhP2P1*u1tmp[];
-	u1dcX[]  = DXP2*udcAux[];		
+	u1dcX[]  = DXP2*udcAux[];
 	u1dcY[]  = DYP2*udcAux[];
-	 
+
 	udcAux[] = IPhP2P1*u2tmp[];
 	u2dcX[]  = DXP2*udcAux[];
 	u2dcY[]  = DYP2*udcAux[];
@@ -151,18 +151,21 @@ for (int i=0;i<=ni;i++)
 		
 		
 		
+		
+		
 		////////////////////////
 		//Segundo miembro
 		///////////////////////
 		real[int] bNS(Vh4P2L.ndof);
 		bNS = vNSb(0,Vh4P2L);
 		bNS += bNSf;
-		bNS += bTx;
-		bNS += bTy;
-		
+		//bNS += bTx;
+		//bNS += bTy;
+		for [i,v : bNS] v=abs(bcvector[i] - 1.0)<1e-2 ? 0.0 : v; 
+		setBC(Afinal, bcvector,-1);
 		
 		MatAVh4P2 = Afinal;
-	
+		/*
 		bNS.resize(bNS.n+1);
 		bNS(bNS.n-1) = 0;
 	
@@ -183,11 +186,11 @@ for (int i=0;i<=ni;i++)
 		uL[] = xsol;
 	
 		reduceSolution(uL,u, MatAVh4P2.D, mapVh4P2);
-		
+		*/
 	
 		
 		
-		//solvesystem(Afinal,bNS,u)
+		solvesystemLPS(Afinal,bNS,u)
 		
 		
 		//Pintamos la solucion de cada iteracion
@@ -215,13 +218,13 @@ for (int i=0;i<=ni;i++)
 		u1tmp=u;
 		u2tmp=uY;
 						
-		udcAux[] = IPhP2P1*u1tmp[];
-		u1dcX[]  = DXP2*udcAux[];		
-		u1dcY[]  = DYP2*udcAux[];
-	 
-		udcAux[] = IPhP2P1*u2tmp[];
-		u2dcX[]  = DXP2*udcAux[];
-		u2dcY[]  = DYP2*udcAux[];
+		// udcAux[] = IPhP2P1*u1tmp[];
+		// u1dcX[]  = DXP2*udcAux[];
+		// u1dcY[]  = DYP2*udcAux[];
+		//
+		// udcAux[] = IPhP2P1*u2tmp[];
+		// u2dcX[]  = DXP2*udcAux[];
+		// u2dcY[]  = DYP2*udcAux[];
 	
 		Gr=mod(u1dcX,u1dcY,u2dcX,u2dcY);
 	

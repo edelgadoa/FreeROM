@@ -19,11 +19,14 @@ varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
 			   +on(paredi, tt=0.)+on(paredd, tt=0.);
 			    
 
-//	
+varf BCs([uu1,uu2,tt,pp],[v1, v2, zt, q]) = on(suelo,paredd,paredi,techo, uu1=0., uu2=0.)
+			  	 							+on(paredi, tt=0.)+on(paredd, tt=0.);
+
+real[int] bcvector = BCs(0, Vh4P2L, tgv = 1);	
 						
 matrix AvNS;
 
-AvNS=vNS(Vh4P2L,Vh4P2L);
+AvNS=vNS(Vh4P2L,Vh4P2L, tgv=-1);
 
 real[int] bNSf(Vh4P2L.ndof);
-bNSf=vNS(0,Vh4P2L);
+bNSf=vNS(0,Vh4P2L, tgv = -1);

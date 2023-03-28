@@ -1,0 +1,157 @@
+
+int nIterations=2000;
+real epsError = 1.e-10;
+real nu=1./Re;
+
+
+///////////////////////////////////////
+//MATRIZ FIJA PARA STOKES
+//////////////////////////////////////	
+//Construimos las matrices fijas, dependientes o no del parámetro
+
+Vh3P2 [u1,u2,p]; //u_0 inicial para el método de Euler que resuelva las N-Stokes es la sol del pb de Stokes
+
+varf aRe([uu1,uu2,pp],[v1,v2,q])=int2d(Th)(nu*(GradGrad(uu1,uu2,v1,v2)))
+								-int2d(Th)(pp*div(v1,v2)) + int2d(Th)(div(uu1,uu2)*q)
+								+on(3, uu1=inlet, uu2=0)
+								+on(1,2,4, uu1=0., uu2=0.);
+
+
+//Definimos las matrices asociadas y segundos miembros a la F.Var
+
+matrix A=aRe(Vh3P2,Vh3P2);
+real [int] b=aRe(0,Vh3P2);
+set(A,solver=sparsesolver);
+u1[]=A^-1*b;  //La solución del problema de Stokes!
+
+//plot([u1,u2]);
+
+
+VhP1dc u1dcX,u1dcY,u2dcX,u2dcY;
+
+
+//////////////////////////////////////////////////////////////
+//Resolución Navier-Stokes + VMS iterativo
+/////////////////////////////////////////////////////////////
+
+
+////Matriz fija (Casi igual que la de stokes)
+
+varf vNS([uu1,uu2,pp],[v1,v2,q])=int2d(Th)((1./dt)*(uu1*v1+uu2*v2)-div(v1,v2)*pp+div(uu1,uu2)*q)
+								+int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2))
+								+on(3, uu1=inlet, uu2=0.)
+								+on(2,1,4, uu1=0., uu2=0.); 
+					
+
+matrix AvNS,Anu;
+
+AvNS=vNS(Vh3P2,Vh3P2);
+
+real[int] bNSf=vNS(0,Vh3P2);
+
+// Preliminares a la iteracion
+real itercontrol1 = 2.*epsError + 1.;
+
+real iterrelative1 = itercontrol1;
+
+real mediap;
+real cpu0=clock();
+
+for (int ii=1; ii<=nIterations &&  (iterrelative1 > epsError) ; ii++) {
+	cout << endl;
+	cout << "------------------------------------" << endl;	
+	cout << "Starting iteration number " << ii << endl;	
+	cout << "------------------------------------" << endl;	
+
+//////////////////////////	
+//Matriz de Smagorinsky
+/////////////////////////
+//Vh3P1dc [G1p,G2p,Gpprev];
+	
+VhP2 utmp1,utmp2,u1prev,u2prev,Gr;
+utmp1=u1+G1;
+utmp2=u2+G2;
+u1prev=u1;
+u2prev=u2;
+
+u1dcX[]=DXun*utmp1[];
+u1dcY[]=DYun*utmp1[];
+u2dcX[]=DXun*utmp2[];
+u2dcY[]=DYun*utmp2[];
+Gr=moddc(u1dcX,u1dcY,u2dcX,u2dcY);
+
+varf VMSSma([u1l,u2l,unused],[v1l,v2l,ql])=
+int2d(Th)(((CS*hTriangle)^2)*Gr*GradGrad(u1l,u2l,v1l,v2l));
+
+//cout << "Build A VMS-Smag." << endl;
+matrix Sma = VMSSma(Vh3P2,Vh3P2);
+
+//real[int] bSmago=bVMSSma(0,Vh3P2);
+
+///////////////////////////////////
+//Matriz término de Conveccion N-S
+///////////////////////////////////
+	varf vNSb([uu1,uu2,pp],[v1,v2,q])=
+						int2d(Th)((1./dt)*(uu1*v1+uu2*v2)-div(v1,v2)*pp+div(uu1,uu2)*q)
+						+int2d(Th)(nu*GradGrad(uu1,uu2,v1,v2))
+						+int2d(Th)(UgradV(u1,u2,uu1,uu2)'*[v1,v2])
+						+int2d(Th)((1./dt)*(u1*v1+u2*v2))
+						+int2d(Th)(((CS*hTriangle)^2)*Gr*GradGrad(uu1,uu2,v1,v2))
+						+int2d(Th)(epspen*pp*q)
+						+int2d(Th)(UgradV(G1,G2,uu1,uu2)'*[v1,v2])
+						+int2d(Th)(UgradV(uu1,uu2,G1,G2)'*[v1,v2])
+						//seg miembro
+						-int2d(Th)(nu*GradGrad(G1,G2,v1,v2))
+						-int2d(Th)(UgradV(G1,G2,G1,G2)'*[v1,v2])
+						-int2d(Th)(((CS*hTriangle)^2)*Gr*GradGrad(G1,G2,v1,v2))
+						+on(3, uu1=0, uu2=0.)
+						+on(1,2,4, uu1=0., uu2=0.);
+
+
+	//varf vNSseg([unu1,unu2,unp],[v1,v2,q])=int2d(Th)((1./dt)*(u1*v1+u2*v2));
+	
+	matrix AvNSb=vNSb(Vh3P2,Vh3P2);
+	real [int] bNS=vNSb(0,Vh3P2);
+	//bNS=bNS+bSmago;
+	
+	matrix Afinal;
+	Afinal=AvNSb;//+Sma;
+	
+	set(Afinal,solver=UMFPACK);
+	
+	u1[]=Afinal^-1*bNS;
+	
+	//Pintamos la solucion de cada iteracion
+	VhP2 GG1,GG2;
+	GG1=u1+G1;
+	GG2=u2+G2;
+	//plot([GG1,GG2],wait=0,cmm="Solucion en la iteracion "+ii);
+	
+	
+    VhP2 eu1,eu2;
+	eu1=u1-u1prev;
+	eu2=u2-u2prev;
+	
+	//Inicio calculo normas
+	itercontrol1 = sqrt(int2d(Th)([eu1,eu2]'*[eu1,eu2])+int2d(Th)(GradGrad(eu1,eu2,eu1,eu2)));  		    	 
+    real itertmp1 = sqrt(int2d(Th)([u1,u2]'*[u1,u2])); 
+	
+	iterrelative1 = itercontrol1/itertmp1;	
+
+
+	cout << "------------------------------------" << endl;	
+	cout << "ERROR RELATIVO PARA u1: "<<iterrelative1<<endl;
+	
+
+} 
+
+cpu0=-cpu0+clock();
+cout<<"Tiempo FE:"<<cpu0<<endl;
+
+VhP1dc gradU;
+gradU=sqrt((dx(u1))^2+(dy(u1))^2+(dx(u2))^2+(dy(u2))^2);
+
+
+plot([u1,u2],cmm="Velocidades para Re= "+Re,value=1);
+//plot(p,cmm="Presion para Re= "+Re);
+plot(gradU,cmm="Smago");

@@ -54,6 +54,7 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 	}
 	
 	for (int s=0; s<Taubases; s++){
+
 			// Matrices LPS
 			varf StabPPE(uP,vP) = int2d(Th)(EIMTau[s]*uP*vP);
 			matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
@@ -67,7 +68,3 @@ matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 			StabPPEM[s] = FiltroX + FiltroY;
 	}
 }
-
-
-
-

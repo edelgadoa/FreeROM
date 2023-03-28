@@ -28,6 +28,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 		udcAux[] = IPhP2P1*uprevLY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
+
 	}
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal

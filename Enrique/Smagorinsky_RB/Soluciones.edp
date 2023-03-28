@@ -1,0 +1,84 @@
+load "iovtk"
+macro grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro mod(u1,u2) (sqrt(dx(u1)^2+dy(u1)^2+dx(u2)^2+dy(u2)^2))//
+macro moddc(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+
+//Constantes varias
+real CS=0.1;
+real dt=1;
+real epspen=1e-6;
+int[int] fforder=[1,1,1]; // 0 save a cell value, 1 save point value
+
+
+//include "MallaEscalon.idp"
+//real Dh=2*hl; //Diametro hidraulico
+//real umedia=1./Dh;	
+func inlet=1;//-6*umedia/(hl^2)*y*(y+hl)*(-hl<y);	
+mesh Th=readmesh("CavThRF.msh");
+
+fespace VhP1dc(Th,P1dc);
+fespace Vh3P2(Th,[P2,P2,P1]); 
+fespace VhP1(Th,P1);
+fespace VhP2(Th,P2);
+
+real Remin=2750;
+real Remax=5100;
+
+int ni=(Remax-Remin)/25;
+
+VhP2[int] Bv1(ni+1),Bv2(ni+1);
+VhP1[int] Bp(ni+1);
+
+real[int] vRe(ni+1);
+
+for(int i=0;i<=ni;i++){
+	vRe(i)=Remin+i*(Remax-Remin)/(ni);
+}
+
+matrix DXun=interpolate(VhP1dc,VhP2,op=1);
+matrix DYun=interpolate(VhP1dc,VhP2,op=2);
+
+////////////////////////////////////////////////////////////////////////////
+//La solucion al pb de Stokes como levantamiento de frontera
+
+VhP2 u1sto,u2sto,v1sto,v2sto;
+VhP1 psto,qsto;
+solve stokes(u1sto,u2sto,psto,v1sto,v2sto,qsto)=
+		 int2d(Th)((1./1000)*GradGrad(u1sto,u2sto,v1sto,v2sto))
+		-int2d(Th)(psto*div(v1sto,v2sto))+int2d(Th)(qsto*(div(u1sto,u2sto)))
+		+int2d(Th)(epspen*psto*qsto)
+		+on(3, u1sto=inlet, u2sto=0)+on(1,2,4, u1sto=0,u2sto=0);
+
+VhP2 G1=u1sto;
+VhP2 G2=u2sto;
+//////////////////////////////////////////////////////////////////////////////
+
+
+cout<<vRe<<endl;
+
+for (int i=0;i<=ni;i++){
+	real Re=vRe(i);
+	include "Smago.idp";
+	Bv1[i]=u1;
+	Bv2[i]=u2;
+	Bp[i]=p;
+}
+
+ofstream Basesv1("Cavityv1T.txt",append);
+Basesv1<<ni+1<<endl;
+for (int i=0;i<=ni;i++){
+Basesv1<<Bv1[i][]<<endl;
+}
+ofstream Basesv2("Cavityv2T.txt",append);
+Basesv2<<ni+1<<endl;
+for (int i=0;i<=ni;i++){
+Basesv2<<Bv2[i][]<<endl;
+}
+ofstream Basesp("CavitypT.txt",append);
+Basesp<<ni+1<<endl;
+for (int i=0;i<=ni;i++){
+Basesp<<Bp[i][]<<endl;
+}

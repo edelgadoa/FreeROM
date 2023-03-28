@@ -42,6 +42,7 @@ for (int s=0; s<Taubases; s++){
 		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
 		
 		matrix IPhUiD1, IPhUiD2;
+
 		//
 		{
 			matrix UXD1Xi = BVdci * D1X2P2;
@@ -83,9 +84,9 @@ for (int s=0; s<Taubases; s++){
 				
 				matrix UXD1Xj = BVdcj * D1X2P2;
 				matrix UYD1Yj = BVYdcj * D1Y2P2;
+
 				matrix UD1j = UXD1Xj + UYD1Yj;
 				IPhUjD1 = IPhP1dcP1 * UD1j;
-				
 				
 				matrix UXD2Xj = BVdcj * D2X2P2;
 				matrix UYD2Yj = BVYdcj * D2Y2P2;
@@ -104,3 +105,4 @@ for (int s=0; s<Taubases; s++){
 		}
 	}		
 }
+
