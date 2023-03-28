@@ -154,6 +154,7 @@ for (int s=0; s<Taubases; s++){
 	// StabCLLRB[s] +=  LPSCLLint;
 }
 
+cout<< StabCUURB<<endl;
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
