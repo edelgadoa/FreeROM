@@ -81,7 +81,6 @@ real[int, int] MBaseV(Vh2P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
 /////////////////////////////////////////
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
-cout<<"here"<<endl;
 
 // Cargo los datos del RBF
 readvector("../RBF/BetaMuI.txt", real, BetaI, 0);
