@@ -27,5 +27,5 @@ macro MOD(U) (sqrt(U#dX^2+U#dY^2+U#YdX^2+U#YdY^2)) //EOM
 macro UporV(U,V) (U*V + U#Y*V#Y) //EOM
 
 // Macros para el paralelo
-macro pause()mpiBarrier(mpiCommWorld) //EOM
-macro mpi(variable)if(mpirank==0){variable} //EOM
+//macro pause()mpiBarrier(mpiCommWorld) //EOM
+//macro mpi(variable)if(mpirank==0){variable} //EOM

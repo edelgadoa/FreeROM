@@ -47,7 +47,7 @@ include "../Auxiliary/Normas.idp"
 include "../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
-int Nbases = 10; 
+int Nbases = 30; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -210,13 +210,13 @@ for (int i=0; i<Nbases; i++){
 	
 	// Actualizo el nuevo Reynolds
 	Reynolds = MuBest(i+1);
-	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
-	
-	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
-	
+	//mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
+	cout<<"New Reynolds: "<<Reynolds<<endl;
+	//mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
+	cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;
 	if (DeltaN(i)<epsGreedy){
 		NRB = i + 1;
-		include "Save_Matrices.idp"
+		// include "Save_Matrices.idp"
 		break;
 	}
 }

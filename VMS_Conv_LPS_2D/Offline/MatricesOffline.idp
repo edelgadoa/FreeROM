@@ -35,27 +35,33 @@ for (int j=0; j<=i; j++){
 
 // Conveccion
 
+
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
+	Cint = ConvRB[s];
 	for (int j=0; j<=i; j++){
-			Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
-			if(j<i){
-				Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+		
+		Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+		if(j<i){
+			
+			Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+		}
+		if (s==i && (j!=i)){
+			for (int k=0; k<s; k++){
+				
+				Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
 			}
-			if (s==i && (j!=i)){
-				for (int k=0; k<s; k++){
-					Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
-				}
-			} 
+		} 
 	
-	}	
-	ConvRB[s] = Cint;
+	}
+	ConvRB[s] += Cint;
 }
+
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
 	real[int, int] Sint(2*Nbases, 2*Nbases); 
-	Sint = 0; 
+	Sint = SmagoRB[s]; 
 	for (int j=0; j<=i; j++){
 
 			Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); 
@@ -70,8 +76,7 @@ for (int s=0; s<Mbases; s++){
 // LPS
 for (int s=0; s<Taubases; s++){
 	real[int, int] LPSint(2*Nbases, 2*Nbases); 
-	LPSint = 0;
-	contFF = 0;
+	LPSint = StabPRB[s];
 	for (int j=0; j<=i; j++){
 
 			LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); 
@@ -92,34 +97,35 @@ for (int s=0; s<Taubases; s++){
 	LPSCLLint = 0;
 	bLLint = 0;
 	for (int ui=0; ui<=i; ui++){
-		real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
-		real[int] bULint(2*Nbases), bLUint(2*Nbases);
-		LPSCULint = 0;	LPSCLUint = 0;
-		bULint = 0; bLUint = 0;
+		// real[int,int] LPSCULint(2*Nbases, 2*Nbases), LPSCLUint(2*Nbases, 2*Nbases);
+		// real[int] bULint(2*Nbases), bLUint(2*Nbases);
+		// LPSCULint = 0;	LPSCLUint = 0;
+		// bULint = 0; bLUint = 0;
 		for (int uj=0; uj<=i; uj++){
 
-			real[int] bUUint(2*Nbases);
-			
-			bUUint = 0;
+			// real[int] bUUint(2*Nbases);
+//
+// 			bUUint = 0;
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
 			LPSCUUint = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
-			for (int j=0; j<=i; j++){
+
+			for (int j=0; j<=i; j++){//LO QUE ESTÁ CORRIENDO ES CON LOS ÍNDICES CAMBIADOS
 				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
 				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
 				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
 				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
-				cout<<"i="<<i<<", j="<<j<<", valor (i,j)="<<LPSCUUint(i,j)<<endl;
+				
 				if(j<i){
-					LPSCUUint(j,i) = LPSCUUint(i,j);
+					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); //LPSCUUint(i,j);
 					// LPSCULint(j,i) = LPSCULint(i,j);
 					// LPSCLUint(j,i) = LPSCLUint(i,j);
 					// LPSCLLint(j,i) = LPSCLLint(i,j);
-					if((ui==i || uj==i) && i>0){
+					if((ui==i || uj==i) && j!=i){
 						for(int k=0; k<i; k++){
 							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
-							cout<<"j="<<j<<", k="<<k<<", valor (j,k)="<<LPSCUUint(j,k)<<endl;
+							
 							if(j<k){
-								LPSCUUint(k,j) = LPSCUUint(j,k);
+								LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); // LPSCUUint(j,k);
 							}
 						}
 					}
@@ -129,7 +135,7 @@ for (int s=0; s<Taubases; s++){
 			// bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
 			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] = LPSCUUint;
 			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
-			cout<<"s="<<s<<", ui="<<ui<<", uj="<<uj<<endl<<StabCUURB[s + ui*Taubases + uj*Taubases*Nbases]<<endl;
+			
 			
 			
 		}
@@ -165,7 +171,7 @@ for (int s=0; s<Mbases; s++){
 
 //NgkL = 0; NggkL = 0;
 for (int s=0; s<Taubases; s++){ 
-		real[int, int] NgkL = NUK[s], NggkL = NGUK[s];
+		real[int, int] NgkL = NUK[s]; 
 
 		VhP2 fvel,fvelY;
 		varf NG(un,v) = int2d(Th)(UporV(fvel, Lev)*v);
@@ -180,16 +186,16 @@ for (int s=0; s<Taubases; s++){
 	
 		///////////////////////////////////////////////
 	
-		//real[int,int] Nggk = NGUK[s];
+		real[int,int] Nggk = NGUK[s];
 		VhP1dc dxfv1, dyfv1, dxfv2, dyfv2;
 		varf NDG(un,v) = int2d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dxfv2*FLevYdX + dyfv2*FLevYdY)*v);
 		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i];
 		real[int] ndgaux = NDG(0,VhP0);
-		NggkL(0,1+i) = ndgaux(PuntosMTau(s));
+		Nggk(0,1+i) = ndgaux(PuntosMTau(s));
 		//Matriz simétrica
-		NggkL(1+i,0) = NggkL(0,1+i);
+		Nggk(1+i,0) = Nggk(0,1+i);
 	
-		NGUK[s] = NggkL;
+		NGUK[s] = Nggk;
 
 }
 
