@@ -11,7 +11,8 @@ load "PETSc";
 Mat MatAVh4P2;
 Mat MatAVhP1dc;
 int[int] mapVh4P2,mapVhP1dc;
-string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+string sparamsv = "-pc_type fieldsplit -fieldsplit_NS_pc_type asm -fieldsplit_NS_sub_pc_type lu -fieldsplit_NS_ksp_max_it 50 -ksp_type fgmres -pc_fieldsplit_detect_saddle_point -pc_factor_mat_solver_type mumps -ksp_monitor_true_residual -ksp_converged_reason";
+
 
 if(petsc){	
 	int[int] myN2o;
@@ -21,7 +22,7 @@ if(petsc){
 	{
 		macro def(i) [i, iY, iT, iP] //
 		macro init(i) [i, i, i, i] // EOM
-		macro ThPkPart() [Edge03ds0, Edge03ds0, Edge03ds0, Edge03ds0]// EOM special FE for the domain partitioning
+		// macro ThPkPart() [Edge03ds0, Edge03ds0, Edge03ds0, Edge03ds0]// EOM special FE for the domain partitioning
 		createMat(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
 	}	
 	mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
@@ -33,6 +34,8 @@ if(petsc){
 	
 	
 }
+
+
 
 real[int] auxD = MatAVhP1dc.D;
 
@@ -62,9 +65,9 @@ real Ramin=1.e3;//1.e5
 real Ramax=1.e5;//1.e6
 
 
-int ni=100;
+int ni=2;
 
 
 int nIterations=2000;
-real epsError = 1.e-6;//1.e-8
+real epsError = 1.e-2;//1.e-8
 

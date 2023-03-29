@@ -46,9 +46,9 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	Vh3P2 [uRB, uRBY, uRBZ];
 	VhP2 uRBP;
 	
-	real[int,int] MBaseVi(Vh3P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
-	MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:I-1);
-	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
+	real[int,int] MBaseVi(Vh3P2L.ndof, I), MBasePi(VhP2L.ndof, I); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh3P2L.ndof-1, 0:I-1);
+	MBasePi = MBaseP(0:VhP2L.ndof-1, 0:I-1);
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
 	uRBP[] = MBasePi*uRBv(I:2*I-1);

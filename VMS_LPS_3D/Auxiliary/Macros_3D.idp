@@ -52,6 +52,16 @@ macro mpi(variable) if(mpirank==0){variable} //EOM
 
 // mpiComm comm(mpiCommWorld, 0, 0);
 
+//Local2Global: Hace lo mismo que reduceSolution pero con la notación uL para el EF local de u
+macro Local2Global(u,D,map) 
+{
+	real[int] aux(u[].n); aux = 0;
+	u#L[] .*= D;
+	aux(map) = u#L[];
+	u[] = 0;
+	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
+}
+//EOM
 
 macro reduceSolution(uL,u,D,map)
 {
@@ -109,7 +119,7 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
     string[int] names(2);
     names[0] = "velocity";
     names[1] = "pressure";
-	//names[2] = "Lagrange";
+	names[2] = "Lagrange";
 	
 	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
 	 set(MatLPS, sparams=sparamsv);

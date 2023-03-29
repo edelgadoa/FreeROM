@@ -32,8 +32,8 @@ real[int] bLPSConv1(Vh3P2.ndof);
 	EC1 = IPhUD1' * EC1;
 	
 	VhP1dc AUX;
-	AUX[] = UEFdc * LevdX[];
-	AUX[] += UEFYdc * LevdY[];
+	AUX[] = uEFdc * LevdX[];
+	AUX[] += uEFYdc * LevdY[];
 	funcLev[] = IPhP1dcP1 * AUX[];
 	
 	real[int] bConv1 = btermConv(0, VhP1dc);
