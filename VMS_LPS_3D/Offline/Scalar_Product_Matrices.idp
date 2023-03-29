@@ -58,7 +58,7 @@ cout<<"transferir al resto de procesadores"<<endl;
 // }
 mpi(cout<<"TODO OK"<<endl;)
 if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
-/*
+
 { 
 	int contS = 0; 
 	for (int s=0; s<Mbases; s++){
@@ -90,7 +90,7 @@ if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
 			//}
 		contS++;
 	}
-}*/
+}
 
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(Th)(GradUGradV(Lev, v));
 real[int] bDiffPEv = bDiffPE(0, Vh3P2);
