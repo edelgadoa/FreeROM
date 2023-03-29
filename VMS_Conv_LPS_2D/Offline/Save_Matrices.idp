@@ -44,15 +44,14 @@ for (int s=0; s<Taubases; s++){
 }
 
 for (int s=0;s<Taubases;s++){
-    real[int,int] StabCint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
 	for (int ui=0;ui<NRB; ui++){
 		for(int uj=0;uj<NRB; uj++){
-			aux = StabCUURB[s + ui*Nbases + uj*Taubases*Nbases];
+			real[int,int] StabCint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
+			aux = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
 		    StabCint = aux(0:2*NRB-1, 0:2*NRB-1); 
-		    StabCN[s + ui*NRB + uj*Taubases*NRB] = StabCint(0:2*NRB-1, 0:2*NRB-1);
+		    StabCN[s + ui*Taubases + uj*Taubases*NRB] = StabCint(0:2*NRB-1, 0:2*NRB-1);
 		}
 	}
-
 }
 
 for (int s=0;s<Mbases;s++){
