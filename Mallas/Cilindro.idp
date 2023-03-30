@@ -4,24 +4,47 @@
 
 // Mesh creation. Cilinder with N divisions on the circule, and Nz divisions. 
 
-//load "medit"
-//load "msh3"
-
+load "medit"
+load "msh3"
+load "iovtk"
 
 // Parameters
-int NR = 20; // Number of divisions of the cilinder
-int Nz = 10; // Number of division on z
+int NR = 40; // Number of divisions of the cilinder
+int Nz = 13; // Number of division on z
 
+<<<<<<< HEAD
+=======
+func z0 = 0.;
+func z1 = 10.; 
+
+>>>>>>> 13fd06bda58d58d405055620e3f5a1b9ff93fc63
 real Rx = 1;
 real Ry = 1; // if Rx = Ry => Circle
 
 int LabelTop = 1;
 int LabelSurf = 2;
-int LabelBottom = 3;    
+int LabelBottom = 4;    
 
+<<<<<<< HEAD
 border Circle(t=0, 2*pi){cos(t); sin(t); label=1;}
 
 // 2D mesh
 mesh Thcircle = buildmesh(Circle(10));
+=======
+border Circle(t=0, 2*pi){x=Rx*cos(t); y=Ry*sin(t); label=1;}
 
-plot(Thcircle);
+// 2D mesh
+mesh Thc = buildmesh(Circle(NR));
+
+// 3D mesh 
+int[int] rup = [0, LabelTop], rdown=[0, LabelBottom];
+int[int] rmid=[1, LabelSurf];
+mesh3 Th = buildlayers(Thc, Nz, zbound=[z0,z1], labelmid = rmid, labelup = rup, labeldown = rdown);
+
+int[int] lab = labels(Th);
+cout << lab << endl;
+
+savevtk("CilinderMesh.vtk", Th);
+savemesh(Th, "Cilinder.mesh");
+>>>>>>> 13fd06bda58d58d405055620e3f5a1b9ff93fc63
+
