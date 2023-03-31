@@ -107,25 +107,29 @@ for (int s=0; s<Taubases; s++){
 //
 // 			bUUint = 0;
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
-			LPSCUUint = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
-
+			cout<<"s="<<s<<", ui="<<ui<<", uj="<<uj<<"imatrix = "<<s + ui*Taubases + uj*Taubases*Nbases<<endl;
+			LPSCUUint = 0 ;// StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
+			cout<<"Seg fault?"<<endl;
+			matrix PEM = StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases];
+			cout<<"No esta def la matrix PEM?"<<endl;
 			for (int j=0; j<=i; j++){//LO QUE ESTÁ CORRIENDO ES CON LOS ÍNDICES CAMBIADOS
-				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], PEM);
+
 				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
 				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
 				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
-				
 				if(j<i){
-					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); //LPSCUUint(i,j);
+					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], PEM); //LPSCUUint(i,j);
+
 					// LPSCULint(j,i) = LPSCULint(i,j);
 					// LPSCLUint(j,i) = LPSCLUint(i,j);
 					// LPSCLLint(j,i) = LPSCLLint(i,j);
 					if((ui==i || uj==i) && j!=i){
 						for(int k=0; k<i; k++){
-							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], PEM);
 							
 							if(j<k){
-								LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); // LPSCUUint(j,k);
+								LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], PEM); // LPSCUUint(j,k);
 							}
 						}
 					}
@@ -133,7 +137,9 @@ for (int s=0; s<Taubases; s++){
 			}
 			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
 			// bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
-			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] = LPSCUUint;
+			cout<<"que carajo pasa!"<<endl;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] += LPSCUUint;
+			cout<<"aqui?"<<endl; 
 			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
 			
 			

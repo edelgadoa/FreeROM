@@ -1,0 +1,73 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Productos escalares para el término convectivo
+matrix[int] StabCUUPEM(Taubases*Nbases^2);
+
+for (int s=0; s<Taubases; s++){
+	cout<< s<< endl;	
+	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
+	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
+	
+	matrix ConvUUX, ConvUUY;
+
+	
+	for (int uj=0; uj<=i; uj++){
+		
+		VhP1dc BaseVdci = BaseV[i];
+		VhP1dc BaseVYdci = BaseVY[i];
+		matrix BVdci = BaseVdci[]; matrix BVYdci = BaseVYdci[];
+		
+		matrix IPhUiD1, IPhUiD2;
+
+		//
+		{
+			matrix UXD1Xi = BVdci * D1X2P2;
+			matrix UYD1Yi = BVYdci * D1Y2P2;
+			matrix UD1i = UXD1Xi + UYD1Yi;
+			IPhUiD1 = IPhP1dcP1 * UD1i;
+
+			matrix UXD2Xi = BVdci * D2X2P2;
+			matrix UYD2Yi = BVYdci * D2Y2P2;
+			matrix UD2i = UXD2Xi + UYD2Yi;
+			IPhUiD2 = IPhP1dcP1 * UD2i;
+		}
+		
+
+		VhP1dc BaseVdcj = BaseV[uj];
+		VhP1dc BaseVYdcj = BaseVY[uj];
+		matrix BVdcj = BaseVdcj[]; matrix BVYdcj = BaseVYdcj[];
+		
+		matrix IPhUjD1, IPhUjD2;
+		matrix ConvUUX, ConvUUY;
+		{
+			
+			matrix UXD1Xj = BVdcj * D1X2P2;
+			matrix UYD1Yj = BVYdcj * D1Y2P2;
+
+			matrix UD1j = UXD1Xj + UYD1Yj;
+			IPhUjD1 = IPhP1dcP1 * UD1j;
+			
+			matrix UXD2Xj = BVdcj * D2X2P2;
+			matrix UYD2Yj = BVYdcj * D2Y2P2;
+			matrix UD2j = UXD2Xj + UYD2Yj;
+			IPhUjD2 = IPhP1dcP1 * UD2j;
+			
+			ConvUUX = SCPEM * IPhUiD1;
+			ConvUUX = (IPhUjD1') * ConvUUX;
+			
+			ConvUUY = SCPEM * IPhUiD2;
+			ConvUUY = (IPhUjD2') * ConvUUY;				
+		}	
+			
+		StabCUUPEM[s + i*Taubases + uj*Nbases*Taubases] = ConvUUX + ConvUUY;	
+		cout<<"s="<<s<<", ui="<<i<<", uj="<<uj<<", imatrix = "<< s + i*Taubases + uj*Nbases*Taubases <<endl;
+		if(uj<i){		
+			StabCUUPEM[s + uj*Taubases + i*Nbases*Taubases] = ConvUUX + ConvUUY;
+			cout<<"s="<<s<<", ui="<<uj<<", uj="<<i<<", imatrix = "<< s + uj*Taubases + i*Nbases*Taubases << endl;
+		}
+		
+	}		
+}
+
