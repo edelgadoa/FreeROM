@@ -43,6 +43,7 @@ matrix StabhkPEM = FiltroX + FiltroY;
 
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
+matrix[int] StabCUUPEM(Taubases*Nbases^2); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 { 
