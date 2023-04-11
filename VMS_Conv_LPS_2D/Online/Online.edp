@@ -68,7 +68,9 @@ timeFE = clock() - timeFE;
 //	Resolvemos el problema de RB, y calculamos el tiempo en resolver
 real timeRB = clock();
 
-include "RB_VMS_LPS_2D.idp"
+
+include "RB_LPS_VMSSmago.idp"
+
 
 Vh2P2 [uN, uNY];
 VhP2 uNP;

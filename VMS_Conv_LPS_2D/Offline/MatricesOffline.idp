@@ -28,7 +28,6 @@ for (int j=0; j<=i; j++){
 			// StabhkRBL(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 		}	
 }
-pause;
 
 // Comienzo el bucle para la construcción de los tensores
 
@@ -53,7 +52,7 @@ for (int s=0; s<=i; s++){
 		} 
 	
 	}
-	ConvRB[s] += Cint;
+	ConvRB[s] = Cint;
 }
 
 
@@ -62,13 +61,11 @@ for (int s=0; s<Mbases; s++){
 	real[int, int] Sint(2*Nbases, 2*Nbases); 
 	Sint = SmagoRB[s]; 
 	for (int j=0; j<=i; j++){
-
-			Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); 
-			if(j<i){
-				Sint(j,i) = Sint(i,j);
-			}
+		Sint(i,j) = innerprodX(FBaseV[i][], FBaseV[j][], SmagoPEM[s]); 
+		if(j<i){
+			Sint(j,i) = Sint(i,j);
+		}
 	}
-
 	SmagoRB[s] = Sint;
 }
 
@@ -78,12 +75,10 @@ for (int s=0; s<Taubases; s++){
 	real[int, int] LPSint(2*Nbases, 2*Nbases); 
 	LPSint = StabPRB[s];
 	for (int j=0; j<=i; j++){
-
-			LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); 
-			if(j<i){
-				LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
-			}
-
+		LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); 
+		if(j<i){
+			LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
+		}
 	}
 	StabPRB[s] = LPSint;
 }
@@ -92,6 +87,7 @@ for (int s=0; s<Taubases; s++){
 //
 // LPS Conveccion
 for (int s=0; s<Taubases; s++){
+
 	real[int,int] LPSCLLint(2*Nbases, 2*Nbases);
 	real[int] bLLint(2*Nbases);
 	LPSCLLint = 0;
@@ -101,39 +97,46 @@ for (int s=0; s<Taubases; s++){
 		// real[int] bULint(2*Nbases), bLUint(2*Nbases);
 		// LPSCULint = 0;	LPSCLUint = 0;
 		// bULint = 0; bLUint = 0;
-		for (int uj=0; uj<=i; uj++){
 
+		for (int uj=0; uj<=i; uj++){
+			cout<<"s="<<s<<", ui="<<ui<<", uj="<<uj<<endl;
 			// real[int] bUUint(2*Nbases);
 //
 // 			bUUint = 0;
 			real[int, int] LPSCUUint(2*Nbases, 2*Nbases);// LPSCUUintG(2*Nbases, 2*Nbases);
-			LPSCUUint = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
+			LPSCUUint = 0 ;// StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];// LPSCintG = 0;
+
+			matrix PEM = StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases];
 
 			for (int j=0; j<=i; j++){//LO QUE ESTÁ CORRIENDO ES CON LOS ÍNDICES CAMBIADOS
-				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
+				
+				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], PEM);
+				cout<<"("<<i<<","<<j<<")="<<LPSCUUint(i,j)<<endl;
 				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
 				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
 				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
-				
 				if(j<i){
-					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); //LPSCUUint(i,j);
+					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], PEM); //LPSCUUint(i,j);
+					cout<<"("<<j<<","<<i<<")="<<LPSCUUint(j,i)<<endl;
 					// LPSCULint(j,i) = LPSCULint(i,j);
 					// LPSCLUint(j,i) = LPSCLUint(i,j);
 					// LPSCLLint(j,i) = LPSCLLint(i,j);
-					if((ui==i || uj==i) && j!=i){
-						for(int k=0; k<i; k++){
-							LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
-							
-							if(j<k){
-								LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]); // LPSCUUint(j,k);
-							}
+				}
+				if((ui==i || uj==i) && j!=i){
+					for(int k=0; k<i; k++){
+						LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], PEM);
+						cout<<"("<<j<<","<<k<<")="<<LPSCUUint(j,k)<<endl;
+						if(j<k){
+							LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], PEM); // LPSCUUint(j,k);
+							cout<<"("<<k<<","<<j<<")="<<LPSCUUint(k,j)<<endl;
 						}
 					}
 				}
+				
 			}
 			// bStabCUURB(s + ui*Taubases + uj*Taubases*Nbases, i) = innerprodX(BaseV[i][], LevV[], StabCUUPEM[s + ui*Taubases + uj*Taubases*Nbases]);
 			// bStabCUURB[s + ui*Taubases + uj*Taubases*Nbases] +=  bUUint;
-			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] = LPSCUUint;
+			StabCUURB[s + ui*Taubases + uj*Taubases*Nbases] += LPSCUUint;
 			// StabCUURB[ui + uj*Nbases] = LPSCUUint;
 			
 			
@@ -153,7 +156,6 @@ for (int s=0; s<Taubases; s++){
 
 	// StabCLLRB[s] +=  LPSCLLint;
 }
-
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){

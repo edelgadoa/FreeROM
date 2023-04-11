@@ -56,22 +56,34 @@ usol3D[] = A^-1*b;
 
 
 
+// real[int][int] Vertices(Thc.nv);
+//
+// for (int i = 0; i< Thc.nv; i++){
+// 		Vertices[i] = [Thc(i).x, Thc(i).y];
+// 	}
+//
+//
 
-func real[int][int] GetVert(mesh &Th){
-	real[int][int] Vertices(Th.nv);
-	for (int i = 0; i< Th.nv; i++){
-		real[int] coord(2);
-		coord(0) = Th(i).x;
-		coord(1) = Th(i).y;
-		Vertices[i] = coord;
-	}
-	return Vertices;
+
+real zHiMod = 1;
+for (int i = 0; i<Thc.nv; i++){
+	real solucion = usol3D(Thc(i).x,Thc(i).y, zHiMod);
+	real xi = Thc(i).x, yi = Thc(i).y;
+	
+	usol2D(xi,yi) = solucion;
 }
 
-real[int][int] Vertices(Thc.nv);
-Vertices = GetVert(Thc);
+plot(usol2D, cmm="z="+zHiMod);
+cout << "Sol2D = " << usol2D(0.4,0.4) << ", Sol3D = " << usol3D(0.4, 0.4, zHiMod) << endl;
 
-cout << Vertices << endl;
+zHiMod = 7;
+for (int i = 0; i<Thc.nv; i++){
+	// real solucion = 
+	usol2D(0.4,0.4) = usol3D(Thc(i).x,Thc(i).y, zHiMod);
+}
+
+cout << "Sol2D = " << usol2D(0.4,0.4) << ", Sol3D = " << usol3D(0.4, 0.4, zHiMod) << endl;
+plot(usol2D, cmm="z="+zHiMod);
 
 int[int] fforder=[1];
 savevtk("Poisson.vtk", Th, usol3D, order=fforder);

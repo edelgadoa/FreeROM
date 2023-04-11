@@ -48,7 +48,7 @@ include "../Auxiliary/Normas.idp"
 include "../Auxiliary/betas.idp"
 
 //Definicion de Constantes y variables varias
-int Nbases = 30; 
+int Nbases = 18; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -82,7 +82,6 @@ real[int, int] MBaseV(Vh2P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "EIM_Data.idp"
 
-
 // Cargo los datos del RBF
 readvector("../RBF/BetaMuI.txt", real, BetaI, 0);
 readvector("../RBF/vMuI.txt", real, muI, 0);
@@ -99,7 +98,6 @@ MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
 include "Sobolev.idp"
-
 VhP2 uFijo, uFijoY; //Para la normaT
 VhP1dc uFijodX, uFijodY, uFijoYdX, uFijoYdY;
 
@@ -176,7 +174,7 @@ for (int i=0; i<Nbases; i++){
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
 	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
 	// plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
-	
+
 	include "GramSchmidt.idp"
 	
 	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
@@ -201,14 +199,11 @@ for (int i=0; i<Nbases; i++){
 	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
 	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
 	
-	include "Scalar_Product_Matrices_Conv.idp" // Son demasiadas, este código se hacía demasiado largo 
-	
+	include "Scalar_Product_Matrices_Conv_opt.idp" // Son demasiadas, este código se hacía demasiado largo 
 	// Construyo las matrices
 	include "MatricesOffline.idp"
-		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
 	include "Greedy.idp"
-	
 	// Actualizo el nuevo Reynolds
 	Reynolds = MuBest(i+1);
 
@@ -216,9 +211,10 @@ for (int i=0; i<Nbases; i++){
 	cout<<"New Reynolds: "<<Reynolds<<endl;
 	//mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
 	cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;
-	if (DeltaN(i)<epsGreedy){
+	if (DeltaN(i)<epsGreedy || i == Nbases-1){
 		NRB = i + 1;
-		// include "Save_Matrices.idp"
+		cout<<"Saving matrices"<<endl;
+		include "Save_Matrices.idp"
 		break;
 	}
 }

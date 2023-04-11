@@ -21,6 +21,8 @@ readvector("../../Offline/MatricesRB/bConv.txt", real, bConvN, 0);
 readtensor("../../Offline/MatricesRB/Conv.txt", real, ConvN, 0);
 readtensor("../../Offline/MatricesRB/Smago.txt", real, SmagoN, 0);
 readtensor("../../Offline/MatricesRB/StabP.txt", real, StabPN, 0);
+readtensor("../../Offline/MatricesRB/StabC.txt", real, StabCN, 0);
+
 
 readvectorarray("../../Offline/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
 readtensor("../../Offline/MatricesRB/GradPM.txt", real, GradPM,0);

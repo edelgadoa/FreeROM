@@ -6,7 +6,7 @@
 matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
 
 for (int s=0; s<Taubases; s++){
-	cout << s<<endl;
+
 	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
 	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 
@@ -36,7 +36,7 @@ for (int s=0; s<Taubases; s++){
 		ConvLLY = (IPhLD2')* ConvLLY;
 	}
 	
-	for (int ui=0; ui<Nbases; ui++){
+	for (int ui=0; ui<=i; ui++){
 		
 		VhP1dc BaseVdci = BaseV[ui];
 		VhP1dc BaseVYdci = BaseVY[ui];
@@ -73,7 +73,7 @@ for (int s=0; s<Taubases; s++){
 		// StabCULPEM[s + ui*Taubases] = ConvULX + ConvULY;
 		// StabCLUPEM[s + ui*Taubases] = ConvLUX + ConvLUY;
 		
-		for (int uj=0; uj<Nbases; uj++){
+		for (int uj=0; uj<=i; uj++){
 
 			VhP1dc BaseVdcj = BaseV[uj];
 			VhP1dc BaseVYdcj = BaseVY[uj];

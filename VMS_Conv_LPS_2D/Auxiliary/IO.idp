@@ -124,7 +124,7 @@ EndMacro
 // Escalar
 func int write(string filename,string towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -135,30 +135,28 @@ func int write(string filename,string towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout <<towrite << endl;// }
+	if(show==1) cout <<towrite << endl;}
 	return 1;
 }
-
-// func int write(string filename,string towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;}
-// 	return 1;
-// }
-
+func int write(string filename,string towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
 func int write(string filename,int towrite,int ind,bool show)
 {
-	//if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -169,28 +167,28 @@ func int write(string filename,int towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout <<towrite << endl;//}
+	if(show==1) cout <<towrite << endl;}
 	return 1;
 }
-// func int write(string filename,int towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,int towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
 func int write(string filename,real towrite,int ind,bool show)
 {
-	//if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -201,46 +199,46 @@ func int write(string filename,real towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout <<towrite << endl;//}
+	if(show==1) cout <<towrite << endl;}
 	return 1;
 }
-// func int write(string filename,real towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,real towrite,int ind,bool show,int proces,int preci)
-// {
-// 	// if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;//}
-// 	return 1;
-// }
+func int write(string filename,real towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
+func int write(string filename,real towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
 func int write(string filename,complex towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -251,47 +249,47 @@ func int write(string filename,complex towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout <<towrite << endl;// }
+	if(show==1) cout <<towrite << endl;}
 	return 1;
 }
-// func int write(string filename,complex towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout <<towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,complex towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout <<towrite << endl;}
+	return 1;
+}
 // Vectores
 func int write(string filename,int[int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -302,28 +300,28 @@ func int write(string filename,int[int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;// }
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,int[int] towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,int[int] towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,real[int] towrite,int ind,bool show)
 {
-	//if(mpirank==0)//{
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -334,46 +332,46 @@ func int write(string filename,real[int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,real[int] towrite,int ind,bool show,int proces)
-// {
-//         if(mpirank==proces){
-//         if(ind==0)
-//         {
-//                 ofstream file(filename);
-//                 file << towrite << endl;
-//         }
-//         else
-//         {
-//                 ofstream file(filename,append);
-//                 file << towrite << endl;
-//         }
-//         if(show==1) cout << towrite << endl;}
-//         return 1;
-// }
-// func int write(string filename,real[int] towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,real[int] towrite,int ind,bool show,int proces)
+{       
+        if(mpirank==proces){
+        if(ind==0)
+        {       
+                ofstream file(filename);
+                file << towrite << endl;
+        }
+        else
+        {       
+                ofstream file(filename,append);
+                file << towrite << endl;
+        }
+        if(show==1) cout << towrite << endl;}
+        return 1;
+}
+func int write(string filename,real[int] towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,complex[int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -384,48 +382,48 @@ func int write(string filename,complex[int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,complex[int] towrite,int ind,bool show,int proces)
-// {
-//         if(mpirank==proces){
-//         if(ind==0)
-//         {
-//                 ofstream file(filename);
-//                 file << towrite << endl;
-//         }
-//         else
-//         {
-//                 ofstream file(filename,append);
-//                 file << towrite << endl;
-//         }
-//         if(show==1) cout << towrite << endl;}
-//         return 1;
-// }
-// func int write(string filename,complex[int] towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,complex[int] towrite,int ind,bool show,int proces)
+{       
+        if(mpirank==proces){
+        if(ind==0)
+        {       
+                ofstream file(filename);
+                file << towrite << endl;
+        }
+        else
+        {       
+                ofstream file(filename,append);
+                file << towrite << endl;
+        }
+        if(show==1) cout << towrite << endl;}
+        return 1;
+}
+func int write(string filename,complex[int] towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 
 // Matrices llenas
 func int write(string filename,int[int,int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -436,46 +434,46 @@ func int write(string filename,int[int,int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,int[int,int] towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,int[int,int] towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,int[int,int] towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,int[int,int] towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,real[int,int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -486,46 +484,46 @@ func int write(string filename,real[int,int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,real[int,int] towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,real[int,int] towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,real[int,int] towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int,int] towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,complex[int,int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -536,48 +534,48 @@ func int write(string filename,complex[int,int] towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;// }
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,complex[int,int] towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int,int] towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,complex[int,int] towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int,int] towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 
 // Matrices sparse
 func int write(string filename,matrix towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -588,46 +586,46 @@ func int write(string filename,matrix towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,matrix towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,matrix towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,matrix towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,matrix towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,matrix <complex> towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		ofstream file(filename);
@@ -638,48 +636,48 @@ func int write(string filename,matrix <complex> towrite,int ind,bool show)
 		ofstream file(filename,append);
 		file << towrite << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,matrix <complex> towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,matrix <complex> towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		ofstream file(filename);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	else
-// 	{
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		file << towrite << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,matrix <complex> towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,matrix <complex> towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << towrite << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 
 // Tensores
 func int write(string filename,int[int,int][int] towrite,int ind,bool show)
 {
-	// if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		int n=towrite.n;
@@ -695,56 +693,56 @@ func int write(string filename,int[int,int][int] towrite,int ind,bool show)
 		file << n << endl;
 		for(int i=0;i<n;i++)file << towrite[i] << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,int[int,int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,int[int,int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,int[int,int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,int[int,int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,real[int,int][int] towrite,int ind,bool show)
 {
-	//if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		int n=towrite.n;
@@ -760,123 +758,123 @@ func int write(string filename,real[int,int][int] towrite,int ind,bool show)
 		file << n << endl;
 		for(int i=0;i<n;i++)file << towrite[i] << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,real[int,int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,real[int,int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int,int][int] towrite,int ind,bool show)
-// {
-// 	if(mpirank==0){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int,int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int,int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,real[int,int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int,int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int,int][int] towrite,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int,int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int,int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 
 // Array de array
 func int write(string filename,int[int][int] towrite,int ind,bool show)
 {
-	//if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		int n=towrite.n;
@@ -892,56 +890,56 @@ func int write(string filename,int[int][int] towrite,int ind,bool show)
 		file << n << endl;
 		for(int i=0;i<n;i++)file << towrite[i] << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,int[int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,int[int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,int[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,int[int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
 func int write(string filename,real[int][int] towrite,int ind,bool show)
 {
-	//if(mpirank==0){
+	if(mpirank==0){
 	if(ind==0)
 	{
 		int n=towrite.n;
@@ -957,115 +955,115 @@ func int write(string filename,real[int][int] towrite,int ind,bool show)
 		file << n << endl;
 		for(int i=0;i<n;i++)file << towrite[i] << endl;
 	}
-	if(show==1) cout << towrite << endl;//}
+	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-// func int write(string filename,real[int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,real[int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int][int] towrite,int ind,bool show)
-// {
-// 	if(mpirank==0){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
-// func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces,int preci)
-// {
-// 	if(mpirank==proces){
-// 	if(ind==0)
-// 	{
-// 		int n=towrite.n;
-// 		{ofstream file(filename);
-// 		file << n << endl;}
-// 		ofstream file(filename,append);
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	else
-// 	{
-// 		int n=towrite.n;
-// 		ofstream file(filename,append);
-// 		file << n << endl;
-// 		file.precision(preci);
-// 		for(int i=0;i<n;i++)file << towrite[i] << endl;
-// 	}
-// 	if(show==1) cout << towrite << endl;}
-// 	return 1;
-// }
+func int write(string filename,real[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,real[int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int] towrite,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
+func int write(string filename,complex[int][int]towrite,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		int n=towrite.n;
+		{ofstream file(filename);
+		file << n << endl;}
+		ofstream file(filename,append);
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	else
+	{
+		int n=towrite.n;
+		ofstream file(filename,append);
+		file << n << endl;
+		file.precision(preci);
+		for(int i=0;i<n;i++)file << towrite[i] << endl;
+	}
+	if(show==1) cout << towrite << endl;}
+	return 1;
+}
