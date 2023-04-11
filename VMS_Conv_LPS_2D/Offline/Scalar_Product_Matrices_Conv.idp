@@ -6,7 +6,7 @@
 matrix[int] StabCUUPEM(Taubases*Nbases^2), StabCULPEM(Taubases*Nbases), StabCLUPEM(Taubases*Nbases), StabCLLPEM(Taubases);
 
 for (int s=0; s<Taubases; s++){
-	cout<< s<< endl;	
+
 	varf StabCPE(u,v) = int2d(Th)(EIMTau[s]*u*v);
 	matrix SCPEM = StabCPE(VhP1dc, VhP1dc);
 

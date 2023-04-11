@@ -55,6 +55,7 @@ VhP12D usol2D;
 usol3D[] = A^-1*b;
 
 
+
 // real[int][int] Vertices(Thc.nv);
 //
 // for (int i = 0; i< Thc.nv; i++){
