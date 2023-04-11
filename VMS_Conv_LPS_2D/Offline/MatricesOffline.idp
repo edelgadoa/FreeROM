@@ -126,10 +126,10 @@ for (int s=0; s<Taubases; s++){
 					for(int k=0; k<i; k++){
 						LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], PEM);
 						cout<<"("<<j<<","<<k<<")="<<LPSCUUint(j,k)<<endl;
-						if(j<k){
-							LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], PEM); // LPSCUUint(j,k);
-							cout<<"("<<k<<","<<j<<")="<<LPSCUUint(k,j)<<endl;
-						}
+						// if(j<k){
+						// 	LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], PEM); // LPSCUUint(j,k);
+						// 	cout<<"("<<k<<","<<j<<")="<<LPSCUUint(k,j)<<endl;
+						// }
 					}
 				}
 				
