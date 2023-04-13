@@ -20,7 +20,7 @@ include "Macros_3D.idp"
 
 
 // Creamos la malla
-include "CuboNxNyNZ.idp"
+include "CuboN.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
