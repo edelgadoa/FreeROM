@@ -167,7 +167,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 
 			for (int uj=0; uj<Nbases; uj++){
 				real[int,int] SConvint(2*Nbases, 2*Nbases);
-				SConvint = StabCUURB[s + ui*Taubases + uj*Taubases*Nbases];
+				SConvint = StabCN[s + ui*Taubases + uj*Taubases*Nbases];
 				// SConvint = 0;
 				//SConvRBN = StabCUURB[ui + uj*Nbases];
 			

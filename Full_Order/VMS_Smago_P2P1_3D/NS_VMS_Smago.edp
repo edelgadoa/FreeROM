@@ -16,11 +16,11 @@ load "iovtk"
 load "medit"
 
 // Cargamos macros
-include "../../Auxiliary/Macros_3D.idp"
+include "Macros_3D.idp"
 
 
 // Creamos la malla
-include "../../Mallas/CuboNxNyNZ.idp"
+include "CuboNxNyNZ.idp"
 
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
@@ -35,7 +35,7 @@ include "Parametros_3D.idp"
 include "Interp_matrix_3D.idp"
 include "Interp_matrix_3D_Local.idp"
 
-Reynolds = 3545;
+Reynolds = 4000;
 
 
 /////////////////////////////////////////////

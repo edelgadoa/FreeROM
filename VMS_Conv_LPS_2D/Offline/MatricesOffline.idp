@@ -37,16 +37,13 @@ for (int j=0; j<=i; j++){
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
 	Cint = ConvRB[s];
-	for (int j=0; j<=i; j++){
-		
+	for (int j=0; j<=i; j++){		
 		Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
-		if(j<i){
-			
+		if(j<i){	
 			Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
 		}
 		if (s==i && (j!=i)){
-			for (int k=0; k<s; k++){
-				
+			for (int k=0; k<s; k++){			
 				Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
 			}
 		} 
@@ -99,7 +96,6 @@ for (int s=0; s<Taubases; s++){
 		// bULint = 0; bLUint = 0;
 
 		for (int uj=0; uj<=i; uj++){
-			cout<<"s="<<s<<", ui="<<ui<<", uj="<<uj<<endl;
 			// real[int] bUUint(2*Nbases);
 //
 // 			bUUint = 0;
@@ -111,13 +107,11 @@ for (int s=0; s<Taubases; s++){
 			for (int j=0; j<=i; j++){//LO QUE ESTÁ CORRIENDO ES CON LOS ÍNDICES CAMBIADOS
 				
 				LPSCUUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], PEM);
-				cout<<"("<<i<<","<<j<<")="<<LPSCUUint(i,j)<<endl;
 				// LPSCULint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCULPEM[s + ui*Taubases]);
 				// LPSCLUint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLUPEM[s + ui*Taubases]);
 				// LPSCLLint(i,j) = innerprodX(BaseV[i][], BaseV[j][], StabCLLPEM[s]);
 				if(j<i){
 					LPSCUUint(j,i) = innerprodX(BaseV[j][], BaseV[i][], PEM); //LPSCUUint(i,j);
-					cout<<"("<<j<<","<<i<<")="<<LPSCUUint(j,i)<<endl;
 					// LPSCULint(j,i) = LPSCULint(i,j);
 					// LPSCLUint(j,i) = LPSCLUint(i,j);
 					// LPSCLLint(j,i) = LPSCLLint(i,j);
@@ -125,7 +119,6 @@ for (int s=0; s<Taubases; s++){
 				if((ui==i || uj==i) && j!=i){
 					for(int k=0; k<i; k++){
 						LPSCUUint(j,k) = innerprodX(BaseV[j][], BaseV[k][], PEM);
-						cout<<"("<<j<<","<<k<<")="<<LPSCUUint(j,k)<<endl;
 						// if(j<k){
 						// 	LPSCUUint(k,j) = innerprodX(BaseV[k][], BaseV[j][], PEM); // LPSCUUint(j,k);
 						// 	cout<<"("<<k<<","<<j<<")="<<LPSCUUint(k,j)<<endl;

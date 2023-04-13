@@ -92,7 +92,8 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
-
+    mpi(cout<<"Error:"<<ERROR<<endl;)
+	
 
 }
 
