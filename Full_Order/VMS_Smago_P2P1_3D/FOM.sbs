@@ -5,4 +5,4 @@
 #SBATCH --partition=cpu
 #SBATCH --exclusive
 
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "NS_VMS_Smago.edp" > "terminal1.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "NS_VMS_Smago.edp" --with-debugging=yes > "terminal1.txt"
