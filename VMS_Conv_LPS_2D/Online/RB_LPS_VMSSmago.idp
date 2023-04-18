@@ -66,11 +66,6 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		SmagoNi += SmagoNint; 
 	}
 		
-	// Segundo miembro Smago
-	for (int s=0; s<I; s++){
-		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
-	}
-	
 
 	// Segundo miembro Smago
 	for (int s=0; s<Nbases; s++){
@@ -217,13 +212,13 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 
 	// real[int,int] MRBinv = MRBF^-1;
 	
-	uRBv = MRBs^-1*bRB;
+	uRB = MRBs^-1*bRB;
 	// uRBv = MRBinv*bRB;
 
 	// Actualizo el error 
 
 	real[int] uRBerr(Nbases); 
 	uRBerr = uRB(0:Nbases-1) - uRBp(0:Nbases-1);
-	errRB = uRBerr.l2/uRBv.l2; 
+	errRB = uRBerr.l2/uRB.l2; 
 }
 

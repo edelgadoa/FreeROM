@@ -4,30 +4,30 @@
 
 // Programa que carga las matrices y las bases para la fase ONLINE
 
-readmatrix("../../Offline/MatricesRB/BaseV.txt", real, MBaseV, 0);
-readmatrix("../../Offline/MatricesRB/BaseP.txt", real, MBaseP, 0);
+readmatrix("../Offline/MatricesRB/BaseV.txt", real, MBaseV, 0);
+readmatrix("../Offline/MatricesRB/BaseP.txt", real, MBaseP, 0);
 
 
-readmatrix("../../Offline/MatricesRB/Diff.txt", real, DiffN, 0);
-readmatrix("../../Offline/MatricesRB/DivP.txt", real, DivPN, 0);
-readmatrix("../../Offline/MatricesRB/ConvLev.txt", real, ConvLevN, 0);
-readmatrix("../../Offline/MatricesRB/DT.txt", real, DTN, 0);
-readmatrix("../../Offline/MatricesRB/Pen.txt", real, PenN, 0);
-readmatrix("../../Offline/MatricesRB/bSmago.txt", real, bSmagoN, 0);
+readmatrix("../Offline/MatricesRB/Diff.txt", real, DiffN, 0);
+readmatrix("../Offline/MatricesRB/DivP.txt", real, DivPN, 0);
+readmatrix("../Offline/MatricesRB/ConvLev.txt", real, ConvLevN, 0);
+readmatrix("../Offline/MatricesRB/DT.txt", real, DTN, 0);
+readmatrix("../Offline/MatricesRB/Pen.txt", real, PenN, 0);
+readmatrix("../Offline/MatricesRB/bSmago.txt", real, bSmagoN, 0);
 
-readvector("../../Offline/MatricesRB/bDiff.txt", real, bDiffN, 0);
-readvector("../../Offline/MatricesRB/bConv.txt", real, bConvN, 0);
+readvector("../Offline/MatricesRB/bDiff.txt", real, bDiffN, 0);
+readvector("../Offline/MatricesRB/bConv.txt", real, bConvN, 0);
 
-readtensor("../../Offline/MatricesRB/Conv.txt", real, ConvN, 0);
-readtensor("../../Offline/MatricesRB/Smago.txt", real, SmagoN, 0);
-readtensor("../../Offline/MatricesRB/StabP.txt", real, StabPN, 0);
-readtensor("../../Offline/MatricesRB/StabC.txt", real, StabCN, 0);
+readtensor("../Offline/MatricesRB/Conv.txt", real, ConvN, 0);
+readtensor("../Offline/MatricesRB/Smago.txt", real, SmagoN, 0);
+readtensor("../Offline/MatricesRB/StabP.txt", real, StabPN, 0);
+readtensor("../Offline/MatricesRB/StabC.txt", real, StabCN, 0);
 
 
-readvectorarray("../../Offline/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
-readtensor("../../Offline/MatricesRB/GradPM.txt", real, GradPM,0);
-readtensor("../../Offline/MatricesRB/NUK.txt", real, NukN, 0);
-readtensor("../../Offline/MatricesRB/NGUK.txt", real, NGukN, 0);
+readvectorarray("../Offline/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
+readtensor("../Offline/MatricesRB/GradPM.txt", real, GradPM,0);
+readtensor("../Offline/MatricesRB/NUK.txt", real, NukN, 0);
+readtensor("../Offline/MatricesRB/NGUK.txt", real, NGukN, 0);
 
 
 int Nbases = ConvN.n;
@@ -35,9 +35,9 @@ int Nbases = ConvN.n;
 // int Taubases = StabPN.n;
 
 real[int, int] DivPNT(2*Nbases, 2*Nbases), ConvNi(2*Nbases, 2*Nbases), SmagoNi(2*Nbases, 2*Nbases), 
-		       StabPNi(2*Nbases, 2*Nbases); 
+		       StabPNi(2*Nbases, 2*Nbases) , StabCNi(2*Nbases, 2*Nbases); 
 
-real[int] bDTNi(2*Nbases), bSmagoNi(2*Nbases);
+real[int] bDTNi(2*Nbases), bSmagoNi(2*Nbases), bStabCNi(2*Nbases);
 
 DivPNT = DivPN'; DivPNT = (-1)*DivPNT;
 

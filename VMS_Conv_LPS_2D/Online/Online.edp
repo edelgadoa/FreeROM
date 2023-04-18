@@ -9,7 +9,7 @@ load "iovtk"
 
 // Cargamos macros y funciones i/o
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
+include "../Auxiliary/IO.idp" 
 include "../Auxiliary/search.idp"
 
 // Creamos la malla
@@ -39,7 +39,7 @@ include "Load_Basis_Data.idp"
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "../Offline/EIM_Data.idp"
 
-Reynolds = 4892;
+Reynolds = 3210;
 
 //////////////////////////
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
@@ -103,8 +103,8 @@ uERRP = abs(UEFP - uNP);
 
 [uERR, uERRY] = [UERR, UERRY];
 
-real normErrorV = normX(uERR[], MNormaVel);
-real normErrorP = normL2(uERRP[]);
+real normErrorV = normX(uERR[], MNormaVel)/normX(uN[], MNormaVel);
+real normErrorP = normL2(uERRP[])/normL2(uNP[]);
 
 
 real speedup = timeFE/timeRB;

@@ -111,18 +111,19 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real RhoT = 2*CSobolev^2;
 	
 	// Tau_N
-	TauG(iRB) = (4 * RhoT * ResG(iRB))/(Betah^2);
+	// TauG(iRB) = (4 * RhoT * ResG(iRB))/(Betah^2);
 
-	cout<<"TauN = "<< TauG(iRB)<<endl;
+	// cout<<"TauN = "<< TauG(iRB)<<endl;
 
 	
 	// DeltaN
-	if (TauG(iRB) < 1){
-		DeltaG(iRB) = Betah/(2*RhoT)*(1-sqrt(1-TauG(iRB)));
-	}
-	else{
-		DeltaG(iRB) = Betah/(4*RhoT)*TauG(iRB);
-	}
+	// if (TauG(iRB) < 1){
+	// 	DeltaG(iRB) = Betah/(2*RhoT)*(1-sqrt(1-TauG(iRB)));
+	// }
+	// else{
+	// 	DeltaG(iRB) = Betah/(4*RhoT)*TauG(iRB);
+	// }
+	DeltaG(iRB) = ResG(iRB)/Betah;
 	
 }
 
