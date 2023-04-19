@@ -3,7 +3,7 @@
 /////////////// 
 
 // Creacion de malla. Dominio Cuadrado con Nx,Ny divisiones por eje. 
-// Por defecto tiene 50 divisiones por eje y construye la malla estandar.
+// Por defecto tiene 75 divisiones por eje y construye la malla estandar.
 
 mesh Th;
  
@@ -22,7 +22,7 @@ mesh Th;
 	
 	// func fx = 0.5*(1 + (tanh(1.5*(2*x-1)))/(tanh(1.5)));
 	// func fy = 0.5*(1 + (tanh(1.5*(2*y-1)))/(tanh(1.5)));
-	
+	//
 	// Th = movemesh(Th, [fx,fy]);
 	
 	// plot(Th);

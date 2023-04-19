@@ -12,7 +12,6 @@ ERROR = 10;
 
 // Comenzamos el bucle iterativo para resolver el problema de EF
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
-	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
 	uprevL = uEF + Lev;
@@ -94,6 +93,6 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
-	// cout<<ERROR<<endl;
+	cout<<ERROR<<endl;
 }
 

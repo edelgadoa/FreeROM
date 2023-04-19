@@ -86,7 +86,6 @@ for (int i=0; i<nSnapshots; i++){
 	uN[] = MBaseV*uRB(0:Nbases-1);
 	uNP[] = MBaseP*uRB(Nbases:2*Nbases-1);
 	
-
 	
 	[uRBN, uRBNY, uRBNP] = [uN, uNY, uNP];
 	
