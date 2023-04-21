@@ -33,6 +33,7 @@ int nSnapshots; // numero de Snapshots que voy a querer calcular
 ifstream nSnapshotFILE("../../Snapshots/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
 
 nSnapshotFILE>>nSnapshots;
+nSnapshots = 83;
 real[int] vReynolds(nSnapshots);
 
 
