@@ -7,7 +7,7 @@
 
 // Parametros del modelo VMS-Smago con LPS en la presion
 real CS = 0.1; // Smago
-real Refijo = 1000; // Valor del Reynolds fijo
+real Refijo = 5000; // Valor del Reynolds fijo
 
 real cc1 = 16.; // tauk
 real cc2 = sqrt(cc1);
