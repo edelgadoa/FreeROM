@@ -58,7 +58,7 @@ real Reynolds; // Esto es perceptible de cambiarlo
 real Remin = 5000;
 real Remax = 7000;
 
-int Ntrain = 165;
+int Ntrain = 201;
 
 real[int] MuTrain(Ntrain);
 for (int ig=0; ig<Ntrain; ig++){
