@@ -44,8 +44,8 @@ real epsFE = 1e-10;
 int niterRB = 2000;
 real epsRB = 1e-10; //parada de problema reducido
 
-real epsGreedy = 5e-5;
-real epsEIM = 5e-5;
+real epsGreedy = 1e-4;
+real epsEIM = 1e-5;
 
 int NRB = 0;
 
