@@ -1,0 +1,337 @@
+// Funcion que devuelve la fila donde se produce el maximo en una matriz
+func int imax (real[int,int] & A)
+{
+	int nfila = A.n;
+	int ncol = A.m;
+	real[int] maximum(nfila);
+	for(int i=0; i<nfila; i++)
+	{
+		real[int] aux(ncol);
+		aux = A(i,:);
+		maximum(i)=aux.max;
+	}
+	return maximum.imax;
+}// Si se desea para un vector, utilizar v.imax
+func int imaxabs(real[int] & v)
+{
+	real[int] vabs(v.n);
+	vabs=abs(v);
+	return vabs.imax;
+}
+// Funcion que devuelve la columna donde se produce el maximo
+func int jmax (real[int,int] & A)
+{
+	int nfila = A.n;
+	int ncol = A.m;
+	real[int] maximum(ncol);
+	for(int i=0; i<ncol; i++)
+	{
+		real[int] aux(nfila);
+		aux = A(:,i);
+		maximum(i)=aux.max;
+	}
+	return maximum.imax;
+}
+
+func int[int] ijmax(real[int,int] & A)
+{
+	int[int] result(2);
+	result(0)=imax(A);
+	result(1)=jmax(A);
+	return result;
+}
+
+func int[int] ijkmax(real[int,int][int] & A)
+{
+	int n=A.n;
+	real[int] valmax(n);
+	for(int i=0;i<n;i++)
+	{
+		valmax(i)=A[i].max;
+	}
+	int[int] result(3);
+	result(2)=valmax.imax;
+	result(0)=imax(A[result(2)]);
+	result(1)=jmax(A[result(2)]);
+	return result;
+}
+
+func int[int] ijkmin(real[int,int][int] & A)
+{
+	int n=A.n;
+	real[int] valmax(n);
+	for(int i=0;i<n;i++)
+	{
+		valmax(i)=A[i].min;
+	}
+	int[int] result(3);
+	result(2)=valmax.imin;
+	result(0)=imax(A[result(2)]);
+	result(1)=jmax(A[result(2)]);
+	return result;
+}
+
+
+func int[int] ijkmaxabs(real[int,int][int] & A)
+{
+	int n=A.n;
+	int[int] maximo(n);
+	real[int,int][int] Aabs(n);
+	for(int i=0; i<n; i++)
+	{
+		Aabs[i]=abs(A[i]);
+		maximo(i) = Aabs[i].max;
+	}
+	int[int] result(3);
+	result(2)=maximo.imax;
+	result(0)=imax(Aabs[result(2)]);
+	result(1)=jmax(Aabs[result(2)]);
+	return result;
+}
+
+// Funcion que devuelve la fila donde se produce el maximo en una matriz
+func int imin (real[int,int] & A)
+{
+	int nfila = A.n;
+	int ncol = A.m;
+	real[int] minimum(nfila);
+	for(int i=0; i<nfila; i++)
+	{
+		real[int] aux(ncol);
+		aux = A(i,:);
+		minimum(i)=aux.min;
+	}
+	return minimum.imin;
+}// Si se desea para un vector, utilizar v.imin
+
+// Funcion que devuelve la columna donde se produce el maximo
+func int jmin (real[int,int] & A)
+{
+	int nfila = A.n;
+	int ncol = A.m;
+	real[int] minimum(ncol);
+	for(int i=0; i<ncol; i++)
+	{
+		real[int] aux(nfila);
+		aux = A(:,i);
+		minimum(i)=aux.min;
+	}
+	return minimum.imin;
+}
+func int[int] ijmin(real[int,int] & A)
+{
+	int[int] result(2);
+	result(0)=imin(A);
+	result(1)=jmin(A);
+	return result;
+}
+
+func int search(real[int] & v, real  a)
+{
+	int result=-1;
+	int n=v.n;
+	for(int i=0; i<n; i++)
+	{
+		if(abs(v(i)-a)<1.e-4)
+		{
+			result=i;
+		}
+	}
+	return result;
+}
+func int search(real[int] & v, real  a,real preci)
+{
+	int result=-1;
+	int n=v.n;
+	for(int i=0; i<n; i++)
+	{
+		if(abs(v(i)-a)<preci)
+		{
+			result=i;
+		}
+	}
+	return result;
+}
+func int[int] search(real[int,int] & A, real a)
+{
+	int[int] result = [-1,-1];
+	int n=A.n;
+	int m=A.m;
+	for(int i=0; i<n; i++)
+	{
+		for(int j=0;j<m; j++)
+		{
+			cout << "Comprobando i: " << i << ", j " << j << endl;
+			if(abs(A(i,j)-a)<1.e-4)
+			{
+				result=[i,j];
+			}
+		}
+	}
+	return result;
+}
+func int[int] search(real[int,int] & A, real a,real preci)
+{
+	int[int] result = [-1,-1];
+	int n=A.n;
+	int m=A.m;
+	for(int i=0; i<n; i++)
+	{
+		for(int j=0;j<m; j++)
+		{
+			if(abs(A(i,j)-a)<preci)
+			{
+				result=[i,j];
+			}
+		}
+	}
+	return result;
+}
+
+func int search(real[int,int] & A, real[int] & a,real preci)
+{
+	int n=A.n;
+	int[int] result(n);
+	result=0;
+	int m=A.m;
+	int l=a.n;
+	if(n!=l)
+	{
+		result=-1;
+		cout << "El numero de filas de la matriz debe ser igual al numero de componentes del vector" << endl;
+	}
+	for(int j=0; j<m; j++)
+	{
+		result=0;
+		for(int i=0;i<n;i++)
+		{
+			if(abs(A(i,j)-a(i))<preci)
+			{
+				result(i)=1.;
+			}
+		}
+		if(result.sum==n)
+		{
+			return j;
+			break;
+		}
+	}
+	return -1;
+}
+
+func real maxmax(real[int] & etax, real[int] & etay)
+{
+	real[int] max1(2);
+	max1[0]=etax.max;
+	max1[1]=etay.max;
+	return max1.max;
+}
+
+func real minmin(real[int] & etax, real[int] & etay)
+{
+	real[int] min1(2);
+	min1[0]=etax.min;
+	min1[1]=etay.min;
+	return min1.min;
+}
+////////////////////////////////////////// INTERPOLACION P1 /////////////////////////////
+func real interp1local(real[int] vx, real[int] vy,real x)
+{
+	if(abs(vx(1)-vx(0))<1.e-8)
+	{
+		if(mpirank==0)cout << "points must be difference" << endl;
+		return 0;
+	}
+	else
+	{
+		real a=(vy(1)-vy(0))/(vx(1)-vx(0));
+		real b=vy(0)-a*vx(0);
+		return a*x+b;
+	}
+}
+func real interp1local(real[int,int] vx,real x)
+{
+	if(abs(vx(0,1)-vx(0,0))<1.e-8)
+	{
+		if(mpirank==0)cout << "points must be difference" << endl;
+		return 0;
+	}
+	else
+	{
+		real a=(vx(1,1)-vx(1,0))/(vx(0,1)-vx(0,0));
+		real b=vx(1,0)-a*vx(0,0);
+		return a*x+b;
+	}
+}
+func real[int,int] order(real[int] & vx,real[int] & vy)
+{
+	real[int,int] vre(2,vx.n);
+	real[int] vxx=vx;
+	if(abs(vx.n-vy.n)>0)
+	{
+		if(mpirank==0)cout << "vector length must be the same" << endl;
+	}
+	else
+	{
+		real aux=vx.max+10;
+		for(int i=0;i<vx.n;i++)
+		{
+			vre(0,i)=vxx.min;
+			vre(1,i)=vy(vxx.imin);
+			vxx(vxx.imin)=aux;
+		}
+	}
+	return vre;
+}
+func real[int,int] deleteduplicate(real[int,int] & vx)
+{
+	real[int,int] vre=vx;
+	vre=0;
+	vre(:,0)=vx(:,0);
+	int cont=1;
+	for(int i=1;i<vx.m;i++)
+	{
+		int find=search(vre(0,0:i-1),vx(0,i));
+		if(find<0)
+		{
+			vre(:,cont)=vx(:,i);
+			cont++;
+		}
+	}
+	real[int,int] result=vre(0:vx.n-1,0:cont-1);
+	return result;
+}
+func int between(real[int] & vx, real x)
+{
+	for(int i=1;i<vx.n;i++)
+	{
+		if(vx(i-1)<=x && x<=vx(i))
+		{
+			return i-1;
+			break;
+		}
+	}
+}
+func int between(real[int,int] vxx, real x)
+{
+	real[int] vx=vxx(0,:);
+	for(int i=1;i<vx.n;i++)
+	{
+		if(vx(i-1)<=x && x<=vx(i))
+		{
+			return i-1;
+			break;
+		}
+	}
+}
+func real interp1(real[int] vx, real[int] vy, real x)
+{
+	real[int,int] vxvyorder=order(vx,vy);
+	real[int,int] vxvyclean=deleteduplicate(vxvyorder);
+	int ind=between(vxvyclean,x);
+	real[int,int] vxvy(2,2);
+	vxvy(0,0:1)=[vxvyclean(0,ind),vxvyclean(0,ind+1)];
+	vxvy(1,0:1)=[vxvyclean(1,ind),vxvyclean(1,ind+1)];
+	real result=interp1local(vxvy,x);
+	return result;
+}

@@ -1,0 +1,319 @@
+// A try on the substraction of the boundary conditions
+
+// Miscelaneous
+load "dfft"
+load "msh3" 
+load "iovtk"
+load "lapack"
+include "dft3D.idp";
+
+func complex conjugate(complex v){
+	complex result=real(v)-1i*imag(v);
+	return result;
+}
+
+func real uporu(complex & v){
+	complex vcon=conjugate(v);
+	real result=real(v*vcon);
+	return result;
+}
+
+macro Grad(u) [dx(u),dy(u),dz(u)]// EOM
+macro div(u1,u2,u3) (dx(u1)+dy(u2)+dz(u3)) //EOM
+
+func CCo = (x+1)*(1-x)*(1+y)*(1-y); // Condiciones de contorno
+
+macro ugradvw(ux,uy,uz,vx,vy,vz,wx,wy,wz) ([[ux,uy,uz]'*[dx(vx),dy(vx),dz(vx)],
+						[ux,uy,uz]'*[dx(vy),dy(vy),dz(vy)],
+						[ux,uy,uz]'*[dx(vz),dy(vz),dz(vz)]]'*[wx,wy,wz])//EOM
+macro antisimetric(ux,uy,uz,vx,vy,vz,wx,wy,wz)(0.5*(ugradvw(ux,uy,uz,vx,vy,vz,wx,wy,wz)-ugradvw(ux,uy,uz,wx,wy,wz,vx,vy,vz))) // EOM
+real CS = 0.18;
+real Re = 1.e3;
+///////////////////////////////////////////////////////////////////////////////
+// Definition of the domain
+int mexp = 6;
+int NN = 2^mexp;
+real length2 = 1;
+mesh3 Th = cube(NN,NN,NN,[x*2*length2-length2, y*2*length2-length2, z*2*length2-length2]); // Cube with center in the origin
+// Labels of the cube are 1: South 2: East 3: North 4: West 5: Floor 6: Top
+// plot(Th);
+
+///////////////////////////////////////////////////////////////////////////////
+// We solve a Stokes problem with boundary conditions equal to the value of u
+int m = 12;
+mesh3 ThStokes = cube(m,m,m,[x*2*length2-length2, y*2*length2-length2, z*2*length2-length2]); // Cube with center in the origin
+
+// Fespace
+fespace Uh(ThStokes, P2);
+Uh wxSto, wySto, wzSto, vxSto, vySto, vzSto;
+fespace Ph(ThStokes, P1);
+Ph pSto, qSto;
+
+solve stokes([wxSto, wySto, wzSto, pSto], [vxSto, vySto, vzSto, qSto], solver=sparsesolver)
+  = int3d(ThStokes,qforder=3)(
+        (Grad(wxSto)'*Grad(vxSto) +  Grad(wySto)'*Grad(vySto) +  Grad(wzSto)'*Grad(vzSto))*1./1e6 //)';
+		       - div(wxSto,wySto,wzSto)*qSto - div(vxSto,vySto,vzSto)*pSto + 1e-10*qSto*pSto 
+  )
+  + on(1, 2, 3, 4, 5, wxSto=0, wySto=0, wzSto=0)
+  + on(6, wxSto=CCo, wySto=0, wzSto=0)
+;
+
+///////////////////////////////////////////////////////////////////////////////
+// Definition of the initial condition in the frequency space
+fespace VhP1(Th,P1);
+VhP1<complex> ZZ,zz;
+
+// real alpha = 5./3; // Kolmogorov law
+real alpha = 3; // Kolmogorov law
+real module;
+for(int k=-NN/2;k<=NN/2;k++)
+{
+	for(int l=-NN/2;l<=NN/2;l++)
+	{
+        for(int m=-NN/2;m<=NN/2;m++)
+        {
+            module=sqrt(k^2+l^2+m^2);
+            if(sqrt(module)<1)
+            {
+                ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)+(NN+1)^2*(m+NN/2)]=0.;
+            }
+            else
+            {
+                ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)+(NN+1)^2*(m+NN/2)]=module^(-(alpha+2)/2);
+                // The exponent is -(alpha+dim-1)/2, dim-1 is the dimensions "added by the integral"
+            }
+        }
+		
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Apply the Fourier Transform to have the initial condition in the physical space
+zz[]=dfft(ZZ[],NN+1,+1);
+zz[]/=zz[].max; // Normalize
+VhP1 uPx, uPy, uPz;
+uPx = real(zz);
+uPy = real(zz(y,z,x));
+uPz = real(zz(z,x,y));
+// plot([uPx,uPy,uPz],value=1,fill=1,wait=1); // Plot to see the velocity profile
+int[int] Order = [1,1,1];
+savevtk("ic.vtu", Th, [uPx,uPy,uPz], order=Order);	
+
+
+///////////////////////////////////////////////////////////////////////////////
+// We calculate the energy spectrum to check if we get the k-5/3 profile
+VhP1 <complex> uhat;
+uhat[]=dfft(zz[],NN+1,-1);
+uhat[]*=1/sqrt(uhat.n); // Normalizar la transformada
+
+// Computation of the energy of each node
+real[int] energyhat(uhat.n);
+for(int ii=0;ii<energyhat.n;ii++){
+    energyhat[ii]=uporu(uhat[][ii]); // no hay que sumar y dividir ya que se irían
+}
+
+int LN = sqrt(3./4)*NN;
+
+real[int] energykbycrowns(LN+1);energykbycrowns=0;
+int l;
+for(int k1=-NN/2;k1<=NN/2;k1++)
+{
+    for(int k2=-NN/2;k2<=NN/2;k2++)
+    {
+        for(int k3=-NN/2;k3<=NN/2;k3++)
+        {
+            module=sqrt(k1^2+k2^2+k3^2);
+            l=module;
+            energykbycrowns[l]+=energyhat[(k1+NN/2)+(NN+1)*(k2+NN/2)+(NN+1)^2*(k3+NN/2)];
+        }
+    }
+}
+
+ofstream file("EnergyNN"+NN+".txt");
+for(int ii=0; ii<LN+1; ii++){
+    file << energykbycrowns(ii) << endl;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Addition of a regular function
+/*
+VhP1 <complex> uRx,uRy,uRz;
+
+uRx = 0.5*(z+1)*(x+1)*(1-x)*(1+y)*(1-y);
+uRy = 0;
+uRz = 0;
+func g = ((1+x)*(1-x)*(1+y)*(1-y)*(1+z)*(1-z))^(1/40);
+
+VhP1 <complex> ux,uy,uz;
+ux = uRx+uPx;
+uy = uRy+uPy;
+uz = uRz+uPz;
+*/
+
+///////////////////////////////////////////////////////////////////////////////
+// We solve a step of Smagorinsky to obtain a divergence free velocity field
+real dt = 0.5;
+int ms = 12;
+mesh3 ThSmago = cube(ms,ms,ms,[x*2*length2-length2, y*2*length2-length2, z*2*length2-length2]); // Cube with center in the origin
+
+fespace USh(ThSmago, P2);
+USh wsx, wsy, wsz, vsx, vsy, vsz;
+
+matrix ISmag = interpolate(USh, VhP1);
+USh w0x, w0y, w0z;
+w0x[] = ISmag*uPx[];
+w0y[] = ISmag*uPy[];
+w0z[] = ISmag*uPz[];
+
+USh hTri = hTriangle;
+USh gradw0;
+gradw0 = sqrt(dx(wxSto)^2+dy(wxSto)^2+dz(wxSto)^2+dx(wySto)^2+dy(wySto)^2+dz(wySto)^2+dx(wzSto)^2+dy(wzSto)^2+dz(wzSto)^2);
+fespace PSh(ThSmago, P1);
+PSh ps, qs;
+
+real T = 10;
+for(real t=0; t<T; t+=dt){
+
+solve smago([wsx, wsy, wsz, ps], [vsx, vsy, vsz,qs],solver = sparsesolver)
+    = int3d(ThSmago,qforder=3)(
+        1./dt*(wsx*vsx+wsy*vsy+wsz*vsz)
+        + 1./Re*(Grad(wsx)'*Grad(vsx)+Grad(wsy)'*Grad(vsy)+Grad(wsz)'*Grad(vsz)) //)';
+		+ div(wsx,wsy,wsz)*qs - div(vsx,vsy,vsz)*ps + 1e-10*qs*ps 
+        + antisimetric(w0x,w0y,w0z,wsx,wsy,wsz,vsx,vsy,vsz)
+        + antisimetric(wsx,wsy,wsz,wxSto,wySto,wzSto,vsx,vsy,vsz)
+        + antisimetric(wxSto,wySto,wzSto,wsx,wsy,wsz,vsx,vsy,vsz)
+        + (CS*hTri)^2*gradw0*(Grad(wsx)'*Grad(vsx)+Grad(wsy)'*Grad(vsy)+Grad(wsz)'*Grad(vsz))
+    )
+    + int3d(ThSmago,qforder=3)(
+        - 1./dt*(w0x*vsx+w0y*vsy+w0z*vsz)
+        + 1./Re*(Grad(wxSto)'*Grad(vsx)+Grad(wySto)'*Grad(vsy)+Grad(wzSto)'*Grad(vsz)) //)';
+        + qs*div(wxSto,wySto,wzSto) 
+        + antisimetric(wxSto,wySto,wzSto,wxSto,wySto,wzSto,vsx,vsy,vsz)
+        + (CS*hTri)^2*gradw0*(Grad(wxSto)'*Grad(vsx)+Grad(wySto)'*Grad(vsy)+Grad(wzSto)'*Grad(vsz))
+    )
+    + on(1, 2, 3, 4, 5, 6, wsx=0, wsy=0, wsz=0)
+;
+
+/*
+plot(ps,value=1);
+USh modw;
+modw = sqrt(wsx^2+wsy^2+wsz^2);
+plot([wsx,wsy],wait=1);
+plot(modw,value=1);
+*/
+// Actualización
+w0x = wsx;
+w0y = wsy;
+w0z = wsz;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+matrix IReturn = interpolate(VhP1, USh);
+VhP1 uSx, uSy, uSz;
+uSx[] = IReturn*wsx[];
+uSy[] = IReturn*wsy[];
+uSz[] = IReturn*wsz[];
+
+/*
+ofstream fileVel("Vel_Cavity.txt");
+for(int ii=0; ii<Th.nv; ii++){
+    fileVel << uSx[][ii] << " " << uSy[][ii] << " " << uSz[][ii] << endl;
+}
+*/
+
+
+VhP1 <complex> ux,uy,uz;
+ux = 0; ux = ux + uSx;
+uy = 0; uy = uy + uSy;
+uz = 0; uz = uz + uSz;
+
+// We compute its spectrum
+VhP1 <complex> uhatx, uhaty, uhatz;
+uhatx[]=dft3D(ux[],-1,NN/2);
+uhaty[]=dft3D(uy[],-1,NN/2);
+uhatz[]=dft3D(uz[],-1,NN/2);
+
+VhP1 uhx, uhy, uhz;
+uhx = real(uhatx);
+uhy = real(uhaty);
+uhz = real(uhatz);
+// plot(uhz,fill=true,wait=1);
+// savevtk("Freg.vtu", Th, [uhx, uhy, uhz], order=Order);	
+
+// Computation of the energy of each node
+energyhat=0;
+for(int ii=0;ii<energyhat.n;ii++){
+    energyhat[ii]=uporu(uhatx[][ii])+uporu(uhaty[][ii])+uporu(uhatz[][ii])/3.;
+}
+
+LN = sqrt(3./4)*NN;
+
+energykbycrowns=0;
+
+for(int k1=-NN/2+1;k1<=NN/2-1;k1++)
+{
+    for(int k2=-NN/2+1;k2<=NN/2-1;k2++)
+    {
+        for(int k3=-NN/2+1;k3<=NN/2-1;k3++)
+        {
+            module=sqrt(k1^2+k2^2+k3^2);
+            l=module;
+            energykbycrowns[l]+=energyhat[(k1+NN/2)+(NN+1)*(k2+NN/2)+(NN+1)^2*(k3+NN/2)];
+        }
+    }
+}
+
+ofstream fileR("EnergyNN"+NN+"_SinLevantamiento.txt");
+for(int ii=0; ii<LN+1; ii++){
+    fileR << energykbycrowns(ii) << endl;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+matrix I = interpolate(VhP1, Uh);
+VhP1 wux, wuy, wuz;
+wux[] = I*wxSto[];
+wuy[] = I*wySto[];
+wuz[] = I*wzSto[];
+
+VhP1 <complex> uux, uuy, uuz;
+uux = ux+wux;
+uuy = uy+wuy;
+uuz = uz+wuz;
+
+///////////////////////////////////////////////////////////////////////////////
+// We compute its spectrum
+uhatx[]=dft3D(uux[],-1,NN/2);
+uhaty[]=dft3D(uuy[],-1,NN/2);
+uhatz[]=dft3D(uuz[],-1,NN/2);
+
+uhx = real(uhatx);
+uhy = real(uhaty);
+uhz = real(uhatz);
+
+// Computation of the energy of each node
+energyhat=0;
+for(int ii=0;ii<energyhat.n;ii++){
+    energyhat[ii]=uporu(uhatx[][ii])+uporu(uhaty[][ii])+uporu(uhatz[][ii])/3.;
+}
+
+LN = sqrt(3./4)*NN;
+energykbycrowns=0;
+for(int k1=-NN/2+1;k1<=NN/2-1;k1++)
+{
+    for(int k2=-NN/2+1;k2<=NN/2-1;k2++)
+    {
+        for(int k3=-NN/2+1;k3<=NN/2-1;k3++)
+        {
+            module=sqrt(k1^2+k2^2+k3^2);
+            l=module;
+            energykbycrowns[l]+=energyhat[(k1+NN/2)+(NN+1)*(k2+NN/2)+(NN+1)^2*(k3+NN/2)];
+        }
+    }
+}
+
+ofstream fileS("EnergyNN"+NN+"_ConLevantamiento.txt");
+for(int ii=0; ii<LN+1; ii++){
+    fileS << energykbycrowns(ii) << endl;
+}

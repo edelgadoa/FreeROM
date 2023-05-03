@@ -1,0 +1,71 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/macro_ddm.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
+
+infoparam;
+
+write("Output.txt","Computing the EF solutions with "+mpisize+" processors for Re=",0,1);
+write("Output.txt",vRe,1,1);
+readTh(NN);
+
+// plot(Th);
+VhGP1 uP1,uP1Y;
+VhGVel defVel(u);
+// matrix Veltou1,Veltou2;
+// {
+// 	int[int] cs2=[0];
+// 	Veltou1 = interpolate(VhGP1,VhGVel,U2Vc=cs2);
+// 	cs2=[1];
+// 	Veltou2 = interpolate(VhGP1,VhGVel,U2Vc=cs2);
+// }
+
+readparameters(ReSta);
+VhGP1dc nut;
+nut[]=0;
+
+// {ifstream read("../solutions/txt/nut.txt");
+// read >> nut[];}
+// matrixgeneration;
+
+IFMACRO(prob,"Smago")
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+ini(VhGP2,w0)
+macrogradinter(VhG,matrixD)
+VhGP1dc gradw0;
+ENDIFMACRO
+
+// matrix prodVP;
+// {
+// 	varf a(defVP(u),defVP(v))=intN(Th)((1./Refijo+nut)*gradgrad(u,v)+uP*vP);
+// 	// varf a(defVel(u),defVel(v))=intN(Th)(nut*gradgrad(u,v));
+// 	prodVP=a(VhGVP,VhGVP);
+// }
+//
+matrix energymatrix;
+{
+	varf a(defVP(u),defVP(v))=intN(Th)(uporv(u,v));
+	energymatrix=a(VhGVP,VhGVP);
+}
+
+VhGVP[int] defVP(uEF)(nEF+1);
+for(int iRe=0;iRe<niRe;iRe++)
+{
+	if(T0>0)
+	{
+		Re=vRe(iRe);
+	}
+	else
+	{
+		Re=Refijo;
+		iRe=niRe;
+	}
+	write("Output.txt"," - Reynold="+Re[0],1,1);
+	EFSta(uEF,Re);
+}
+write("Output.txt","Done.",1,1);

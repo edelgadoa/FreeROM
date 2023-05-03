@@ -1,0 +1,56 @@
+// No es necesario lanzarlo con varios procesadores
+// Si se quiere calcular el espectro de energia sí
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/write.idp";
+include "../auxiliary/fourier.idp";
+
+int N1=512/2^2,N2=N1/2,N3=N1*2;
+write("Output.txt","N1="+N1+", N2="+N2+", N3="+N3,0,1);
+
+mesh Th1=readmesh("../mesh/meshNN"+N1+".msh");
+mesh Th2=readmesh("../mesh/meshNN"+N2+".msh");
+mesh Th3=readmesh("../mesh/meshNN"+N3+".msh");
+
+
+creationVh(Th1,Vh1);
+creationVh(Th2,Vh2);
+creationVh(Th3,Vh3);
+Vh1VP defVP(u1),defVP(e2),defVP(e3);
+Vh2VP defVP(u2);
+Vh3VP defVP(u3);
+real[int] et1(nEF),et2(nEF);
+int cont=0;
+for(real ti=dtsave;ti<T;ti+=dtsave)
+{
+	{
+		ifstream read("../solutions"+esquema+"/txt/SolEFNSNN"+N1+"Reynold10000t"+ti+".txt");
+		read >> u1[];
+	}
+	{
+		ifstream read("../solutions"+esquema+"/txt/SolEFNSNN"+N2+"Reynold10000t"+ti+".txt");
+		read >> u2[];
+	}
+	{
+		ifstream read("../solutions"+esquema+"/txt/SolEFNSNN"+N3+"Reynold10000t"+ti+".txt");
+		read >> u3[];
+	}
+	defVP(e2)=defVP(u1)-defVP(u2);
+	defVP(e3)=defVP(u1)-defVP(u3);
+	et1(cont)=intN(Th1)(gradgrad(e2,e2));
+	et2(cont)=intN(Th1)(gradgrad(e3,e3));
+	cout << sqrt(et1(cont))/sqrt(et2(cont)) << endl;
+	cont++;
+}
+
+et1*=dtsave;
+et2*=dtsave;
+cout << sqrt(et1.sum)/sqrt(et2.sum) << endl;
+
+// cout << sqrt(intN(Th1)(uporv(e2,e2)))/sqrt(intN(Th1)(uporv(e3,e3))) << endl;
+
+// plot(defVel(u1),value=1,wait=1,cmm="NN="+N1,ps="solNN"+N1+".eps");
+// plot(defVel(u2),value=1,wait=1,cmm="NN="+N2,ps="solNN"+N2+".eps");
+// plot(defVel(u3),value=1,wait=1,cmm="NN="+N3,ps="solNN"+N3+".eps");
+
+write("Output.txt","Done.",1,1);

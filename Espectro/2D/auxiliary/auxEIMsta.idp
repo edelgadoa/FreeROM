@@ -1,0 +1,155 @@
+NewMacro readsolutions(matgradw,Vh)
+// IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+// IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+// IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO;
+{
+	int n=Vh#P1dc.ndof;
+	real[int,int] matgradwL=matgradw;matgradwL=0;
+	Vh#P1dc gradw,nut;
+	pause;
+	int cont=1;
+	for(int iRe=0;iRe<niRe;iRe++)
+	{
+		Re=vRe(iRe);
+		write("Output.txt"," - Reynold="+Re[0],1,1);
+		Vh#VP defVP(uEF);
+		for(real ti=T0+dtsave;ti<=T+epsEF;ti+=dtsave)
+		{
+			if(mpirank==cont%mpisize)
+			{
+				ifstream read("../solutions"+esquema+"/txt/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+ti+".txt");
+				read >> uEF[];
+				// cout << "reading ti="<< ti << endl;
+				equ(w0,uEF);
+				updategradw(w0,matrixD,Grad)
+				gradw=modb(Grad);//phix*modbx(Grad)+phiy*modby(Grad);
+				// plot(gradw,value=1,fill=1);
+				for(int ii=0;ii<gradw[].n;ii++){nut[][ii]=(CS*hTri)^2*sqrt(gradw[][ii]);}
+				matgradwL(0:n-1,cont)=nut[];
+			}
+			cont++;
+		}
+	}
+	pause;
+	mpiAllReduce(matgradwL,matgradw,mpiCommWorld,mpiSUM);
+	{
+		Vh#VP defVP(u0VP);
+		if(T0>0)
+		{
+			ifstream fileRe("../solutions"+esquema+"/txt/SolEF"+prob+"NN"+NN+"Reynold"+Refijo+"t"+T0+".txt");
+			fileRe >> u0VP[];
+		}
+		else
+		{
+			readic(16,alpha);
+		}
+		equ(w0,u0VP);
+		updategradw(w0,matrixD,Grad)
+		gradw=modb(Grad);//phix*modbx(Grad)+phiy*modby(Grad);
+		// plot(gradw,value=1,fill=1);
+		for(int ii=0;ii<gradw[].n;ii++){nut[][ii]=(CS*hTri)^2*sqrt(gradw[][ii]);}
+		matgradw(0:n-1,0)=nut[];
+	}
+}
+EndMacro
+NewMacro EIM(totaln,matgradw);
+{
+	include "../auxiliary/search.idp";
+	VhGP1dc gradw,rest,Ig;
+	int EIMbasis=1000; // max number of basis
+	int EIMbasisF;     // number of final basis
+	real epsEIM=1.e-5; // error
+	write("Output.txt"," - epsEIM: " + epsEIM,1,1);
+	int[int,int] EIMRe(2,EIMbasis); // parametros escogidos
+	int[int] EIMmu(EIMbasis);
+	int[int] EIMx(EIMbasis);
+	real[int] errEIM(EIMbasis),restLinfL(totaln),restLinf(totaln); // error en el algoritmo
+	real[int,int] EIMB(EIMbasis,EIMbasis);
+	EIMB=0;
+	VhGP1dc [int] EIMq(EIMbasis),EIMr(EIMbasis);
+	int[int] xtmu=ijmax(matgradw);
+	EIMmu(0)=xtmu(1);
+	EIMx(0)=xtmu(0);
+
+	EIMr[0][]=matgradw(:,EIMmu(0));
+	errEIM(0)=EIMr[0][].max;
+
+	real erri=10;
+	for (int iEIM=0; iEIM<EIMbasis && erri>epsEIM; iEIM++)
+	{
+		restLinfL=0;restLinf=0;
+		EIMq[iEIM][]=EIMr[iEIM][]/EIMr[iEIM][](EIMx(iEIM));
+		write("Output.txt"," - x="+EIMx(iEIM),1,1);
+		write("Output.txt"," - mu="+EIMmu(iEIM),1,1);
+		for (int j=0; j<=iEIM; j++)EIMB(iEIM,j)=EIMq[j][](EIMx(iEIM));
+		{
+			// Greedy
+			real[int,int] B=EIMB(0:iEIM,0:iEIM);
+			real[int,int] Binv(iEIM+1,iEIM+1);
+			load "lapack";Binv=B^-1;
+			pause;
+			for(int imu; imu<totaln; imu++)
+			{
+				if(mpirank==imu%mpisize)
+				{
+					gradw[]=matgradw(:,imu);
+					computeEIM(gradw,Ig,iEIM+1,EIMx,EIMq,Binv);
+					rest[]=gradw[]-Ig[];
+					rest[]=abs(rest[]);
+					restLinfL(imu)=rest[].max/gradw[].max;
+				}
+			}
+			pause;
+			mpiAllReduce(restLinfL,restLinf,mpiCommWorld,mpiSUM);
+			// Fin Greedy
+			EIMmu(iEIM+1)=restLinf.imax;
+			erri=restLinf.max;
+			gradw[]=matgradw(:,EIMmu(iEIM+1));
+			computeEIM(gradw,Ig,iEIM+1,EIMx,EIMq,Binv);
+			EIMr[iEIM+1][]=gradw[]-Ig[];
+		}
+		EIMx(iEIM+1)=imaxabs(EIMr[iEIM+1][]);
+		errEIM(iEIM+1)=erri;
+		write("Output.txt","Error in iteration " + iEIM + ": " + erri,1,1);
+		EIMbasisF=iEIM+1;
+	}
+	write("Output.txt","------------------------------------------------------------------",1,1);
+	write("Output.txt","End of the algorithm with "+EIMbasisF+" basis.",1,1);
+	write("Output.txt","Writing the results...",1,1);
+	write("./results/EIMbasis.txt",EIMbasisF,0,0);
+	write("./results/Base.txt",EIMbasisF,0,0);
+	for(int i=0; i<EIMbasisF; i++)write("./results/Base.txt",EIMq[i][],1,0);
+	real[int,int] EIMBF=EIMB(0:EIMbasisF-1,0:EIMbasisF-1);
+	load "lapack";
+	real[int,int] EIMBFinv=EIMBF^-1;
+	write("./results/MatrixB.txt",EIMBF,0,0);
+	write("./results/MatrixBinv.txt",EIMBFinv,0,0);
+	write("./results/InterpolationPoints.txt",EIMx(0:EIMbasisF-1),0,0);
+	write("./results/ErrorHistory.txt",errEIM(0:EIMbasisF),0,0);
+	write("Output.txt","Ok, over.",1,1);
+}
+EndMacro
+
+NewMacro readEIM()
+int M;
+{ifstream aux("../EIM/results/EIMbasis.txt");aux >> M;}
+VhGP1dc[int] EIMq(M);
+{ifstream aux("../EIM/results/Base.txt");aux>>M;for (int i=0;i<M;i++)aux>>EIMq[i][];}
+real[int,int] EIMB(M,M),EIMBinv(M,M);
+{ifstream aux("../EIM/results/MatrixB.txt");aux >> EIMB;}
+{load "lapack"; EIMBinv=EIMB^-1;}
+// {ifstream aux("../EIM/results/MatrixBinv.txt");aux >> EIMBinv;}
+real[int] EIMx(M);
+{ifstream aux("../EIM/results/InterpolationPoints.txt");aux >> EIMx;}
+real[int] segEIM(M),sigma(M);
+EndMacro
+//EOM
+
+
+macro computeEIM(Gr,Ig,M,EIMx,EIMq,Binv)
+{real[int] gamma(M),sigma(M);
+Ig[]=0;
+for(int j=0;j<M;j++)gamma(j)=Gr[](EIMx(j));
+sigma=Binv*gamma;
+for(int j=0;j<M;j++)Ig[]+=sigma(j)*EIMq[j][];}
+// EOM

@@ -1,0 +1,346 @@
+NewMacro createmesh(Th,NN)
+{
+	// Puntos de definición del primer cuadrado
+	real x01 = -0.5, x11 = 0.5;
+	real y01 = -0.5, y11 = 0.5;
+	real z01 = -0.5, z11 = 0.5;
+	include "cube.idp";
+	int[int]  Nxyz=[NN,NN,NN]; // Subdivisiones en las 3 direcciones
+	real [int,int]  Bxyz=[[x01,x11],[y01,y11],[z01,z11]]; // Coordenadas de las esquinas del cubo
+	int [int,int]  Lxyz=[[2,4],[1,3],[5,6]]; // Referencias a los planos [[x00,x01],[y00,y01],[z00,z01]]
+	Th=Cube(Nxyz,Bxyz,Lxyz);
+}
+EndMacro
+
+
+macro PVP() [P2,P2,P2,P1], periodic=[[labPeriodic[0],y,z], [labPeriodic[1],y,z], [labPeriodic[2],x,z], [labPeriodic[3],x,z], [labPeriodic[4],x,y], [labPeriodic[5],x,y]]// EOM
+macro PVel() [P2,P2,P2], periodic=[[labPeriodic[0],y,z], [labPeriodic[1],y,z], [labPeriodic[2],x,z], [labPeriodic[3],x,z], [labPeriodic[4],x,y], [labPeriodic[5],x,y]] //EOM
+macro defVP(u) [u,u#Y,u#Z,u#P] //EOM
+macro initVP(i) [i,i,i,i] //EOM
+macro initVel(i) [i,i,i] //EOM
+macro ini(Vh,v) Vh v,v#Y,v#Z; // EOM
+macro equ(u,v) u=v;u#Y=v#Y;u#Z=v#Z // EOM
+macro plus(u,v) u[]+=v[];u#Y[]+=v#Y[];u#Z[]+=v#Z[]; // EOM
+IFMACRO(prob,"Smago")
+macro macrogradinter(Vh,D)
+matrix D#X=interpolate(Vh#P1dc,Vh#P2,op=1);
+matrix D#Y=interpolate(Vh#P1dc,Vh#P2,op=2);
+matrix D#Z=interpolate(Vh#P1dc,Vh#P2,op=3);
+// EOM
+macro updategradw(v,matrixD,Grad)
+Grad#X[]=matrixD#X*v[];Grad#XY[]=matrixD#X*v#Y[];Grad#XZ[]=matrixD#X*v#Z[];
+Grad#Y[]=matrixD#Y*v[];Grad#YY[]=matrixD#Y*v#Y[];Grad#YZ[]=matrixD#Y*v#Z[];
+Grad#Z[]=matrixD#Z*v[];Grad#ZY[]=matrixD#Z*v#Y[];Grad#ZZ[]=matrixD#Z*v#Z[];
+
+// EOM
+macro gradEIM(u,gradu,EIMx,Grad)
+{updategradw(u,matrixD,Grad);
+for(int s=0;s<M;s++)gradu[s]=[Grad#X[](EIMx(s)),Grad#Y[](EIMx(s)),Grad#Z[](EIMx(s)),Grad#XY[](EIMx(s)),Grad#YY[](EIMx(s)),Grad#ZY[](EIMx(s)),Grad#XZ[](EIMx(s)),Grad#YZ[](EIMx(s)),Grad#ZZ[](EIMx(s))];}// EOM
+ENDIFMACRO
+
+NewMacro creationVh(Th,name)
+fespace name#Vel(Th,PVel);
+fespace name#VP(Th,PVP);
+fespace name#P2(Th,P2);
+fespace name#P1(Th,P1);
+fespace name#P0(Th,P0);
+IFMACRO(dimension,2)fespace name#P1dc(Th,P1dc);ENDIFMACRO
+IFMACRO(dimension,3)fespace name#P1dc(Th,P1b);ENDIFMACRO
+EndMacro
+
+NewMacro readTh(NN)
+Th=readmesh3("../mesh/meshNN"+NN+".mesh");
+ThL=Th;
+creationVh(Th,VhG);
+IFMACRO(prob,"Smago")
+VhGP1dc hTri=hTriangle;
+ENDIFMACRO
+creationVh(ThL,VhL);
+if(petsc)
+{
+	int[int] myN2o;
+	macro ThLN2O() myN2o // EOM
+	macro ThLPeriodicity()labPeriodic//
+	buildDmesh(ThL);
+	mapVP=restrict(VhLVP,VhGVP,myN2o);
+	mapVel=restrict(VhLVel,VhGVel,myN2o);
+	{macro def(i) defVP(i)//
+	macro init(i) initVP(i) // [i,i,i] // EOM
+	createMat(ThL,MatAVP,PVP);}
+	{macro def(i) defVel(i)//
+	macro init(i) initVel(i) // [i,i,i] // EOM
+	createMat(ThL,MatAVel,PVel);}
+}
+EndMacro
+
+NewMacro readic(NO,expo)
+VhGP1 u0,u0Y,u0Z,u0P;u0P[]=0;
+if(NO>0)
+{
+	ifstream read("../ic/txt/icNN"+NN+"alpha"+expo+"fromNN"+NO+".txt");
+	read >> u0[];
+	read >> u0Y[];
+	read >> u0Z[];
+}
+else
+{
+	ifstream read("../ic/txt/icNN"+NN+"alpha"+expo+".txt");
+	read >> u0VP[];
+	//read >> u0Y[];
+	//read >> u0Z[];
+}
+//defVP(u0VP)=defVP(u0);
+EndMacro
+
+
+macro readparameters(parameters)
+int nsol;
+{ifstream aux("../solutions"+esquema+"/parametersNN"+NN+prob+"_EIM.txt");aux >> nsol;aux>>nsol;}
+real[int,int] parameters(numparam,nsol);
+{ifstream aux("../solutions"+esquema+"/parametersNN"+NN+prob+"_EIM.txt");aux >> parameters;}
+//EOM
+
+macro updateparameters(u,param)
+if(u.m==1 && u(0,0)==-1)
+{u(0:numparam-1,0)=param;write("../solutions"+esquema+"/parametersNN"+NN+prob+".txt",u,0,0,mpirank);}
+else
+{int aux = u.m;u.resize(numparam,aux+1);aux = u.m;
+u(0:numparam-1,aux-1)=param;write("../solutions"+esquema+"/parametersNN"+NN+prob+".txt",u,0,0,mpirank);}
+// EOM
+
+macro updateparameterstemp(u,param)
+if(u.m==1 && u(0,0)==-1)
+{u(0:numparam-1,0)=param;write("../solutions/parameters"+prob+"Boussinesq.txt",u,0,0,mpirank);}
+else
+{int aux = u.m;u.resize(numparam,aux+1);aux = u.m;
+u(0:numparam-1,aux-1)=param;write("../solutions/parameters"+prob+"Boussinesq.txt",u,0,0,mpirank);}
+// EOM
+
+
+NewMacro rhoTselection()
+write("Output.txt", " - Sobolev constant: " + CSobolev,1,1);
+{
+	rhoT=2.*CSobolev+4*CS^2*hTri[].max^(2-dimension/2);
+}
+EndMacro
+
+//** macro graVhGgrad(u,v) (dx(u)*dx(v)+dy(u)*dy(v)+dx(u#Y)*dx(v#Y)+dy(u#Y)*dy(v#Y))// EOM
+// macro gradgradtemp(u,v)(dx(u)*dx(v)+dy(u)*dy(v)) // EOM
+
+macro gradgrad(u,v) (dx(u)*dx(v)+dy(u)*dy(v)+dz(u)*dz(v)
+					+dx(u#Y)*dx(v#Y)+dy(u#Y)*dy(v#Y)+dz(u#Y)*dz(v#Y)
+					+dx(u#Z)*dx(v#Z)+dy(u#Z)*dy(v#Z)+dz(u#Z)*dz(v#Z))// EOM
+
+macro ugradvw(u,v,ww) ([[u,u#Y,u#Z]'*[dx(v),dy(v),dz(v)],
+						[u,u#Y,u#Z]'*[dx(v#Y),dy(v#Y),dz(v#Y)],
+						[u,u#Y,u#Z]'*[dx(v#Z),dy(v#Z),dz(v#Z)]]'*[ww,ww#Y,ww#Z])//EOM
+// macro ugradvwtemp(u,v,ww)((u*dx(v)+u#Y*dy(v))*ww) // EOM
+macro antisimetric(u,v,ww)(0.5*(ugradvw(u,v,ww)-ugradvw(u,ww,v))) // EOM
+macro uporv(u,v)([u,u#Y,u#Z]'*[v,v#Y,v#Z])// EOM
+macro div(u)(dx(u)+dy(u#Y)+dz(u#Z))// EOM
+macro modb(u) (u#X^2+u#Y^2+u#Z^2+u#XY^2+u#YY^2+u#ZY^2+u#XZ^2+u#YZ^2+u#ZZ^2)// EOM
+macro fixmacro(Reynold,u,v)(1./Re[0]*gradgrad(u,v)-div(v)*u#P+div(u)*v#P+epspen*u#P*v#P) // EOM
+macro dert(u,v)(1./dt*uporv(u,v)) // EOM
+
+macro BC(u,G) on(techo,u=G,u#Y=G#Y,u#Z=G#Z)+on(paredes, u=0.,u#Y=0.,u#Z=0.)// EOM
+
+macro pause()mpiBarrier(mpiCommWorld)// EOM
+
+NewMacro solvesystem(A,b,u,Vel)
+{	if(petsc)
+	{
+		VhL#Vel def#Vel(u#L);
+		MatA#Vel = A;
+		set(MatA#Vel,sparams=sparamsv);
+		u#L[]=MatA#Vel^-1*b;
+		//plotMPI(ThL, defVel(u#L), PVel, defVel, real, cmm = "Sol L");
+		reduceSolution(u#L,u,MatA#Vel.D,map#Vel);
+		//plot(defVel(u),value=1,wait=1,cmm="Sol G");
+	}
+else{set(A,solver=sparsesolver);
+	u[]=A^-1*b;}
+}EndMacro
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	pause;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}
+//EOM
+
+func real innerprod(real[int] & u,real[int] & v,matrix & A){real[int] aux=A*v;real result=u'*aux;return result;}
+func real normL2(real[int] & u, matrix & A){real result=innerprod(u,u,A);return sqrt(result);}
+
+func real norm2(real[int,int] & A)
+{
+	include "../auxiliary/powermethod.idp";
+	real[int,int] At=A',B=At*A;
+	real[int] lambda=powermethod(B);
+	return sqrt(lambda(0));
+}
+func real cond(real[int,int] & A)
+{
+	include "../auxiliary/powermethod.idp";
+	load "lapack";
+	real lambda1=norm2(A);
+	real[int,int] Ainv(A.n,A.m);Ainv=A^-1;
+	real lambda2=norm2(Ainv);
+	real result=lambda1*lambda2;
+	return result;
+}
+
+macro VeltoP2(Vh,base,ww)
+{Vh#Vel defVel(aux);aux[]=base[];equ(ww,aux);}// EOM
+
+macro readRBF()
+int RBFn;
+{ifstream aux("../betah/results/betamuI.txt");aux >> RBFn;}
+real[int] RBFbeta(RBFn);
+{ifstream aux("../betah/results/betamuI.txt");aux >> RBFbeta;}
+real[int,int] RBFmu(numparam,RBFn);
+{ifstream aux("../betah/results/vparam.txt");aux >> RBFmu;}
+real[int] RBFgamma(RBFn+numparam+1);
+{ifstream aux("../betah/results/gammaI.txt");aux >> RBFgamma;}
+//EOM
+
+NewMacro writeStoN(N,StoN)
+write("../results/StoNnu"+N+".txt",StoN#nu,0,0);
+write("../results/StoNdiv"+N+".txt",StoN#div,0,0);
+write("../results/StoNpen"+N+".txt",StoN#pen,0,0);
+write("../results/NSNdt"+N+".txt",NSN#dt,0,0);
+EndMacro
+
+NewMacro readStoN(N,StoN)
+{
+	ifstream read("../results/StoNnu"+N+".txt");
+	read >> StoN#nu;
+}
+{
+	ifstream read("../results/StoNdiv"+N+".txt");
+	read >> StoN#div;
+}
+{
+	ifstream read("../results/StoNpen"+N+".txt");
+	read >> StoN#pen;
+}
+{
+	ifstream read("../results/NSNdt"+N+".txt");
+	read >> NSN#dt;
+}
+EndMacro
+
+NewMacro writeNSN(N,NSN)
+int nv=Nv+Np;
+write("../results/NSNugradvw"+N+".txt",nv,0,0);
+for(int s=0;s<nv;s++)
+{
+	write("../results/NSNugradvw"+N+".txt",NSN#ugradvw[s],1,0);
+}
+EndMacro
+NewMacro readNSN(N,NSN)
+{
+	int nv;
+	ifstream readx("../results/NSNugradvw"+N+".txt");
+	readx >> nv;
+	for(int s=0;s<nv;s++)
+	{
+		readx >> NSN#ugradvw[s];
+	}
+}
+EndMacro
+NewMacro writeSmaN(N,SmaN)
+write("../results/SmaN"+N+".txt",M,0,0);
+for(int s=0;s<M;s++)
+{
+	write("../results/SmaN"+N+".txt",SmaN[s],1,0);
+}
+EndMacro
+NewMacro readSmaN(N,SmaN)
+{
+	ifstream readx("../results/SmaN"+N+".txt");
+	readx >> M;
+	for(int s=0;s<M;s++)
+	{
+		readx >> SmaN[s];
+	}
+}
+EndMacro
+
+NewMacro infoparam()
+{
+	bool show=1;
+	write("infoparam.txt","------------- PARAMETERS INFO ----------",0,show);
+	write("infoparam.txt","Number of proccesors: "+mpisize,1,show);
+	write("infoparam.txt","Geometrical: ",1,show);
+	write("infoparam.txt"," - NN="+NN,1,show);
+	write("infoparam.txt"," ",1,show);
+	write("infoparam.txt","Physical: ",1,show);
+	write("infoparam.txt"," - dt="+dt,1,show);
+	write("infoparam.txt"," - T="+T,1,show);
+	write("infoparam.txt"," - epspen="+epspen,1,show);
+	write("infoparam.txt"," - epsEF="+epsEF,1,show);
+	write("infoparam.txt"," - nEF="+nEF,1,show);
+	write("infoparam.txt"," ",1,show);
+	write("infoparam.txt","Numerical squeme: "+esquema,1,show);
+    write("infoparam.txt","Problem: "+prob,1,show);
+	write("infoparam.txt","Energy spectrum: ",1,show);
+	write("infoparam.txt"," - k1="+k1,1,show);
+	write("infoparam.txt"," - k2="+k2,1,show);
+	write("infoparam.txt"," - kc="+kc,1,show);
+	write("infoparam.txt"," ",1,show);
+}
+EndMacro
+// NewMacro estimate(v,vY,result)
+// {
+// 	include "../auxiliary/fourier.idp";
+// 	VhGP1 ubar,ubarY;
+// 	VhGP1 <complex> ubarhat,ubarhatY,auxbar;
+// 	ubar=v;ubarY=vY;
+// 	ubarhat[]=DFFT2d(ubar[],-1,NN/2);
+//    	ubarhatY[]=DFFT2d(ubarY[],-1,NN/2);
+// 	ubarhat[]=intervalscaleszero(ubarhat[],k1,k2);
+// 	ubarhatY[]=intervalscaleszero(ubarhatY[],k1,k2);
+// 	auxbar[]=DFFT2d(ubarhat[],1,NN/2);
+// 	ubar[]=complex2real(auxbar[]);
+// 	auxbar[]=DFFT2d(ubarhatY[],1,NN/2);
+// 	ubarY[]=complex2real(auxbar[]);
+// //	cout << "kc="<<kc<<"k1="<<k1<<"kck1"<<(kc^(4./3.)-k1^(4./3.)) << endl;
+// 	result=intN(Th)(gradgrad(ubar,ubar))*(k2^(4./3.)-kc^(4./3.))/(kc^(4./3.)-k1^(4./3.));
+// }
+// EndMacro
+NewMacro estimate(v,vY,vZ,result)
+{
+	include "../auxiliary/fourier.idp";
+	VhGP1 uP1,uP1Y,uP1Z,energyhat;
+	VhGP1 <complex> uhat,uhatY,uhatZ,auxbar,uc,uYc,uZc,auxc;
+	auxc = 0;
+	uP1=v;uP1Y=vY;uP1Z=vZ;
+	uc = uP1 + auxc; uYc = uP1Y + auxc; uZc = uP1Z + auxc; 
+	uhat[]=DFFT3d(uc[],-1,NN/2);
+	uhatY[]=DFFT3d(uYc[],-1,NN/2);
+	uhatY[]=DFFT3d(uZc[],-1,NN/2);
+	energyhat[]=energycomputation(uhat[],uhatY[],uhatZ[]);
+	real [int] energykk=energyk(energyhat[],NN),energyk53(energykk.n),errk(k2-k1+1);
+	for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+	real amin=1.e-11,amax=1.e-6,adt=2.e-11;
+	real an=(amax-amin)/adt+1.;
+	real[int] difere(an);
+	int cont=0;
+	for(real a=amin;a<=amax;a+=adt)
+	{
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		errk(0:errk.n-1)-=energykk(k1:k2);
+		difere(cont)=errk.l2;
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		difere(cont)/=errk.l2;
+		cont++;
+	}
+
+	
+	result=difere.min;
+}
+EndMacro
