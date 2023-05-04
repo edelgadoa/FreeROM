@@ -2,14 +2,14 @@
 // FreeROM 
 ///////////////
 
-/////////////////////////////////////////
-//// NS + VMS-Smago + Estab Pres (LPS)///
-/////////////////////////////////////////
+/////////////////////////
+//// NS + VMS-Smago   ///
+/////////////////////////
 
 // Codigo para resolver el problema 3D de EF de VMS-Smago con estabilizacion LPS en la presion. 
-// Elemento Finito P2-P2 (no estable) en vel-pres 
+// Elemento Finito P2-P1 
 
-verbosity=0;
+verbosity = 0;
 
 // Cargamos librerias
 load "iovtk" 
@@ -18,12 +18,8 @@ load "medit"
 // Cargamos macros
 include "Macros_3D.idp"
 
-
 // Creamos la malla
 include "CuboN.idp"
-
-real paredes = 1;
-real techo = 2; //para las condiciones de contorno
 
 // Definimos los espacios de EF y de los EF locales
 include "FE_Spaces_NoStab_VP_3D.idp"
@@ -32,29 +28,27 @@ include "FE_Spaces_NoStab_VP_3D.idp"
 include "Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
-include "Interp_matrix_3D.idp"
+// include "Interp_matrix_3D.idp"
 include "Interp_matrix_3D_Local.idp"
 
-Reynolds = 4000;
-
+Reynolds = 3500;
+real nu=1./Reynolds;
 
 /////////////////////////////////////////////
-// Resolvemos el problema de EF: Cavidad 2D//
+// Resolvemos el problema de EF: Cavidad 3D//
 /////////////////////////////////////////////
 
-Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
-Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
-VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+Vh4P2L [uEF, uEFY, uEFZ, uEFP]; 
+Vh4P2L [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2L uprev, uprevY, uprevZ; // La sol del paso anterior con Levantamiento
+VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
 
 include "FE_VMS_3D.idp"
 
 
-// Dibujamos la solucion, con levantamiento
-
-Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
-uEFL[] = uEF[] + Lev[];
+Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; 
+reduceSolution(uEF,uEFG,MatAVh4P2.D,mapVh4P2);
 
 int[int] fforder=[1,1,1,1];
-savevtk("NS.vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
+savevtk("NS.vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, dataname="Velocity Pressure", order=fforder, bin=true);

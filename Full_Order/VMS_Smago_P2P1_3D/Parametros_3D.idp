@@ -10,10 +10,10 @@ macro dimension()3 //EOM
 include "macro_ddm.idp";
 
 load "PETSc";
+
 Mat MatAVh4P2;
 int[int] mapVh4P2;
-string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
-string solver;
+
 	
 int[int] myN2o;
 macro ThLN2O() myN2o // EOM
@@ -30,31 +30,15 @@ mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
 real CS = 0.1; // Smago
 
 
-real cc1=16.; // tauk
-real cc2=sqrt(cc1);
-
-VhP0 mk,tKcod,tKTcod,tau;
-
-varf med(unused,v)=intN(Th)(1.*v);
-real[int] medk=med(0,VhP0);
-mk[]=sqrt(medk); 
-
-
 // Parametros para el problema de EF
-real dt = 1;
+real dt = 0.1;
+real dtt = 1./dt;
 real epspen = 1e-8;
 
 real ERROR = 10; // inicializacion del error para el bucle
 
 int niterFE = 2000; 
-real epsFE = 1e-10;
-
-// Parametros para el problema ROM
-int niterRB = 2000;
-real epsRB = 1e-10; //parada de problema reducido
-
-real epsGreedy = 5e-5;
-real epsEIM = 1e-5;
+real epsFE = 1e-4;  //tolerance for the fix point scheme
 
 // Parametros mu
 real Reynolds; // Esto es perceptible de cambiarlo
