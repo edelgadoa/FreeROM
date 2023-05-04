@@ -1,0 +1,84 @@
+// No es necesario lanzarlo con varios procesadores
+// Si se quiere calcular el espectro de energia sí
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/write.idp";
+include "../auxiliary/fourier.idp";
+
+int NO=512/2^5;
+write("Output.txt","NN origin= "+ NO +", NN final= "+ NN,0,1);
+
+mesh ThO=readmesh("../mesh/meshNN"+NO+".msh");
+mesh ThF=readmesh("../mesh/meshNN"+NN+".msh");
+
+creationVh(ThO,VhO);
+creationVh(ThF,VhF);
+
+VhOVP defVP(uO);
+VhOP1 uOP1,uOP1Y;
+VhFVP defVP(uF);
+VhFP1 uFP1,uFP1Y;
+write("Output.txt","Reading ic original...",1,1);
+{
+	ifstream read("./txt/icNN"+NO+"alpha"+alpha+".txt");
+	read >> uO[];
+}
+write("Output.txt","Extrapolating...",1,1);
+if(0)
+{
+	matrix OtoF = interpolate(VhFVP,VhOVP);
+	uF[]=OtoF*uO[];
+}
+if(0)
+{
+	varf a(u,v)=intN(ThF)(u*v)
+				+intN(ThF)(uO*v);
+	matrix A=a(VhFVP,VhFVP);
+	real[int] b=a(0,VhFVP);
+	set(A,solver=sparsesolver);
+	uF[]=A^-1*b;
+}
+if(1)
+{
+	uOP1=uO;
+	uOP1Y=uOY;
+	VhOP1 <complex> ZO,ZOY,ZO2;
+	VhFP1 <complex> ZF,ZFY;//,ZZ2,err;
+	ZO[]=DFFT2d(uOP1[],-1,NO/2);
+	ZOY[]=DFFT2d(uOP1Y[],-1,NO/2);
+	// plot(ZO,value=1,fill=1,wait=1);
+	complex[int,int] matrixZO=vector2matrix(ZO[],NO+1);
+	complex[int,int] matrixZOY=vector2matrix(ZOY[],NO+1);
+	
+	// ZO2[]=matrix2vector(matrixZO);
+	complex[int,int] matrixZF=AintoB(matrixZO,NN+1);
+	complex[int,int] matrixZFY=AintoB(matrixZOY,NN+1);
+	
+	ZF[]=matrix2vector(matrixZF);
+	ZFY[]=matrix2vector(matrixZFY);
+	
+	ZF[]=DFFT2d(ZF[],1,NN/2);
+	ZFY[]=DFFT2d(ZFY[],1,NN/2);
+	uFP1[]=complex2real(ZF[]);
+	uFP1Y[]=complex2real(ZFY[]);
+}
+plot(uO,value=1,fill=1,wait=0,cmm="ic in original mesh");
+plot(uFP1,value=1,fill=1,cmm="ic in final mesh",ps="./eps/icNN"+NN+"alpha"+alpha+"fromNN"+NO+".eps");
+write("./txt/icNN"+NN+"alpha"+alpha+"fromNN"+NO+".txt",uFP1[],0,0);
+write("./txt/icNN"+NN+"alpha"+alpha+"fromNN"+NO+".txt",uFP1Y[],1,0);
+if(1)
+{
+	write("Output.txt","Computation of the energy spectrum...",1,1);
+	real iterationtime=mpiWtime();
+	VhFP1 energy;
+	VhFP1 <complex> ZZ,ZZY;//,ZZ2,err;
+	ZZ[]=DFFT2d(uFP1[],-1,NN/2);
+	ZZY[]=DFFT2d(uFP1Y[],-1,NN/2);
+	energy[]=energycomputation(ZZ[],ZZY[]);
+	// plot(ZZ,value=1,fill=1,wait=1,cmm="transform");
+	// for(int ii=0;ii<energy[].n;ii++)energy[][ii]=(uporu(ZZ[][ii])+uporu(ZZY[][ii]))/2.;
+	// plot(energy,value=1,fill=1,wait=0,cmm="energy espectrum");
+	real[int] energykk=energyk(energy[],NN);
+	write("../test/energyspectrum/energyk"+prob+"NN"+NN+"alpha"+alpha+"t0.txt",energykk,0,0);
+}
+write("Output.txt","Done.",1,1);

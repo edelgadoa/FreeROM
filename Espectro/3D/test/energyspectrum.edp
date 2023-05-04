@@ -1,0 +1,94 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/macro_ddm.idp";
+include "../auxiliary/fourier.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";ENDIFMACRO
+
+infoparam;
+
+write("Output.txt","Computing the EF solutions with "+mpisize+" processors for Re=",0,1);
+write("Output.txt",vRe,1,1);
+readTh(NN);
+
+int[int] unos(VhGP1.ndof);//,uY;
+unos=1;
+// u=x^2+1;
+// cout << intN(Th)(u) << endl;
+for(int ii=NN;ii<unos.n;ii+=NN+1)
+{
+ 	unos[ii]=0;
+ }
+for(int ii=NN*(NN+1);ii<(NN+1)^2;ii++)
+{
+	unos[ii]=0;
+}
+
+matrix VPtou1,VPtou2,VPtou3,GradXu1,GradYu1,GradXu2,GradYu2; // Faltan los gradientes**
+{
+	int[int] cs2=[0]; 
+	VPtou1 = interpolate(VhGP1,VhGVP,U2Vc=cs2);
+	GradXu1 = interpolate(VhGP1,VhGVP,U2Vc=cs2,op=1);
+	GradYu1 = interpolate(VhGP1,VhGVP,U2Vc=cs2,op=2);
+	cs2=[1]; 
+	VPtou2 = interpolate(VhGP1,VhGVP,U2Vc=cs2);
+	GradXu2 = interpolate(VhGP1,VhGVP,U2Vc=cs2,op=1);
+	GradYu2 = interpolate(VhGP1,VhGVP,U2Vc=cs2,op=2);
+	cs2=[2]; 
+	VPtou3 = interpolate(VhGP1,VhGVP,U2Vc=cs2);
+}
+// real caracVel=u0[].max;
+// cout << "caracVel=" << caracVel << endl;
+
+
+// plot(defVel(u0),value=1,fill=1,wait=1);
+readparameters(ReSta);
+VhGVP defVP(uEF);
+VhGP1 uP1,uP1Y,uP1Z,energy,energyhat,ubar,ubarY,ubarZ,uprima,uprimaY,uprimaZ;
+VhGP1 gradXuP1,gradYuP1,gradZuP1,gradXuP1Y,gradYuP1Y,gradZuP1Y,gradXuP1Z,gradYuP1Z,gradZuP1Z,disenergy;
+VhGP1 <complex> uhat,uhatY,uhatZ,uhatred,uhatredY,uhatredZ,ubarhat,ubarhatY,ubarhatZ,uprimahat,uprimahatY,uprimahatZ,aux;
+VhGP1 <complex> uP1c,uP1Yc,uP1Zc,auxcc;
+auxcc = 0;
+// dtsave=T;
+int[int] kk1(niRe),kk2(niRe);
+cout << vRe << endl;
+ 
+//for(int iRe=0;iRe<niRe;iRe++)
+for(int ii=0; ii>16; ii++)
+{
+	uEF[]=0;
+	//Re=Refijo;
+	// Re = vRe(iRe);
+	Re = 1000*(1+ii);
+	for(real tsave=T0+dtsave;tsave<=T+epsEF;tsave+=dtsave)
+	{
+
+		{
+			ifstream fileRe("../solutions"+esquema+"/txt/Maquina/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+tsave+".txt");
+			fileRe >> uEF[];
+		}
+		write("Output.txt","ti="+tsave,1,1);
+		uP1[] =VPtou1*uEF[]; 
+		uP1c = uP1+auxcc;
+		uP1Y[]=VPtou2*uEF[]; 
+		uP1Yc = uP1Y+auxcc;
+		uP1Z[]=VPtou3*uEF[]; 
+		uP1Zc = uP1Z+auxcc;
+	
+		uhat[]=DFFT3d(uP1c[],-1,NN/2);
+		uhatY[]=DFFT3d(uP1Yc[],-1,NN/2);		
+		uhatZ[]=DFFT3d(uP1Zc[],-1,NN/2);
+		energyhat[]=energycomputation(uhat[],uhatY[],uhatZ[]);
+		
+		// Espectro
+		real [int] energykk=energyk3d(energyhat[],NN);
+        write("energyspectrum/Maquina/energyk"+prob+"NN"+NN+"Reynold"+Re[0]+"alpha"+alpha+"t"+tsave+".txt",energykk,0,0,0);
+//		inertialenergyspectrum(energykk,kk1(iRe),kk2(iRe));
+//		write("Output.txt","   k1="+kk1(iRe)+", k2="+kk2(iRe),1,1);
+	}
+}
+//write("energyspectrum/k1"+prob+"NN"+NN+"Re0"+vRe(0)+"Ref"+vRe(niRe-1)+"alpha"+alpha+".txt",kk1,0,0);
+//write("energyspectrum/k2"+prob+"NN"+NN+"Re0"+vRe(0)+"Ref"+vRe(niRe-1)+"alpha"+alpha+".txt",kk2,0,0);
+write("Output.txt","Done.",1,1);

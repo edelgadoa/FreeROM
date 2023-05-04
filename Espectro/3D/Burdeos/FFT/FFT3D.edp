@@ -1,0 +1,73 @@
+// FFT prueba en 3D
+///////////////////////////////////////////////////////////////////////////////
+load "msh3";
+load "dfft";
+
+///////////////////////////////////////////////////////////////////////////////
+// Definition of the domain
+int mexp = 4;
+int NN = 2^mexp;
+real length2 = 5;
+mesh3 Th = cube(NN,NN,NN,[x*2*length2-length2, y*2*length2-length2, z*2*length2-length2]); // Cube with center in the origin
+// Labels of the cube are 1: South 2: East 3: North 4: West 5: Floor 6: Top
+
+///////////////////////////////////////////////////////////////////////////////
+// Definicion de la función test
+fespace Vh(Th,P1);
+Vh<complex> uc, ukc;
+Vh u, uk;
+func f = exp(-(x^2+y^2+z^2)/2);
+uc = f;
+u = real(uc);
+plot(u,wait = true);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Paso de vector a matriz 3D
+// Realmente es una matriz 2D con más columnas
+complex[int,int] Uc(NN+1,(NN+1)^2);
+
+for(int k=-NN/2;k<=NN/2;k++){
+	for(int l=-NN/2;l<=NN/2;l++){
+        for(int m=-NN/2;m<=NN/2;m++){
+            Uc(k+NN/2,l+NN/2+(NN+1)*(m+NN/2)) = uc[][(k+NN/2)+(NN+1)*(l+NN/2)+(NN+1)^2*(m+NN/2)];
+        }	
+	}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Aplicacion de la transformada
+// La aplicación directa de la transformada no es posible en FreeFem++
+complex w = exp(-2*pi*1i/(NN+1));
+
+complex[int,int] Ukc(NN+1,(NN+1)^2);
+Ukc = 0;
+for(int k=-NN/2;k<=NN/2;k++){
+	for(int l=-NN/2;l<=NN/2;l++){
+        for(int m=-NN/2;m<=NN/2;m++){
+            for(int kk=-NN/2;kk<=NN/2;kk++){
+	            for(int ll=-NN/2;ll<=NN/2;ll++){
+                    for(int mm=-NN/2;mm<=NN/2;mm++){
+                        Ukc(k+NN/2,l+NN/2+(NN+1)*(m+NN/2)) += w^(k*kk+l*ll+m*mm)*Uc(kk+NN/2,ll+NN/2+(NN+1)*(mm+NN/2));
+                    }	
+	            }
+            }
+        }	
+	}
+}
+
+
+// ofstream filek("Ukc.txt"); filek << Ukc << endl;
+
+
+for(int k=-NN/2;k<=NN/2;k++){
+	for(int l=-NN/2;l<=NN/2;l++){
+        for(int m=-NN/2;m<=NN/2;m++){
+            ukc[][(k+NN/2)+(NN+1)*(l+NN/2)+(NN+1)^2*(m+NN/2)] = Ukc(k+NN/2,l+NN/2+(NN+1)*(m+NN/2));
+        }	
+	}
+}
+
+uk = real(ukc);
+plot(uk,wait=1);
