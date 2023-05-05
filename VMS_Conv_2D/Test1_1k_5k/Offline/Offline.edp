@@ -1,0 +1,220 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+//////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////
+//// NS + VMS-Smago + Estab Pres-Conv (LPS)///
+//////////////////////////////////////////////
+/////////// NO SUPREMIZER ////////////////////
+//////////////////////////////////////////////
+
+
+// Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
+
+verbosity=0;
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Creamos la Malla
+include "../Auxiliary/CuadradoNxNy.idp"
+
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+include "../Auxiliary/IO.idp" 
+
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Incluimos el levantamiento
+include "../FOM/Levantamiento.idp"
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../Auxiliary/Normas.idp"
+
+// Cargo las funciones del RBF
+include "../Auxiliary/betas.idp"
+
+//Definicion de Constantes y variables varias
+int Nbases = 18; 
+
+real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
+
+
+// Leo los valores de los parámetros para los cuales he calculado ya Snapshots
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
+
+//////////////////////////////////////////
+////DEFINICION DE LOS ESPACIOS DE BR//////
+//////////////////////////////////////////
+
+VhP2[int] BaseP(Nbases);
+Vh2P2[int] [BaseV, BaseVY](Nbases);
+
+VhP2[int] BaseVel(Nbases);
+VhP2[int] BaseVelY(Nbases);
+
+Vh2P2[int] [FBaseV, FBaseVY](Nbases);//, FBaseVY(Nbases);
+
+VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases);;
+
+VhP1dc[int] FPdX(Nbases), FPdY(Nbases);
+
+VhP1dc[int] FVdX(Nbases), FVdY(Nbases);
+VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases);
+
+// Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
+real[int, int] MBaseV(Vh2P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+
+/////////////////////////////////////////
+// Cargo los elementos del EIM (tanto para Smago como para LPS)
+include "EIM_Data.idp"
+
+// Cargo los datos del RBF
+readvector("../RBF/BetaMuI.txt", real, BetaI, 0);
+readvector("../RBF/vMuI.txt", real, muI, 0);
+readvector("../RBF/gammaI.txt", real, gammaI, 0);
+
+// Inicializo las matrices para la fase offline
+include "Allocate_matrices.idp"
+
+/////////////////////////////////////////
+// Comenzamos con el Algoritmo Greedy
+
+Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+MuBest(0) = Reynolds;
+
+// Calculo la constante de Sobolev
+include "Sobolev.idp"
+VhP2 uFijo, uFijoY; //Para la normaT
+VhP1dc uFijodX, uFijodY, uFijoYdX, uFijoYdY;
+
+Vh3P2 [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+
+if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+	// Si no lo he calculado todavía, lo calculo
+	Reynolds = Refijo;
+	include "../FOM/FE_VMS_LPS_2D.idp"	
+	
+	uFijo = uEF + Lev;
+	uFijoY = uEFY + LevY;
+}
+else{
+	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
+	uFijo[] = SolX;
+	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
+	uFijoY[] = SolY;
+
+	uFijo = uFijo + Lev;
+	uFijoY = uFijoY + LevY;
+	
+}
+
+// Defino los diferentes productos escalares para construir las matrices reducidas
+include "Scalar_Product_Matrices.idp"
+
+for (int i=0; i<Nbases; i++){
+	
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+		// Si no lo he calculado todavía, lo calculo
+
+		include "../FOM/FE_VMS_LPS_2D.idp"	
+		
+		[BaseV[i], BaseVY[i]] = [uEF, uEFY];
+		BaseP[i] = uEFP;
+		
+		BaseVel[i] = uEF; BaseVelY[i] = uEFY; // Para construir las funciones filtradas después
+		
+		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
+		
+		
+		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
+		
+		VhP2 SnapX, SnapY, SnapP;
+		SnapX = uEF;
+		SnapY = uEFY;
+		SnapP = uEFP;
+		
+		// Guardamos los snapshots 
+		write("../Snapshots/Vx_" + Reynolds + ".txt", SnapX[], 0, 0);
+		write("../Snapshots/Vy_" + Reynolds + ".txt", SnapY[], 0, 0);	
+		write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
+		
+	}
+	else{
+		readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
+		BaseVel[i][] = SolX;
+		readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
+		BaseVelY[i][] = SolY;
+		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
+		BaseP[i][] = SolP;		
+		
+		[BaseV[i], BaseVY[i]] = [BaseVel[i], BaseVelY[i]];
+			
+	}
+	VhP2 UL, ULY;
+	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY;
+	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
+	// plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
+
+	include "GramSchmidt.idp"
+	
+	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
+
+	// Almaceno en las matrices las Bases ortonormalizadas por columnas
+	MBaseV(:,i) = BaseV[i][];
+	MBaseP(:,i) = BaseP[i][];
+
+
+	// Actualizo las soluciones filtradas
+	FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+	
+	FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
+	
+	FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
+	FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
+	
+	FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
+	
+	
+	// Defino el nuevo producto escalar para la convección
+	varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
+	ConvPEM[i] = ConvPE(Vh2P2, Vh2P2);
+	
+	include "Scalar_Product_Matrices_Conv_opt.idp" // Son demasiadas, este código se hacía demasiado largo 
+	// Construyo las matrices
+	include "MatricesOffline.idp"
+	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
+	include "Greedy.idp"
+	// Actualizo el nuevo Reynolds
+	Reynolds = MuBest(i+1);
+
+	//mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
+	cout<<"New Reynolds: "<<Reynolds<<endl;
+	//mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
+	cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;
+	if (DeltaN(i)<epsGreedy || i == Nbases-1){
+		NRB = i + 1;
+		cout<<"Saving matrices"<<endl;
+		include "Save_Matrices.idp"
+		break;
+	}
+}

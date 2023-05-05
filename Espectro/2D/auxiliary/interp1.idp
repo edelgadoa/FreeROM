@@ -1,0 +1,66 @@
+func real interp1(real[int] vx, real[int] vy,real x)
+{
+	if(abs(vx(1)-vx(0))<1.e-8)
+	{
+		if(mpirank==0)cout << "points must be difference" << endl;
+		return 0;
+	}
+	else
+	{
+		real a=(vy(1)-vy(0))/(vx(1)-vx(0));
+		real b=vy(0)-a*vx(0);
+		return a*x+b;
+	}
+}
+func real interp1(int[int] vx,int[int]  vy,real x)
+{
+	if(abs(vx(1)-vx(0))==0)
+	{
+		if(mpirank==0)cout << "points must be difference" << endl;
+		return 0;
+	}
+	else
+	{
+		real a=(vy(1)-vy(0))/(vx(1)-vx(0));
+		real b=vy(0)-a*vx(0);
+		return a*x+b;
+	}
+}
+func real[int,int] order(real[int] & vx,real[int] & vy)
+{
+	real[int,int] vre(2,vx.n);
+	real[int] vxx=vx;
+	if(abs(vx.n-vy.n)>0)
+	{
+		if(mpirank==0)cout << "vector length must be the same" << endl;
+	}
+	else
+	{
+		real aux=vx.max+10;
+		for(int i=0;i<vx.n;i++)
+		{
+			vre(0,i)=vxx.min;
+			vre(1,i)=vy(vxx.imin);
+			vxx(vxx.imin)=aux;
+		}
+	}
+	return vre;
+}
+func real[int,int] deleteduplicate(real[int,int] & vx)
+{
+	include "../auxiliary/search.idp";
+	real[int,int] vre=vx;
+	vre=0;
+	vre(:,0)=vx(:,0);
+	int cont=1;
+	for(int i=1;i<vx.m;i++)
+	{
+		int find=search(vre(0,0:i-1),vx(0,i));
+		if(find<0)
+		{
+			vre(:,cont)=vx(:,cont);
+			cont++;
+		}
+	}
+	return vre(:,0:cont-1);
+}

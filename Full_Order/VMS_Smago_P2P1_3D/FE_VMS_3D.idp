@@ -2,18 +2,20 @@
 // FreeROM 
 ///////////////
 
+// Construimos las matrices fijas de EF
 
+varf FVFija([uu,uuY,uuZ,uP],[v,vY,vZ,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v))
+								  	 	  + Div(uu)*vP - Div(v)*uP
+								          + nu*GradUGradV(uu, v)
+								          + epspen*uP*vP )
+										  //Segundo miembro
+								          + on(1, uu=0., uuY=0., uuZ=0.) + on(2, uu=1., uuY=0., uuZ=0.); 
+										  
 
-// Incluimos el levantamiento
-include "Levantamiento_3D.idp"
+//							
 
-
-// Defininimos la matriz y segundo miembro fijos
-matrix MFija;
-real[int] bFija(Vh4P2L.ndof);
-
-
-include "Matrices_fijas_NS_3D.idp"
+matrix MFija = FVFija(Vh4P2L,Vh4P2L);
+real[int] bFija = FVFija(0,Vh4P2L);
 
 
 
@@ -21,78 +23,95 @@ include "Matrices_fijas_NS_3D.idp"
 for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
-	
-	uprevL = uEF + Lev;
-	uprevLY = uEFY + LevY;
-	uprevLZ = uEFZ + LevZ;
+	uprev = uEF;
+	uprevY = uEFY;
+	uprevZ = uEFZ;
 	
 	if (ii%20==0){
 		int[int] fforder=[1,1,1,1];
-		savevtk("NSL"+ii+".vtu", Th, [uprevL, uprevLY, uprevLZ], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
-	}
-	
-	{
-		VhP2 udcAux;
-		udcAux[] = IPhP2P1*uprevL[];
-		uEFdX[] = DXP2*udcAux[];
-		uEFdY[] = DYP2*udcAux[];
-		uEFdZ[] = DZP2*udcAux[];
-
-		udcAux[] = IPhP2P1*uprevLY[];
-		uEFYdX[] = DXP2*udcAux[];
-		uEFYdY[] = DYP2*udcAux[];
-		uEFYdZ[] = DZP2*udcAux[];
+		Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; 
+		Vh4P2L [uEFTemp, uEFTempY, uEFTempZ, uEFTempP];
+		uEFTemp[] = uEF[];
+		reduceSolution(uEFTemp,uEFG,MatAVh4P2.D,mapVh4P2);
 		
-		udcAux[] = IPhP2P1*uprevLZ[];
-		uEFZdX[] = DXP2*udcAux[];
-		uEFZdY[] = DYP2*udcAux[];
-		uEFZdZ[] = DZP2*udcAux[];	
+		savevtk("NSL"+ii+".vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, dataname="Velocity Pressure", order=fforder, bin=true);
+	}
+
+
+	{
+		VhP2L udcAux;
+		udcAux[] = IPhP2P1L*uprev[];
+		uEFdX[] = DXP2L*udcAux[];
+		uEFdY[] = DYP2L*udcAux[];
+		uEFdZ[] = DZP2L*udcAux[];
+
+		udcAux[] = IPhP2P1L*uprevY[];
+		uEFYdX[] = DXP2L*udcAux[];
+		uEFYdY[] = DYP2L*udcAux[];
+		uEFYdZ[] = DZP2L*udcAux[];
+		
+		udcAux[] = IPhP2P1L*uprevZ[];
+		uEFZdX[] = DXP2L*udcAux[];
+		uEFZdY[] = DYP2L*udcAux[];
+		uEFZdZ[] = DZP2L*udcAux[];	
 	}
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
-	matrix MNS;
-	real[int] bNS(Vh4P2L.ndof);
-	
-	include "Matrices_variables_NS_3D.idp"
+
+	varf FVNS ([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])= intN(ThL)(Antisimetric(uEF, uu, v))			
+									  		//Segundo miembro
+									 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
+				
+						
+	matrix MNS = FVNS(Vh4P2L,Vh4P2L);
+	real[int] bNS = FVNS(0,Vh4P2L);
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
 	real[int] bSmago(Vh4P2L.ndof);
-	
+
 	include "Matriz_VMSSmago_3D.idp"
 	
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
-	matrix MFinal;
-	real[int] bFinal(Vh4P2L.ndof);
+	// matrix MFinal;
+	// real[int] bFinal(Vh4P2L.ndof);
 	
-	MFinal = MFija;
-	MFinal += MNS;
+	
+	//
+	// MFinal = MFija;
+	// MFinal += MNS;
+	// MFinal += Smago;
+
+	// bFinal = bFija;
+	// bFinal += bNS;
+	// bFinal += bSmago;
+	
+	matrix MFinal = MFija + MNS;
 	MFinal += Smago;
-	// MFinal += LPSpres;
-	
-	bFinal = bFija;
-	bFinal += bNS;
-	bFinal += bSmago;
+	real[int] bFinal = bFija + bNS;
 	
 	
 	// Actualizamos la solución
-	uEFp[]=uEF[];
+
+	uEFp[] = uEF[];
     real timeIt = clock();
+
 	solvesystem(MFinal, bFinal, uEF);
     timeIt = clock() - timeIt;
     
-    mpi(cout<<"Tiempo en resolver el sistema:"<<timeIt<<endl;)
+    mpi(cout<<"Tiempo en resolver el sistema: "<<timeIt<<endl;)
 
 	// Calculamos el error cometido (en velocidad)
-	VhP2 errEF, errEFY, errEFZ;
+	VhP2L errEF, errEFY, errEFZ;
 	errEF = uEF - uEFp;
 	errEFY = uEFY - uEFpY;
 	errEFZ = uEFZ - uEFpZ;
 	
-	real ERRORabs = sqrt(intN(Th)(UporV(errEF,errEF)) + intN(Th)(GradUGradV(errEF,errEF)));
-	ERROR = ERRORabs / sqrt(intN(Th)(UporV(uEF,uEF)) + intN(Th)(GradUGradV(uEF, uEF)));
-
+	real ERRORabs = sqrt(intN(ThL)(UporV(errEF,errEF)) + intN(ThL)(GradUGradV(errEF,errEF)));
+	real ERROR = ERRORabs / sqrt(intN(ThL)(UporV(uEF,uEF)) + intN(ThL)(GradUGradV(uEF, uEF)));
+    mpi(cout<<"Error:"<<ERROR<<", iteration:"<<ii<<endl;)
+	
 
 }
 

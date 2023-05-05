@@ -10,23 +10,27 @@ varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)((1./Refijo + MOD(
 matrix MPescX = pescX(Vh4P2L, Vh4P2L);
 
 varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
+Mat MNormaVel = MatAVh3P2;
+
+MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
 
 ///////////////////////////////////////////////////////
+Mat DiffPEM = MatAVh3P2;
 
-Mat DiffPEM, DivPPEM, PenPEM, ConvLevPEM, DTPEM;
+Mat DivPPEM, PenPEM, ConvLevPEM, DTPEM;
 
 varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
 {
-	matrix DiffPEML = DiffPE(Vh3P2L,Vh3P2L);
-    Mat DiffPEMTemp = DiffPEML;
-	DiffPEM = DiffPEMTemp;
+	DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
+	// matrix DiffPEML = DiffPE(Vh3P2L,Vh3P2L);
+  	// Mat DiffPEMTemp = DiffPEML;
+	// DiffPEM = DiffPEMTemp;
 }
 
 varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
 {
-	matrix DivPPEML = DivPPE(Vh3P2L,Vh3P2L);
-    Mat DivPPEMTemp = DivPPEML;
+	matrix DivPPEMT = DivPPE(Vh3P2L,VhP2L);
+    Mat DivPPEMTemp(MatAVhP2, MatAVh3P2, DivPPEMT);
 	DivPPEM = DivPPEMTemp;
 }
 
@@ -79,7 +83,6 @@ mpi(cout<<"START"<<endl;)
 
 { 
 	for (int s=0; s<Mbases; s++){
-<<<<<<< HEAD
 		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
 		{
 			matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);

@@ -1,0 +1,167 @@
+// TEXTO
+func int write(string filename,string text,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << text << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << text << endl;
+	}
+	if(show==1) cout <<text << endl;}
+	return 1;
+}
+func int write(string filename,string text,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << text << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << text << endl;
+	}
+	if(show==1) cout <<text << endl;}
+	return 1;
+}
+// ENTERO
+func int write(string filename,int[int] vector,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+func int write(string filename,int[int] vector,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+// REAL
+func int write(string filename,real[int] vector,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+func int write(string filename,real[int] vector,int ind,bool show,int proces)
+{       
+        if(mpirank==proces){
+        if(ind==0)
+        {       
+                ofstream file(filename);
+                file << vector << endl;
+        }
+        else
+        {       
+                ofstream file(filename,append);
+                file << vector << endl;
+        }
+        if(show==1) cout << vector << endl;}
+        return 1;
+}
+func int write(string filename,real[int] vector,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+func int write(string filename,real[int,int] vector,int ind,bool show)
+{
+	if(mpirank==0){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+func int write(string filename,real[int,int] vector,int ind,bool show,int proces)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}
+func int write(string filename,real[int,int] vector,int ind,bool show,int proces,int preci)
+{
+	if(mpirank==proces){
+	if(ind==0)
+	{
+		ofstream file(filename);
+		file.precision(preci);
+		file << vector << endl;
+	}
+	else
+	{
+		ofstream file(filename,append);
+		file.precision(preci);
+		file << vector << endl;
+	}
+	if(show==1) cout << vector << endl;}
+	return 1;
+}

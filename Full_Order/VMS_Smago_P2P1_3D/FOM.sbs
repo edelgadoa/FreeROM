@@ -1,0 +1,8 @@
+#!/bin/bash
+#SBATCH --time=7-00:00:00
+#SBATCH --ntasks=32
+#SBATCH --mem=0
+#SBATCH --partition=cpu
+#SBATCH --exclusive
+
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "NS_VMS_Smago.edp" --with-debugging=yes > "terminal1.txt"

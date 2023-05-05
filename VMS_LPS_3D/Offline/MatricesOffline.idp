@@ -7,20 +7,25 @@
 
 // Inicializo las matrices locales para el paralelo
 include "Allocate_matrices_local.idp"
+real[int] BaseVi, BasePi;
+ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi);
+ChangeNumbering(MatAVhP2, BaseP[i][], BasePi);
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 for (int j=0; j<=i; j++){
-
+	real[int] BaseVj, BasePj;
+	ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
+	ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
 		
 	// Matrices
-	DiffRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
-	DivPRB(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
+	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
+	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
 	PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
 	ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 	DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 	
-	if (j<i){
+	if (j<i){		
 		DiffRB(j,i) = DiffRB(i,j);
 		DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
 		PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
@@ -31,6 +36,18 @@ for (int j=0; j<=i; j++){
 
 }
 
+mpi(cout<<"la matriz que quiero comprobar: 1"<<endl;)
+mpi(cout<< DiffRB<<endl;)
+pause;
+mpi(cout<< DivPRB<<endl;)
+pause;
+
+VhP2 BP, BV, BVY, BVZ;
+Local2Global(BP,BaseP[0],mapVhP2); 
+Local2Global(BV,BaseV[0],mapVhP2);
+Local2Global(BVY,BaseVY[0],mapVhP2); 
+Local2Global(BVZ,BaseVZ[0],mapVhP2);
+cout<<int3d(Th)(BP*Div(BV))<<endl;
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
@@ -210,7 +227,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	NGUK[s] += Nggk;
 }
 
-mpi(cout<<"RHS"<<endl;)
+//mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
 bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
 bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz

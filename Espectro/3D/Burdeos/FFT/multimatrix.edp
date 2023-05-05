@@ -1,0 +1,52 @@
+// Prueba multiplicacion de matrices y vectores de matrices
+load "lapack";
+int n = 2^1;
+int dim = 2*n+1;
+real epsi = -1.;
+complex w = exp(epsi*2*pi*1i/dim);
+
+// Construimos la matriz de Vandermonde
+complex[int,int] A(dim,dim); A = 1.;
+complex[int] wvec(dim); wvec = 1.;
+
+/*
+for(int ii=-n;ii<=0;ii++){
+    for(int jj=-n;jj<=0;jj++){
+        A(ii+n,jj+n)=w^(ii*jj);
+        A(dim-ii-n-1,dim-jj-n-1)=w^(ii*jj);
+        A(ii+n,dim-jj-n-1)=w^(-ii*jj);
+        A(dim-ii-n-1,jj+n)=w^(-ii*jj);
+    }	
+    wvec(ii+n) = w^(ii);
+    wvec(dim-ii-n-1) = w^(-ii); 
+}
+*/
+
+// Pasamos de vector a matriz (el 3D se consigue añadiendo columnas)
+complex[int,int] M(dim,dim^2);
+M = 1.;
+
+// Calculamos la transformada (2D+1D)
+complex[int,int] Mk(dim,dim^2); Mk = 0;
+
+complex[int,int][int] WMW(dim);
+for(int m=-n;m<=n;m++){
+    complex[int,int] aux=M(0:dim-1,dim*(m+n):dim*(m+n+1)-1); 
+    complex[int,int] aux2(dim,dim); aux2 = 0.;
+    aux2 = aux*A; 
+    aux = A*aux2;
+    WMW[m+n] = aux(0:dim-1,0:dim-1);
+}
+
+for(int m=-n;m<=n;m++){
+    complex[int,int] aux2(dim,dim);
+    aux2 = 0.;
+    for(int mm=-n;mm<=n;mm++){
+        complex[int,int] aux=WMW[mm+n];
+        aux *= wvec(m+n)^(mm);
+        aux2 += aux;
+    }
+    for(int l=0; l<dim;l++){
+        Mk(0:dim-1,dim*(m+n)+l) = aux2(0:dim-1,l);
+    }
+}

@@ -9,13 +9,9 @@ real nu=1./Reynolds;
 varf FVFija([uu,uuY,uuZ,uP],[v,vY,vZ,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v))
 								  	 	  + Div(uu)*vP - Div(v)*uP
 								          + nu*GradUGradV(uu, v)
-								          + Antisimetric(uu, Lev, v) 
-										  + Antisimetric(Lev, uu, v)
 								          + epspen*uP*vP )
 										  //Segundo miembro
-								   	   	  - intN(ThL)(Antisimetric(Lev,Lev,v)
-								          + nu*GradUGradV(Lev,v))
-								          + on(1,2, uu=0., uuY=0., uuZ=0.); 
+								          + on(1, uu=0., uuY=0., uuZ=0.) + on(2, uu=1., uuY=0., uuZ=0.); 
 										  
 
 //							

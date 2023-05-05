@@ -1,0 +1,27 @@
+///////////////
+// FreeROM 
+///////////////
+
+
+/////////////////////////////
+//MATRIZ ESTAB. PRES.
+/////////////////////////////
+
+varf termPres(pp,q) = int2d(Th)(tau*pp*q);
+
+
+matrix TermP = termPres(VhP1dc,VhP1dc);
+
+matrix DDxx;
+{
+	DDxx = TermP * IPhD3X3P2; 
+	DDxx = IPhD3X3P2' * DDxx;
+}
+
+matrix DDyy;
+{
+	DDyy = TermP * IPhD3Y3P2; 
+	DDyy = IPhD3Y3P2' * DDyy;
+}
+
+LPSpres = DDxx + DDyy;

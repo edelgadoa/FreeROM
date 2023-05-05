@@ -1,0 +1,5 @@
+#!/bin/bash
+
+verbosity=0
+
+ff-mpirun -np 1 ./Error.edp -glut ffglut

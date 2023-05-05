@@ -152,6 +152,21 @@ func int search(real[int] & v, real  a,real preci)
 	}
 	return result;
 }
+
+func int search(int[int] & v, int  a)
+{
+	int result=-1;
+	int n=v.n;
+	for(int i=0; i<n; i++)
+	{
+		if(abs(v(i)-a)<1e-9)
+		{
+			result=i;
+		}
+	}
+	return result;
+}
+
 func int[int] search(real[int,int] & A, real a)
 {
 	int[int] result = [-1,-1];
