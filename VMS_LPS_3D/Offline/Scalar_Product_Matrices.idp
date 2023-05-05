@@ -74,6 +74,7 @@ Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy
 
 
 
+
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 
 
@@ -83,6 +84,7 @@ mpi(cout<<"START"<<endl;)
 
 { 
 	for (int s=0; s<Mbases; s++){
+
 		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
 		{
 			matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
@@ -90,29 +92,6 @@ mpi(cout<<"START"<<endl;)
 			SmagoPEM[s] = SmagoPEMTemp; 
 		}
 
-	}
-	
-	for (int s=0; s<Taubases; s++){
-		varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
-
-		{
-			matrix FiltroX, FiltroY, FiltroZ;
-			matrix SPPEML = StabPPE(VhP1dcL, VhP1dcL);
-			{
-				FiltroX = SPPEML * IPhDXP2L;
-				FiltroX = (IPhDXP2L') * FiltroX;
-				FiltroY = SPPEML * IPhDYP2L;
-				FiltroY = (IPhDYP2L') * FiltroY;	
-				FiltroZ = SPPEML * IPhDZP2L;
-				FiltroZ = (IPhDZP2L') * FiltroZ;	
-			}
-			matrix TMP = FiltroX + FiltroY + FiltroZ;
-			Mat StabPPEMTemp = TMP; //copy the distribution of SMAGOPEM
-			StabPPEM[s] = StabPPEMTemp; 
-		}
-
-	}
-}
 mpi(cout<<"END"<<endl;)
 
 // real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
