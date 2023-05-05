@@ -31,7 +31,7 @@ real CS = 0.1; // Smago
 
 
 // Parametros para el problema de EF
-real dt = 1;
+real dt = 10;
 real dtt = 1./dt;
 real epspen = 1e-8;
 
