@@ -30,7 +30,9 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	if (ii%20==0){
 		int[int] fforder=[1,1,1,1];
 		Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; 
-		reduceSolution(uEF,uEFG,MatAVh4P2.D,mapVh4P2);
+		Vh4P2L [uEFTemp, uEFTempY, uEFTempZ, uEFTempP];
+		uEFTemp[] = uEF[];
+		reduceSolution(uEFTemp,uEFG,MatAVh4P2.D,mapVh4P2);
 		
 		savevtk("NSL"+ii+".vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, dataname="Velocity Pressure", order=fforder, bin=true);
 	}
