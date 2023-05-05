@@ -1,0 +1,27 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Mesh creation. Cilinder with N divisions on the circule, and Nz divisions. 
+
+//load "medit"
+//load "msh3"
+
+
+// Parameters
+int NR = 20; // Number of divisions of the cilinder
+int Nz = 10; // Number of division on z
+
+int Rx = 1;
+int Ry = 1; // if Rx = Ry => Circle
+
+int LabelTop = 1;
+int LabelSurf = 2;
+int LabelBottom = 3;    
+
+border Circle(t=0, 2*pi){Rx*cos(t); Ry*sin(t); label=1;}
+
+// 2D mesh
+mesh Thcircle = buildmesh(Circle(NR));
+
+plot(Thcircle);
