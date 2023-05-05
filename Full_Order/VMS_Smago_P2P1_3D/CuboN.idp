@@ -10,9 +10,9 @@ mesh3 Th, ThL;
  
 {
 
-	int Nx = 16; // X
-	int Ny = 16; // Y
-	int Nz = 16; // Z
+	int Nx = 20; // X
+	int Ny = 20; // Y
+	int Nz = 20; // Z
 
 	int[int] Nxyz = [Nx,Ny,Nz]; // 3 directions
 	
@@ -44,4 +44,4 @@ mesh3 Th, ThL;
 	ThL = Th; // For the local mesh
 }
 
-plot(Th);
+// plot(Th);
