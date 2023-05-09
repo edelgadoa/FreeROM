@@ -1,12 +1,13 @@
 ///////////////
-/// FreeROM ///
+// FreeROM 
 ///////////////
 
 /////////////////////////////////////////
-/////////////// BASE FOM ////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
 /////////////////////////////////////////
 
-// Codigo base para la resolucion de problemas
+// Codigo para resolver el problema 3D de EF de VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
 
 verbosity = 0;
 
@@ -20,10 +21,10 @@ include "../../Auxiliary/IO.idp"
 include "../../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../Auxiliary/Mesh.idp"
+include "../Auxiliary/CuboNxNyNZ.idp"
 
-// Condiciones de contorno
-real paredes = 1; real techo = 2; 
+real paredes = 1;
+real techo = 2; //para las condiciones de contorno
 
 // Definimos los espacios de EF y de los EF locales
 include "FE_Spaces_NoStab_VP_3D.idp"
@@ -34,6 +35,7 @@ include "Parametros_3D.idp"
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"
+
 
 // Incluimos el levantamiento
 include "Levantamiento_3D.idp"

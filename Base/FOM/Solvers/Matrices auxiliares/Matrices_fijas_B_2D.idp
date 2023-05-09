@@ -1,0 +1,32 @@
+///////////
+// FreeRom
+//////////
+
+
+//// Construimos la matrices fijas para EF 
+
+varf vNS([uu1,uu2,tt,pp],[v1,v2,zt,q])=
+				intN(ThL)((1./dt)*(uu1*v1+uu2*v2+tt*zt)
+			   -div(v1,v2)*pp+div(uu1,uu2)*q
+			   +Pr*gradugradv(uu1,uu2,v1,v2)
+			   +Grad(tt)'*Grad(zt)
+			   +1.e-8*pp*q
+			   -Pr*Ra*tt*v2)
+			   //Segundo miembro
+			   +intN(ThL)(Pr*Ra*G*v2
+			   -Grad(G)'*Grad(zt))
+			   +on(suelo,paredd,paredi,techo, uu1=0., uu2=0.)
+			   +on(paredi, tt=0.)+on(paredd, tt=0.);
+			    
+
+varf BCs([uu1,uu2,tt,pp],[v1, v2, zt, q]) = on(suelo,paredd,paredi,techo, uu1=0., uu2=0.)
+			  	 							+on(paredi, tt=0.)+on(paredd, tt=0.);
+
+real[int] bcvector = BCs(0, Vh4P2L, tgv = 1);	
+						
+matrix AvNS;
+
+AvNS=vNS(Vh4P2L,Vh4P2L, tgv=-1);
+
+real[int] bNSf(Vh4P2L.ndof);
+bNSf=vNS(0,Vh4P2L, tgv = -1);
