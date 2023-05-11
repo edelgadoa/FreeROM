@@ -75,6 +75,8 @@ usol2D[] = solv;
 plot(usol2D, cmm="z="+zHiMod);
 
 cout << "Sol2D = " << usol2D(Thc(5).x,Thc(5).y) << ", Sol3D = " << usol3D(Thc(5).x,Thc(5).y, zHiMod) << endl;
+cout << "Sol2D = " << usol2D(0.5,0.5) << ", Sol3D = " << usol3D(0.5,0.5, zHiMod) << endl;
+
 
 // zHiMod = 7;
 // for (int i = 0; i<Thc.nv; i++){
@@ -86,7 +88,8 @@ cout << "Sol2D = " << usol2D(Thc(5).x,Thc(5).y) << ", Sol3D = " << usol3D(Thc(5)
 // plot(usol2D, cmm="z="+zHiMod);
 
 int[int] fforder=[1];
-savevtk("Poisson.vtk", Th, usol3D, order=fforder);
+savevtk("Poisson3d.vtk", Th, usol3D, order=fforder);
+savevtk("Poisson2d.vtk", Thc, usol2D, order=fforder);
 
 
 
