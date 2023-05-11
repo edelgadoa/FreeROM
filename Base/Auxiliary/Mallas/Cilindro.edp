@@ -1,0 +1,102 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Mesh creation. Cilinder with N divisions on the circule, and Nz divisions. 
+
+load "medit"
+load "msh3"
+load "iovtk"
+
+// Parameters
+int NR = 40; // Number of divisions of the cilinder
+int Nz = 10; // Number of division on z
+
+real z0 = 0;
+real z1 = 10;
+
+
+
+real Rx = 1;
+real Ry = 1; // if Rx = Ry => Circle
+
+int LabelTop = 2;
+int LabelSurf = 3;
+int LabelBottom = 4;    
+
+
+border Circle(t=0, 2*pi){x=Rx*cos(t); y=Ry*sin(t); label=1;}
+
+// 2D mesh
+mesh Thc = buildmesh(Circle(NR));
+
+// 3D mesh 
+int[int] rup = [0, LabelTop], rdown= [0, LabelBottom];
+int[int] rmid = [1, LabelSurf];
+mesh3 Th = buildlayers(Thc, Nz, zbound=[z0,z1], labeldown = rdown, labelup = rup, labelmid = rmid);
+
+
+savevtk("CilinderMesh.vtk", Th);
+
+fespace VhP13D(Th, P1);
+fespace VhP12D(Thc, P1);
+
+fespace VhP23D(Th, P2);
+fespace VhP22D(Thc, P2);
+
+varf Poisson(u,v) = int3d(Th)(dx(u)*dx(v) + dy(u)*dy(v) + dz(u)*dz(v)) + on(2, u = 1)+ on(4, u = 50) + on(3, u = 0) ;
+
+matrix A = Poisson(VhP23D, VhP23D);
+real[int] b = Poisson(0, VhP23D);
+
+VhP23D usol3D;
+VhP22D usol2D;
+VhP22D PosX, PosY;
+
+func fx = x;
+func fy = y;
+
+PosX = fx;
+PosY = fy;
+
+
+
+usol3D[] = A^-1*b;
+
+
+
+// real[int][int] Vertices(Thc.nv);
+//
+// for (int i = 0; i< Thc.nv; i++){
+// 		Vertices[i] = [Thc(i).x, Thc(i).y];
+// 	}
+//
+//
+
+
+real zHiMod = 4;
+real[int] solv(VhP22D.ndof);
+for (int i = 0; i<VhP22D.ndof; i++){
+    	solv(i) = usol3D(PosX[][i],PosY[][i], zHiMod);
+
+}
+usol2D[] = solv;
+plot(usol2D, cmm="z="+zHiMod);
+
+cout << "Sol2D = " << usol2D(Thc(5).x,Thc(5).y) << ", Sol3D = " << usol3D(Thc(5).x,Thc(5).y, zHiMod) << endl;
+cout << "Sol2D = " << usol2D(0,0) << ", Sol3D = " << usol3D(0,0,zHiMod) << endl;
+// zHiMod = 7;
+// for (int i = 0; i<Thc.nv; i++){
+//     // real solucion =
+//     usol2D([0.4,0.4]) = usol3D(Thc(i).x,Thc(i).y, zHiMod);
+// }
+
+// cout << "Sol2D = " << usol2D(0.4,0.4) << ", Sol3D = " << usol3D(0.4, 0.4, zHiMod) << endl;
+// plot(usol2D, cmm="z="+zHiMod);
+
+int[int] fforder=[1,1];
+savevtk("Poisson3D.vtk", Th, usol3D, dataname="sol3D", order=fforder);
+savevtk("Poisson2D.vtk", Thc, usol2D, dataname="sol2D", order=fforder);
+
+
+

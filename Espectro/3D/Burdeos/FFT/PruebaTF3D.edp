@@ -1,0 +1,34 @@
+// Prueba TF3D
+
+load "lapack";
+load "msh3";
+include "dft3D.idp";
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Definition of the domain
+int mexp = 6;
+int NN = 2^mexp;
+real length2 = 0.5;
+mesh3 Th = cube(NN,NN,NN,[x*2*length2-length2, y*2*length2-length2, z*2*length2-length2]); // Cube with center in the origin
+// Labels of the cube are 1: South 2: East 3: North 4: West 5: Floor 6: Top
+
+///////////////////////////////////////////////////////////////////////////////
+// Definicion de la función test
+fespace Vh(Th,P1);
+Vh<complex> uc, ukc;
+Vh u, uk;
+func f = exp(-(x^2+y^2+z^2)/2);
+uc = f;
+u = real(uc);
+// plot(u,wait = true);
+
+real tstart = clock();
+ukc[] = dft3D(uc[],-1,NN/2);
+
+real tcpu = clock()-tstart;
+
+cout << "Para N = " << 2^mexp << " divisiones. tcpu = " << tcpu << endl; 
+uk = real(ukc);
+
+plot(uk,wait=true);

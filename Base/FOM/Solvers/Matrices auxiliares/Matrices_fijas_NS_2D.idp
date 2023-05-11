@@ -1,0 +1,22 @@
+///////////////
+// FreeROM 
+///////////////
+
+real nu=1./Reynolds;
+
+// Construimos las matrices fijas de EF
+
+varf FVFija([uu,uuY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(uu*v + uuY*vY))
+								   + int2d(Th)(Div(uu)*vP - Div(v)*uP)
+								   + int2d(Th)(nu*GradUGradV(uu,v))
+								   + int2d(Th)(Antisimetric(uu,Lev,v)) + int2d(Th)(Antisimetric(Lev, uu, v))
+								   + int2d(Th)(epspen*uP*vP)
+									//Segundo miembro
+								   - int2d(Th)(Antisimetric(Lev,Lev,v)) 
+								   - int2d(Th)(nu*GradUGradV(Lev,v))
+								   + on(1,2,3,4, uu=0., uuY=0.); 
+
+//							
+
+MFija = FVFija(Vh3P2,Vh3P2);
+bFija = FVFija(0,Vh3P2);
