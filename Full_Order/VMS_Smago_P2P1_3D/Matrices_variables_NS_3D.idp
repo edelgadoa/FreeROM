@@ -7,9 +7,9 @@
 //Matriz término de Conveccion N-S
 ///////////////////////////////////
 	
-varf FVNS ([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])= intN(ThL)(Antisimetric(uEF, uu, v))			
+varf FVNS ([uu,uuY,uuZ,uuP],[v,vY,vZ,vP])= intN(ThL)(Antisimetric(uEF, uu, v)) +			
 								  		//Segundo miembro
-								 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
+								 	   	  intN(ThL)((1./dt)*UporV(uEF,v));
 				
 						
 MNS = FVNS(Vh4P2L,Vh4P2L);
