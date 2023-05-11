@@ -31,7 +31,7 @@ include "Parametros_3D.idp"
 // include "Interp_matrix_3D.idp"
 include "Interp_matrix_3D_Local.idp"
 
-Reynolds = 3500;
+Reynolds = 1500;
 real nu=1./Reynolds;
 
 /////////////////////////////////////////////
