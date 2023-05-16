@@ -27,7 +27,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uprevY = uEFY;
 	uprevZ = uEFZ;
 	
-	if (ii%20==0){
+	if (ii%2==0){
 		int[int] fforder=[1,1,1,1];
 		Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; 
 		Vh4P2L [uEFTemp, uEFTempY, uEFTempZ, uEFTempP];
