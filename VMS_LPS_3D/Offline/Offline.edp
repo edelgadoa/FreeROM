@@ -27,6 +27,7 @@ include "../Auxiliary/CuboNxNyNz.idp"
 include "../Auxiliary/Macros_3D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp" 
+include "../Auxiliary/Functions_MP.idp"
 
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_3D.idp"

@@ -20,7 +20,7 @@ for (int j=0; j<=i; j++){
 	// Matrices
 	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
 	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
-	PenRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+	PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
 	ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
 	DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
@@ -39,15 +39,10 @@ for (int j=0; j<=i; j++){
 mpi(cout<<"la matriz que quiero comprobar: 1"<<endl;)
 mpi(cout<< DiffRB<<endl;)
 pause;
-mpi(cout<< DivPRB<<endl;)
+mpi(cout<< PenRB<<endl;)
 pause;
 
-VhP2 BP, BV, BVY, BVZ;
-Local2Global(BP,BaseP[0],mapVhP2); 
-Local2Global(BV,BaseV[0],mapVhP2);
-Local2Global(BVY,BaseVY[0],mapVhP2); 
-Local2Global(BVZ,BaseVZ[0],mapVhP2);
-cout<<int3d(Th)(BP*Div(BV))<<endl;
+
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
@@ -122,7 +117,7 @@ for (int s=0; s<Taubases; s++){
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
-   real[int,int] Dtk = GradPM[s];
+   real[int,int] DtkL = GradPM[s];
    
    Dtk(0,i) = FVdX[i][](PuntosMSmago(s)); Dtk(1,i) = FVdY[i][](PuntosMSmago(s)); Dtk(2,i) = FVdZ[i][](PuntosMSmago(s));
    Dtk(3,i) = FVYdX[i][](PuntosMSmago(s)); Dtk(4,i) = FVYdY[i][](PuntosMSmago(s)); Dtk(5,i) = FVYdZ[i][](PuntosMSmago(s));
