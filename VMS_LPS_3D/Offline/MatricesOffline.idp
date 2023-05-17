@@ -117,7 +117,7 @@ for (int s=0; s<Taubases; s++){
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
-   real[int,int] DtkL = GradPM[s];
+   real[int,int] Dtk = GradPM[s];
    
    Dtk(0,i) = FVdX[i][](PuntosMSmago(s)); Dtk(1,i) = FVdY[i][](PuntosMSmago(s)); Dtk(2,i) = FVdZ[i][](PuntosMSmago(s));
    Dtk(3,i) = FVYdX[i][](PuntosMSmago(s)); Dtk(4,i) = FVYdY[i][](PuntosMSmago(s)); Dtk(5,i) = FVYdZ[i][](PuntosMSmago(s));

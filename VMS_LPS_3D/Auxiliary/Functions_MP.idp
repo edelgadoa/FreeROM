@@ -1,3 +1,25 @@
+func int search(int[int] & v, int  &a)
+{
+    int result=-1;
+    for[i, vi : v]{
+        if(abs(vi-a)<1.e-8){
+            result=i;
+        }
+    }
+    return result;
+}
+
+// func int search(real[int] & v, real  &a, real &preci)
+// {
+//     int result=-1;
+//     for[i, vi : v]{
+//         if(abs(vi-a)<preci){
+//             result=i;
+//         }
+//     }
+//     return result;
+// }
+
 // Go from Global vector of magic points to Local vectors of M
 func int[int] MagicPointG2L(int[int] &map, int[int] &MagicPoint){
 	int NMagic = MagicPoint.n;

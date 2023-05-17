@@ -255,5 +255,3 @@ for (int i=0; i<Nbases; i++){
 		break;
 	}
 }
-
-
