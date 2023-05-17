@@ -12,12 +12,14 @@ func int imax (real[int,int] & A)
 	}
 	return maximum.imax;
 }// Si se desea para un vector, utilizar v.imax
+
 func int imaxabs(real[int] & v)
 {
 	real[int] vabs(v.n);
 	vabs=abs(v);
 	return vabs.imax;
 }
+
 // Funcion que devuelve la columna donde se produce el maximo
 func int jmax (real[int,int] & A)
 {
@@ -126,14 +128,23 @@ func int[int] ijmin(real[int,int] & A)
 	return result;
 }
 
+func int search(int[int] & v, int  a)
+{
+	int result=-1;
+	for[i, vi : v]{
+		if(abs(vi-a)<1.e-8){
+			result=i;
+		}
+	}
+	return result;
+}
+
+
 func int search(real[int] & v, real  a)
 {
 	int result=-1;
-	int n=v.n;
-	for(int i=0; i<n; i++)
-	{
-		if(abs(v(i)-a)<1.e-4)
-		{
+	for[i, vi : v]{
+		if(abs(vi-a)<1.e-8){
 			result=i;
 		}
 	}
@@ -142,11 +153,8 @@ func int search(real[int] & v, real  a)
 func int search(real[int] & v, real  a,real preci)
 {
 	int result=-1;
-	int n=v.n;
-	for(int i=0; i<n; i++)
-	{
-		if(abs(v(i)-a)<preci)
-		{
+	for[i, vi : v]{
+		if(abs(vi-a)<preci){
 			result=i;
 		}
 	}
@@ -155,36 +163,28 @@ func int search(real[int] & v, real  a,real preci)
 func int[int] search(real[int,int] & A, real a)
 {
 	int[int] result = [-1,-1];
-	int n=A.n;
-	int m=A.m;
-	for(int i=0; i<n; i++)
-	{
-		for(int j=0;j<m; j++)
+    for[i,j, Aij : A]{
+		if(abs(Aij-a)<1.e-4)
 		{
-			cout << "Comprobando i: " << i << ", j " << j << endl;
-			if(abs(A(i,j)-a)<1.e-4)
-			{
-				result=[i,j];
-			}
+			result=[i,j];
 		}
-	}
+    
+    }
+
 	return result;
 }
+
+
 func int[int] search(real[int,int] & A, real a,real preci)
 {
 	int[int] result = [-1,-1];
-	int n=A.n;
-	int m=A.m;
-	for(int i=0; i<n; i++)
-	{
-		for(int j=0;j<m; j++)
+    for[i,j, Aij : A]{
+		if(abs(Aij-a)<preci)
 		{
-			if(abs(A(i,j)-a)<preci)
-			{
-				result=[i,j];
-			}
+			result=[i,j];
 		}
-	}
+    
+    }
 	return result;
 }
 

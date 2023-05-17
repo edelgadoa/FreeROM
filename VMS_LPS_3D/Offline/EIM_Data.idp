@@ -21,12 +21,17 @@ for (int i=0; i<Mbases; i++){
 	EIMSmago[i][] = EIMSmagoG[](mapVhP1dc); //Cargo la bases EN LOCAL
 }
 
-
+// Cargo la Matriz de EIMSmago
 readmatrix("../EIM/EIM_VMSSmago/Bases_EIM/MatrizEIM_Smago.txt", real, MatrixEIMSmago, 0);
-readvector("../EIM/EIM_VMSSmago/Bases_EIM/TintEIM_Smago.txt", real, PuntosMSmago, 0);
-
 matrix MEIMS = MatrixEIMSmago;
 set(MEIMS, solver= UMFPACK);
+
+//Cargo los Puntos Magicos Smago y los paso a local para trabajar con ellos
+readvector("../EIM/EIM_VMSSmago/Bases_EIM/TintEIM_Smago.txt", int, PuntosMSmago, 0);
+int[int] PuntosMSmagoL = MagicPointG2L(mapVhP1dc, PuntosMSmago); // Vector local de Puntos magicos
+real[int] NumberPMSmago = NumberMagicPoint(mapVhP1dc, PuntosMSmago); // 1: esta en proc, 0: no esta en proc
+real[int] WeightPMSmago = WeightMagicPoint(NumberPMSmago); //Pesos de cada Magic Point
+
 
 //////////////////////////////////////////
 //////////////////////////////////////////
@@ -38,14 +43,19 @@ for (int i=0; i<Taubases; i++){
 	readvector("../EIM/EIM_LPS/Bases_EIM/Base_" + muEIMTau(i) + ".txt", real, BaseEIM, 0);
 	EIMTauG[] = BaseEIM;
 	EIMTau[i][] = EIMTauG[](mapVhP0); //Cargo la bases EN LOCAL
-
-
 }
 
+// Cargo la matriz EIM tau
 readmatrix("../EIM/EIM_LPS/Bases_EIM/MatrizEIM_LPS.txt", real, MatrixEIMTau, 0);
-readvector("../EIM/EIM_LPS/Bases_EIM/TintEIM_LPS.txt", real, PuntosMTau, 0);
-
 matrix MEIMTau = MatrixEIMTau;
 // real[int,int] MEIMTauinv = MatrixEIMTau^-1;
 set(MEIMTau, solver=UMFPACK);
+
+
+//Cargo los Puntos Magicos Tau y los paso a local para trabajar con ellos
+readvector("../EIM/EIM_LPS/Bases_EIM/TintEIM_LPS.txt", int, PuntosMTau, 0);
+int[int] PuntosMSTauL = MagicPointG2L(mapVhP1dc, PuntosMTau); // Vector local de Puntos magicos
+real[int] NumberPMTau = NumberMagicPoint(mapVhP1dc, PuntosMTau); // 1: esta en proc, 0: no esta en proc
+real[int] WeightPMTau = WeightMagicPoint(NumberPMTau); //Pesos de cada Magic Point
+
 ///////////////////////////////////////////

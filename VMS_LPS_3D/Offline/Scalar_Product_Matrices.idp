@@ -78,20 +78,23 @@ Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 
 
-mpi(cout<<"START"<<endl;)
-// if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
 
+// mpi(cout<<"START"<<endl;)
+// // if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
+//
+//
+// {
+//     for (int s=0; s<Mbases; s++){
+//
+//         varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+//         {
+//             matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
+//             Mat SmagoPEMTemp = SmagoPEML; //(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+//             SmagoPEM[s] = SmagoPEMTemp;
+//         }
+//
+// mpi(cout<<"END"<<endl;)
 
-    // for (int s=0; s<Mbases; s++){
-    //
-    //     varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-    //     {
-    //         matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
-    //         Mat SmagoPEMTemp = SmagoPEML; //(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
-    //         SmagoPEM[s] = SmagoPEMTemp;
-    //     }
-
-mpi(cout<<"END"<<endl;)
 
 // real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
 // real[int,int] BaseV2D(Vh3P2L.ndof, Nbases);
