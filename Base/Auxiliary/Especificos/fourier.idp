@@ -1,0 +1,108 @@
+load "dfft"
+
+///////////////////////////////////////////////////////////////////////////////
+// Calculo de la energía 
+
+func real uporu(complex & v)
+{
+	complex vcon=conjugate(v);
+	real result=real(v*vcon);
+	return result;
+}
+
+func real[int] energycomputation(complex[int] & u,complex[int] & uY)
+{
+	real[int] resultL(u.n), result(u.n);
+	resultL=0.; result=0.; 
+	int cont = 1;
+	for(int ii=0;ii<result.n;ii++){
+		if(mpirank==cont%mpisize){
+			resultL[ii]=(uporu(u[ii])+uporu(uY[ii]))/2.;
+		}
+	cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+
+func real[int] energycomputation(complex[int] & u,complex[int] & uY, complex[int] & uZ)
+{
+	real[int] resultL(u.n), result(u.n);
+	resultL=0.; result=0.; 
+	int cont = 1;
+	for(int ii=0;ii<result.n;ii++){
+		if(mpirank==cont%mpisize){
+			resultL[ii]=(uporu(u[ii])+uporu(uY[ii])+uporu(uZ[ii]))/2.;
+		}
+	cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Suma de la energía por coronas
+func real[int] energyk2d(real[int] & Energy, int nx, int ny)
+{
+    int LN=sqrt(nx^2+ny^2)/2;
+	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
+	energykbycrownsL=0.; energykbycrowns=0.;
+	real module;int l;
+	int cont = 1;
+	for(int k1=0;k1<nx/2;k1++){
+		for(int k2=0;k2<ny/2;k2++){
+            if(mpirank==cont%mpisize){
+                module=sqrt(k1^2+k2^2);
+                // cout << module << ", " << l << endl;
+                l=module;
+                energykbycrownsL[l]+=Energy[k1+nx*k2+nx*ny*k3];
+            }
+            cont++;
+		}
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	return energykbycrowns;
+}
+
+func real[int] energyk3d(real[int] & Energy, int nx, int ny, int nz)
+{
+    int LN=sqrt(nx^2+ny^2+nz^2)/2;
+	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
+	energykbycrownsL=0.; energykbycrowns=0.;
+	real module;int l;
+	int cont = 1;
+	for(int k1=0;k1<nx/2;k1++){
+		for(int k2=0;k2<ny/2;k2++){
+			for(int k3=0;k3<nz/2;k3++){
+				if(mpirank==cont%mpisize){
+					module=sqrt(k1^2+k2^2+k3^2);
+					// cout << module << ", " << l << endl;
+					l=module;
+					energykbycrownsL[l]+=Energy[k1+nx*k2+nx*ny*k3];
+				}
+				cont++;
+			}	
+		}
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	return energykbycrowns;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Función simplificadora 
+
+func real[int] espectro3D(complex[int] & uxc, complex[int] & uyc, complex[int] & uzc, int Ndiv){
+
+    int length = uxc.n;
+    complex[int] uxhat(length), uyhat(length), uzhat(length);
+    uxhat = dfft(uxc,Ndiv,Ndiv,-1); uyhat = dfft(uyc,Ndiv,Ndiv,-1); uzhat = dfft(uzc,Ndiv,Ndiv,-1);
+    real[int] energyhat = energycomputation(uxhat,uyhat,uzhat);
+    real[int] energykk=energyk3d(energyhat,Ndiv,Ndiv,Ndiv);
+    return energykk;
+}

@@ -84,7 +84,13 @@ usol2D[] = solv;
 plot(usol2D, cmm="z="+zHiMod);
 
 cout << "Sol2D = " << usol2D(Thc(5).x,Thc(5).y) << ", Sol3D = " << usol3D(Thc(5).x,Thc(5).y, zHiMod) << endl;
+<<<<<<< HEAD
+cout << "Sol2D = " << usol2D(0.5,0.5) << ", Sol3D = " << usol3D(0.5,0.5, zHiMod) << endl;
+
+
+=======
 cout << "Sol2D = " << usol2D(0,0) << ", Sol3D = " << usol3D(0,0,zHiMod) << endl;
+>>>>>>> e094b5b85c71539d219e5a928f784a4b047a6a91
 // zHiMod = 7;
 // for (int i = 0; i<Thc.nv; i++){
 //     // real solucion =
@@ -94,9 +100,16 @@ cout << "Sol2D = " << usol2D(0,0) << ", Sol3D = " << usol3D(0,0,zHiMod) << endl;
 // cout << "Sol2D = " << usol2D(0.4,0.4) << ", Sol3D = " << usol3D(0.4, 0.4, zHiMod) << endl;
 // plot(usol2D, cmm="z="+zHiMod);
 
+<<<<<<< HEAD
+int[int] fforder=[1];
+savevtk("Poisson3d.vtk", Th, usol3D, order=fforder);
+savevtk("Poisson2d.vtk", Thc, usol2D, order=fforder);
+
+=======
 int[int] fforder=[1,1];
 savevtk("Poisson3D.vtk", Th, usol3D, dataname="sol3D", order=fforder);
 savevtk("Poisson2D.vtk", Thc, usol2D, dataname="sol2D", order=fforder);
+>>>>>>> e094b5b85c71539d219e5a928f784a4b047a6a91
 
 
 

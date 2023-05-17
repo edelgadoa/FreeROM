@@ -43,7 +43,6 @@ mpi(cout<< PenRB<<endl;)
 pause;
 
 
-
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
