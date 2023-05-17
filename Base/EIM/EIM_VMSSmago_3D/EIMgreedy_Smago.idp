@@ -13,10 +13,10 @@ set(BMs, solver=sparsesolver);
 real[int,int] Binv = BMi^-1; 
 real [int] bEIM(i),sigmai(i);
 
-pause; //Hacemos el siguiente for en paralelo
+pause; //Hacemos el siguiente bucle en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
 	if (mpirank==imu%mpisize){
-		gEIM = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
+		gEIM = mod(BVdX[imu], BVdY[imu], BVdZ[imu], BVYdX[imu], BVYdY[imu], BVYdZ[imu], BVZdX[imu], BVZdY[imu], BVZdZ[imu]);
 		
 		for (int j=0; j<i; j++){
 			bEIM(j) = gEIM[](Tmax(j));
@@ -31,7 +31,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 		
 		VhP1dc Linf = abs(gEIM-IgEIM); 
 		
-		ErroritL(imu)=Linf[].max/gEIM[].max;
+		ErroritL(imu) = Linf[].max/gEIM[].max;
 		//Errorit(imu) = Linf[].max/gEIM[].max;
 	}
 	mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
@@ -44,7 +44,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 
 // Calculamos la base escogida
 int iReynolds = Errorit.imax;
-gEIM = mod(BVdX[iReynolds], BVdY[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIM = mod(BVdX[iReynolds], BVdY[iReynolds], BVdZ[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds], BVYdZ[iReynolds], BVZdX[iReynolds], BVZdY[iReynolds], BVZdZ[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
 
 //bEIM = 0;
 for (int j=0; j<i; j++){
