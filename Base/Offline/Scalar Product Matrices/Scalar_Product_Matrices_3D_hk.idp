@@ -1,0 +1,82 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
+varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+matrix MPescT = pescT(Vh3P2, Vh3P2);
+
+varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
+matrix MPescX = pescX(Vh4P2, Vh4P2);
+
+varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(Th)(GradUGradV(uu,vv));
+matrix MNormaVel = NormaVel(Vh3P2, Vh3P2);
+
+///////////////////////////////////////////////////////
+
+varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(GradUGradV(uu,v));
+matrix DiffPEM = DiffPE(Vh3P2,Vh3P2);
+
+varf DiffPEL([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+matrix DiffPEML = DiffPEL(Vh3P2L,Vh3P2L);
+
+varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(Th)(Div(uu)*vP);
+matrix DivPPEM = DivPPE(Vh3P2, VhP2);
+
+varf PenPE(uP, vP) = int3d(Th)(epspen*uP*vP);
+matrix PenPEM = PenPE(VhP2, VhP2);
+
+varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(Th)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+matrix ConvLevPEM = ConvLevPE(Vh3P2, Vh3P2);
+
+varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(UporV(uu,v));
+matrix DTPEM = DTPE(Vh3P2, Vh3P2);
+
+
+varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
+matrix FiltroX, FiltroY, FiltroZ;
+matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
+{
+	FiltroX = SPPEM2 * IPhDXP2;
+	FiltroX = (IPhDXP2') * FiltroX;
+	FiltroY = SPPEM2 * IPhDYP2;
+	FiltroY = (IPhDYP2') * FiltroY;	
+	FiltroZ = SPPEM2 * IPhDZP2;
+	FiltroZ = (IPhDZP2') * FiltroZ;	
+}
+matrix StabhkPEM = FiltroX + FiltroY;
+StabhkPEM += FiltroZ;
+
+
+matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
+
+
+matrix[int] SmagoPEM(Mbases), StabPPEM(Taubases);
+{  
+	for (int s=0; s<Mbases; s++){
+			// Matrices Smago
+			varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+			SmagoPEM[s] = SmagoPE(Vh3P2, Vh3P2);
+	}
+	
+
+	// for (int s=0; s<Taubases; s++){
+	// 	//if(mpirank==contS%mpisize){
+	// 		// Matrices LPS
+	// 		varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
+	// 		matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
+	// 		matrix FiltroX, FiltroY;
+	// 		{
+	// 			FiltroX = SPPEM * IPhDXP2;
+	// 			FiltroX = (IPhDXP2') * FiltroX;
+	// 			FiltroY = SPPEM * IPhDYP2;
+	// 			FiltroY = (IPhDYP2') * FiltroY;
+	// 		}
+	// 		StabPPEM[s] = FiltroX + FiltroY;
+	// 		//}
+	// 	contS++;
+	// }
+}
+
+varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(Th)(GradUGradV(Lev, v));
+real[int] bDiffPEv = bDiffPE(0, Vh3P2);

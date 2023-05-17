@@ -1,0 +1,116 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+include "../Auxiliary/powermethod.idp"
+
+VhP2 uF,uFY, uFZ;
+VhP1dc uFdX, uFdY,uFdZ, uFYdX, uFYdY, uFYdZ, uFZdX, uFZdY, uFZdZ;
+VhP2 SnapX, SnapY, SnapZ, SnapP;
+
+// Cargo o calculo el snapshot para el Reynolds fijo de la norma T
+if (search(ReSnapshots, Refijo, 1.e-9)==-1){
+	// Defino las variables que usaremos para obtener la solucion de EF
+	Vh4P2 [uEF, uEFY, uEFZ, uEFP];
+	VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ;
+	VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+	VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+	
+	include "../FOM/FE_VMS_LPS_3D.idp"
+	
+	real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
+	ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
+	ReSnapshotsNEW(ReSnapshots.n) = Refijo;
+	
+	write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
+	
+	SnapX = uEF;
+	SnapY = uEFY;
+	SnapZ = uEFZ;
+	SnapP = uEFP;
+		
+	// Guardamos los snapshots 
+	write("../Snapshots/Vx_" + Refijo + ".txt", SnapX[], 0, 0);
+	write("../Snapshots/Vy_" + Refijo + ".txt", SnapY[], 0, 0);
+	write("../Snapshots/Vz_" + Refijo + ".txt", SnapZ[], 0, 0);		
+	write("../Snapshots/P_" + Refijo + ".txt", SnapP[], 0, 0);
+
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	SnapZ = SnapZ + LevZ;
+	
+	uF[] = IPhP2P1*SnapX[];
+	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
+	
+	uFY[] = IPhP2P1*SnapY[];
+	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
+	
+	uFZ[] = IPhP2P1*SnapZ[];
+	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
+}
+else{
+
+	readvector("../Snapshots/Vx_" + Refijo + ".txt", real, SolX, 0);
+	SnapX[] = SolX;
+	readvector("../Snapshots/Vy_" + Refijo + ".txt", real, SolY, 0);
+	SnapY[] = SolY;
+	readvector("../Snapshots/Vz_" + Refijo + ".txt", real, SolZ, 0);
+	SnapZ[] = SolZ;
+	readvector("../Snapshots/P_" + Refijo + ".txt", real, SolP, 0);
+	SnapP[] = SolP;
+	
+	SnapX = SnapX + Lev;
+	SnapY = SnapY + LevY;
+	SnapZ = SnapZ + LevZ;
+	
+	uF[] = IPhP2P1*SnapX[];
+	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
+	
+	uFY[] = IPhP2P1*SnapY[];
+	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
+	
+	uFZ[] = IPhP2P1*SnapZ[];
+	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
+	
+}
+
+varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*GradUGradV(uu,v)) + on(1,2,3,4, uu=0,uuY=0, uuZ=0);
+
+matrix T, Zu;
+T = prodT(Vh3P2, Vh3P2);
+
+//macro normsup(vh) int2d(Th)(vh^2)//EOM
+
+real CSerror = 10, CSeps = 1.e-3;
+
+real rhok0 = 20, rhok1;
+
+VhP2 u0, u0Y, u0Z;
+VhP2 zuk;
+
+u0 = uF;
+u0Y = uFY;
+u0Z = uFZ;
+
+// Fix point
+for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
+{
+	zuk = UporV(u0,u0);
+	zuk[] /= sqrt(int3d(Th)(zuk^2));
+//	 {real normL2=int2d(Th)(zuk^2);
+//	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
+
+	varf prodzu([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(zuk*UporV(uu,v));
+	Zu = prodzu(Vh3P2, Vh3P2);
+	
+	real[int] autovec = powermethodmpi(Zu,T);
+	broadcast(processor(0, mpiCommWorld), autovec);
+	rhok1 = autovec(0);
+	u0[] = autovec(1:autovec.n-1);
+	// plot(defVel(u0),value=1,wait=1);
+	CSerror = abs((rhok1-rhok0)/rhok1);
+ 	// mpi(cout << "PM: " << CSerror<< endl;)
+	rhok0 = rhok1;
+}
+
+CSobolev = rhok1;
