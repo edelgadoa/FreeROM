@@ -13,9 +13,9 @@ set(BMs, solver=sparsesolver);
 real[int,int] Binv = BMi^-1; 
 real [int] bEIM(i),sigmai(i);
 
-//pause; //Hacemos el siguiente for en paralelo
+pause; //Hacemos el siguiente for en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
-	//if (mpirank==imu%mpisize){
+	if (mpirank==imu%mpisize){
 		gEIM = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
 		
 		for (int j=0; j<i; j++){
@@ -31,11 +31,11 @@ for (int imu=0; imu<nSnapshots; imu++){
 		
 		VhP1dc Linf = abs(gEIM-IgEIM); 
 		
-		//ErroritL(imu)=Linf[].max/gEIM[].max;
-		Errorit(imu) = Linf[].max/gEIM[].max;
-		//}
-	//mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
-	//pause;
+		ErroritL(imu)=Linf[].max/gEIM[].max;
+		//Errorit(imu) = Linf[].max/gEIM[].max;
+	}
+	mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
+	pause;
 	
 	ErrorMaxEIM(i-1) = Errorit.max;
 	muEIM(i) = vReynolds(Errorit.imax);	
@@ -67,7 +67,6 @@ for (int j=0; j<=i; j++){
 }
 
 // Almacenamos la base escogida 
-ofstream BaseEIMFILE("Bases_EIM/Base_EIM_" + vReynolds(Errorit.imax) + ".txt");
-BaseEIMFILE<<BEIM[i][]<<endl;
+write("Bases_EIM/Base_EIM_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 
 muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	

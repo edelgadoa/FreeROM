@@ -27,10 +27,8 @@ include "../../FOM/Levantamiento.idp"
 
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots; // numero de Snapshots que voy a querer calcular 
-ifstream nSnapshotFILE("../../Snapshots/Snapshots.txt"); // TODO: Hacerlo mediante la funcion read
-nSnapshotFILE>>nSnapshots;
-real[int] vReynolds(nSnapshots);
+readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 0); 
+int nSnapshots = vReynolds.n;
 
 
 VhP2[int] BVX(nSnapshots), BVY(nSnapshots);
@@ -66,9 +64,7 @@ BEIM[0][] /= BEIM[0][].max;
 
 BM(0,0) = BEIM[0][](Tmax(0));
 
-// Guardamos la base calculada //TODO -> Hacerlo mediante la funcion write		
-ofstream BaseEIMFILE("Bases_EIM/Base_EIM_" + vReynolds(0) + ".txt");
-BaseEIMFILE<<BEIM[0][]<<endl;
+write("Bases_EIM/Base_EIM_" + vReynolds(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
@@ -86,24 +82,17 @@ for (int i=1; i<Mmax; i++){
 // Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
 real[int] muEIMF(M);
 muEIMF = muEIM(0:M-1);
-ofstream muFILE("Bases_EIM/muEIM_Smago.txt");
-muFILE.precision(20);
-muFILE<<muEIMF<<endl;
+write("Bases_EIM/muEIM_Smago.txt", muEIMF, 0, 0);
 
-ofstream MatrizFILE("Bases_EIM/MatrizEIM_Smago.txt");
 real[int, int] BFinal(M,M);
 BFinal = BM(0:M-1,0:M-1);
-MatrizFILE.precision(20);
-MatrizFILE<<BFinal<<endl;
+write("Bases_EIM/MatrizEIM_Smago.txt", BFinal, 0, 0, 0, 20);
 
 real[int] TM(M);
 TM = Tmax(0:M-1);
-ofstream TmaxFILE("Bases_EIM/TintEIM_Smago.txt");
-TmaxFILE.precision(20);
-TmaxFILE<<TM<<endl;
+write("Bases_EIM/TintEIM_Smago.txt", TM, 0, 0);
 
 real[int] ErrorEIM(M);
-ErrorEIM=ErrorMaxEIM(0:M-1);
-ofstream ErrorFILE("Bases_EIM/ErrorEIM_Smago.txt");
-ErrorFILE<<ErrorEIM<<endl;
+ErrorEIM = ErrorMaxEIM(0:M-1);
+write("Bases_EIM/ErrorEIM_Smago.txt", ErrorEIM, 0, 0);
 

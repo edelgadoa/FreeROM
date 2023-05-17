@@ -84,7 +84,6 @@ for (int j=0; j<=i; j++){
 }
 
 // Almacenamos la base escogida 
-ofstream BaseEIMFILE("Bases_EIM/Base_" + vReynolds(Errorit.imax) + ".txt");
-BaseEIMFILE<<BEIM[i][]<<endl;
+write("Bases_EIM/Base_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 
 muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	
