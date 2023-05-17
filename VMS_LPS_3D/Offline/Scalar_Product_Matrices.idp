@@ -82,15 +82,14 @@ mpi(cout<<"START"<<endl;)
 // if(mpirank==1) {cout<<SmagoPEM[0]<<endl;}
 
 
-{ 
-	for (int s=0; s<Mbases; s++){
-
-		varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-		{
-			matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
-			Mat SmagoPEMTemp = SmagoPEML; //(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
-			SmagoPEM[s] = SmagoPEMTemp; 
-		}
+    // for (int s=0; s<Mbases; s++){
+    //
+    //     varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+    //     {
+    //         matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
+    //         Mat SmagoPEMTemp = SmagoPEML; //(SmagoPEM[0], TMP); //copy the distribution of SMAGOPEM
+    //         SmagoPEM[s] = SmagoPEMTemp;
+    //     }
 
 mpi(cout<<"END"<<endl;)
 

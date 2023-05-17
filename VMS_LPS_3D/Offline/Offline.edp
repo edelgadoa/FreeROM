@@ -96,6 +96,7 @@ readvector("../RBF/gammaI.txt", real, gammaI, 0);
 include "Allocate_matrices.idp"
 mpi(cout<<"matrices alocadas"<<endl;)
 
+
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 
@@ -254,3 +255,4 @@ for (int i=0; i<Nbases; i++){
 		break;
 	}
 }
+
