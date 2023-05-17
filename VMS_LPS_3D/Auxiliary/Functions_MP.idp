@@ -1,13 +1,13 @@
-func int search(int[int] & v, int  &a)
-{
-    int result=-1;
-    for[i, vi : v]{
-        if(abs(vi-a)<1.e-8){
-            result=i;
-        }
-    }
-    return result;
-}
+// func int search(int[int] & v, int  &a)
+// {
+//     int result=-1;
+//     for[i, vi : v]{
+//         if(abs(vi-a)<1.e-8){
+//             result=i;
+//         }
+//     }
+//     return result;
+// }
 
 // func int search(real[int] & v, real  &a, real &preci)
 // {

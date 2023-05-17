@@ -12,12 +12,14 @@ func int imax (real[int,int] & A)
 	}
 	return maximum.imax;
 }// Si se desea para un vector, utilizar v.imax
+
 func int imaxabs(real[int] & v)
 {
 	real[int] vabs(v.n);
 	vabs=abs(v);
 	return vabs.imax;
 }
+
 // Funcion que devuelve la columna donde se produce el maximo
 func int jmax (real[int,int] & A)
 {
@@ -135,7 +137,7 @@ func int search(int[int] & v, int  a)
 		}
 	}
 	return result;
-
+}
 
 
 func int search(real[int] & v, real  a)
@@ -171,6 +173,8 @@ func int[int] search(real[int,int] & A, real a)
 
 	return result;
 }
+
+
 func int[int] search(real[int,int] & A, real a,real preci)
 {
 	int[int] result = [-1,-1];
