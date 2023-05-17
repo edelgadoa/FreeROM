@@ -72,14 +72,12 @@ func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
 	}
 	u -= Proy;
 	real[int] result = u / normX(u, X);
-	return result;
-	
+	return result;	
 }
 
 func real[int] OrtoX(real[int] &u, real[int,int] &M, Mat &X){
 	real[int] Proy(u.n);
 	Proy = 0;
-	
 	for (int j=0; j<M.m; j++){
 		real Pesc = innerprodX(u, M(:,j), X);
 		Proy += Pesc*M(:,j);

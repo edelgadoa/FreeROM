@@ -1,0 +1,37 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para calcular las bases ortonormalizadas 
+
+/////////////////////////////////////////////
+// Ortonormalizacion de la Presion
+
+real[int, int] MBasePi = MBaseP(0:VhP2L.ndof-1, 0:i-1);
+
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
+
+// Doble Ortonormalización
+BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
+
+////////////////////////////////////////////
+
+
+real[int,int] MBaseVi = MBaseV(0:Vh3P2L.ndof-1, 0:i-1);
+
+{
+	real[int] BaseVi;
+	ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi);
+	
+	BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);
+	ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi, inverse=true);
+	mpi(cout<<"he cambiado el numbering"<<endl;)
+	// BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);
+// BaseV[i][] = OrtoX(BaseVi, MBaseVi, MNormaVel);
+
+// Doble Ortonormalización
+// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
+
+}
+// Para el filtrado
+BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i]; BaseVelZ[i] = BaseVZ[i];

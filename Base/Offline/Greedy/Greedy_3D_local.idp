@@ -1,0 +1,105 @@
+///////////////
+// FreeROM 
+/////////////// 
+int I=i+1; // Para ajustar los indices
+
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
+real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain); 
+//, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
+
+// Inicializamos las matrices para el problema reducido
+real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(2*I, 2*I),
+			   ConvLevRBi(2*I, 2*I), DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I),
+			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I); 
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 
+
+// Matrices fijas 
+DiffRBi = DiffRB(0:2*I-1, 0:2*I-1);
+DivPRBi = DivPRB(Nbases-I:Nbases+I-1, 0:2*I-1);
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
+ConvLevRBi = ConvLevRB(0:2*I-1, 0:2*I-1);
+DTRBi = DTRB(0:2*I, 0:2*I);
+// StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
+bDiffRBi = bDiffRB(0:2*I-1);
+bConvRBi = bConvRB(0:2*I-1);
+
+
+
+// Comenzamos el bucle del greedy 
+
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+	real nuRB = 1./MuTrain(iRB);
+	
+	// Resuelvo el problema 
+	real[int] uRBv(2*I); // Vectores donde almaceno la Solución Reducida
+	real[int,int] MRB(2*I,2*I); // Matriz para resolver el sistema
+	real[int] bRB(2*I); // Segundo miembro para resolver el sistema
+	
+	include "RB_LPS_VMSSmago.idp"
+	//mpi(cout<<uRBv<<endl;)
+	// Reconstruyo la solución reducida
+	Vh3P2 [uRB, uRBY, uRBZ];
+	VhP2 uRBP;
+	
+	real[int,int] MBaseVi(Vh3P2L.ndof, I), MBasePi(VhP2L.ndof, I); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh3P2L.ndof-1, 0:I-1);
+	MBasePi = MBaseP(0:VhP2L.ndof-1, 0:I-1);
+	
+	uRB[] = MBaseVi*uRBv(0:I-1);
+	uRBP[] = MBasePi*uRBv(I:2*I-1);
+	
+	uRB[] += LevV[];
+	
+	if(MuTrain(iRB)==Reynolds){
+		// plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
+		// plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		mpi(cout<<uRBv<<endl;)
+	}
+	
+	VhP1dc uRBdX, uRBdY, uRBdZ, uRBYdX, uRBYdY, uRBYdZ, uRBZdX, uRBZdY, uRBZdZ;
+	
+	{ 
+		VhP2 uRBvel, uRBvelY, uRBvelZ;
+		uRBvel = uRB; uRBvelY = uRBY; uRBvelZ = uRBZ;
+	
+		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	uRBdZ[] = DZP2IPh * uRBvel[];
+		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[]; uRBYdZ[] = DZP2IPh * uRBvelY[];
+		uRBZdX[] = DXP2IPh * uRBvelZ[]; uRBZdY[] = DYP2IPh * uRBvelZ[];	uRBZdZ[] = DZP2IPh * uRBvelZ[];
+	}
+	
+	// Calculo el estimador de error 
+
+	// Norma del Residuo
+	include "Residuo_LPS_VMSSmago.idp"	
+	mpi(cout<<"ResN = "<<ResG(iRB)<<endl;)
+
+	
+	// Beta_h
+	real Betah = fbeta(gammaI, muI, MuTrain(iRB)); 
+	
+	// Rho_t
+	real RhoT = 2*CSobolev^2;
+	
+	// Tau_N
+	TauG(iRB) = (4 * RhoT * ResG(iRB))/(Betah^2);
+	mpi(cout<<"TauN = "<< TauG(iRB)<<endl;)
+	
+	// DeltaN
+	if (TauG(iRB) < 1){
+		DeltaG(iRB) = Betah/(2*RhoT)*(1-sqrt(1-TauG(iRB)));
+	}
+	else{
+		DeltaG(iRB) = Betah/(4*RhoT)*TauG(iRB);
+	}
+	
+}
+
+mpi(cout<<"Delta"<<DeltaG<<endl;)
+DeltaN(i) = DeltaG.max;
+TauN(i) = TauG.max;
+MuBest(i+1) = MuTrain(DeltaG.imax);

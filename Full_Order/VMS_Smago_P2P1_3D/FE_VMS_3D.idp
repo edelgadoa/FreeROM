@@ -27,7 +27,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uprevY = uEFY;
 	uprevZ = uEFZ;
 	
-	if (ii%20==0){
+	if (ii%2==0){
 		int[int] fforder=[1,1,1,1];
 		Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; 
 		Vh4P2L [uEFTemp, uEFTempY, uEFTempZ, uEFTempP];
@@ -88,7 +88,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// bFinal += bSmago;
 	
 	matrix MFinal = MFija + MNS;
-	MFinal += Smago;
+	// MFinal += Smago;
 	real[int] bFinal = bFija + bNS;
 	
 	
@@ -108,8 +108,16 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	errEFY = uEFY - uEFpY;
 	errEFZ = uEFZ - uEFpZ;
 	
-	real ERRORabs = sqrt(intN(ThL)(UporV(errEF,errEF)) + intN(ThL)(GradUGradV(errEF,errEF)));
-	real ERROR = ERRORabs / sqrt(intN(ThL)(UporV(uEF,uEF)) + intN(ThL)(GradUGradV(uEF, uEF)));
+	
+	real ERRORabsL  = sqrt(intN(ThL)(UporV(errEF,errEF)) + intN(ThL)(GradUGradV(errEF,errEF)));
+	real ERRORabs;
+	mpiAllReduce(ERRORabsL, ERRORabs, mpiCommWorld, mpiSUM);
+	real ERRORL = ERRORabsL / sqrt(intN(ThL)(UporV(uEF,uEF)) + intN(ThL)(GradUGradV(uEF, uEF)));
+	mpiAllReduce(ERRORL, ERROR, mpiCommWorld, mpiSUM);
+	ERROR/=mpisize;
+	
+	
+	//ERROR = ERRORabs /  sqrt(intN(ThL)(UporV(uEF,uEF)) + intN(ThL)(GradUGradV(uEF, uEF)));
     mpi(cout<<"Error:"<<ERROR<<", iteration:"<<ii<<endl;)
 	
 

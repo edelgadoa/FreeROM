@@ -12,11 +12,13 @@ Gr = MOD(uEF);
 // Vh4P1dc [Levf, LevfY, LevfZ, LevfP];
 
 
-varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=intN(ThL)((CS*hTriangle)^2*Gr*UporV(uu,v));
+varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=intN(ThL)((CS*hTriangle)^2*Gr*UporV(uu,v))  
+                      //  + on(1, uu=0., uuY=0., uuZ=0.) + on(2, uu=1., uuY=0., uuZ=0.); 
+                        ;
 // varf FVSmagob([un1,un2,un3,pun],[v,vY,vZ,qun])=-intN(ThL)((CS*hTriangle)^2*Gr*UporV(Levf,v));
 
 	
-matrix M = FVSmago(Vh4P1dcL,Vh4P1dcL);
+matrix M = FVSmago(Vh4P1dcL,Vh4P1dcL, tgv = -1);
 // real[int] bSx(Vh4P2L.ndof), bSy(Vh4P2L.ndof), bSz(Vh4P2L.ndof);
 
 matrix DXX,DYY,DZZ;
