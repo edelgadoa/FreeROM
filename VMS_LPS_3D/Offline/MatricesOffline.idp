@@ -42,12 +42,12 @@ pause;
 mpi(cout<< DivPRB<<endl;)
 pause;
 
-VhP2 BP, BV, BVY, BVZ;
-Local2Global(BP,BaseP[0],mapVhP2); 
-Local2Global(BV,BaseV[0],mapVhP2);
-Local2Global(BVY,BaseVY[0],mapVhP2); 
-Local2Global(BVZ,BaseVZ[0],mapVhP2);
-cout<<int3d(Th)(BP*Div(BV))<<endl;
+// VhP2 BP, BV, BVY, BVZ;
+// Local2Global(BP,BaseP[0],mapVhP2);
+// Local2Global(BV,BaseV[0],mapVhP2);
+// Local2Global(BVY,BaseVY[0],mapVhP2);
+// Local2Global(BVZ,BaseVZ[0],mapVhP2);
+// cout<<int3d(Th)(BP*Div(BV))<<endl;
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 // mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
