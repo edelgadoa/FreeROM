@@ -73,25 +73,27 @@ mpi(cout<<DTRB<<endl;)
 mpi(cout<<"Convection matrix"<<endl;)
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
-	Cint = 0; 
+	Cint = ConvRB[s];
+	Mat ConvPEMs = MatAVh3P2;
+	ConvPEMs = ConvPEM[s];
 	for (int j=0; j<=i; j++){
         real[int] BaseVj;
         ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
-		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
+		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEMs);
 		if(j<i){
-			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
+			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEMs);
 		}
 		if (s==i && (j!=i)){
 			for (int k=0; k<s; k++){
                 real[int] BaseVk;
                 ChangeNumbering(MatAVh3P2, BaseV[k][], BaseVk);
-				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEMs);
 			}
 		} 
 	
 	}
 	
-	ConvRB[s] += Cint;
+	ConvRB[s] = Cint;
 }
 mpi(cout<<"conv Matrix"<<ConvRB[0]<<endl;)
 
