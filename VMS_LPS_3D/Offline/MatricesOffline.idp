@@ -75,13 +75,17 @@ for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
 	Cint = 0; 
 	for (int j=0; j<=i; j++){
-		Cint(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+        real[int] BaseVj;
+        ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
+		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
 		if(j<i){
-			Cint(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
 		}
 		if (s==i && (j!=i)){
 			for (int k=0; k<s; k++){
-				Cint(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
+                real[int] BaseVk;
+                ChangeNumbering(MatAVh3P2, BaseV[k][], BaseVk);
+				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
 			}
 		} 
 	
