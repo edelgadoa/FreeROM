@@ -24,6 +24,7 @@ real[int,int] MBaseVi = MBaseV(0:Vh3P2L.ndof-1, 0:i-1);
 	ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi);
 	
 	BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);
+    BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);
 	ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi, inverse=true);
 	mpi(cout<<"he cambiado el numbering"<<endl;)
 	// BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);

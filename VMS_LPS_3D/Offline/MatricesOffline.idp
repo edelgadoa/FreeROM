@@ -20,16 +20,16 @@ for (int j=0; j<=i; j++){
 	// Matrices
 	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
 	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
-	PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
-	ConvLevRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvLevPEM);
-	DTRB(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+	ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
+	DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+    PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 	
 	if (j<i){		
 		DiffRB(j,i) = DiffRB(i,j);
-		DivPRB(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+		DivPRB(j+Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
 		PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
-		ConvLevRB(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvLevPEM);
+		ConvLevRB(j,i) = innerprodX(BaseVj, BaseVi, ConvLevPEM);
 		DTRB(j,i) = DTRB(i,j);
 		// StabhkRB(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 	}	
