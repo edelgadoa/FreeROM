@@ -93,13 +93,16 @@ for (int s=0; s<=i; s++){
 	
 	ConvRB[s] += Cint;
 }
+mpi(cout<<"conv Matrix"<<ConvRB[0]<<endl;)
 
 // Smagorinsky
 mpi(cout<<"Smago matrix"<<endl;)
 for (int s=0; s<Mbases; s++){
 	real[int, int] Sint(2*Nbases, 2*Nbases);
 	for (int j=0; j<=i; j++){
-		Sint(i,j) = innerprodX(BaseV[j][], BaseV[i][], SmagoPEM[s]);
+        real[int] BaseVj;
+        ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
+		Sint(i,j) = innerprodX(BaseVj, BaseVi, SmagoPEM[s]);
 		if(j<i){
 			Sint(j,i) = Sint(i,j);
 		}
@@ -107,7 +110,7 @@ for (int s=0; s<Mbases; s++){
 	}
 	SmagoRB[s] += Sint;
 }
-
+mpi(cout<<"Smago Matrix"<<SmagoRB[0]<<endl;)
 
 
 // LPS
