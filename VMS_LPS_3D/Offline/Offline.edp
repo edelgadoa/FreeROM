@@ -228,7 +228,7 @@ for (int i=0; i<Nbases; i++){
 	//
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseVel[i],BaseVelY[i],BaseVelZ[i],uu,uuY,uuZ,v,vY,vZ));
+	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
 	{
 		// matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
 		Mat ConvTemp = MatAVh3P2;

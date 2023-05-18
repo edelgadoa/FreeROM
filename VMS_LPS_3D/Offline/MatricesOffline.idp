@@ -74,20 +74,18 @@ mpi(cout<<"Convection matrix"<<endl;)
 for (int s=0; s<=i; s++){
 	real[int, int] Cint(2*Nbases, 2*Nbases);
 	Cint = ConvRB[s];
-	Mat ConvPEMs = MatAVh3P2;
-	ConvPEMs = ConvPEM[s];
 	for (int j=0; j<=i; j++){
         real[int] BaseVj;
         ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
-		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEMs);
+		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
 		if(j<i){
-			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEMs);
+			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
 		}
 		if (s==i && (j!=i)){
 			for (int k=0; k<s; k++){
                 real[int] BaseVk;
                 ChangeNumbering(MatAVh3P2, BaseV[k][], BaseVk);
-				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEMs);
+				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
 			}
 		} 
 	
@@ -101,6 +99,7 @@ mpi(cout<<"conv Matrix"<<ConvRB[0]<<endl;)
 mpi(cout<<"Smago matrix"<<endl;)
 for (int s=0; s<Mbases; s++){
 	real[int, int] Sint(2*Nbases, 2*Nbases);
+    Sint = SmagoRB[s];
 	for (int j=0; j<=i; j++){
         real[int] BaseVj;
         ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
@@ -110,7 +109,7 @@ for (int s=0; s<Mbases; s++){
 		}
 		
 	}
-	SmagoRB[s] += Sint;
+	SmagoRB[s] = Sint;
 }
 mpi(cout<<"Smago Matrix"<<SmagoRB[0]<<endl;)
 
