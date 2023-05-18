@@ -17,7 +17,9 @@ MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
 ///////////////////////////////////////////////////////
 Mat DiffPEM  = MatAVh3P2;
 Mat PenPEM = MatAVhP2;
-Mat DivPPEM, ConvLevPEM, DTPEM;
+Mat DivPPEM;
+Mat ConvLevPEM = MatAVh3P2;
+Mat DTPEM = MatAVh3P2;
 
 varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
 {
@@ -44,16 +46,18 @@ varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
 
 varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
 {
-	matrix ConvLevPEML = ConvLevPE(Vh3P2L,Vh3P2L);
-    Mat ConvLevPEMTemp = ConvLevPEML;
-	ConvLevPEM = ConvLevPEMTemp;
+	ConvLevPEM = ConvLevPE(Vh3P2L,Vh3P2L); 
+	//matrix ConvLevPEML = ConvLevPE(Vh3P2L,Vh3P2L);
+    //Mat ConvLevPEMTemp = ConvLevPEML;
+	//ConvLevPEM = ConvLevPEMTemp;
 }
 
 varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
 {
-	matrix DTPEML = DTPE(Vh3P2L,Vh3P2L);
-    Mat DTPEMTemp = DTPEML;
-	DTPEM = DTPEMTemp;
+	DTPEM = DTPE(Vh3P2L,Vh3P2L);
+	// matrix DTPEML = DTPE(Vh3P2L,Vh3P2L);
+    //Mat DTPEMTemp = DTPEML;
+	// DTPEM = DTPEMTemp;
 }
 
 /*

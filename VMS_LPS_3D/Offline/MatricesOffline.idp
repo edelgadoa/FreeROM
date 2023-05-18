@@ -23,9 +23,9 @@ for (int j=0; j<=i; j++){
     mpi(cout<<"2"<<endl;)
 	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
     mpi(cout<<"3"<<endl;)
-	// ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
+	ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
     mpi(cout<<"4"<<endl;)
-	// DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+	DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
     mpi(cout<<"5"<<endl;)
     PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
@@ -46,6 +46,11 @@ mpi(cout<< DiffRB<<endl;)
 pause;
 mpi(cout<< PenRB<<endl;)
 pause;
+mpi(cout<<ConvLevRB<<endl;)
+pause;
+mpi(cout<<DivPRB<<endl;)
+pause;
+mpi(cout<<DTRB<<endl;)
 
 
 // mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
