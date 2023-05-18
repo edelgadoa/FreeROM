@@ -70,6 +70,11 @@ func real normL2(real[int] &u){
 	return sqrt(result);
 }
 
+func real normL2mpi(real[int] &u){
+	real result = innerprodL2mpi(u,u);
+	return sqrt(result);
+}
+
 func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
 	real[int] Proy(u.n);
 	Proy = 0;
@@ -115,6 +120,6 @@ func real[int] OrtoL2mpi(real[int] &u, real[int,int] &M){
 		Proy += Pesc*M(:,j);
 		}
 	u -= Proy;
-	real[int] result = u / normL2(u);
+	real[int] result = u / normL2mpi(u);
 	return result;
 }
