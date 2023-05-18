@@ -18,10 +18,15 @@ for (int j=0; j<=i; j++){
 	ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
 		
 	// Matrices
+    mpi(cout<<"1"<<endl;)
 	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
+    mpi(cout<<"2"<<endl;)
 	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
-	ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
-	DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+    mpi(cout<<"3"<<endl;)
+	// ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
+    mpi(cout<<"4"<<endl;)
+	// DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+    mpi(cout<<"5"<<endl;)
     PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 	
