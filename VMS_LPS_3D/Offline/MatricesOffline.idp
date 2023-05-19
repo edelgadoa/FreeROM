@@ -118,19 +118,18 @@ mpi(cout<<"Smago Matrix"<<SmagoRB[0]<<endl;)
 mpi(cout<<"Stab matrix"<<endl;)
 for (int s=0; s<Taubases; s++){
 	real[int, int] LPSint(2*Nbases, 2*Nbases);
-	LPSint = 0;
+	LPSint = StabPRB[s];
 	for (int j=0; j<=i; j++){
-		LPSint(i + Nbases,j + Nbases) = innerprodX(BaseP[i][], BaseP[j][], StabPPEM[s]); //int2d(Th)(EIMTau[s]*(FPdX[i]*FPdX[j]+FPdY[i]*FPdY[j]));;
+        real[int] BasePj;
+        ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
+		LPSint(i + Nbases,j + Nbases) = innerprodX(BasePi, BasePj, StabPPEM[s]); 
 		if(j<i){
 			LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
 		}
 	}
-	// pause;
-	// mpiAllReduce(LPSintL, LPSintG, mpiCommWorld, mpiSUM);
-	
-	StabPRB[s] += LPSint;
+	StabPRB[s] = LPSint;
 }
-
+mpi(cout<<"LPS Matrix"<<StabPRB[0]<<endl;)
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){

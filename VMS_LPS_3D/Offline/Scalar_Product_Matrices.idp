@@ -60,26 +60,11 @@ varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
 	// DTPEM = DTPEMTemp;
 }
 
-/*
-varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
-matrix FiltroX, FiltroY;
-matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
-{
-	FiltroX = SPPEM2 * IPhDXP2;
-	FiltroX = (IPhDXP2') * FiltroX;
-	FiltroY = SPPEM2 * IPhDYP2;
-	FiltroY = (IPhDYP2') * FiltroY;	
-}
-matrix StabhkPEM = FiltroX + FiltroY;
-*/
+
 Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
-// {ConvPEM[0] = MatAVh3P2;} //Inicializo la estructura de la Mat PETSc
-
-
-
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
-// {SmagoPEM[0] = MatAVh3P2;}
+// VMS-SMAGO
 {
     for (int s=0; s<Mbases; s++){
         
@@ -89,6 +74,28 @@ Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
             Mat SmagoPEMtem(MatAVh3P2, SmagoPEML); // = SmagoPE(Vh3P2L,Vh3P2L);
             SmagoPEM[s] = SmagoPEMtem;
         }
+    }
+}
+
+// LPS-pressure
+{
+    for (int s=0; s<Taubases; s++){
+        
+		varf StabPPE(uP,vP) = int2d(Th)(EIMTau[s]*uP*vP);
+		matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
+		matrix FiltroX, FiltroY, FiltroZ;
+		{
+			FiltroX = SPPEM * IPhDXP2L;
+			FiltroX = (IPhDXP2L') * FiltroX;
+			FiltroY = SPPEM * IPhDYP2L;
+			FiltroY = (IPhDYP2L') * FiltroY;
+			FiltroZ = SPPEM * IPhDZP2L;
+			FiltroZ = (IPhDZP2L') * FiltroZ;	
+		}
+        matrix SPPEML = FiltroX + FiltroY;
+        SPPEML = SPPEML + FiltroZ;
+	    Mat StabPPEMtem(MatAVh3P2, SPPEML);
+        StabPPEM[s] =  StabPPEMtem;
     }
 }
 
