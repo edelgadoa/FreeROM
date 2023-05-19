@@ -71,13 +71,13 @@ VhP2L[int] BaseVelZ(Nbases);
 
 Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
-VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
+VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
 VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
-VhP1dc[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
-VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
-VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
+VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
+VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
+VhP1dcL[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(Vh3P2L.ndof, Nbases), MBaseP(VhP2L.ndof, Nbases);
@@ -220,11 +220,11 @@ for (int i=0; i<Nbases; i++){
 	//
 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
 	//
-	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
-	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
-	// FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	 FVdX[i][] = DXP2L*FBaseVel[i][]; FVdY[i][] = DYP2L*FBaseVel[i][]; FVdZ[i][] = DZP2L*FBaseVel[i][];
+	 FVYdX[i][] = DXP2L*FBaseVelY[i][]; FVYdY[i][] = DYP2L*FBaseVelY[i][]; FVYdZ[i][] = DZP2L*FBaseVelY[i][];
+	 FVZdX[i][] = DXP2L*FBaseVelZ[i][]; FVZdY[i][] = DYP2L*FBaseVelZ[i][]; FVZdZ[i][] = DZP2L*FBaseVelZ[i][];
 	//
-	// FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
+	//FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	//
 	
 	// Defino el nuevo producto escalar para la convección

@@ -133,15 +133,34 @@ for (int s=0; s<Taubases; s++){
 mpi(cout<<"LPS Matrix"<<StabPRB[0]<<endl;)
 
 // Matrices para el EIM de Smago
+// Matrices para el EIM de Smago
+int MbasesL;
 for (int s=0; s<Mbases; s++){
-   real[int,int] Dtk = GradPM[s];
+    real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
+    real[int,int] DtkL = GradPM[s];
+    
+    Dtk = 0;
    
-   Dtk(0,i) = FVdX[i][](PuntosMSmago(s)); Dtk(1,i) = FVdY[i][](PuntosMSmago(s)); Dtk(2,i) = FVdZ[i][](PuntosMSmago(s));
-   Dtk(3,i) = FVYdX[i][](PuntosMSmago(s)); Dtk(4,i) = FVYdY[i][](PuntosMSmago(s)); Dtk(5,i) = FVYdZ[i][](PuntosMSmago(s));
-   Dtk(6,i) = FVZdX[i][](PuntosMSmago(s)); Dtk(7,i) = FVZdY[i][](PuntosMSmago(s)); Dtk(8,i) = FVZdZ[i][](PuntosMSmago(s));
+    if (NumberPMSmago(s)>0){
+        DtkL(0,i) = FVdX[i][](PuntosMSmagoL(s));
+        DtkL(1,i) = FVdY[i][](PuntosMSmagoL(s));
+        DtkL(2,i) = FVdZ[i][](PuntosMSmagoL(s));
    
-   GradPM[s] = Dtk;
+        DtkL(3,i) = FVYdX[i][](PuntosMSmagoL(s));
+        DtkL(4,i) = FVYdY[i][](PuntosMSmagoL(s));
+        DtkL(5,i) = FVYdZ[i][](PuntosMSmagoL(s));
+   
+        DtkL(6,i) = FVZdX[i][](PuntosMSmagoL(s));
+        DtkL(7,i) = FVZdY[i][](PuntosMSmagoL(s));
+        DtkL(8,i) = FVZdZ[i][](PuntosMSmagoL(s));
+       
+        DtkL *= WeightPMSmago(s);
+    }
+    mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
+    GradPM[s] = Dtk;
 }
+
+cout<<GradPM<<endl;
 
 
 // Matrices para el EIM LPS (parte del levantamiento)

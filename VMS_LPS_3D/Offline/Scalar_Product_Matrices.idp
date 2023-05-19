@@ -101,25 +101,6 @@ mpi(cout<<"lps matrix PEM"<<endl;)
     }
 }
 
-
-
-// real[int,int] BaseVMPI(SmagoPEM[0].n, Nbases);
-// real[int,int] BaseV2D(Vh3P2L.ndof, Nbases);
-// for (int s=0;s<Nbases;s++){
-// 	BaseV2D(:,s) = BaseV[s][];
-// }
-// ChangeNumbering(SmagoPEM[0], BaseV2D, BaseVMPI); //pass from FreeFem numbering to PETSc numbering
-
-
-/*real[int,int] TEMP(0,0);
-MatMatMult(SmagoPEM[0], BaseVMPI, TEMP);
-real[int, int] TBaseV2D = BaseVMPI';
-// cout<<BaseVMPI.n<<endl;
-// cout<<TBaseV2D.n<<" "<<TBaseV2D.m<<"--"<<TEMP.n<<" "<<TEMP.m<<endl;
-real[int, int] innerprodL = TBaseV2D*TEMP;
-real[int, int] innerprod (innerprodL.n, innerprodL.m);
-mpiAllReduce(innerprodL, innerprod,  mpiCommWorld, mpiSUM);*/
-
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));
 real[int] bDiffPEv = bDiffPE(0, Vh3P2L);
 
