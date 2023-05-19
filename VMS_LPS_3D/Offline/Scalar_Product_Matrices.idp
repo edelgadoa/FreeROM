@@ -73,9 +73,9 @@ matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
 matrix StabhkPEM = FiltroX + FiltroY;
 */
 Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
-{
-    ConvPEM[0] = MatAVh3P2; //Inicializo la estructura de la Mat PETSc
-}
+
+{ConvPEM[0] = MatAVh3P2;} //Inicializo la estructura de la Mat PETSc
+
 
 
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
