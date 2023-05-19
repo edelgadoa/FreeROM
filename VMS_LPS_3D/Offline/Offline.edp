@@ -218,7 +218,7 @@ for (int i=0; i<Nbases; i++){
 	// Actualizo las soluciones filtradas
 	 FBaseV[i][] = IPh3P23P1L * BaseV[i][];
 	//
-	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
+	 FBaseVel[i][] = IPhP2P1L*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1L*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1L*BaseVelZ[i][];
 	//
 	 FVdX[i][] = DXP2L*FBaseVel[i][]; FVdY[i][] = DYP2L*FBaseVel[i][]; FVdZ[i][] = DZP2L*FBaseVel[i][];
 	 FVYdX[i][] = DXP2L*FBaseVelY[i][]; FVYdY[i][] = DYP2L*FBaseVelY[i][]; FVYdZ[i][] = DZP2L*FBaseVelY[i][];

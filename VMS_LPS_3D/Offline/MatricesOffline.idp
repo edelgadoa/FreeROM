@@ -133,7 +133,7 @@ for (int s=0; s<Taubases; s++){
 mpi(cout<<"LPS Matrix"<<StabPRB[0]<<endl;)
 
 // Matrices para el EIM de Smago
-// Matrices para el EIM de Smago
+
 int MbasesL;
 for (int s=0; s<Mbases; s++){
     real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
@@ -161,7 +161,7 @@ for (int s=0; s<Mbases; s++){
     GradPM[s] = Dtk;
 }
 
-cout<<GradPM<<endl;
+
 
 
 // Matrices para el EIM LPS (parte del levantamiento)
