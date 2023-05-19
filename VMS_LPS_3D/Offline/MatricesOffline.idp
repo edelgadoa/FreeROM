@@ -93,7 +93,7 @@ for (int s=0; s<=i; s++){
 	
 	ConvRB[s] = Cint;
 }
-mpi(cout<<"conv Matrix"<<ConvRB[0]<<endl;)
+cout<<"conv Matrix"<<ConvRB[0]<<endl;
 
 // Smagorinsky
 mpi(cout<<"Smago matrix"<<endl;)

@@ -78,6 +78,8 @@ Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 }
 
 // LPS-pressure
+
+mpi(cout<<"lps matrix PEM"<<endl;)
 {
     for (int s=0; s<Taubases; s++){
         
@@ -92,9 +94,9 @@ Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 			FiltroZ = SPPEM * IPhDZP2L;
 			FiltroZ = (IPhDZP2L') * FiltroZ;	
 		}
-        matrix SPPEML = FiltroX + FiltroY;
-        SPPEML = SPPEML + FiltroZ;
-	    Mat StabPPEMtem(MatAVh3P2, SPPEML);
+        matrix SPPEML = FiltroX + FiltroY + FiltroZ;
+        // SPPEML = SPPEML + FiltroZ;
+	    Mat StabPPEMtem(MatAVhP2, SPPEML);
         StabPPEM[s] =  StabPPEMtem;
     }
 }
