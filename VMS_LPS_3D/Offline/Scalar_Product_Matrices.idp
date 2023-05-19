@@ -74,20 +74,20 @@ matrix StabhkPEM = FiltroX + FiltroY;
 */
 Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
-{ConvPEM[0] = MatAVh3P2;} //Inicializo la estructura de la Mat PETSc
+// {ConvPEM[0] = MatAVh3P2;} //Inicializo la estructura de la Mat PETSc
 
 
 
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
-
+{SmagoPEM[0] = MatAVh3P2;}
 {
     for (int s=0; s<Mbases; s++){
-
+        
         varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
         {
-            Mat SmagoPEML = MatAVh3P2;
-            SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
-            SmagoPEM[s] = SmagoPEML;
+            matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
+            Mat SmagoPEMtem(MatVh3P2, SmagoPEML); // = SmagoPE(Vh3P2L,Vh3P2L);
+            SmagoPEM[s] = SmagoPEMtem;
         }
     }
 }
