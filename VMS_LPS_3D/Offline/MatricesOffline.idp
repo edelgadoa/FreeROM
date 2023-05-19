@@ -166,46 +166,60 @@ for (int s=0; s<Mbases; s++){
 
 // Matrices para el EIM LPS (parte del levantamiento)
 real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
-Ngk = 0; Nggk = 0;
+real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
+
+int TauBasesL;
 for (int s=0; s<Taubases; s++){ 
 
 	//real[int,int] Ngk = NUK[s];
-	VhP2 fvel, fvelY, fvelZ;
-	varf NG(un,v) = int3d(Th)(UporV(fvel, Lev)*v);
+	VhP2L fvel, fvelY, fvelZ;
+	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
 	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
-	real[int] ngaux = NG(0,VhP0);
-	Ngk(0,1+i) = ngaux(PuntosMTau(s));		
-
-	//Matriz simétrica
-	Ngk(1+i,0) = Ngk(0,1+i);
-
-	NUK[s] += Ngk;
-
+	
+    real[int] ngaux = NG(0,VhP0L);
+    
 	///////////////////////////////////////////////
 
 	//real[int,int] Nggk = NGUK[s];
 	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
-	varf NDG(un,v) = int3d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
+	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
 			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
 							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
 							  
 	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
 	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
 	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
-	
-	real[int] ndgaux = NDG(0,VhP0);
-	Nggk(0,1+i) = ndgaux(PuntosMTau(s));
-	//Matriz simétrica
-	Nggk(1+i,0) = Nggk(0,1+i);
+  
+    real[int] ndgaux = NDG(0,VhP0L);
+    
+    if (NumberPMTau(s)>0){
+	    NgkL(0,1+i) = ngaux(PuntosMTau(TauBasesL));		
 
+	    //Matriz simétrica
+	    NgkL(1+i,0) = NgkL(0,1+i);
+        
+        NgKL *= WeightPMTau(s);
+        //---
+        
+    	NggkL(0,1+i) = ndgaux(PuntosMTau(TauBasesL));
+    	//Matriz simétrica
+    	NggkL(1+i,0) = NggkL(0,1+i);
+        
+        NggKL *= WeightPMTau(s);
+        
+        TauBasesL++  
+    }
+    mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+    mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+    
+    NUK[s] += Ngk;
 	NGUK[s] += Nggk;
-
 }
 
-pause;
-
-
-for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
+/*
+{
+	//MATRICES DEL EIM 2
 	real[int,int] Ngk(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
 	real[int,int] Nggk(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
 	Ngk = 0; NgkG = 0;
@@ -257,7 +271,7 @@ for (int s=0; s<Taubases; s++){ 	//MATRICES DEL EIM 2
 	
 	NUK[s] += Ngk;
 	NGUK[s] += Nggk;
-}
+}*/
 
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
