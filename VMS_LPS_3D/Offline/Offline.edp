@@ -69,7 +69,7 @@ VhP2L[int] BaseVel(Nbases);
 VhP2L[int] BaseVelY(Nbases);
 VhP2L[int] BaseVelZ(Nbases);
 
-Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
 VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
@@ -216,7 +216,7 @@ for (int i=0; i<Nbases; i++){
 
 
 	// Actualizo las soluciones filtradas
-	// FBaseV[i][] = IPh3P23P1 * BaseV[i][];
+	 FBaseV[i][] = IPh3P23P1L * BaseV[i][];
 	//
 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
 	//

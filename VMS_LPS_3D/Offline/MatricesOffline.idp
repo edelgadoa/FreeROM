@@ -7,9 +7,10 @@
 
 // Inicializo las matrices locales para el paralelo
 include "Allocate_matrices_local.idp"
-real[int] BaseVi, BasePi;
+real[int] BaseVi, BasePi, FBaseVi;
 ChangeNumbering(MatAVh3P2, BaseV[i][], BaseVi);
 ChangeNumbering(MatAVhP2, BaseP[i][], BasePi);
+ChangeNumbering(MatAVh3P2, FBaseV[i][], FBaseVi);
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 for (int j=0; j<=i; j++){
@@ -101,9 +102,9 @@ for (int s=0; s<Mbases; s++){
 	real[int, int] Sint(2*Nbases, 2*Nbases);
     Sint = SmagoRB[s];
 	for (int j=0; j<=i; j++){
-        real[int] BaseVj;
-        ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
-		Sint(i,j) = innerprodX(BaseVj, BaseVi, SmagoPEM[s]);
+        real[int] FBaseVj;
+        ChangeNumbering(MatAVh3P2, FBaseV[j][], FBaseVj);
+		Sint(i,j) = innerprodX(FBaseVi, FBaseVj, SmagoPEM[s]);
 		if(j<i){
 			Sint(j,i) = Sint(i,j);
 		}
