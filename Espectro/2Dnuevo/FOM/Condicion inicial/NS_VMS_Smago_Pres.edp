@@ -19,7 +19,7 @@ include "../../Auxiliary/Macros_2D.idp"
 // Creamos la malla
 // include "../../Auxiliary/CuadradoNxNy.idp"
 
-int NN = 64;
+int NN = 32;
 mesh Th=square(NN,NN,flags=0);
 
 
@@ -81,11 +81,21 @@ VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CO
 VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-T0 = 0.;
-real TF = 10.;
+T0 = 5.;
+real TF = 5.;
 
 Reynolds = 8500;
 uEF = uEF0; uEFY = uEF0Y; uEFP = 0.;
+
+if(T0>0){
+	readvector("../../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
+	uEF[] = SolX;
+	readvector("../../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
+	uEFY[] = SolY;
+	readvector("../../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
+	uEFP[] = SolP;		
+}
+
 for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	write("Output.txt","t = " + ti,0,1);
     include "FE_VMS_2D.idp"
@@ -97,15 +107,11 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 }
 
 // Dibujamos la solucion, con levantamiento 
-
-
-plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
-plot(uEFP, cmm="FE pres para Re="+Reynolds);
-
-VhP2 uEFL, uEFLY, uEFLP;
+VhP2 uEFL, uEFLY;
+VhP1 uEFLP;
 uEFL[]=uEF[] + Lev[];
 uEFLY[]=uEFY[] + LevY[];
-uEFLP[]=uEFP[] + LevP[];
+uEFLP[]=uEFP[] + LevP[]; //**Esto da error
 
 plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
 plot(uEFLP, cmm="FE pres para Re="+Reynolds);

@@ -64,6 +64,7 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	uEF = uT;
 	uEFY = uTY;
 	uEFP = uTP; 
+	
 	// Calculamos el error cometido (en velocidad)
 	VhP2 errEF, errEFY;
 	errEF = uEF - uEFp;
