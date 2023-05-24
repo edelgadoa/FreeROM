@@ -3,6 +3,12 @@ load "dfft"
 ///////////////////////////////////////////////////////////////////////////////
 // Calculo de la energía 
 
+func complex conjugate(complex v)
+{
+	complex result=real(v)-1i*imag(v);
+	return result;
+}
+
 func real uporu(complex & v)
 {
 	complex vcon=conjugate(v);
@@ -58,7 +64,7 @@ func real[int] energyk2d(real[int] & Energy, int nx, int ny)
                 module=sqrt(k1^2+k2^2);
                 // cout << module << ", " << l << endl;
                 l=module;
-                energykbycrownsL[l]+=Energy[k1+nx*k2+nx*ny*k3];
+                energykbycrownsL[l]+=Energy[k1+nx*k2];
             }
             cont++;
 		}

@@ -1,0 +1,10 @@
+#!/bin/bash
+echo 'Numero de procesadores:'
+read NP
+
+nameedp="NS_VMS_Smago_Pres.edp"
+
+verbosity=0
+
+rm freefem++.pref
+ff-mpirun -np $NP ./$nameedp -glut ffglut

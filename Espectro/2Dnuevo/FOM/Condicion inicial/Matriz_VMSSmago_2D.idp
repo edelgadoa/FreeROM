@@ -1,0 +1,42 @@
+///////////////
+// FreeROM 
+///////////////
+
+///////////////////////////////////
+//Matriz SMAGORINSKY filtrada
+///////////////////////////////////	
+
+Gr = MOD(uEF);
+
+Vh3P1dc [Levf,LevfY,LevfP];
+VhP2 Levaux; //en principio no lo necesito
+
+varf FVSmago([uu,uuY,pun],[v,vY,qun]) = int2d(Th)((CS*hTriangle)^2*Gr*UporV(uu,v));
+//varf FVSmagob([uu,uuY,pun],[v,vY,qun]) = -int2d(Th)((CS*hTriangle)^2*Gr*UporV(Levf,v));
+
+matrix M = FVSmago(Vh3P1dc,Vh3P1dc);
+// real[int] bSx(Vh3P2.ndof), bSy(Vh3P2.ndof);
+
+matrix DXX,DYY;
+{
+	//COMPONENTE X
+	DXX = (DX3P2IPh')*M;
+	DXX = DXX*DX3P2IPh;
+	
+	//Levf[] = DX3P2IPh*Lev[]; //seg miembro x
+	//real[int] bS = FVSmagob(0,Vh3P1dc);
+	//bSx = (DX3P2IPh')*bS;
+	
+	//COMPONENTE Y
+	DYY = (DY3P2IPh')*M;
+	DYY = DYY*DY3P2IPh;
+	
+	//Levf[] = DY3P2IPh*Lev[]; //seg miembro y
+	//bS = FVSmagob(0,Vh3P1dc);
+	//bSy = (DY3P2IPh')*bS;
+}
+
+Smago = DXX + DYY;
+
+//bSmago = bSx + bSy;
+
