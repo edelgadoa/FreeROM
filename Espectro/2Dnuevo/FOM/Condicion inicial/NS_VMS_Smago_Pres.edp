@@ -1,0 +1,100 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago. 
+// Elemento Finito P2-P2 (no estable) en vel-pres 
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros
+include "../../Auxiliary/Macros_2D.idp"
+
+// Creamos la malla
+// include "../../Auxiliary/CuadradoNxNy.idp"
+
+int NN = 32;
+mesh Th;
+Th=square(NN,NN,flags=0);
+
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../../Auxiliary/Parametros_2D.idp"
+
+// Incluimos el levantamiento
+// include "Levantamiento.idp"
+
+/////////////////////////////////////////////
+/// Establecemos la CI para EF: Cavidad 2D///
+/////////////////////////////////////////////
+
+// Cargamos el modulo para hacer transformadas
+include "../../Auxiliary/fourier.idp"
+
+
+VhP1 <complex> ZZ,zz;
+
+// Creamos el espectro artificialmente
+real module;
+for(int k=-NN/2;k<=NN/2;k++)
+{
+	for(int l=-NN/2;l<=NN/2;l++)
+	{
+		module=k^2+l^2;
+		if(sqrt(module)<1-1.e-3)
+		{
+			ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)]=0.;
+		}
+		else
+		{
+			ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)]=module^(-(alpha+1)/2);
+		}
+	}
+}
+
+// Calculamos la transformada inversa
+zz[] = dfft(ZZ[],NN+1,1);
+
+VhP1 uEF0,uEF0Y;
+uEF0=real(zz);
+uEF0Y=real(zz(y,x));
+plot(uEF0);
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+VhP2 uEF, uEFY;
+
+Vh3P1dc [Lev,LevY,LevP];
+
+VhP1 uEFP;
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+T0 = 0.;
+real TF = 15.;
+
+Reynolds = 8500;
+uEF = uEF0; uEFY = uEF0Y; uEFP = 0.;
+for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
+    cout << "t = " << ti << endl;
+    include "FE_VMS_2D.idp"
+    // plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
+}
+
+// Dibujamos la solucion, 
+plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
+plot(uEFP, cmm="FE pres para Re="+Reynolds);

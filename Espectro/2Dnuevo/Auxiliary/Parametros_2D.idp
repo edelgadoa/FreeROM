@@ -1,0 +1,32 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Parametros a usar durante la ejecucion del codigo
+// Parametros del modelo VMS-Smago con LPS en la presion
+real CS=0.18; // Smago
+
+// Parametros mu
+real Reynolds;
+real Remin = 1000;
+real Remax = 16000;
+real dtRe= 625;
+real  niRe=(Remax-Remin)/dtRe+1.;
+real Refijo=(Remax+Remin)/2.;
+
+// Parametros para el problema de EF
+real epspen = 1e-8;
+real dt=1./32*10;
+real dtsave=dt;
+real T=30.;
+real T0=15.;
+real errEF=10.,epsEF=1.e-11,errBR=10.,epsBR=epsEF;
+int nEF=(T-T0)/dtsave,nBR=nEF;
+real ERROR;
+int niterEF = 10;
+
+// Parametros para el espectro
+real hTri=sqrt(2)/NN;
+real k1=5,k2=NN/2;//256/2,
+real kc=1./hTri;
+real alpha = 5/3;
