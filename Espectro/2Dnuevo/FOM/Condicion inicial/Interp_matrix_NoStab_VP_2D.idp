@@ -30,7 +30,7 @@ matrix IPhP2P1, IPh3P23P1, IPhP1dcP1, IPh2P22P1;
 			IdP1dc = faux1[];
             VhP1 fauxp1 = 1.;
             IdP1 = fauxp1[];
-			Id3P2=[[IdP2, 0, 0],[0, IdP2, 0],[0, 0, IdP2]];
+			Id3P2=[[IdP2, 0, 0],[0, IdP2, 0],[0, 0, IdP1]];
 			Id2P2=[[IdP2, 0],[0, IdP2]];
 		}
 		

@@ -92,7 +92,7 @@ uEF = uEF0; uEFY = uEF0Y; uEFP = 0.;
 for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
     cout << "t = " << ti << endl;
     include "FE_VMS_2D.idp"
-    // plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
+    plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
 }
 
 // Dibujamos la solucion, 
