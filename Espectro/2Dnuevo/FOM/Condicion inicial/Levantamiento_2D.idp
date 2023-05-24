@@ -1,0 +1,29 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa para definir el levantamiento de frontera
+
+func G = 0.;
+
+Vh3P2 [Lev, LevY, LevP];
+Vh2P2 [LevV, LevVY];
+VhP2 GP2 = G;
+VhP2 GzeroP2 = 0.;
+
+[Lev, LevY, LevP] = [GP2, GzeroP2, GzeroP2];
+[LevV, LevVY] = [GP2, GzeroP2];
+
+// Filtro el levantamiento y lo derivo
+VhP1dc FLevdX, FLevdY, FLevYdX, FLevYdY;
+
+{
+	FLevdX[] = DXP2IPh * GP2[]; FLevdY[] = DYP2IPh * GP2[];
+	FLevYdX[] = DXP2IPh * GzeroP2[]; FLevYdY[] = DYP2IPh * GzeroP2[];
+}
+
+
+// Levantamiento filtrado
+
+Vh2P2 [FLev, FLevY];
+FLev[] = IPh2P22P1 * LevV[];

@@ -1,0 +1,10 @@
+#!/bin/bash
+echo 'Numero de procesadores:'
+read NP
+
+nameedp="Espectro.edp"
+
+verbosity=0
+
+rm freefem++.pref
+ff-mpirun -np $NP ./$nameedp -glut ffglut

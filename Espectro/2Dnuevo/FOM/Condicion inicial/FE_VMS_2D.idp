@@ -14,8 +14,8 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
-	uprevL = uEF;
-	uprevLY = uEFY;
+	uprevL = uEF + Lev;
+	uprevLY = uEFY + LevY;
 	
 	{
 		VhP2 udcAux;
@@ -37,7 +37,7 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
-	// real[int] bSmago(Vh3P2.ndof);
+	real[int] bSmago(Vh3P2.ndof);
 	
 	include "Matriz_VMSSmago_2D.idp"
 	
@@ -50,7 +50,7 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	
 	bFinal = bFija;
 	bFinal += bNS;
-	// bFinal += bSmago;
+	bFinal += bSmago;
 
 	set(MFinal, solver=sparsesolver);
 	

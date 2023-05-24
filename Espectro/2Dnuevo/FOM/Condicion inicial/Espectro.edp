@@ -1,0 +1,31 @@
+// Espectro
+
+// Cargamos macros
+include "../../Auxiliary/IO.idp"
+include "../../Auxiliary/Macros_2D.idp"
+
+int NN = 64;
+mesh Th=square(NN,NN,flags=0);
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Cargamos el modulo para hacer transformadas
+include "../../Auxiliary/fourier.idp"
+
+real Reynolds = 8500;
+real ti = 15.;
+readvector("../../Snapshots/Vx_" + Reynolds +  "_t_" +ti+ ".txt", real, SX, 0);
+readvector("../../Snapshots/Vy_" + Reynolds +  "_t_" +ti+ ".txt", real, SY, 0);
+
+VhP2 uEF, uEFY;
+uEF[] = SX;
+uEFY[] = SY;
+
+VhP1 <complex> uEFc, uEFcY, auxc = 0.;
+uEFc = uEF+auxc;
+uEFcY = uEFY+auxc;
+
+real[int] energyk = espectro2D(uEFc[], uEFcY[], NN+1);
+
+write("../../Snapshots/Espectro_inicial.txt", energyk, 0, 0);

@@ -13,14 +13,14 @@
 load "iovtk" 
 
 // Cargamos macros
+include "../../Auxiliary/IO.idp"
 include "../../Auxiliary/Macros_2D.idp"
 
 // Creamos la malla
 // include "../../Auxiliary/CuadradoNxNy.idp"
 
-int NN = 32;
-mesh Th;
-Th=square(NN,NN,flags=0);
+int NN = 64;
+mesh Th=square(NN,NN,flags=0);
 
 
 // Definimos los espacios de EF 
@@ -33,7 +33,7 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 include "../../Auxiliary/Parametros_2D.idp"
 
 // Incluimos el levantamiento
-// include "Levantamiento.idp"
+include "Levantamiento_2D.idp"
 
 /////////////////////////////////////////////
 /// Establecemos la CI para EF: Cavidad 2D///
@@ -69,32 +69,43 @@ zz[] = dfft(ZZ[],NN+1,1);
 VhP1 uEF0,uEF0Y;
 uEF0=real(zz);
 uEF0Y=real(zz(y,x));
-plot(uEF0);
+// plot(uEF0);
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
 
 VhP2 uEF, uEFY;
-
-Vh3P1dc [Lev,LevY,LevP];
-
 VhP1 uEFP;
 VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
 VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 T0 = 0.;
-real TF = 15.;
+real TF = 10.;
 
 Reynolds = 8500;
 uEF = uEF0; uEFY = uEF0Y; uEFP = 0.;
 for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
-    cout << "t = " << ti << endl;
+	write("Output.txt","t = " + ti,0,1);
     include "FE_VMS_2D.idp"
-    // plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
+
+	// Guardamos los snapshots 
+	write("../../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+	write("../../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);	
+	write("../../Snapshots/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
 }
 
-// Dibujamos la solucion, 
+// Dibujamos la solucion, con levantamiento 
+
+
 plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
 plot(uEFP, cmm="FE pres para Re="+Reynolds);
+
+VhP2 uEFL, uEFLY, uEFLP;
+uEFL[]=uEF[] + Lev[];
+uEFLY[]=uEFY[] + LevY[];
+uEFLP[]=uEFP[] + LevP[];
+
+plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
+plot(uEFLP, cmm="FE pres para Re="+Reynolds);
