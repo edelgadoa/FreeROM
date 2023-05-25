@@ -189,7 +189,7 @@ for (int s=0; s<Mbases; s++){
         real[int] ndgaux = NDG(0,VhP0L);
     
         if (NumberPMTau(s)>0){
-    	    NgkL(0,1+i) = ngaux(PuntosMTau(TauBasesL));		
+    	    NgkL(0,1+i) = ngaux(PuntosMTauL(TauBasesL));		
 
     	    //Matriz simétrica
     	    NgkL(1+i,0) = NgkL(0,1+i);
@@ -198,7 +198,7 @@ for (int s=0; s<Mbases; s++){
         
             ////--------------///////
         
-        	NggkL(0,1+i) = ndgaux(PuntosMTau(TauBasesL));
+        	NggkL(0,1+i) = ndgaux(PuntosMTauL(TauBasesL));
         	//Matriz simétrica
         	NggkL(1+i,0) = NggkL(0,1+i);
         
@@ -255,7 +255,7 @@ for (int s=0; s<Mbases; s++){
         
     		if (NumberPMTau(s)>0){	
             
-                NgkL(1+i,1+j) = ngaux(PuntosMTau(TauBasesL));				
+                NgkL(1+i,1+j) = ngaux(PuntosMTauL(TauBasesL));				
         		if(j<i){
         			NgkL(1+j,1+i) = Ngk(1+i,1+j);
         		}
@@ -263,7 +263,7 @@ for (int s=0; s<Mbases; s++){
                 NgkL *= WeightPMTau(s);
         		/////-----------////
 		
-        		NggkL(1+i,1+j) = ndgaux(PuntosMTau(TauBasesL));		
+        		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(TauBasesL));		
         		if(j<i){
         			NggkL(1+j,1+i) = Nggk(1+i,1+j);
         		}
@@ -285,9 +285,9 @@ for (int s=0; s<Mbases; s++){
 
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
-real[int] LevVB FLevVB;
+real[int] LevVB, FLevVB;
 ChangeNumbering(MatAVh3P2, LevV[],LevVB);
-ChangeNumbering(MatAVh3P2, FLevV[], FLevVB);
+ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
 bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
 bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
 

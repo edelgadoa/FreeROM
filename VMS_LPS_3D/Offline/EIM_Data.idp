@@ -54,7 +54,8 @@ set(MEIMTau, solver=UMFPACK);
 
 //Cargo los Puntos Magicos Tau y los paso a local para trabajar con ellos
 readvector("../EIM/EIM_LPS/Bases_EIM/TintEIM_LPS.txt", int, PuntosMTau, 0);
-int[int] PuntosMSTauL = MagicPointG2L(mapVhP1dc, PuntosMTau); // Vector local de Puntos magicos
+int[int] PuntosMTauL = MagicPointG2L(mapVhP1dc, PuntosMTau); // Vector local de Puntos magicos
+cout<<PuntosMTauL<<endl;
 real[int] NumberPMTau = NumberMagicPoint(mapVhP1dc, PuntosMTau); // 1: esta en proc, 0: no esta en proc
 real[int] WeightPMTau = WeightMagicPoint(NumberPMTau); //Pesos de cada Magic Point
 
