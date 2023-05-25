@@ -165,29 +165,30 @@ for (int s=0; s<Mbases; s++){
     Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
 
     int TauBasesL;
+    
+	//real[int,int] Ngk = NUK[s];
+	VhP2L fvel, fvelY, fvelZ;
+	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
+	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
+
+    real[int] ngaux = NG(0,VhP0L);
+
+	///////////////////////////////////////////////
+
+	//real[int,int] Nggk = NGUK[s];
+	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
+	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
+			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
+							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
+						  
+	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
+	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+
+    real[int] ndgaux = NDG(0,VhP0L);
+    
     for (int s=0; s<Taubases; s++){ 
-
-    	//real[int,int] Ngk = NUK[s];
-    	VhP2L fvel, fvelY, fvelZ;
-    	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
-    	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
-	
-        real[int] ngaux = NG(0,VhP0L);
-    
-    	///////////////////////////////////////////////
-
-    	//real[int,int] Nggk = NGUK[s];
-    	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
-    	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
-    			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
-    							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
-							  
-    	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-    	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-    	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
-  
-        real[int] ndgaux = NDG(0,VhP0L);
-    
+   
         if (NumberPMTau(s)>0){
     	    NgkL(0,1+i) = ngaux(PuntosMTau(TauBasesL));		
 
@@ -220,38 +221,41 @@ for (int s=0; s<Mbases; s++){
     real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
     Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
     
+    
+	for (int j=0; j<=i; j++){ 
+
+		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
+		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
+	
+		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
+		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
+	
+		real[int] ngaux = NGL(0,VhP0L);
+    
+    
+        ///////////////////////////////////////////
+    
+		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
+			   DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
+	
+	    varf NDG(un,v) = int3d(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1 
+			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
+								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
+	
+	
+		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
+		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+	
+		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
+		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
+		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
+	
+		real[int] ndgaux = NDG(0,VhP0L);
+    
     int TauBasesL;
     for (int s=0; s<Taubases; s++){
-    	for (int j=0; j<=i; j++){ 
-
-    		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
-    		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
-		
-    		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
-    		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
-		
-    		real[int] ngaux = NGL(0,VhP0L);
-        
-        
-            ///////////////////////////////////////////
-        
-    		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
-    			   DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
-		
-    	    varf NDG(un,v) = int3d(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1 
-    			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
-    								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
-		
-		
-    		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-    		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-    		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
-		
-    		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
-    		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
-    		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
-		
-    		real[int] ndgaux = NDG(0,VhP0L);
+    	
         
     		if (NumberPMTau(s)>0){	
             
