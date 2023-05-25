@@ -19,15 +19,10 @@ for (int j=0; j<=i; j++){
 	ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
 		
 	// Matrices
-    mpi(cout<<"1"<<endl;)
 	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
-    mpi(cout<<"2"<<endl;)
 	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
-    mpi(cout<<"3"<<endl;)
 	ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
-    mpi(cout<<"4"<<endl;)
 	DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
-    mpi(cout<<"5"<<endl;)
     PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 	
@@ -163,116 +158,130 @@ for (int s=0; s<Mbases; s++){
 
 
 
+{
+    // Matrices para el EIM LPS (parte del levantamiento)
+    real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
+    real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+    Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
 
-// Matrices para el EIM LPS (parte del levantamiento)
-real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
-real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
-Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
+    int TauBasesL;
+    for (int s=0; s<Taubases; s++){ 
 
-int TauBasesL;
-for (int s=0; s<Taubases; s++){ 
-
-	//real[int,int] Ngk = NUK[s];
-	VhP2L fvel, fvelY, fvelZ;
-	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
-	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
+    	//real[int,int] Ngk = NUK[s];
+    	VhP2L fvel, fvelY, fvelZ;
+    	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
+    	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
 	
-    real[int] ngaux = NG(0,VhP0L);
+        real[int] ngaux = NG(0,VhP0L);
     
-	///////////////////////////////////////////////
+    	///////////////////////////////////////////////
 
-	//real[int,int] Nggk = NGUK[s];
-	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
-	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
-			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
-							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
+    	//real[int,int] Nggk = NGUK[s];
+    	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
+    	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ 
+    			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
+    							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
 							  
-	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+    	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
+    	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+    	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
   
-    real[int] ndgaux = NDG(0,VhP0L);
+        real[int] ndgaux = NDG(0,VhP0L);
     
-    if (NumberPMTau(s)>0){
-	    NgkL(0,1+i) = ngaux(PuntosMTau(TauBasesL));		
+        if (NumberPMTau(s)>0){
+    	    NgkL(0,1+i) = ngaux(PuntosMTau(TauBasesL));		
 
-	    //Matriz simétrica
-	    NgkL(1+i,0) = NgkL(0,1+i);
+    	    //Matriz simétrica
+    	    NgkL(1+i,0) = NgkL(0,1+i);
         
-        NgKL *= WeightPMTau(s);
+            NgkL *= WeightPMTau(s);
         
-        ////--------------///////
+            ////--------------///////
         
-    	NggkL(0,1+i) = ndgaux(PuntosMTau(TauBasesL));
-    	//Matriz simétrica
-    	NggkL(1+i,0) = NggkL(0,1+i);
+        	NggkL(0,1+i) = ndgaux(PuntosMTau(TauBasesL));
+        	//Matriz simétrica
+        	NggkL(1+i,0) = NggkL(0,1+i);
         
-        NggKL *= WeightPMTau(s);
+            NggkL *= WeightPMTau(s);
         
-        TauBasesL++  
-    }
-    mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
-    mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+            TauBasesL++  
+        }
+        mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+        mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
     
-    NUK[s] += Ngk;
-	NGUK[s] += Nggk;
+        NUK[s] += Ngk;
+    	NGUK[s] += Nggk;
+    }
 }
 
-/*
 {
-	//MATRICES DEL EIM 2
+	// Matrices para el EIM LPS (Funciones de base)
 	real[int,int] Ngk(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
 	real[int,int] Nggk(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
-	Ngk = 0; NgkG = 0;
-	Nggk = 0; NggkG = 0;
-	for (int j=0; j<=i; j++){ 
+	Ngk = 0; NgkG = 0; Nggk = 0; NggkG = 0;
+    
+    int TauBasesL;
+    for (int s=0; s<Taubases; s++){
+    	for (int j=0; j<=i; j++){ 
 
-		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
-		varf NGL(un,v) = int3d(Th)(UporV(fvel,ffvel)*v);
+    		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
+    		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
 		
-		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
-		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
+    		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
+    		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
 		
-		real[int] ngaux = NGL(0,VhP0);
-		Ngk(1+i,1+j) = ngaux(PuntosMTau(s));
+    		real[int] ngaux = NGL(0,VhP0L);
+        
+        
+            ///////////////////////////////////////////
+        
+    		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
+    			   DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
 		
-							
-		if(j<i){
-			Ngk(1+j,1+i) = Ngk(1+i,1+j);
-		}
+    	    varf NDG(un,v) = int3d(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1 
+    			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
+    								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
+		
+		
+    		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
+    		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+    		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+		
+    		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
+    		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
+    		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
+		
+    		real[int] ndgaux = NDG(0,VhP0L);
+        
+    		if (NumberPMTau(s)>0){	
+            
+                NgkL(1+i,1+j) = ngaux(PuntosMTau(TauBasesL));				
+        		if(j<i){
+        			NgkL(1+j,1+i) = Ngk(1+i,1+j);
+        		}
+	            
+                NgkL *= WeightPMTau(s);
+        		/////-----------////
+		
+        		NggkL(1+i,1+j) = ndgaux(PuntosMTau(TauBasesL));		
+        		if(j<i){
+        			NggkL(1+j,1+i) = Nggk(1+i,1+j);
+        		}
+                NggkL *= WeightPMTau(s);
+            
+                TauBasesL++;
+            }
+		
+
+    	}
+    
+        mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+        mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
 	
-
-		///////////////////////////////////////////////
-		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
-			   DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
-		
-	    varf NDG(un,v) = int3d(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1 
-			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
-								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
-		
-		
-		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
-		
-		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
-		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
-		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
-		
-		real[int] ndgaux = NDG(0,VhP0L);
-		Nggk(1+i,1+j) = ndgaux(PuntosMTau(s));
-		
-		if(j<i){
-			Nggk(1+j,1+i) = Nggk(1+i,1+j);
-		}
-		
-
-	}
-
-	
-	NUK[s] += Ngk;
-	NGUK[s] += Nggk;
-}*/
+	    NUK[s] += Ngk;
+	    NGUK[s] += Nggk;
+    }
+}
 
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
