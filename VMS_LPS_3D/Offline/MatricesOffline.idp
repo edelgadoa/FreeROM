@@ -300,4 +300,6 @@ for (int s=0; s<Mbases; s++){
 		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
 }
 
+
 mpi(cout<<"bsmago"<<endl<<bSmagoRB<<endl;)
+
