@@ -204,7 +204,7 @@ for (int s=0; s<Mbases; s++){
         
             NggkL *= WeightPMTau(s);
         
-            TauBasesL++  
+            TauBasesL++;  
         }
         mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
         mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
@@ -216,9 +216,9 @@ for (int s=0; s<Mbases; s++){
 
 {
 	// Matrices para el EIM LPS (Funciones de base)
-	real[int,int] Ngk(Nbases+1, Nbases+1), NgkG(Nbases+1, Nbases+1);
-	real[int,int] Nggk(Nbases+1, Nbases+1), NggkG(Nbases+1, Nbases+1);
-	Ngk = 0; NgkG = 0; Nggk = 0; NggkG = 0;
+    real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
+    real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+    Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
     
     int TauBasesL;
     for (int s=0; s<Taubases; s++){
@@ -285,10 +285,13 @@ for (int s=0; s<Mbases; s++){
 
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
-bDiffRB(i) = innerprodX(BaseV[i][], LevV[], DiffPEM);
-bConvRB(i) = innerprodX(BaseV[i][], LevV[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
+real[int] LevVB FLevVB;
+ChangeNumbering(MatAVh3P2, LevV[],LevVB);
+ChangeNumbering(MatAVh3P2, FLevV[], FLevVB);
+bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
+bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
 
 for (int s=0; s<Mbases; s++){
-		bSmagoRB(s,i) = innerprodX(FBaseV[i][], FLev[], SmagoPEM[s]);
+		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
 }
 
