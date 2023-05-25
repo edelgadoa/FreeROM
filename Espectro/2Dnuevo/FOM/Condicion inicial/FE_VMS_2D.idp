@@ -14,16 +14,16 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
-	uprevL = uEF + Lev;
-	uprevLY = uEFY + LevY;
+	uprev = uEF;
+	uprevY = uEFY;
 	
 	{
-		VhP2 udcAux;
-		udcAux[] = IPhP2P1*uprevL[];
+		VhP2per udcAux;
+		udcAux[] = IPhP2P1*uprev[];
 		uEFdX[] = DXP2*udcAux[];
 		uEFdY[] = DYP2*udcAux[];
 
-		udcAux[] = IPhP2P1*uprevLY[];
+		udcAux[] = IPhP2P1*uprevY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
 	
@@ -31,44 +31,39 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
-	real[int] bNS(Vh3P2.ndof);
+	real[int] bNS(Vh3P2per.ndof);
 	
 	include "Matrices_variables_NS_2D.idp"
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
-	real[int] bSmago(Vh3P2.ndof);
 	
 	include "Matriz_VMSSmago_2D.idp"
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
-	real[int] bFinal(Vh3P2.ndof);
+	real[int] bFinal(Vh3P2per.ndof);
 	MFinal = MFija;
 	MFinal += MNS;
  	MFinal += Smago;
 	
 	bFinal = bFija;
 	bFinal += bNS;
-	bFinal += bSmago;
 
 	set(MFinal, solver=sparsesolver);
 	
-	VhP2 uEFp, uEFpY, uEFpP; // guardamos la iteración anterior para calcular el error
+	Vh3P2per [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
 
 	uEFp[]=uEF[];
 	
-	Vh3P2 [uT, uTY, uTP];
+	Vh3P2per [uT, uTY, uTP];
 	uT[]=MFinal^-1*bFinal;
 	
-	uEF = uT;
-	uEFY = uTY;
-	uEFP = uTP; 
+	[uEF,uEFY,uEFP] = [uT,uTY,uTP];
 	
 	// Calculamos el error cometido (en velocidad)
-	VhP2 errEF, errEFY;
-	errEF = uEF - uEFp;
-	errEFY = uEFY - uEFpY;
+	Vh2P2per [errEF, errEFY];
+	[errEF,errEFY] = [uEF - uEFp,uEFY - uEFpY];
 	
 	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
 	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));

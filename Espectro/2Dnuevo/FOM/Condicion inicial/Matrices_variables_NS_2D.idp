@@ -12,5 +12,5 @@ varf FVNS ([uu,uuY,uuP],[v,vY,vP])= int2d(Th)(Antisimetric(uEF, uu, v))
 								  + int2d(Th)((1./dt)*(uEF*v + uEFY*vY));
 				
 						
-MNS = FVNS(Vh3P2,Vh3P2);
-bNS = FVNS(0,Vh3P2);
+MNS = FVNS(Vh3P2per,Vh3P2per);
+bNS = FVNS(0,Vh3P2per);
