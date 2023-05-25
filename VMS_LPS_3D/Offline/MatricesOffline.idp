@@ -285,6 +285,9 @@ for (int s=0; s<Mbases; s++){
     }
 }
 
+mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
+mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
+
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
 real[int] LevVB, FLevVB;
@@ -297,3 +300,4 @@ for (int s=0; s<Mbases; s++){
 		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
 }
 
+mpi(cout<<"bsmago"<<endl<<bSmagoRB<<endl;)
