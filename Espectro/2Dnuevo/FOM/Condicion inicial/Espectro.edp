@@ -38,8 +38,8 @@ uEF2c = uEF2+aux2c;
 uEF2cY = uEF2Y+aux2c;
 
 
-real[int] energyk = espectro2D(uEFc[], uEFcY[], NN+1);
+real[int] energyk = espectro2DDFFT(uEFc[], uEFcY[], NN+1);
 write("../../Snapshots/Espectro_inicial.txt", energyk, 0, 0);
 
-real[int] energyk2 = espectro2D(uEF2c[], uEF2cY[], NN2+1);
+real[int] energyk2 = espectro2DDFFT(uEF2c[], uEF2cY[], NN2+1);
 write("../../Snapshots/Espectro_inicial2.txt", energyk2, 0, 0);

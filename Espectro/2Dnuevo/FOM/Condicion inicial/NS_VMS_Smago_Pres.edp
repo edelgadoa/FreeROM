@@ -21,7 +21,9 @@ include "../../Auxiliary/macro_ddm.idp"
 // include "../../Auxiliary/CuadradoNxNy.idp"
 
 int NN = 32;
-mesh Th=square(NN,NN,flags=0);
+real x01 = -0.5, x11 = 0.5;
+real y01 = -0.5, y11 = 0.5;
+mesh Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
 
 
 // Definimos los espacios de EF 
@@ -49,7 +51,7 @@ for(int k=-NN/2;k<=NN/2;k++)
 	for(int l=-NN/2;l<=NN/2;l++)
 	{
 		module=sqrt(k^2+l^2);
-		if(sqrt(module)<1-1.e-3)
+		if(sqrt(module)<1)
 		{
 			ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)]=0.;
 		}
@@ -60,15 +62,8 @@ for(int k=-NN/2;k<=NN/2;k++)
 	}
 }
 
-VhP1 zr;
 // Calculamos la transformada inversa
-zz[] = dfft(ZZ[],NN+1,1);
-zr = real(zz);
-plot(zr,zr);
-
 zz[]=DFFT2d(ZZ[],1,NN/2);
-zr = real(zz);
-plot(zr,zr);
 
 VhP1 uEF0,uEF0Y;
 uEF0=real(zz);
@@ -84,8 +79,8 @@ VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
 VhP2per uprev, uprevY;
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-T0 = 0.;
-real TF = 5.;
+T0 = 5.;
+real TF = 15.;
 
 Reynolds = 8500;
 [uEF, uEFY,uEFP] = [uEF0,uEF0Y,0];

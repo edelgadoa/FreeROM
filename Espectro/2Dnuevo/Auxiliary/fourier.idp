@@ -115,13 +115,13 @@ func real[int] energyk2d(real[int] & Energy, int nx, int ny)
 	energykbycrownsL=0.; energykbycrowns=0.;
 	real module;int l;
 	int cont = 1;
-	for(int k1=0;k1<nx/2;k1++){
-		for(int k2=0;k2<ny/2;k2++){
+	for(int k1=-nx/2;k1<nx/2;k1++){
+		for(int k2=-ny/2;k2<ny/2;k2++){
             if(mpirank==cont%mpisize){
                 module=sqrt(k1^2+k2^2);
                 // cout << module << ", " << l << endl;
                 l=module;
-                energykbycrownsL[l]+=Energy[(k1+nx/2)+nx*(k2+ny/2)];
+                energykbycrownsL[l]+=Energy[(k2+ny/2)+ny*(k1+nx/2)];
             }
             cont++;
 		}
@@ -165,6 +165,16 @@ func real[int] espectro2D(complex[int] & uxc, complex[int] & uyc, int Ndiv){
     int length = uxc.n;
     complex[int] uxhat(length), uyhat(length);
     uxhat = dfft(uxc,Ndiv,-1); uyhat = dfft(uyc,Ndiv,-1);;
+    real[int] energyhat = energycomputation(uxhat,uyhat);
+    real[int] energykk=energyk2d(energyhat,Ndiv,Ndiv);
+    return energykk;
+}
+
+func real[int] espectro2DDFFT(complex[int] & uxc, complex[int] & uyc, int Ndiv){
+
+    int length = uxc.n;
+    complex[int] uxhat(length), uyhat(length);
+    uxhat = DFFT2d(uxc,-1,(Ndiv-1)/2); uyhat = DFFT2d(uyc,-1,(Ndiv-1)/2);;
     real[int] energyhat = energycomputation(uxhat,uyhat);
     real[int] energykk=energyk2d(energyhat,Ndiv,Ndiv);
     return energykk;

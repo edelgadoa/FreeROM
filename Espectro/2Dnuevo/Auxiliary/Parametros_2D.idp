@@ -29,4 +29,4 @@ int niterEF = 10;
 real hTri=sqrt(2)/NN;
 real k1=5,k2=NN/2;//256/2,
 real kc=1./hTri;
-real alpha = 5/3;
+real alpha = 5./3.;
