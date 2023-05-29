@@ -94,7 +94,7 @@ if(T0>0){
 	readvector("../../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
 	uEFY[] = SolY;
 	readvector("../../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
-	uEFP[] = SolP;		
+	uEFP[] = SolP;n
 }
 
 include "FE_VMS_2D.idp"

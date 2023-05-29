@@ -9,7 +9,7 @@
 //                                 VhNPXMPY	--> N Elementos Finitos PX y M Py. Ej: Vh2P2P1 -> [P2, P2, P1]	
 //								   VhNPXdc  --> N Elementos Finitos PXdc			
 
-fespace Vh3P2(Th, [P2, P2, P2]);
+fespace Vh3P2(Th, [P2, P2, P1]);
 fespace Vh3P1(Th, [P1, P1, P1]);
 fespace Vh3P1dc(Th, [P1dc, P1dc, P1dc]); 
 fespace VhP0(Th, P0); 
