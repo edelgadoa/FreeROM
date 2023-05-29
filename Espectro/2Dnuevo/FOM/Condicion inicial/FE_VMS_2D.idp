@@ -7,10 +7,10 @@ matrix MFija;
 real[int] bFija(Vh3P2.ndof);
 
 include "Matrices_fijas_NS_2D.idp"
-ERROR = 10;
 
-// Comenzamos el bucle iterativo para resolver el problema de EF
-for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
+for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
+	write("Output.txt","t = " + ti,0,1);
+	// Comenzamos el bucle iterativo para resolver el problema de EF
 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
 	
@@ -26,9 +26,9 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 		udcAux[] = IPhP2P1*uprevY[];
 		uEFYdX[] = DXP2*udcAux[];
 		uEFYdY[] = DYP2*udcAux[];
-	
 	}
 	
+
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
 	real[int] bNS(Vh3P2per.ndof);
@@ -52,21 +52,10 @@ for (int ii=1; ii<=niterEF && (ERROR > epsEF) ; ii++){
 
 	set(MFinal, solver=sparsesolver);
 	
-	Vh3P2per [uEFp, uEFpY, uEFpP]; // guardamos la iteración anterior para calcular el error
-
-	uEFp[]=uEF[];
+	uEF[]=MFinal^-1*bFinal;
 	
-	Vh3P2per [uT, uTY, uTP];
-	uT[]=MFinal^-1*bFinal;
-	
-	[uEF,uEFY,uEFP] = [uT,uTY,uTP];
-	
-	// Calculamos el error cometido (en velocidad)
-	Vh2P2per [errEF, errEFY];
-	[errEF,errEFY] = [uEF - uEFp,uEFY - uEFpY];
-	
-	real ERRORabs = sqrt(int2d(Th)([errEF, errEFY]'*[errEF, errEFY]) + int2d(Th)(GradUGradV(errEF,errEF)));
-	ERROR = ERRORabs / sqrt(int2d(Th)([uEF,uEFY]'*[uEF, uEFY]) + int2d(Th)(GradUGradV(uEF, uEF)));
-
+	// Guardamos los snapshots 
+	write("../../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+	write("../../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);	
+	write("../../Snapshots/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
 }
-
