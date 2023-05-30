@@ -21,9 +21,6 @@ real dtsave=dt;
 real T=30.;
 real T0=15.;
 real errEF=10.,epsEF=1.e-11,errBR=10.,epsBR=epsEF;
-int nEF=(T-T0)/dtsave,nBR=nEF;
-real ERROR;
-int niterEF = 10;
 
 // Parametros para el espectro
 real hTri=sqrt(2)/NN;

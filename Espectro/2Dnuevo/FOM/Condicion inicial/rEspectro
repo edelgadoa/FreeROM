@@ -2,7 +2,7 @@
 echo 'Numero de procesadores:'
 read NP
 
-nameedp="Espectro.edp"
+nameedp="Calculo_espectro.edp"
 
 verbosity=0
 
