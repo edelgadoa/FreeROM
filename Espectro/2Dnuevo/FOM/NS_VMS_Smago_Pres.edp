@@ -6,18 +6,23 @@
 //// NS + VMS-Smago + Estab Pres (LPS)///
 /////////////////////////////////////////
 
-// Codigo para resolver el problema de EF de VMS-Smago con estabilizacion LPS en la presion. 
-// Elemento Finito P2-P2 (no estable) en vel-pres 
-
+// Codigo para resolver el problema de EF de VMS-Smago. 
+// Elemento Finito P2-P1 (no estable) en vel-pres 
 
 // Cargamos librerias
 load "iovtk" 
 
 // Cargamos macros
+include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
 
 // Creamos la malla
-include "../Auxiliary/CuadradoNxNy.idp"
+int NN = 32;
+real x01 = -0.5, x11 = 0.5;
+real y01 = -0.5, y11 = 0.5;
+mesh Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
 
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
@@ -28,26 +33,58 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 // Definimos los parametros a usar
 include "../Auxiliary/Parametros_2D.idp"
 
-// Incluimos el levantamiento
-// include "Levantamiento.idp"
+/////////////////////////////////////////////
+/// Establecemos la CI para EF: Cavidad 2D///
+/////////////////////////////////////////////
 
-Reynolds = 8500;
+Vh3P2per [uEF0,uEF0Y,uEF0P];
+
+Reynolds = Refijo;
+
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0); uEF0[] = SolX;
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
+readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+
+/////////////////////////////////////////////
+// Cargamos los valores de parametros calculados
+
+readvector("../Snapshots/parameters.txt", real, ReSolved, 0);
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
 
-Vh3P2 [uEF, uEFY, uEFP]; 
-VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
+Vh3P2per [uEF, uEFY,uEFP];
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
+VhP2per uprev, uprevY;
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-include "FE_VMS_LPS_2D.idp"
+for(int iRe=0;iRe<niRe;iRe++)
+{
+	// Nuevo Reynolds
+	Reynolds = Remin+iRe*dtRe;
+	write("Output.txt"," - Reynold="+Reynolds,1,1);
 
-// Dibujamos la solucion, con levantamiento
+	// Comprobamos si la solucion no esta calculada
+	if(search(ReSolved,Reynolds)==-1){
+		[uEF, uEFY,uEFP] = [uEF0,uEF0Y,uEF0P];
+		include "FE_VMS_2D.idp"
+		// Actualizamos parametros
+		ReSolved.resize(ReSolved.n+1);
+		ReSolved(ReSolved.n-1) = Reynolds;
+		write("../Snapshots/parameters.txt", ReSolved, 0, 0);
+	}
+	/*
+	else{
+		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0); uEF[] = SolX;
+		readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0); uEFY[] = SolY;
+		readvector("../Snapshots/P_" + Reynolds + "_t_" +TF+ ".txt", real, SolP, 0); uEFP[] = SolP;
+	}
+	plot([uEF,uEFY],wait=1);
+	plot(uEFP,wait=1);
+	*/
+	write("Output.txt","Done",1,1);
+}
 
-Vh3P2 [uEFL, uEFLY, uEFLP];
-uEFL[]=uEF[] + Lev[];
 
-plot([uEFL, uEFLY], cmm="FE vel para Re="+Reynolds);
-plot(uEFLP, cmm="FE pres para Re="+Reynolds);
+write("Output.txt","FOM Done",1,1);

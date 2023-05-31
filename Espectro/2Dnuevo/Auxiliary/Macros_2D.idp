@@ -93,5 +93,3 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 
 }
 EndMacro
-
-
