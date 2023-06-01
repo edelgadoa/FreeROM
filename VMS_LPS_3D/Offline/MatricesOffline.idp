@@ -168,10 +168,10 @@ for (int s=0; s<Mbases; s++){
     
 	//real[int,int] Ngk = NUK[s];
 	VhP2L fvel, fvelY, fvelZ;
-	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
-	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
+	varf NG(un,v) = int3d(Th)(UporV(fvel, LevG)*v);
+	fvel = BaseVelG[i]; fvelY = BaseVelGY[i]; fvelZ = BaseVelGZ[i];
 
-    real[int] ngaux = NG(0,VhP0L);
+    real[int] ngaux = NG(0,VhP0);
 
 	///////////////////////////////////////////////
 
@@ -181,16 +181,16 @@ for (int s=0; s<Mbases; s++){
 			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
 							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v); 
 						  
-	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+	dxfv1 = FVGdX[i]; dyfv1 = FVGdY[i]; dzfv1 = FVGdZ[i]; 
+	dxfv2 = FVGYdX[i]; dyfv2 = FVGYdY[i]; dzfv2 = FVGYdZ[i];
+	dxfv3 = FVGZdX[i]; dyfv3 = FVGZdY[i]; dzfv3 = FVGZdZ[i]; 
 
-    real[int] ndgaux = NDG(0,VhP0L);
+    real[int] ndgaux = NDG(0,VhP0);
     
     for (int s=0; s<Taubases; s++){ 
    
         if (NumberPMTau(s)>0){
-    	    NgkL(0,1+i) = ngaux(PuntosMTauL(TauBasesL));		
+    	    NgkL(0,1+i) = ngaux(PuntosMTau(s));		
 
     	    //Matriz simétrica
     	    NgkL(1+i,0) = NgkL(0,1+i);
@@ -199,7 +199,7 @@ for (int s=0; s<Mbases; s++){
         
             ////--------------///////
         
-        	NggkL(0,1+i) = ndgaux(PuntosMTauL(TauBasesL));
+        	NggkL(0,1+i) = ndgaux(PuntosMTau(s));
         	//Matriz simétrica
         	NggkL(1+i,0) = NggkL(0,1+i);
         
@@ -227,8 +227,8 @@ for (int s=0; s<Mbases; s++){
 		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
 		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
 	
-		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
-		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
+		fvel = BaseVG[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
+		ffvel = BaseVG[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
 	
 		real[int] ngaux = NGL(0,VhP0L);
     
@@ -293,11 +293,11 @@ mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
 real[int] LevVB, FLevVB;
 ChangeNumbering(MatAVh3P2, LevV[],LevVB);
 ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
-bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
-bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
+bDiffRB(i) = innerprodX(BaseVG[i][], LevG[], DiffPEM);
+bConvRB(i) = innerprodX(BaseVG[i][], LevG[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
 
 for (int s=0; s<Mbases; s++){
-		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
+		bSmagoRB(s,i) = innerprodX(FBaseVG[i][], FLevV, SmagoPEM[s]);
 }
 
 mpi(cout<<"bsmago"<<endl<<bSmagoRB<<endl;)

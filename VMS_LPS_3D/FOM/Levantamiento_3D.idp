@@ -10,13 +10,17 @@ func g1=1.*(z>=1);
 
 Vh4P2L [Lev, LevY, LevZ, LevP];
 Vh3P2L [LevV, LevVY, LevVZ];
+Vh3P2 [LevG, LevGY, LevGZ];
+
 VhP2L GP2 = g1;
 VhP2L GzeroP2 = 0.;
+VhP2 GP2G = g1;
+VhP2 GzeroP2G = 0.;
 
 
 [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
 [LevV, LevVY, LevVZ] = [GP2, GzeroP2, GzeroP2];
-
+[LevG, LevGY, LevGZ] = [GP2G, GzeroP2G, GzeroP2G];
 // Filtro el levantamiento y lo derivo
 VhP1dcL FLevdXL, FLevdYL, FLevdZL, FLevYdXL, FLevYdYL, FLevYdZL, FLevZdXL, FLevZdYL, FLevZdZL;
 
@@ -32,5 +36,5 @@ Local2Global(FLevdY, MatAVhP1dc.D, mapVhP1dc);
 Local2Global(FLevdZ, MatAVhP1dc.D, mapVhP1dc);
 
 // Levantamiento filtrado
-Vh3P2L [FLev, FLevY, FLevZ];
-FLev[] = IPh3P23P1L * LevV[];
+Vh3P2 [FLev, FLevY, FLevZ];
+FLev[] = IPh3P23P1 * LevG[];
