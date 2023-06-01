@@ -47,7 +47,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	
-	cout<<"it: "<<iN<<",Proc: "<<mpirank<<endl<<sigmaEIMS<<endl;
+	//cout<<"it: "<<iN<<",Proc: "<<mpirank<<endl<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] SmagoRBint(2*I, 2*I), SmagoRBN(2*Nbases, 2*Nbases);
 		SmagoRBN = SmagoRB[s];
@@ -56,7 +56,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		SmagoRBi += SmagoRBint; 
 	}
 	// mpi(cout<<SmagoRBi<<endl;)
-	mpi(cout<<"--------------------------------"<<endl;)	
+	//mpi(cout<<"--------------------------------"<<endl;)	
 	// Segundo miembro Smago
 	for (int s=0; s<I; s++){
 		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
@@ -85,7 +85,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	}
 	
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-	cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;
+	// cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBint(2*I,2*I), StabPRBN(2*Nbases, 2*Nbases);
 		StabPRBN = StabPRB[s];
@@ -93,7 +93,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		StabPRBint = sigmaEIMTau(s)*StabPRBint;
 		StabPRBi += StabPRBint; 
 	}
-	mpi(cout<<"--------------------------------"<<endl;)	
+	// mpi(cout<<"--------------------------------"<<endl;)	
 	
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
