@@ -77,14 +77,20 @@ VhP2[int] BaseVelGY(Nbases);
 VhP2[int] BaseVelGZ(Nbases);
 
 Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2[int] [FBaseVG, FBaseVGY, FBaseVGZ](Nbases);
 
 VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
+VhP2[int] FBaseVelG(Nbases), FBaseVelGY(Nbases), FBaseVelGZ(Nbases);
 
 VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
 VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
 VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
 VhP1dcL[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
+
+VhP1dc[int] FVGdX(Nbases), FVGdY(Nbases), FVGdZ(Nbases);
+VhP1dc[int] FVGYdX(Nbases),FVGYdY(Nbases), FVGYdZ(Nbases);
+VhP1dc[int] FVGZdX(Nbases),FVGZdY(Nbases), FVGZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(Vh3P2L.ndof, Nbases), MBaseP(VhP2L.ndof, Nbases);
@@ -228,23 +234,28 @@ for (int i=0; i<Nbases; i++){
 
 	// Actualizo las soluciones filtradas
 	 FBaseV[i][] = IPh3P23P1L * BaseV[i][];
+     FBaseVG[i][] = IPh3P23P1 * BaseVG[i][];
 	//
-	 FBaseVel[i][] = IPhP2P1L*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1L*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1L*BaseVelZ[i][];
+	 FBaseVelG[i][] = IPhP2P1*BaseVelG[i][]; FBaseVelGY[i][] = IPhP2P1*BaseVelGY[i][]; FBaseVelGZ[i][] = IPhP2P1*BaseVelGZ[i][];
 	//
 	 FVdX[i][] = DXP2L*FBaseVel[i][]; FVdY[i][] = DYP2L*FBaseVel[i][]; FVdZ[i][] = DZP2L*FBaseVel[i][];
 	 FVYdX[i][] = DXP2L*FBaseVelY[i][]; FVYdY[i][] = DYP2L*FBaseVelY[i][]; FVYdZ[i][] = DZP2L*FBaseVelY[i][];
 	 FVZdX[i][] = DXP2L*FBaseVelZ[i][]; FVZdY[i][] = DYP2L*FBaseVelZ[i][]; FVZdZ[i][] = DZP2L*FBaseVelZ[i][];
+     
+	 FVGdX[i][] = DXP2*FBaseVelG[i][]; FVGdY[i][] = DYP2*FBaseVelG[i][]; FVGdZ[i][] = DZP2*FBaseVelG[i][];
+	 FVGYdX[i][] = DXP2*FBaseVelGY[i][]; FVGYdY[i][] = DYP2*FBaseVelGY[i][]; FVGYdZ[i][] = DZP2*FBaseVelGY[i][];
+	 FVGZdX[i][] = DXP2*FBaseVelGZ[i][]; FVGZdY[i][] = DYP2*FBaseVelGZ[i][]; FVGZdZ[i][] = DZP2*FBaseVelGZ[i][];
 	//
 	//FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	//
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
+	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
 	{
-		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
-		Mat ConvTemp(MatAVh3P2, TMP);
+		matrix TMP = ConvPE(Vh3P2,Vh3P2);
+		// Mat ConvTemp(MatAVh3P2, TMP);
         // ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
-		ConvPEM[i] = ConvTemp; 
+		ConvPEM[i] = TMP; 
 	}
 	
 	mpi(cout<<"Matrices Offline"<<endl;)

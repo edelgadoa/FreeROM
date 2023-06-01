@@ -73,15 +73,15 @@ for (int s=0; s<=i; s++){
 	for (int j=0; j<=i; j++){
         real[int] BaseVj;
         ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
-		Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
+		Cint(i,j) = innerprodX(BaseVG[i], BaseVG[j], ConvPEM[s]);
 		if(j<i){
-			Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
+			Cint(j,i) = innerprodX(BaseVG[j], BaseVG[i], ConvPEM[s]);
 		}
 		if (s==i && (j!=i)){
 			for (int k=0; k<s; k++){
                 real[int] BaseVk;
                 ChangeNumbering(MatAVh3P2, BaseV[k][], BaseVk);
-				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+				Cint(k,j) = innerprodX(BaseVG[k], BaseVG[j], ConvPEM[s]);
 			}
 		} 
 	
@@ -99,7 +99,7 @@ for (int s=0; s<Mbases; s++){
 	for (int j=0; j<=i; j++){
         real[int] FBaseVj;
         ChangeNumbering(MatAVh3P2, FBaseV[j][], FBaseVj);
-		Sint(i,j) = innerprodX(FBaseVi, FBaseVj, SmagoPEM[s]);
+		Sint(i,j) = innerprodX(FBaseVG[i], FBaseVG[j], SmagoPEM[s]);
 		if(j<i){
 			Sint(j,i) = Sint(i,j);
 		}
@@ -118,7 +118,7 @@ for (int s=0; s<Taubases; s++){
 	for (int j=0; j<=i; j++){
         real[int] BasePj;
         ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
-		LPSint(i + Nbases,j + Nbases) = innerprodX(BasePi, BasePj, StabPPEM[s]); 
+		LPSint(i + Nbases,j + Nbases) = innerprodX(BasePG[i], BasePG[j], StabPPEM[s]); 
 		if(j<i){
 			LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
 		}
