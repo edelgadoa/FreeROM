@@ -261,7 +261,7 @@ for (int s=0; s<Mbases; s++){
         
                 NgkL(1+i,1+j) = ngaux(PuntosMTauL(TauBasesL));				
         		if(j<i){
-        			NgkL(1+j,1+i) = Ngk(1+i,1+j);
+        			NgkL(1+j,1+i) = NgkL(1+i,1+j);
         		}
             
                 NgkL *= WeightPMTau(s);
@@ -269,7 +269,7 @@ for (int s=0; s<Mbases; s++){
 	
         		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(TauBasesL));		
         		if(j<i){
-        			NggkL(1+j,1+i) = Nggk(1+i,1+j);
+        			NggkL(1+j,1+i) = NggkL(1+i,1+j);
         		}
                 NggkL *= WeightPMTau(s);
         
