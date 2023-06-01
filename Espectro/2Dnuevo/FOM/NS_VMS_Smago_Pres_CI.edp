@@ -13,12 +13,15 @@
 load "iovtk" 
 
 // Cargamos macros
-include "../../Auxiliary/IO.idp"
-include "../../Auxiliary/Macros_2D.idp"
-include "../../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
 
 // Creamos la malla
-include "../../Auxiliary/Malla.idp"
+include "../Auxiliary/Malla.idp"
 
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
@@ -26,15 +29,13 @@ include "FE_Spaces_NoStab_VP_2D.idp"
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
 
-// Definimos los parametros a usar
-include "../../Auxiliary/Parametros_2D.idp"
 
 /////////////////////////////////////////////
 /// Establecemos la CI para EF: Cavidad 2D///
 /////////////////////////////////////////////
 
 // Cargamos el modulo para hacer transformadas
-include "../../Auxiliary/fourier.idp"
+include "../Auxiliary/fourier.idp"
 
 VhP1 <complex> ZZ,zz;
 ZZ = 0.;
@@ -66,7 +67,7 @@ uEF0=real(zz);
 uEF0Y=real(zz);
 
 real[int] energyk = espectro2DDFFT(zz[], zz[], NN+1);
-write("../../Snapshots/Espectro_inicial0.txt", energyk, 0, 0);
+write("../Snapshots/Espectro_inicial0.txt", energyk, 0, 0);
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
@@ -78,17 +79,17 @@ VhP2per uprev, uprevY;
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
 T0 = 0;
-real TF = 15;
+TF = 15;
 
 Reynolds = 8500;
 [uEF, uEFY,uEFP] = [uEF0,uEF0Y,0];
 
 if(T0>0){
-	readvector("../../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
+	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
 	uEF[] = SolX;
-	readvector("../../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
+	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
 	uEFY[] = SolY;
-	readvector("../../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
+	readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
 	uEFP[] = SolP;
 }
 
