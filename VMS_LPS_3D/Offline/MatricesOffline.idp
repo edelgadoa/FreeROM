@@ -189,26 +189,26 @@ for (int s=0; s<Mbases; s++){
     
     for (int s=0; s<Taubases; s++){ 
    
-        if (NumberPMTau(s)>0){
-    	    NgkL(0,1+i) = ngaux(PuntosMTau(s));		
+      //  if (NumberPMTau(s)>0){
+    	    Ngk(0,1+i) = ngaux(PuntosMTau(s));		
 
     	    //Matriz simétrica
-    	    NgkL(1+i,0) = NgkL(0,1+i);
+    	    Ngk(1+i,0) = Ngk(0,1+i);
         
-            NgkL *= WeightPMTau(s);
+          //  NgkL *= WeightPMTau(s);
         
             ////--------------///////
         
-        	NggkL(0,1+i) = ndgaux(PuntosMTau(s));
+        	Nggk(0,1+i) = ndgaux(PuntosMTau(s));
         	//Matriz simétrica
-        	NggkL(1+i,0) = NggkL(0,1+i);
+        	Nggk(1+i,0) = Nggk(0,1+i);
         
-            NggkL *= WeightPMTau(s);
+        //    NggkL *= WeightPMTau(s);
         
-            TauBasesL++;  
-        }
-        mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
-        mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+          //  TauBasesL++;  
+      //  }
+    //    mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+       // mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
     
         NUK[s] += Ngk;
     	NGUK[s] += Nggk;
@@ -227,10 +227,10 @@ for (int s=0; s<Mbases; s++){
 		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
 		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
 	
-		fvel = BaseVG[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i]; 
-		ffvel = BaseVG[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
+		fvel = BaseVG[i]; fvelY = BaseVGY[i]; fvelZ = BaseVGZ[i]; 
+		ffvel = BaseVG[j]; ffvelY = BaseVGY[j]; ffvelZ = BaseVGZ[i];
 	
-		real[int] ngaux = NGL(0,VhP0L);
+		real[int] ngaux = NGL(0,VhP0);
     
     
         ///////////////////////////////////////////
@@ -243,41 +243,41 @@ for (int s=0; s<Mbases; s++){
 								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
 	
 	
-		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i]; 
-		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
-		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i]; 
+		dxfv1 = FVGdX[i]; dyfv1 = FVGdY[i]; dzfv1 = FVGdZ[i]; 
+		dxfv2 = FVGYdX[i]; dyfv2 = FVGYdY[i]; dzfv2 = FVGYdZ[i];
+		dxfv3 = FVGZdX[i]; dyfv3 = FVGZdY[i]; dzfv3 = FVGZdZ[i]; 
 	
-		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
-		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
-		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
+		DXFV1 = FVGdX[j]; DYFV1 = FVGdY[j]; DZFV1 = FVGdZ[j];
+		DXFV2 = FVGYdX[j]; DYFV2 = FVGYdY[j]; DZFV2 = FVGYdZ[j];
+		DXFV3 = FVGZdX[j]; DYFV3 = FVGZdY[j]; DZFV3 = FVGZdZ[j];
 	
-		real[int] ndgaux = NDG(0,VhP0L);
+		real[int] ndgaux = NDG(0,VhP0);
     
         int TauBasesL;
         for (int s=0; s<Taubases; s++){
     	
         
-    		if (NumberPMTau(s)>0){	
+    		//if (NumberPMTau(s)>0){	
         
                 NgkL(1+i,1+j) = ngaux(PuntosMTau(s));				
         		if(j<i){
         			NgkL(1+j,1+i) = Ngk(1+i,1+j);
         		}
             
-                NgkL *= WeightPMTau(s);
+                // NgkL *= WeightPMTau(s);
         		/////-----------////
 	
         		NggkL(1+i,1+j) = ndgaux(PuntosMTau(s));		
         		if(j<i){
         			NggkL(1+j,1+i) = Nggk(1+i,1+j);
         		}
-                NggkL *= WeightPMTau(s);
+                // NggkL *= WeightPMTau(s);
         
-                TauBasesL++;
-            }
+        //        TauBasesL++;
+          //  }
 		  
-            mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
-            mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+          //   mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+            //mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
 	
     	    NUK[s] += Ngk;
     	    NGUK[s] += Nggk;
