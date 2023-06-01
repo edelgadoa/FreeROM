@@ -19,18 +19,18 @@ for (int j=0; j<=i; j++){
 	ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
 		
 	// Matrices
-	DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM); 
-	DivPRB(i+Nbases, j) = innerprodX(BasePi, BaseVj, DivPPEM);
-	ConvLevRB(i,j) = innerprodX(BaseVi, BaseVj, ConvLevPEM);
-	DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
-    PenRB(i+Nbases, j+Nbases) = innerprodX(BasePi, BasePj, PenPEM);
+	DiffRB(i,j) = innerprodX(BaseVG[i], BaseVG[j], DiffPEM); 
+	DivPRB(i+Nbases, j) = innerprodX(BasePG[i], BaseVG[j], DivPPEM);
+	ConvLevRB(i,j) = innerprodX(BaseVG[i], BaseVG[j], ConvLevPEM);
+	DTRB(i,j) = innerprodX(BaseVG[i], BaseVG[j], DTPEM);
+    PenRB(i+Nbases, j+Nbases) = innerprodX(BasePG[i], BasePG[j], PenPEM);
 	// StabhkRB(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][],StabhkPEM);
 	
 	if (j<i){		
 		DiffRB(j,i) = DiffRB(i,j);
-		DivPRB(j+Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
+		DivPRB(j+Nbases, i) = innerprodX(BasePG[j], BaseV[i], DivPPEM);
 		PenRB(j+Nbases, i+Nbases) = PenRB(i+Nbases, j+Nbases);
-		ConvLevRB(j,i) = innerprodX(BaseVj, BaseVi, ConvLevPEM);
+		ConvLevRB(j,i) = innerprodX(BaseVG[j], BaseVG[i], ConvLevPEM);
 		DTRB(j,i) = DTRB(i,j);
 		// StabhkRB(j+Nbases, i+Nbases) = StabhkRBL(i+Nbases, j+Nbases);
 	}	

@@ -69,6 +69,13 @@ VhP2L[int] BaseVel(Nbases);
 VhP2L[int] BaseVelY(Nbases);
 VhP2L[int] BaseVelZ(Nbases);
 
+
+VhP2[int] BasePG(Nbases);
+Vh3P2[int] [BaseVG, BaseVGY, BaseVGZ](Nbases);
+VhP2[int] BaseVelG(Nbases);
+VhP2[int] BaseVelGY(Nbases);
+VhP2[int] BaseVelGZ(Nbases);
+
 Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
 VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
@@ -189,18 +196,22 @@ for (int i=0; i<Nbases; i++){
 		readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
 		SnapX[] = SolX;
 		BaseVel[i][] = SnapX[](mapVhP2); //Cargo las bases en local
+        BaseVelG[i][] = SnapX[]; //Cargo las bases en GLOBAL
 		readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
 		SnapY[] = SolY;
 		BaseVelY[i][] = SnapY[](mapVhP2);
+        BaseVelGY[i][] = SnapY[];
 		readvector("../Snapshots/Vz_" + Reynolds + ".txt", real, SolZ, 0);
 		SnapZ[] = SolZ;
 		BaseVelZ[i][] = SnapZ[](mapVhP2);
+        BaseVelgZ[i][] = SnapZ[];
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
 		BaseP[i][] = SnapP[](mapVhP2);		
+        BasePG[i][] = SnapP[];
 		
 		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
-			
+		[BaseVG[i], BaseVGY[i], BaseVGZ[i]] = [BaseVelG[i], BaseVelGY[i], BaseVelGZ[i]];
 	}
 	VhP2 UL, ULY, ULZ;
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
