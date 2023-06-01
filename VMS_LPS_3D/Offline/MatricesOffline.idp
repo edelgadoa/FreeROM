@@ -259,7 +259,7 @@ for (int s=0; s<Mbases; s++){
         
     		if (NumberPMTau(s)>0){	
         
-                NgkL(1+i,1+j) = ngaux(PuntosMTauL(TauBasesL));				
+                NgkL(1+i,1+j) = ngaux(PuntosMTau(s));				
         		if(j<i){
         			NgkL(1+j,1+i) = Ngk(1+i,1+j);
         		}
@@ -267,7 +267,7 @@ for (int s=0; s<Mbases; s++){
                 NgkL *= WeightPMTau(s);
         		/////-----------////
 	
-        		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(TauBasesL));		
+        		NggkL(1+i,1+j) = ndgaux(PuntosMTau(s));		
         		if(j<i){
         			NggkL(1+j,1+i) = Nggk(1+i,1+j);
         		}
@@ -297,7 +297,7 @@ bDiffRB(i) = innerprodX(BaseVG[i][], LevG[], DiffPEM);
 bConvRB(i) = innerprodX(BaseVG[i][], LevG[], ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
 
 for (int s=0; s<Mbases; s++){
-		bSmagoRB(s,i) = innerprodX(FBaseVG[i][], FLevV, SmagoPEM[s]);
+		bSmagoRB(s,i) = innerprodX(FBaseVG[i][], FLev[], SmagoPEM[s]);
 }
 
 mpi(cout<<"bsmago"<<endl<<bSmagoRB<<endl;)
