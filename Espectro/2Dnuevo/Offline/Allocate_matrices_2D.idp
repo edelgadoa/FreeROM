@@ -1,0 +1,54 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+///////////////////////////
+// Codigo donde inicializo las matrices que almacenaré de manera offline
+///////////////////////////
+
+// Definicion del array de matrices del gradiente en los Puntos mágicos
+real[int,int][int] GradPM(Mbases);
+real[int][int] GradPMLev(Mbases); 
+
+for (int i=0;i<Mbases;i++){
+	real[int,int] Aux(4,Nbases);
+	Aux=0;
+	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i))];
+	GradPM[i]=Aux(0:3,0:Nbases-1);
+}
+
+// Definicion de las Matrices Reducidas fijas
+real[int,int] DiffRB(2*Nbases, 2*Nbases), DivPRB(2*Nbases, 2*Nbases), PenRB(2*Nbases, 2*Nbases), 
+			  ConvLevRB(2*Nbases, 2*Nbases), DTRB(2*Nbases, 2*Nbases), StabhkRB(2*Nbases, 2*Nbases);
+			  
+DiffRB = 0;
+DivPRB = 0;
+PenRB = 0;
+ConvLevRB = 0;
+DTRB = 0;
+StabhkRB = 0;
+
+// Definicion de los segundos miembros
+real[int] bDiffRB(2*Nbases), bConvRB(2*Nbases), bDTRB(2*Nbases), bSmagoRBi(2*Nbases);			   
+real[int,int] bSmagoRB(Mbases, 2*Nbases);
+
+bDiffRB = 0;
+bConvRB = 0;
+bDTRB = 0;
+bSmagoRBi = 0;
+bSmagoRB = 0;
+
+// Definicion de Matrices y Tensores variables
+real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases);
+
+for (int k=0; k<Nbases; k++){
+	real[int,int] aux(2*Nbases, 2*Nbases);
+	aux=0;
+	ConvRB[k] = aux(0:2*Nbases-1, 0:2*Nbases-1);
+}
+
+for (int k=0;k<Mbases;k++){
+	real[int,int] aux(2*Nbases,2*Nbases);
+	aux=0;
+	SmagoRB[k]=aux(0:2*Nbases-1,0:2*Nbases-1);
+}

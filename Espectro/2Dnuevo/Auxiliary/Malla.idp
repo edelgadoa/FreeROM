@@ -1,0 +1,13 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Creacion de malla.
+
+mesh Th;
+{
+	int NN = 32;
+	real x01 = -0.5, x11 = 0.5;
+	real y01 = -0.5, y11 = 0.5;
+	Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
+}
