@@ -295,7 +295,8 @@ ChangeNumbering(MatAVh3P2, LevV[],LevVB);
 ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
 bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
 bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
-
+mpi(cout<<"bDiff"<<endl<<bDiffRB<<endl;)
+mpi(cout<<"bConv"<<endl<<bConvRB<<endl;)
 for (int s=0; s<Mbases; s++){
 		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
 }
