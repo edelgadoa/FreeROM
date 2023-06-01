@@ -22,7 +22,7 @@ MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
 // Mat DTPEM = MatAVh3P2;
 
 varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(GradUGradV(uu,v));
-matrix DiffPEM = DiffPE(Vh3P2,Vh3P2)
+matrix DiffPEM = DiffPE(Vh3P2,Vh3P2);
 // {
 //     DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
 //     //matrix DiffPEML = DiffPE(Vh3P2L,Vh3P2L);

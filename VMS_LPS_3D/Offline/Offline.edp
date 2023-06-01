@@ -210,7 +210,7 @@ for (int i=0; i<Nbases; i++){
 		readvector("../Snapshots/Vz_" + Reynolds + ".txt", real, SolZ, 0);
 		SnapZ[] = SolZ;
 		BaseVelZ[i][] = SnapZ[](mapVhP2);
-        BaseVelgZ[i][] = SnapZ[];
+        BaseVelGZ[i][] = SnapZ[];
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
 		BaseP[i][] = SnapP[](mapVhP2);		
