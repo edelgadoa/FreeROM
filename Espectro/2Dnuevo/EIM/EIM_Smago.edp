@@ -37,7 +37,6 @@ include "Load_Snapshots_EIM.idp"
 // Defino las variables para el EIM
 int Mmax = NN^2; //numero maximo de bases del EIM
 int M; //numero de bases que voy a considerar finalmente
-real epsEIM = 1.e-4;
 real[int] Tmax(Mmax), muEIM(Mmax); //Donde almaceno los puntos magicos y los valores de parámetros que voy escogiendo
 real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa del EIM
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero

@@ -7,22 +7,26 @@
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-real[int, int] MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
+mpi(cout<<"aa" <<endl;)
+
+real[int, int] MBasePi = MBaseP(0:VhP1per.ndof-1, 0:i-1);
 
 BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
 // Doble Ortonormalización
 BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
+
+mpi(cout<<"Inicializacion matrices..." <<endl;)
 
 ////////////////////////////////////////////
+real[int,int] MBaseVi = MBaseV(0:Vh2P2per.ndof-1, 0:i-1);
 
+BaseV[i][] = OrtoX(BaseVel[i][], MBaseVi, MNormaVel);
 
-real[int,int] MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:i-1);
-
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
+mpi(cout<<"Inicializacion matrices..." <<endl;)
 
 // Doble Ortonormalización
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
+BaseV[i][] = OrtoX(BaseVel[i][], MBaseVi, MNormaVel);
 
 // Para el filtrado
 BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];

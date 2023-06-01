@@ -31,3 +31,21 @@ real hTri=sqrt(2)/NN;
 real k1=5,k2=NN/2;//256/2,
 real kc=1./hTri;
 real alpha = 5./3.;
+
+
+// Parametros para el problema ROM
+int niterRB = 2000;
+real epsRB = 1e-10; //parada de problema reducido
+int NRB = 0;
+
+real epsEIM = 5e-5;
+
+
+
+// Parametros para el Greedy y reducido
+real epsGreedy = 5e-5;
+int Ntrain = niRe;
+real[int] MuTrain(Ntrain);
+for (int ig=0; ig<Ntrain; ig++){
+	MuTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
+}

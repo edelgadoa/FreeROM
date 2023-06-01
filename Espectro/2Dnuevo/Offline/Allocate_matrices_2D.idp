@@ -8,12 +8,10 @@
 
 // Definicion del array de matrices del gradiente en los Puntos mágicos
 real[int,int][int] GradPM(Mbases);
-real[int][int] GradPMLev(Mbases); 
 
 for (int i=0;i<Mbases;i++){
 	real[int,int] Aux(4,Nbases);
 	Aux=0;
-	GradPMLev[i]=[FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i))];
 	GradPM[i]=Aux(0:3,0:Nbases-1);
 }
 
@@ -39,7 +37,7 @@ bSmagoRBi = 0;
 bSmagoRB = 0;
 
 // Definicion de Matrices y Tensores variables
-real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases);
+real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases);
 
 for (int k=0; k<Nbases; k++){
 	real[int,int] aux(2*Nbases, 2*Nbases);

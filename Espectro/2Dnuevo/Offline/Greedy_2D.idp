@@ -9,8 +9,7 @@ real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain);
 
 // Inicializamos las matrices para el problema reducido
 real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(2*I, 2*I),
-			   ConvLevRBi(2*I, 2*I), DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I),
-			   StabPRBi(2*I, 2*I), StabhkRBi(2*I,2*I); 
+			   DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I);
 			   			   			 			  
 // Inicializamos los segundos miembros
 real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 
@@ -20,13 +19,9 @@ DiffRBi = DiffRB(0:2*I-1, 0:2*I-1);
 DivPRBi = DivPRB(Nbases-I:Nbases+I-1, 0:2*I-1);
 DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
 PenRBi = PenRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
-ConvLevRBi = ConvLevRB(0:2*I-1, 0:2*I-1);
 DTRBi = DTRB(0:2*I, 0:2*I);
-// StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
 bDiffRBi = bDiffRB(0:2*I-1);
 bConvRBi = bConvRB(0:2*I-1);
-
-
 
 // Comenzamos el bucle del greedy 
 
@@ -43,8 +38,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	include "RB_LPS_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
-	Vh2P2 [uRB, uRBY];
-	VhP2 uRBP;
+	Vh2P2per [uRB, uRBY];
+	VhP2per uRBP;
 	
 	real[int,int] MBaseVi(Vh2P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
 	MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:I-1);
@@ -52,8 +47,6 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 	uRB[] = MBaseVi*uRBv(0:I-1);
 	uRBP[] = MBasePi*uRBv(I:2*I-1);
-	
-	uRB[] += LevV[];
 	
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
@@ -74,6 +67,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// Calculo el estimador de error 
 
 	// **ESPECTRO
+	cout << "aa" << endl;
 	
 }
 
