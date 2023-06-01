@@ -83,7 +83,7 @@ mpi(cout<<"lps matrix PEM"<<endl;)
 {
     for (int s=0; s<Taubases; s++){
         
-		varf StabPPE(uP,vP) = int2d(Th)(EIMTau[s]*uP*vP);
+		varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
 		matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
 		matrix FiltroX, FiltroY, FiltroZ;
 		{
