@@ -40,12 +40,12 @@ matrix DivPPEM = DivPPE(Vh3P2,VhP2);
 
 varf PenPE(uP, vP) = int3d(Th)(epspen*uP*vP);
 matrix PenPEM = PenPE(VhP2, VhP2);
-{
-	PenPEM = PenPE(VhP2L, VhP2L);
+//{
+	//PenPEM = PenPE(VhP2L, VhP2L);
 	//matrix PenPEML = PenPE(VhP2L,VhP2L);
     //Mat PenPEMTemp = PenPEML;
 	//PenPEM = PenPEMTemp;
-}
+	//}
 
 varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(Th)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
 matrix ConvLevPEM = ConvLevPE(Vh3P2,Vh3P2); 
@@ -58,12 +58,12 @@ matrix ConvLevPEM = ConvLevPE(Vh3P2,Vh3P2);
 
 varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(UporV(uu,v));
 matrix DTPEM = DTPE(Vh3P2,Vh3P2);
-{
-	DTPEM = DTPE(Vh3P2L,Vh3P2L);
+//{
+	//DTPEM = DTPE(Vh3P2L,Vh3P2L);
 	// matrix DTPEML = DTPE(Vh3P2L,Vh3P2L);
     //Mat DTPEMTemp = DTPEML;
 	// DTPEM = DTPEMTemp;
-}
+	//}
 
 
 matrix[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
@@ -89,7 +89,7 @@ mpi(cout<<"lps matrix PEM"<<endl;)
     for (int s=0; s<Taubases; s++){
         
 		varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
-		matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
+		matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
 		matrix FiltroX, FiltroY, FiltroZ;
 		{
 			FiltroX = SPPEM * IPhDXP2;
