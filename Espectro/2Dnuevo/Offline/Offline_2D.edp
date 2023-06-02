@@ -21,9 +21,6 @@ include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
 
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
-
 // Creamos la Malla
 include "../Auxiliary/Malla.idp"
 
@@ -32,6 +29,9 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
@@ -49,9 +49,8 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
-Vh3P2per[int] [BaseVel,BaseVelY,BasePP](Nbases);
-VhP2per[int] BaseV(Nbases), BaseVY(Nbases);
-VhP1per[int] BaseP(Nbases);
+Vh2P2per[int] [baseVel,baseVelY](Nbases);
+VhP1per[int] basePres(Nbases);
 
 Vh2P2per[int] [FBaseV, FBaseVY](Nbases);//, FBaseVY(Nbases);
 
@@ -62,18 +61,33 @@ VhP1dcper[int] FPdX(Nbases), FPdY(Nbases);
 VhP1dcper[int] FVdX(Nbases), FVdY(Nbases);
 VhP1dcper[int] FVYdX(Nbases),FVYdY(Nbases);
 
-// Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
-real[int, int] MBaseV(Vh2P2per.ndof, Nbases), MBaseP(VhP1per.ndof, Nbases);
+// Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
+int NbasesV=1; int NbasesP=1;
+real[int, int] MBaseV(Vh2P2per.ndof, 1), MBaseP(VhP1per.ndof, 1);
+Reynolds = Refijo;
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
+readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
 
+Vh3P2per [VVx,VVy,PP]; //Hay que cargarlos en Vh3P2per y despues pasarlos a Vh2P2per+VhP1per
+VVx[] = SolX; VVy[] = SolY; PP[] = SolP;
+
+Vh2P2per [Vx,Vy]; VhP1per PPP;
+[Vx,Vy] = [VVx,VVy]; PPP = PP;
+
+// Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
+MBaseV(:,0) = Vx[];
+MBaseP(:,0) = PPP[];
+ 
 /////////////////////////////////////////
 mpi(cout<<"Inicializacion EIM..." <<endl;)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
-
+/*
 // Inicializo las matrices para la fase offline
 mpi(cout<<"Inicializacion matrices..." <<endl;)
 include "Allocate_matrices_2D.idp"
-
+*/
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 mpi(cout<<"Inicializacion Greedy..." <<endl;)
@@ -90,67 +104,73 @@ VhP2per uprev, uprevY;
 VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
 
-if (search(ReSnapshots, Refijo, 1.e-9)==-1){
-	// Si no lo he calculado todavía, lo calculo
-	Reynolds = Refijo;
-	include "../FOM/FE_VMS_2D.idp"	
-}
-else{
-	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0); uEF[] = SolX;
-	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0); uEFY[] = SolY;
-}
-uFijo = uEF; uFijoY = uEFY;
-plot([uFijo,uFijoY],wait=1);
-
-
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
 
-for (int i=0; i<Nbases; i++){
+for (int i=0; i<NiterGreddy; i++){
 	
-	mpi(cout<<"---Iteracion " + i <<endl;)
+	mpi(cout<<"---Iteracion " + (i+1) + " for Re=" + Reynolds <<endl;)
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 		// Si no lo he calculado todavía, lo calculo
 
 		include "../FOM/FE_VMS_2D.idp"	
 		
-		BaseV[i] = uEF;
-		BaseVY[i] = uEFY;
-		BaseP[i] = uEFP;
-		
-		BaseVel[i] = uEF; BaseVelY[i] = uEFY; // Para construir las funciones filtradas después
-		
-		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
-		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
-		ReSnapshotsNEW(ReSnapshots.n) = Reynolds;
-		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
-		
-		VhP2per SnapX, SnapY;
-		VhP1per SnapP;
-		SnapX = uEF;
-		SnapY = uEFY;
-		SnapP = uEFP;		
-	}
-	else{
-		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0);
-		BaseVel[i][] = SolX;
-		readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0);
-		BaseVelY[i][] = SolY;
-		readvector("../Snapshots/P_" + Reynolds + "_t_" +TF+ ".txt", real, SolP, 0);
-		BasePP[i][] = SolP;		
+		// Actualizamos el vector de parametros calculados
+		ReSnapshots.resize(ReSnapshots.n+1);
+		ReSnapshots(ReSnapshots.n-1) = Reynolds;
+		write("../Snapshots/Snapshots.txt", ReSnapshots, 0, 0);
 	}
 
-	VhP2per UL, ULY;
-	UL = BaseVel[i]; ULY = BaseVelY[i];
-	BaseP[i] = BasePP[i];
-	plot([UL, ULY], cmm="FE para Re = " + Reynolds, fill=1);
-	plot(BaseP[i], cmm="FE para Re = " + Reynolds, fill=1);
+	// Cargamos todos los snapshots en tiempo
+	MBaseV.resize(MBaseV.n,NbasesV+niT);
+	MBaseP.resize(MBaseP.n,NbasesP+niT);
+	for(int i=0; i<niT; i++){
+		real tt = T0+(i+1)*dt;
+		Vh3P2per [uaux, uauxY, uauxP];
+		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +tt+ ".txt", real, SolX, 0);
+		readvector("../Snapshots/Vy_" + Reynolds + "_t_" +tt+ ".txt", real, SolY, 0);
+		readvector("../Snapshots/P_" + Reynolds + "_t_" +tt+ ".txt", real, SolP, 0);
+		uaux[] = SolX; uauxY[] = SolY; uauxP[] = SolP;
+		Vh2P2per [Vx,Vy]; VhP1per PPP;
+		[Vx,Vy] = [uaux,uauxY]; PPP = uauxP;
+		MBaseV(:,NbasesV+i) = Vx[];
+		MBaseP(:,NbasesP+i) = PPP[];
+	}
+	// Calculamos la POD
+	write("Output.txt","Computing the complete basis...",1,1);
+	{
+		include "POD.idp"
+		POD(MBaseV,prodV,baseVel,NbasesV,autovalVel);
+		POD(MBaseP,prodP,basePres,NbasesP,autovalPres);
+	}
+	write("Output.txt","At the end, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);
 
-	// ** HAY Q HACER LA POD
+	// Calculamos el supremizer
+	write("Output.txt","Supremizer construction...",1,1);
+	for(int i=0;i<NbasesP;i++)
+	{
+		Vh2P2per [supEF,supEFY];
+		include "supremizer.idp"
+		supremizer(basePres[i],Reynolds,supEF);
+		baseVel[NbasesV+i][]=supEF[];
+	}
+	NbasesV += NbasesP; 
+	write("Output.txt","Ok.",1,1);
+
+	// Hacemos la ortonormalizacion
+	write("Output.txt","Orthonormalization...",1,1);
 	include "GramSchmidt_2D.idp"
 	
-	plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
+	ortho(baseVel,NbasesV,prodV);
+	ortho(baseVel,NbasesV,prodV);
+	ortho(basePres,NbasesP,prodP);
+	ortho(basePres,NbasesP,prodP);
+	write("Output.txt","Ok.",1,1);
+
+	// ** HASTA AQUI ESTA BIEN
 	
+	// plot(BaseP[i], cmm="Normalized FE para Re = " + Reynolds, fill=1);
+	/*
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	MBaseV(:,i) = BaseV[i][];
 	MBaseP(:,i) = BaseP[i][];
@@ -187,4 +207,5 @@ for (int i=0; i<Nbases; i++){
 		include "Save_Matrices.idp"
 		break;
 	}
+*/
 }

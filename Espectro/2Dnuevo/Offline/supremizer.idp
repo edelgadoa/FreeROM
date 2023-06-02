@@ -1,0 +1,14 @@
+NewMacro supremizer(uEF,wh,sol)
+{
+	matrix Asup;real[int] bsup(Vh2P2per.ndof);
+	{
+		varf a([u,uY],[v,vY])=
+			int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY))
+			+int2d(ThL)(-uEF*div(v,vY));
+			//+on(1,2,3,4,u=0,uY=0);			
+		Asup=a(Vh2P2perL,Vh2P2perL);bsup=a(0,Vh2P2perL);
+	}
+    sol[] = Asup^(-1)*bsup;
+	// solvesystemsup(Asup,bsup,sol);
+}
+EndMacro

@@ -51,6 +51,15 @@ NewMacro solvesystem(A,b,u)
 	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
 }
 EndMacro
+NewMacro solvesystemsup(A,b,u)
+{	
+	Vh2P2perL [u#L,u#LY];
+	MatAVh2P2per = A;
+	set(MatAVh2P2per,sparams=sparamsv);
+	u#L[]=MatAVh2P2per^-1*b;
+	reduceSolution(u#L,u,MatAVh2P2per.D,mapVh2P2per);
+}
+EndMacro
 
 NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
 {
