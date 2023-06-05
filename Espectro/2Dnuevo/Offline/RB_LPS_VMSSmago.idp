@@ -11,8 +11,6 @@ MRB += PenRBi;
 
 bDiffRBi = bDiffRB(0:I-1);
 
-
-/*
 for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	real[int, int] MRBF = MRB;
 	ConvRBi = 0;
@@ -77,8 +75,9 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
 	set(MRBs, solver=UMFPACK);
+
+	mpi(cout<<"Aqui"<<endl;)
 	// real[int,int] MRBinv = MRB^-1;
 	uRBv = MRBs^-1*bRB;
+	mpi(cout<<"Aqui"<<endl;)
 }
-
-*/

@@ -35,9 +35,14 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real[int,int] MRB(I,I); // Matriz para resolver el sistema
 	real[int] bRB(I); // Segundo miembro para resolver el sistema
 	
+
+	mpi(cout<<"Calculando solucion reducida..."<<endl;)
 	include "RB_LPS_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
+	mpi(cout<<"OK."<<endl;)
+	
+
 	Vh2P2per [uRB, uRBY];
 	VhP2per uRBP;
 	
