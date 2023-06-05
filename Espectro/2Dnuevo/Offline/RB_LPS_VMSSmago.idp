@@ -3,17 +3,15 @@
 /////////////// 	
 
 // Comenzamos a resolver el problema reducido	
-real errRB = 1.;	
-	
 MRB = nuRB * DiffRBi;
 MRB += DivPRBi;
 MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += PenRBi;	
 
-bDiffRBi = bDiffRB(0:2*I-1);
+bDiffRBi = bDiffRB(0:I-1);
 
-for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
+for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	real[int, int] MRBF = MRB;
 	ConvRBi = 0;
 	SmagoRBi = 0;
@@ -23,15 +21,15 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	
 	// Matriz de conveccion
 	for (int s=0; s<I; s++){
-		real[int,int] ConvRBint(2*I,2*I), ConvRBN(2*Nbases, 2*Nbases);
+		real[int,int] ConvRBint(I,I), ConvRBN(2*Nbases, 2*Nbases);
 		ConvRBN = ConvRB[s];
-		ConvRBint = ConvRBN(0:2*I-1, 0:2*I-1);
+		ConvRBint = ConvRBN(0:I-1, 0:I-1);
 		ConvRBint = uRBv(s)*ConvRBint;
 		ConvRBi += ConvRBint;
 	}
 
 	// Matiz de Smagorinsky
-	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(I);
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(NbasesV);
 	uN = uRBv(0:I-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
 		real[int, int] Gradint(9,I);
@@ -43,9 +41,9 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	//cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBint(2*I, 2*I), SmagoRBN(2*Nbases, 2*Nbases);
+		real[int,int] SmagoRBint(I, I), SmagoRBN(2*Nbases, 2*Nbases);
 		SmagoRBN = SmagoRB[s];
-		SmagoRBint = SmagoRBN(0:2*I-1, 0:2*I-1);
+		SmagoRBint = SmagoRBN(0:I-1, 0:I-1);
 		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
 		SmagoRBi += SmagoRBint; 
 	}
@@ -58,7 +56,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
-		real[int] bDTRBint(2*I);
+		real[int] bDTRBint(I);
 		bDTRBint = DTRB(s,:);
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
@@ -68,10 +66,10 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
 	
-	bRB = (1./dt) * bDTRBi(0:2*I-1);
-	bRB -= nuRB * bDiffRBi(0:2*I-1);
-	bRB -= bConvRBi(0:2*I-1);
-	bRB -= bSmagoRBi(0:2*I-1);
+	bRB = (1./dt) * bDTRBi(0:I-1);
+	bRB -= nuRB * bDiffRBi(0:I-1);
+	bRB -= bConvRBi(0:I-1);
+	bRB -= bSmagoRBi(0:I-1);
 	
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
@@ -79,11 +77,5 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	set(MRBs, solver=UMFPACK);
 	// real[int,int] MRBinv = MRB^-1;
 	
-	uRBv = MRBs^-1*bRB;
-	// mpi(cout<<"uRB:"<<uRBv<<endl;)
-	// Actualizo el error 
-	real[int] uRBerr(I); 
-	uRBerr = uRBv(0:I-1) - uRBvp(0:I-1);
-	errRB = uRBerr.l2/uRBv.l2; 
 }
 

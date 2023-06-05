@@ -1,27 +1,27 @@
 ///////////////
 // FreeROM 
 /////////////// 
-int I=i+1; // Para ajustar los indices
+int I=NbasesV+NbasesP; // Para ajustar los indices
 
 // Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
 real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain); 
 //, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
 
 // Inicializamos las matrices para el problema reducido
-real[int, int] DiffRBi(2*I, 2*I), DivPRBi(2*I, 2*I), DivPRBTi(2*I, 2*I), PenRBi(2*I, 2*I),
-			   DTRBi(2*I, 2*I), ConvRBi(2*I, 2*I), SmagoRBi(2*I, 2*I);
+real[int, int] DiffRBi(I, I), DivPRBi(I, I), DivPRBTi(I, I), PenRBi(I, I),
+			   DTRBi(I, I), ConvRBi(I, I), SmagoRBi(I, I);
 			   			   			 			  
 // Inicializamos los segundos miembros
-real[int] bDiffRBi(2*I), bSmagoRBi(2*I), bDTRBi(2*I), bConvRBi(2*I); 
+real[int] bDiffRBi(I), bSmagoRBi(I), bDTRBi(I), bConvRBi(I); 
 
 // Matrices fijas 
-DiffRBi = DiffRB(0:2*I-1, 0:2*I-1);
-DivPRBi = DivPRB(Nbases-I:Nbases+I-1, 0:2*I-1);
+DiffRBi = DiffRB(0:I-1, 0:I-1);
+DivPRBi = DivPRB(I-NbasesP:I-1, 0:I-1);
 DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
-PenRBi = PenRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
-DTRBi = DTRB(0:2*I, 0:2*I);
-bDiffRBi = bDiffRB(0:2*I-1);
-bConvRBi = bConvRB(0:2*I-1);
+PenRBi = PenRB(I-NbasesP:I-1, I-NbasesP:I-1);
+DTRBi = DTRB(0:I-1, 0:I-1);
+bDiffRBi = bDiffRB(0:I-1);
+bConvRBi = bConvRB(0:I-1);
 
 // Comenzamos el bucle del greedy 
 
@@ -31,9 +31,9 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real nuRB = 1./MuTrain(iRB);
 	
 	// Resuelvo el problema 
-	real[int] uRBv(2*I); // Vectores donde almaceno la Solución Reducida
-	real[int,int] MRB(2*I,2*I); // Matriz para resolver el sistema
-	real[int] bRB(2*I); // Segundo miembro para resolver el sistema
+	real[int] uRBv(I); // Vectores donde almaceno la Solución Reducida
+	real[int,int] MRB(I,I); // Matriz para resolver el sistema
+	real[int] bRB(I); // Segundo miembro para resolver el sistema
 	
 	include "RB_LPS_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
@@ -41,12 +41,12 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	Vh2P2per [uRB, uRBY];
 	VhP2per uRBP;
 	
-	real[int,int] MBaseVi(Vh2P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
-	MBaseVi = MBaseV(0:Vh2P2.ndof-1, 0:I-1);
-	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
+	real[int,int] MBaseVi(Vh2P2per.ndof, NbasesV), MBasePi(VhP1per.ndof, NbasesP); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
+	MBasePi = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
 	
-	uRB[] = MBaseVi*uRBv(0:I-1);
-	uRBP[] = MBasePi*uRBv(I:2*I-1);
+	uRB[] = MBaseVi*uRBv(0:NbasesV-1);
+	uRBP[] = MBasePi*uRBv(NbasesV:I-1);
 	
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
@@ -54,6 +54,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 		mpi(cout<<uRBv<<endl;)
 	}
 	
+	/*
 	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;
 	
 	{ 
@@ -65,7 +66,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	}
 	
 	// Calculo el estimador de error 
-
+	*/
 	// **ESPECTRO
 	cout << "aa" << endl;
 	
