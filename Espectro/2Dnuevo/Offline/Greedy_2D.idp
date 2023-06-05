@@ -15,13 +15,13 @@ real[int, int] DiffRBi(I, I), DivPRBi(I, I), DivPRBTi(I, I), PenRBi(I, I),
 real[int] bDiffRBi(I), bSmagoRBi(I), bDTRBi(I), bConvRBi(I); 
 
 // Matrices fijas 
-DiffRBi = DiffRB(0:I-1, 0:I-1);
-DivPRBi = DivPRB(I-NbasesP:I-1, 0:I-1);
+DiffRBi = DiffRB;
+DivPRBi = DivPRB;
 DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
-PenRBi = PenRB(I-NbasesP:I-1, I-NbasesP:I-1);
-DTRBi = DTRB(0:I-1, 0:I-1);
-bDiffRBi = bDiffRB(0:I-1);
-bConvRBi = bConvRB(0:I-1);
+PenRBi = PenRB;
+DTRBi = DTRB;
+bDiffRBi = bDiffRB;
+bConvRBi = bConvRB;
 
 // Comenzamos el bucle del greedy 
 

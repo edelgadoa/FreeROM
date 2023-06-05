@@ -25,21 +25,21 @@ for (int i=0; i<NbasesV; i++){
         contFF++;
     }
     for (int j=0; j<NbasesP; j++){
-        DivPRBL(j+Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+        if (mpirank==contFF%mpisize){
+            DivPRBL(j+NbasesV, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+        }
+        contFF++;
     }
 }
 for (int i=0; i<NbasesP; i++){
     for (int j=0; j<=i; j++){
         if (mpirank==contFF%mpisize){
-            PenRBL(i+Nbases, j+Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+            PenRBL(i+NbasesV, j+NbasesV) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
             if (j<i){
-                PenRBL(j+Nbases, i+Nbases) = PenRBL(i+Nbases, j+Nbases);
-            }
+                PenRBL(j+NbasesV, i+NbasesV) = PenRBL(i+NbasesV, j+NbasesV);
+            } 
         }
         contFF++;
-    }
-    for (int j=0; j<NbasesV; j++){
-        DivPRBL(i+Nbases, j) = innerprodX(BaseP[i][], BaseV[j][], DivPPEM);
     }
 }
 
@@ -56,10 +56,15 @@ DivPRB += DivPRBG;
 PenRB += PenRBG;
 DTRB += DTRBG;
 
+/*
+mpi(cout << DiffRB << endl;)
+mpi(cout << DivPRB << endl;)
+mpi(cout << PenRB << endl;)
+mpi(cout << DTRB << endl;)*/
 
 // Conveccion
 for (int s=0; s<=i; s++){
-    real[int, int] CintL(2*Nbases, 2*Nbases), CintG(2*Nbases, 2*Nbases);
+    real[int, int] CintL(NbasesV+NbasesP, NbasesV+NbasesP), CintG(NbasesV+NbasesP, NbasesV+NbasesP);
     CintL = 0; CintG = 0;
     contFF = 0;
     for (int i=0; i<NbasesV; i++){
@@ -86,7 +91,7 @@ for (int s=0; s<=i; s++){
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-    real[int, int] SintL(2*Nbases, 2*Nbases), SintG(2*Nbases, 2*Nbases);
+    real[int, int] SintL(NbasesV+NbasesP, NbasesV+NbasesP), SintG(NbasesV+NbasesP, NbasesV+NbasesP);
     SintL = 0; SintG = 0;
     contFF = 0;
     for (int i=0; i<NbasesV; i++){

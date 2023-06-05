@@ -103,13 +103,10 @@ for (int iN=0; iN<=niterRB && (errorRB>epsRB); iN++){
 	MRB += SmagoNi; 
 	MRB += StabPNi;
 	
-
-	
 	bRB = (1./dt) * bDTNi(0:2*Nbases-1);
 	bRB -= nu * bDiffN(0:2*Nbases-1);
 	bRB -= bConvN(0:2*Nbases-1);
 	bRB -= bSmagoNi(0:2*Nbases-1);
-	
 	 
 	// Resuelvo el problema reducido
 	real[int] uRBp = uRB;

@@ -3,8 +3,8 @@
 /////////////// 
 
 // Definicion de las Matrices Reducidas fijas Globales para el cálculo en paralelo
-real[int,int] DiffRBG(2*Nbases, 2*Nbases), DivPRBG(2*Nbases, 2*Nbases), PenRBG(2*Nbases, 2*Nbases), 
-			  DTRBG(2*Nbases, 2*Nbases);
+real[int,int] DiffRBG(NbasesV+NbasesP, NbasesV+NbasesP), DivPRBG(NbasesV+NbasesP, NbasesV+NbasesP), PenRBG(NbasesV+NbasesP, NbasesV+NbasesP), 
+			  DTRBG(NbasesV+NbasesP, NbasesV+NbasesP);
 			  
 DiffRBG = 0;
 DivPRBG = 0;
@@ -12,8 +12,8 @@ PenRBG = 0;
 DTRBG = 0;
 
 // Definicion de los segundos miembros Globales
-real[int] bDiffRBG(2*Nbases), bConvRBG(2*Nbases), bDTRBG(2*Nbases);			   
-real[int,int] bSmagoRBG(Mbases, 2*Nbases);
+real[int] bDiffRBG(NbasesV+NbasesP), bConvRBG(NbasesV+NbasesP), bDTRBG(NbasesV+NbasesP);			   
+real[int,int] bSmagoRBG(Mbases, NbasesV+NbasesP);
 
 bDiffRBG = 0;
 bConvRBG = 0;
@@ -21,8 +21,8 @@ bDTRBG = 0;
 bSmagoRBG = 0;
 
 // Definicion de las Matrices Reducidas fijas locales para el cálculo en paralelo
-real[int,int] DiffRBL(2*Nbases, 2*Nbases), DivPRBL(2*Nbases, 2*Nbases), PenRBL(2*Nbases, 2*Nbases), 
-			  DTRBL(2*Nbases, 2*Nbases);
+real[int,int] DiffRBL(NbasesV+NbasesP, NbasesV+NbasesP), DivPRBL(NbasesV+NbasesP, NbasesV+NbasesP), PenRBL(NbasesV+NbasesP, NbasesV+NbasesP), 
+			  DTRBL(NbasesV+NbasesP, NbasesV+NbasesP);
 			  
 DiffRBL = 0;
 DivPRBL = 0;
@@ -30,8 +30,8 @@ PenRBL = 0;
 DTRBL = 0;
 
 // Definicion de los segundos miembros
-real[int] bDiffRBL(2*Nbases), bConvRBL(2*Nbases), bDTRBL(2*Nbases);			   
-real[int,int] bSmagoRBL(Mbases, 2*Nbases);
+real[int] bDiffRBL(NbasesV+NbasesP), bConvRBL(NbasesV+NbasesP), bDTRBL(NbasesV+NbasesP);			   
+real[int,int] bSmagoRBL(Mbases, NbasesV+NbasesP);
 
 bDiffRBL = 0;
 bConvRBL = 0;
@@ -43,8 +43,8 @@ real[int,int][int] SmagoRBL(Mbases);
 real[int,int][int] SmagoRBG(Mbases);
 
 for (int nn = 0; nn<Mbases; nn++){
-	real[int,int] maux(2*Nbases, 2*Nbases);
+	real[int,int] maux(NbasesV+NbasesP, NbasesV+NbasesP);
 	maux = 0;
-	SmagoRBL[nn] = maux(0:2*Nbases-1, 0:2*Nbases-1);
-	SmagoRBG[nn] = maux(0:2*Nbases-1, 0:2*Nbases-1);
+	SmagoRBL[nn] = maux(0:NbasesV+NbasesP-1, 0:NbasesV+NbasesP-1);
+	SmagoRBG[nn] = maux(0:NbasesV+NbasesP-1, 0:NbasesV+NbasesP-1);
 }

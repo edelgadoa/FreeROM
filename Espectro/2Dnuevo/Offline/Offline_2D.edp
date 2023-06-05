@@ -87,10 +87,6 @@ mpi(cout<<"Inicializacion EIM..." <<endl;)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
 
-// Inicializo las matrices para la fase offline
-mpi(cout<<"Inicializacion matrices..." <<endl;)
-include "Allocate_matrices_2D.idp"
-
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 mpi(cout<<"Inicializacion Greedy..." <<endl;)
@@ -105,7 +101,6 @@ Vh3P2per [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
 VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior 
 VhP2per uprev, uprevY;
 VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
-
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
@@ -167,13 +162,19 @@ for (int i=0; i<NiterGreddy; i++){
 		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	}
 	include "GramSchmidt_2D.idp"
-	
+
 	ortho(BaseV,NbasesV,prodV);
+	normalization(BaseV,NbasesV,prodV);
 	ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
 	ortho(BaseP,NbasesP,prodP);
+	normalization(BaseP,NbasesP,prodP);
 	ortho(BaseP,NbasesP,prodP); // Doble ortonormalizacion
-	
+
 	write("Output.txt","Ok.",1,1);
+
+	// Inicializo las matrices para la fase offline
+	mpi(cout<<"Inicializacion matrices..." <<endl;)
+	include "Allocate_matrices_2D.idp"
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	for(int i=0;i<NbasesP;i++){
@@ -197,7 +198,7 @@ for (int i=0; i<NiterGreddy; i++){
 	}
 	
 	// ** HASTA AQUI ESTA BIEN
-
+	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
 	include "MatricesOffline_2Dn.idp"

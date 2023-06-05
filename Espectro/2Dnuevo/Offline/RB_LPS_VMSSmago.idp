@@ -11,7 +11,9 @@ MRB += PenRBi;
 
 bDiffRBi = bDiffRB(0:I-1);
 
-for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
+
+/*
+for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	real[int, int] MRBF = MRB;
 	ConvRBi = 0;
 	SmagoRBi = 0;
@@ -20,42 +22,42 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	bRB = 0;
 	
 	// Matriz de conveccion
-	for (int s=0; s<I; s++){
-		real[int,int] ConvRBint(I,I), ConvRBN(2*Nbases, 2*Nbases);
+	for (int s=0; s<NbasesV; s++){
+		real[int,int] ConvRBint(NbasesV,NbasesV), ConvRBN(I, I);
 		ConvRBN = ConvRB[s];
-		ConvRBint = ConvRBN(0:I-1, 0:I-1);
+		ConvRBint = ConvRBN(0:NbasesV-1, 0:NbasesV-1);
 		ConvRBint = uRBv(s)*ConvRBint;
 		ConvRBi += ConvRBint;
 	}
 
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(NbasesV);
-	uN = uRBv(0:I-1); //solo las componentes de la velocidad
+	uN = uRBv(0:NbasesV-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
-		real[int, int] Gradint(9,I);
-		Gradint = GradPM[s](0:8, 0:I-1);
+		real[int, int] Gradint(9,NbasesV);
+		Gradint = GradPM[s](0:8, 0:NbasesV-1);
 		GraduN = Gradint * uN;
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
 	mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
-	//cout<<sigmaEIMS<<endl;
+	// cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBint(I, I), SmagoRBN(2*Nbases, 2*Nbases);
+		real[int,int] SmagoRBint(NbasesV, NbasesV), SmagoRBN(I, I);
 		SmagoRBN = SmagoRB[s];
-		SmagoRBint = SmagoRBN(0:I-1, 0:I-1);
+		SmagoRBint = SmagoRBN(0:NbasesV-1, 0:NbasesV-1);
 		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
 		SmagoRBi += SmagoRBint; 
 	}
 	mpi(cout<<SmagoRBi<<endl;)
 		
 	// Segundo miembro Smago
-	for (int s=0; s<I; s++){
+	for (int s=0; s<NbasesV; s++){
 		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
 	}
 	
 	// Segundos miembro dt
-	for (int s=0; s<I; s++){
+	for (int s=0; s<NbasesV; s++){
 		real[int] bDTRBint(I);
 		bDTRBint = DTRB(s,:);
 		bDTRBint = uRBv(s)*bDTRBint;
@@ -76,6 +78,7 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	matrix MRBs = MRBF;
 	set(MRBs, solver=UMFPACK);
 	// real[int,int] MRBinv = MRB^-1;
-	
+	uRBv = MRBs^-1*bRB;
 }
 
+*/
