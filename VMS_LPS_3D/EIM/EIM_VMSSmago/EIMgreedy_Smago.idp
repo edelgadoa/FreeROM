@@ -69,4 +69,5 @@ for (int j=0; j<=i; j++){
 // Almacenamos la base escogida 
 write("Bases_EIM/Base_EIM_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 
-muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	
+muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido
+mpi(cout<<muEIM<<endl;)	

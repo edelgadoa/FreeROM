@@ -61,6 +61,12 @@ VhP0L hk = hTriangle;
 real hT, hTL = hk[].max;
 mpiAllReduce(hTL, hT, mpiCommWorld, mpiMAX); //El máximo de los diámetros de la malla
 
+VhP0 mkG, hkG;
+hkG = hTriangle;
+varf medG(unused,v)=intN(Th)(1.*v);
+real[int] medkG=medG(0,VhP0);
+mkG[] = sqrt(medkG); 
+
 //Construyo el vector que bloqueará el residuo de SMAGO
 varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2, un1=1,un2=1,un3=1); 
 

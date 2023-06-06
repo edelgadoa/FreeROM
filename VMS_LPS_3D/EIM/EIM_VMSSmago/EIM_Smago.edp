@@ -20,6 +20,7 @@ include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Definimos los parametros a usar
 include "../../Auxiliary/Parametros_3D.idp"
