@@ -73,7 +73,7 @@ Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
 VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
-VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
+// VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
 VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
 VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
