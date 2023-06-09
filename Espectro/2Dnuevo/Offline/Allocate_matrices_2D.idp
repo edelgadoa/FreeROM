@@ -10,14 +10,14 @@
 real[int,int][int] GradPM(Mbases);
 
 for (int i=0;i<Mbases;i++){
-	real[int,int] Aux(4,NbasesV);
+	real[int,int] Aux(4,2*Nbases);
 	Aux=0;
-	GradPM[i]=Aux(0:3,0:NbasesV-1);
+	GradPM[i]=Aux(0:3,0:2*Nbases-1);
 }
 
 // Definicion de las Matrices Reducidas fijas
-real[int,int] DiffRB(NbasesV+NbasesP, NbasesV+NbasesP), DivPRB(NbasesV+NbasesP, NbasesV+NbasesP), PenRB(NbasesV+NbasesP, NbasesV+NbasesP), 
-			  DTRB(NbasesV+NbasesP, NbasesV+NbasesP);
+real[int,int] DiffRB(3*Nbases, 3*Nbases), DivPRB(3*Nbases, 3*Nbases), PenRB(3*Nbases, 3*Nbases), 
+			  DTRB(3*Nbases, 3*Nbases);
 			  
 DiffRB = 0;
 DivPRB = 0;
@@ -25,8 +25,8 @@ PenRB = 0;
 DTRB = 0;
 
 // Definicion de los segundos miembros
-real[int] bDiffRB(NbasesV+NbasesP), bConvRB(NbasesV+NbasesP), bDTRB(NbasesV+NbasesP);// bSmagoRBi(NbasesV+NbasesP);			   
-real[int,int] bSmagoRB(Mbases, NbasesV+NbasesP);
+real[int] bDiffRB(3*Nbases), bConvRB(3*Nbases), bDTRB(3*Nbases);// bSmagoRBi(3*Nbases);			   
+real[int,int] bSmagoRB(Mbases, 3*Nbases);
 
 bDiffRB = 0;
 bConvRB = 0;
@@ -35,16 +35,16 @@ bDTRB = 0;
 bSmagoRB = 0;
 
 // Definicion de Matrices y Tensores variables
-real[int,int][int] ConvRB(NbasesV), SmagoRB(Mbases);
+real[int,int][int] ConvRB(2*Nbases), SmagoRB(Mbases);
 
-for (int k=0; k<NbasesV; k++){
-	real[int,int] aux(NbasesV+NbasesP, NbasesV+NbasesP);
+for (int k=0; k<2*Nbases; k++){
+	real[int,int] aux(3*Nbases, 3*Nbases);
 	aux=0;
-	ConvRB[k] = aux(0:NbasesV+NbasesP-1, 0:NbasesV+NbasesP-1);
+	ConvRB[k] = aux(0:3*Nbases-1, 0:3*Nbases-1);
 }
 
 for (int k=0;k<Mbases;k++){
-	real[int,int] aux(NbasesV+NbasesP,NbasesV+NbasesP);
+	real[int,int] aux(3*Nbases,3*Nbases);
 	aux=0;
-	SmagoRB[k]=aux(0:NbasesV+NbasesP-1,0:NbasesV+NbasesP-1);
+	SmagoRB[k]=aux(0:3*Nbases-1,0:3*Nbases-1);
 }

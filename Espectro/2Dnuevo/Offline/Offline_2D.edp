@@ -39,7 +39,7 @@ include "../Auxiliary/Normas.idp"
 //Definicion de Constantes y variables varias
 int Nbases = NiterGreddy*niT; 
 
-real[int] MuBest(Nbases+1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
+real[int] MuBest(NiterGreddy+1), DeltaN(NiterGreddy), TauN(NiterGreddy), ErrorVN(NiterGreddy), ErrorPN(NiterGreddy);
 
 // Leo los valores de los parámetros para los cuales he calculado ya Snapshots
 readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
@@ -49,19 +49,17 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
-Vh2P2per[int] [BaseV,BaseVY](Nbases);
+Vh2P2per[int] [BaseV,BaseVY](2*Nbases);
 VhP1per[int] BaseP(Nbases);
-VhP2per[int] BaseVel(Nbases);
-VhP2per[int] BaseVelY(Nbases);
+VhP2per[int] BaseVel(2*Nbases);
+VhP2per[int] BaseVelY(2*Nbases);
 
-Vh2P2per[int] [FBaseV, FBaseVY](Nbases);//, FBaseVY(Nbases);
+Vh2P2per[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
 
-VhP2per[int] FBaseVel(Nbases), FBaseVelY(Nbases);;
+VhP2per[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
 
-VhP1dcper[int] FPdX(Nbases), FPdY(Nbases);
-
-VhP1dcper[int] FVdX(Nbases), FVdY(Nbases);
-VhP1dcper[int] FVYdX(Nbases),FVYdY(Nbases);
+VhP1dcper[int] FVdX(2*Nbases), FVdY(2*Nbases);
+VhP1dcper[int] FVYdX(2*Nbases),FVYdY(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
 int NbasesV=1; int NbasesP=1;
@@ -86,6 +84,10 @@ MBaseP(:,0) = PPP[];
 mpi(cout<<"Inicializacion EIM..." <<endl;)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
+
+// Inicializo las matrices para la fase offline
+mpi(cout<<"Inicializacion matrices..." <<endl;)
+include "Allocate_matrices_2D.idp"
 
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
@@ -141,7 +143,7 @@ for (int i=0; i<NiterGreddy; i++){
 		POD(MBaseV,prodV,BaseV,NbasesV,autovalVel);
 		POD(MBaseP,prodP,BaseP,NbasesP,autovalPres);
 	}
-	write("Output.txt","At the end, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);
+	write("Output.txt","After POD, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);
 
 	// Calculamos el supremizer
 	write("Output.txt","Supremizer construction...",1,1);
@@ -153,29 +155,23 @@ for (int i=0; i<NiterGreddy; i++){
 		BaseV[NbasesV+i][]=supEF[];
 	}
 	NbasesV += NbasesP; 
+	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
 	write("Output.txt","Ok.",1,1);
 
 	// Hacemos la ortonormalizacion
 	write("Output.txt","Orthonormalization...",1,1);
 
-	for(int i=0;i<NbasesV;i++){
-		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-	}
+	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
+	
 	include "GramSchmidt_2D.idp"
-
 	ortho(BaseV,NbasesV,prodV);
 	normalization(BaseV,NbasesV,prodV);
 	ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
 	ortho(BaseP,NbasesP,prodP);
 	normalization(BaseP,NbasesP,prodP);
 	ortho(BaseP,NbasesP,prodP); // Doble ortonormalizacion
-
 	write("Output.txt","Ok.",1,1);
 
-	// Inicializo las matrices para la fase offline
-	mpi(cout<<"Inicializacion matrices..." <<endl;)
-	include "Allocate_matrices_2D.idp"
-	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	for(int i=0;i<NbasesP;i++){
 		MBaseP(:,i) = BaseP[i][];
@@ -197,7 +193,7 @@ for (int i=0; i<NiterGreddy; i++){
 		ConvPEM[i] = ConvPE(Vh2P2per, Vh2P2per);
 	}
 	
-	// ** HASTA AQUI ESTA BIEN
+	// ** HASTA AQUI CREO QUE ESTA BIEN
 	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);

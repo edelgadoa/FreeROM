@@ -15,7 +15,7 @@ for (int i=0; i<NbasesV; i++){
     for (int j=0; j<=i; j++){
         if (mpirank==contFF%mpisize){
             // Matrices
-            DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM); 
+            DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM);
             DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
             if (j<i){
                 DiffRBL(j,i) = DiffRBL(i,j);
@@ -26,7 +26,7 @@ for (int i=0; i<NbasesV; i++){
     }
     for (int j=0; j<NbasesP; j++){
         if (mpirank==contFF%mpisize){
-            DivPRBL(j+NbasesV, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+            DivPRBL(j+2*Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
         }
         contFF++;
     }
@@ -34,9 +34,9 @@ for (int i=0; i<NbasesV; i++){
 for (int i=0; i<NbasesP; i++){
     for (int j=0; j<=i; j++){
         if (mpirank==contFF%mpisize){
-            PenRBL(i+NbasesV, j+NbasesV) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+            PenRBL(i+2*Nbases, j+2*Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
             if (j<i){
-                PenRBL(j+NbasesV, i+NbasesV) = PenRBL(i+NbasesV, j+NbasesV);
+                PenRBL(j+2*Nbases, i+2*Nbases) = PenRBL(i+2*Nbases, j+2*Nbases);
             } 
         }
         contFF++;
@@ -64,7 +64,7 @@ mpi(cout << DTRB << endl;)*/
 
 // Conveccion
 for (int s=0; s<=i; s++){
-    real[int, int] CintL(NbasesV+NbasesP, NbasesV+NbasesP), CintG(NbasesV+NbasesP, NbasesV+NbasesP);
+    real[int, int] CintL(3*Nbases, 3*Nbases), CintG(3*Nbases, 3*Nbases);
     CintL = 0; CintG = 0;
     contFF = 0;
     for (int i=0; i<NbasesV; i++){
@@ -91,7 +91,7 @@ for (int s=0; s<=i; s++){
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-    real[int, int] SintL(NbasesV+NbasesP, NbasesV+NbasesP), SintG(NbasesV+NbasesP, NbasesV+NbasesP);
+    real[int, int] SintL(3*Nbases, 3*Nbases), SintG(3*Nbases, 3*Nbases);
     SintL = 0; SintG = 0;
     contFF = 0;
     for (int i=0; i<NbasesV; i++){
