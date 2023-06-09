@@ -1,0 +1,132 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para construir EN PARALELO las matrices de base reducida
+
+// TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
+
+// Inicializo las matrices locales para el paralelo
+include "Allocate_matrices_local.idp"
+
+// Comienzo el bucle de construccion de las matrices reducidas fijas
+int contFF = 0; // Contador para el paralelo
+for (int i=0; i<NbasesV; i++){
+    for (int j=0; j<=i; j++){
+        if (mpirank==contFF%mpisize){
+            // Matrices
+            DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM);
+            DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
+            if (j<i){
+                DiffRBL(j,i) = DiffRBL(i,j);
+                DTRBL(j,i) = DTRBL(i,j);
+            }	
+        }
+        contFF++;
+    }
+    for (int j=0; j<NbasesP; j++){
+        if (mpirank==contFF%mpisize){
+            DivPRBL(j+2*Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
+        }
+        contFF++;
+    }
+}
+for (int i=0; i<NbasesP; i++){
+    for (int j=0; j<=i; j++){
+        if (mpirank==contFF%mpisize){
+            PenRBL(i+2*Nbases, j+2*Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
+            if (j<i){
+                PenRBL(j+2*Nbases, i+2*Nbases) = PenRBL(i+2*Nbases, j+2*Nbases);
+            } 
+        }
+        contFF++;
+    }
+}
+
+pause;
+
+mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+// mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
+
+DiffRB += DiffRBG;
+DivPRB += DivPRBG;
+PenRB += PenRBG;
+DTRB += DTRBG;
+
+/*
+mpi(cout << DiffRB << endl;)
+mpi(cout << DivPRB << endl;)
+mpi(cout << PenRB << endl;)
+mpi(cout << DTRB << endl;)*/
+
+// Conveccion
+for (int s=0; s<=i; s++){
+    real[int, int] CintL(3*Nbases, 3*Nbases), CintG(3*Nbases, 3*Nbases);
+    CintL = 0; CintG = 0;
+    contFF = 0;
+    for (int i=0; i<NbasesV; i++){
+        for (int j=0; j<=i; j++){
+            if (mpirank==contFF%mpisize){
+                CintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
+                if(j<i){
+                    CintL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
+                } 
+                if (s==i && (j!=i)){
+                    for (int k=0; k<s; k++){
+                        CintL(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
+                    }
+                } 
+            }
+            contFF++;		
+        }
+    }
+    pause;
+    mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
+    
+    ConvRB[s] += CintG;
+}
+
+// Smagorinsky
+for (int s=0; s<Mbases; s++){
+    real[int, int] SintL(3*Nbases, 3*Nbases), SintG(3*Nbases, 3*Nbases);
+    SintL = 0; SintG = 0;
+    contFF = 0;
+    for (int i=0; i<NbasesV; i++){
+        for (int j=0; j<=i; j++){
+            if (mpirank==contFF%mpisize){
+                SintL(i,j) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
+                if(j<i){
+                    SintL(j,i) = SintL(i,j);
+                }
+            }
+            contFF++;		
+        }
+    }
+    pause;
+    mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
+    SmagoRB[s] += SintG;
+}
+
+
+// Matrices para el EIM de Smago
+for (int s=0; s<Mbases; s++){
+real[int,int] Dtk = GradPM[s];
+
+for (int i=0; i<NbasesV; i++){
+    Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
+    Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
+    Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
+    Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
+}
+GradPM[s] = Dtk;
+}
+pause;
+
+for (int s=0; s<Mbases; s++){
+    for (int i=0; i<NbasesV; i++){
+        bSmagoRB(s,i) = innerprodX(FBaseV[i][], FBaseV[i][], SmagoPEM[s]);
+    }
+}

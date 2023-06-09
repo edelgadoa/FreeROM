@@ -1,0 +1,83 @@
+///////////////
+// FreeROM 
+/////////////// 
+int I=NbasesV+NbasesP; // Para ajustar los indices
+
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
+real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain); 
+//, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
+
+// Inicializamos las matrices para el problema reducido
+real[int, int] DiffRBi(I, I), DivPRBi(I, I), DivPRBTi(I, I), PenRBi(I, I),
+			   DTRBi(I, I), ConvRBi(I, I), SmagoRBi(I, I);
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDiffRBi(I), bSmagoRBi(I), bDTRBi(I), bConvRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffRB;
+DivPRBi = DivPRB;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB;
+DTRBi = DTRB;
+bDiffRBi = bDiffRB;
+bConvRBi = bConvRB;
+
+// Comenzamos el bucle del greedy 
+
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+	real nuRB = 1./MuTrain(iRB);
+	
+	// Resuelvo el problema 
+	real[int] uRBv(I); // Vectores donde almaceno la Solución Reducida
+	real[int,int] MRB(I,I); // Matriz para resolver el sistema
+	real[int] bRB(I); // Segundo miembro para resolver el sistema
+	
+
+	mpi(cout<<"Calculando solucion reducida..."<<endl;)
+	include "RB_LPS_VMSSmago.idp"
+	//mpi(cout<<uRBv<<endl;)
+	// Reconstruyo la solución reducida
+	mpi(cout<<"OK."<<endl;)
+	
+
+	Vh2P2per [uRB, uRBY];
+	VhP2per uRBP;
+	
+	real[int,int] MBaseVi(Vh2P2per.ndof, NbasesV), MBasePi(VhP1per.ndof, NbasesP); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
+	MBasePi = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
+	
+	uRB[] = MBaseVi*uRBv(0:NbasesV-1);
+	uRBP[] = MBasePi*uRBv(NbasesV:I-1);
+	
+	if(MuTrain(iRB)==Reynolds){
+		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
+		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		mpi(cout<<uRBv<<endl;)
+	}
+	
+	/*
+	VhP1dc uRBdX, uRBdY, uRBYdX, uRBYdY;
+	
+	{ 
+		VhP2 uRBvel, uRBvelY;
+		uRBvel = uRB; uRBvelY = uRBY;
+	
+		uRBdX[] = DXP2IPh * uRBvel[]; uRBdY[] = DYP2IPh * uRBvel[];	
+		uRBYdX[] = DXP2IPh * uRBvelY[]; uRBYdY[] = DYP2IPh * uRBvelY[];
+	}
+	
+	// Calculo el estimador de error 
+	*/
+	// **ESPECTRO
+	cout << "aa" << endl;
+	
+}
+
+mpi(cout<<"Delta"<<DeltaG<<endl;)
+DeltaN(i) = DeltaG.max;
+TauN(i) = TauG.max;
+MuBest(i+1) = MuTrain(DeltaG.imax);

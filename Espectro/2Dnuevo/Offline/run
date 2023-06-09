@@ -2,7 +2,7 @@
 echo 'Numero de procesadores:'
 read NP
 
-nameedp="NS_VMS_Smago_Pres.edp"
+nameedp="Offline_2D.edp"
 
 verbosity=0
 

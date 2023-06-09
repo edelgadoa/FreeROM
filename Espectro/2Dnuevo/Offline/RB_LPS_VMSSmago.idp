@@ -1,0 +1,83 @@
+///////////////
+// FreeROM 
+/////////////// 	
+
+// Comenzamos a resolver el problema reducido	
+MRB = nuRB * DiffRBi;
+MRB += DivPRBi;
+MRB += DivPRBTi;
+MRB += (1./dt) * DTRBi;
+MRB += PenRBi;	
+
+bDiffRBi = bDiffRB(0:I-1);
+
+for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
+	real[int, int] MRBF = MRB;
+	ConvRBi = 0;
+	SmagoRBi = 0;
+	bDTRBi = 0;
+	bSmagoRBi = 0;
+	bRB = 0;
+	
+	// Matriz de conveccion
+	for (int s=0; s<NbasesV; s++){
+		real[int,int] ConvRBint(NbasesV,NbasesV), ConvRBN(I, I);
+		ConvRBN = ConvRB[s];
+		ConvRBint = ConvRBN(0:NbasesV-1, 0:NbasesV-1);
+		ConvRBint = uRBv(s)*ConvRBint;
+		ConvRBi += ConvRBint;
+	}
+
+	// Matiz de Smagorinsky
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(NbasesV);
+	uN = uRBv(0:NbasesV-1); //solo las componentes de la velocidad
+	for(int s=0; s<Mbases; s++){
+		real[int, int] Gradint(9,NbasesV);
+		Gradint = GradPM[s](0:8, 0:NbasesV-1);
+		GraduN = Gradint * uN;
+		bEIMS(s) = sqrt(GraduN'*GraduN);
+	}
+	mpi(cout<<bEIMS<<endl;)
+	sigmaEIMS = MEIMS^-1 * bEIMS;
+	// cout<<sigmaEIMS<<endl;
+	for (int s=0; s<Mbases; s++){
+		real[int,int] SmagoRBint(NbasesV, NbasesV), SmagoRBN(I, I);
+		SmagoRBN = SmagoRB[s];
+		SmagoRBint = SmagoRBN(0:NbasesV-1, 0:NbasesV-1);
+		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
+		SmagoRBi += SmagoRBint; 
+	}
+	mpi(cout<<SmagoRBi<<endl;)
+		
+	// Segundo miembro Smago
+	for (int s=0; s<NbasesV; s++){
+		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
+	}
+	
+	// Segundos miembro dt
+	for (int s=0; s<NbasesV; s++){
+		real[int] bDTRBint(I);
+		bDTRBint = DTRB(s,:);
+		bDTRBint = uRBv(s)*bDTRBint;
+		bDTRBi += bDTRBint;
+	}
+	
+	// Construyo la matriz y Segundo miembros para el problema reducido
+	MRBF += ConvRBi;
+	MRBF += SmagoRBi; 
+	
+	bRB = (1./dt) * bDTRBi(0:I-1);
+	bRB -= nuRB * bDiffRBi(0:I-1);
+	bRB -= bConvRBi(0:I-1);
+	bRB -= bSmagoRBi(0:I-1);
+	
+	// Resuelvo el problema reducido
+	real[int] uRBvp = uRBv;
+	matrix MRBs = MRBF;
+	set(MRBs, solver=UMFPACK);
+
+	mpi(cout<<"Aqui"<<endl;)
+	// real[int,int] MRBinv = MRB^-1;
+	uRBv = MRBs^-1*bRB;
+	mpi(cout<<"Aqui"<<endl;)
+}

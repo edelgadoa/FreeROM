@@ -13,11 +13,11 @@ include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/macro_ddm.idp"
 include "../Auxiliary/search.idp"
 
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
 // Creamos la malla
-int NN = 32;
-real x01 = -0.5, x11 = 0.5;
-real y01 = -0.5, y11 = 0.5;
-mesh Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
+include "../Auxiliary/Malla.idp"
 
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
@@ -25,11 +25,8 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
-
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-readvector("parameters.txt", real, vReynolds, 0); 
+readvector("Snapshots.txt", real, vReynolds, 0); 
 int nSnapshots = vReynolds.n;
 
 VhP2per[int] BVX(nSnapshots), BVY(nSnapshots);
@@ -40,7 +37,6 @@ include "Load_Snapshots_EIM.idp"
 // Defino las variables para el EIM
 int Mmax = NN^2; //numero maximo de bases del EIM
 int M; //numero de bases que voy a considerar finalmente
-real epsEIM = 1.e-4;
 real[int] Tmax(Mmax), muEIM(Mmax); //Donde almaceno los puntos magicos y los valores de parámetros que voy escogiendo
 real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa del EIM
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
