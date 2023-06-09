@@ -4,7 +4,7 @@
 int I=NbasesV+NbasesP; // Para ajustar los indices
 
 // Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
-real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain); 
+real[int] TauG(NiterGreddy), DeltaG(NiterGreddy), ResG(NiterGreddy); 
 //, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
 
 // Inicializamos las matrices para el problema reducido
@@ -78,6 +78,6 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 }
 
 mpi(cout<<"Delta"<<DeltaG<<endl;)
-DeltaN(i) = DeltaG.max;
-TauN(i) = TauG.max;
-MuBest(i+1) = MuTrain(DeltaG.imax);
+DeltaN(iGreedy) = DeltaG.max;
+TauN(iGreedy) = TauG.max;
+MuBest(iGreedy+1) = MuTrain(DeltaG.imax);

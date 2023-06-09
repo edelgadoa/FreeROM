@@ -107,9 +107,9 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
 
-for (int i=0; i<NiterGreddy; i++){
+for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
-	mpi(cout<<"---Iteracion " + (i+1) + " for Re=" + Reynolds <<endl;)
+	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 		// Si no lo he calculado todavía, lo calculo
 
@@ -182,7 +182,7 @@ for (int i=0; i<NiterGreddy; i++){
 	
 		// Actualizo las soluciones filtradas
 		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
-		
+
 		FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
 		
 		FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];

@@ -21,9 +21,9 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	
 	// Matriz de conveccion
 	for (int s=0; s<NbasesV; s++){
-		real[int,int] ConvRBint(NbasesV,NbasesV), ConvRBN(I, I);
+		real[int,int] ConvRBint(I,I), ConvRBN(3*Nbases, 3*Nbases);
 		ConvRBN = ConvRB[s];
-		ConvRBint = ConvRBN(0:NbasesV-1, 0:NbasesV-1);
+		ConvRBint = ConvRBN(0:I-1, 0:I-1);
 		ConvRBint = uRBv(s)*ConvRBint;
 		ConvRBi += ConvRBint;
 	}
@@ -32,22 +32,23 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(NbasesV);
 	uN = uRBv(0:NbasesV-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
-		real[int, int] Gradint(9,NbasesV);
-		Gradint = GradPM[s](0:8, 0:NbasesV-1);
+		real[int, int] Gradint(4,NbasesV);
+		Gradint = GradPM[s](0:3, 0:NbasesV-1);
 		GraduN = Gradint * uN;
+		mpi(cout<<GraduN<<endl;)
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	mpi(cout<<bEIMS<<endl;)
+	//mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	// cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBint(NbasesV, NbasesV), SmagoRBN(I, I);
+		real[int,int] SmagoRBint(I, I), SmagoRBN(3*Nbases, 3*Nbases);
 		SmagoRBN = SmagoRB[s];
-		SmagoRBint = SmagoRBN(0:NbasesV-1, 0:NbasesV-1);
+		SmagoRBint = SmagoRBN(0:I-1, 0:I-1);
 		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
 		SmagoRBi += SmagoRBint; 
 	}
-	mpi(cout<<SmagoRBi<<endl;)
+	//mpi(cout<<SmagoRBi<<endl;)
 		
 	// Segundo miembro Smago
 	for (int s=0; s<NbasesV; s++){
