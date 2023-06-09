@@ -56,6 +56,8 @@ DivPRB += DivPRBG;
 PenRB += PenRBG;
 DTRB += DTRBG;
 
+write("Output.txt","Matrices varias OK.",1,1);
+
 /*
 mpi(cout << DiffRB << endl;)
 mpi(cout << DivPRB << endl;)
@@ -63,7 +65,7 @@ mpi(cout << PenRB << endl;)
 mpi(cout << DTRB << endl;)*/
 
 // Conveccion
-for (int s=0; s<=i; s++){
+for (int s=0; s<NbasesV; s++){
     real[int, int] CintL(3*Nbases, 3*Nbases), CintG(3*Nbases, 3*Nbases);
     CintL = 0; CintG = 0;
     contFF = 0;
@@ -88,6 +90,7 @@ for (int s=0; s<=i; s++){
     
     ConvRB[s] += CintG;
 }
+write("Output.txt","Conveccion OK.",1,1);
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
@@ -110,6 +113,8 @@ for (int s=0; s<Mbases; s++){
     SmagoRB[s] += SintG;
 }
 
+write("Output.txt","Smagorinsky OK.",1,1);
+
 
 // Matrices para el EIM de Smago
 for (int s=0; s<Mbases; s++){
@@ -130,3 +135,5 @@ for (int s=0; s<Mbases; s++){
         bSmagoRB(s,i) = innerprodX(FBaseV[i][], FBaseV[i][], SmagoPEM[s]);
     }
 }
+
+write("Output.txt","EIM Smagorinsky OK.",1,1);
