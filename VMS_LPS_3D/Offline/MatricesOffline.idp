@@ -89,7 +89,7 @@ for (int s=0; s<=i; s++){
 	
 	ConvRB[s] = Cint;
 }
-cout<<"conv Matrix"<<ConvRB[0]<<endl;
+mpi(cout<<"conv Matrix"<<ConvRB[0]<<endl;)
 
 // Smagorinsky
 mpi(cout<<"Smago matrix"<<endl;)
@@ -291,7 +291,7 @@ mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
 //mpi(cout<<"RHS"<<endl;)
 // Definicion de segundos miembros
 real[int] LevVB, FLevVB;
-ChangeNumbering(MatAVh3P2, LevV[],LevVB);
+ChangeNumbering(MatAVh3P2, LevV[], LevVB);
 ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
 bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
 bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz

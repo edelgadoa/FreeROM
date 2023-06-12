@@ -73,7 +73,7 @@ Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
 VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
-VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
+// VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
 VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
 VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
@@ -230,7 +230,7 @@ for (int i=0; i<Nbases; i++){
 	
 	// Defino el nuevo producto escalar para la convección
     Vh3P2L [BV, BVY, BVZ];
-    BV[] = BaseV[i];
+    BV[] = BaseV[i][];
 	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(BV,uu,v));
 	{
 		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
