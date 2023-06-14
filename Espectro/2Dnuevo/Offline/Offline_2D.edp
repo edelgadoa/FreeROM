@@ -49,36 +49,46 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
-Vh2P2per[int] [BaseV,BaseVY](2*Nbases);
-VhP1per[int] BaseP(Nbases);
-VhP2per[int] BaseVel(2*Nbases);
-VhP2per[int] BaseVelY(2*Nbases);
+Vh2P2perL[int] [BaseV,BaseVY](2*Nbases);
+VhP1perL[int] BaseP(Nbases);
+VhP2perL[int] BaseVel(2*Nbases);
+VhP2perL[int] BaseVelY(2*Nbases);
 
-Vh2P2per[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
+// Si hacemos Smagorinsky (sin VMS), esto no es necesario. 
+//Vh2P2perL[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
 
-VhP2per[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
+//VhP2perL[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
 
-VhP1dcper[int] FVdX(2*Nbases), FVdY(2*Nbases);
-VhP1dcper[int] FVYdX(2*Nbases),FVYdY(2*Nbases);
+//VhP1dcperL[int] FVdX(2*Nbases), FVdY(2*Nbases);
+//VhP1dcperL[int] FVYdX(2*Nbases),FVYdY(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
-int NbasesV=1; int NbasesP=1;
-real[int, int] MBaseV(Vh2P2per.ndof, 1), MBaseP(VhP1per.ndof, 1);
+int NbasesV=1; 
+int NbasesP=1;
+
+real[int, int] MBaseV(Vh2P2perL.ndof, 1), MBaseP(VhP1perL.ndof, 1);
 Reynolds = Refijo;
 MuBest(0) = Reynolds;
 readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
 readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
 readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
 
-Vh3P2per [VVx,VVy,PP]; //Hay que cargarlos en Vh3P2per y despues pasarlos a Vh2P2per+VhP1per
-VVx[] = SolX; VVy[] = SolY; PP[] = SolP;
+// Cargamos los Snapshots en local
+VhP2per SnapX, SnapY; 
+VhP1per SnapP;  
+SnapX[] = SolX; SnapY[] = SolY; SnapP[] = SolP;
 
-Vh2P2per [Vx,Vy]; VhP1per PPP;
-[Vx,Vy] = [VVx,VVy]; PPP = PP;
+VhP2perL SnapXL, SnapYL;
+VhP1perL SnapPL;
+SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
+BasePL[] = SnapP[](mapVhP1per);
+
+Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
-MBaseV(:,0) = Vx[];
-MBaseP(:,0) = PPP[];
+MBaseV(:,0) = VelXL[];
+MBaseP(:,0) = SnapPL[];
  
 /////////////////////////////////////////
 mpi(cout<<"Inicializacion EIM..." <<endl;)
@@ -96,6 +106,8 @@ mpi(cout<<"Inicializacion Greedy..." <<endl;)
 Reynolds = Remin; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
 MuBest(0) = Reynolds;
 
+
+/// Esto hay que mirarlo, en principio iría en LOCAL tambien (como no resolvemos el FOM, no hace falta ahora)
 VhP2per uFijo, uFijoY; //Para la normaT
 VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
 
@@ -122,24 +134,31 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	}
 
 	// Cargamos todos los snapshots en tiempo
-	MBaseV.resize(MBaseV.n,NbasesV+niT);
-	MBaseP.resize(MBaseP.n,NbasesP+niT);
+	MBaseV.resize(MBaseV.n, NbasesV + niT);
+	MBaseP.resize(MBaseP.n, NbasesP + niT);
 	for(int i=0; i<niT; i++){
-		real tt = T0+(i+1)*dt;
-		Vh3P2per [uaux, uauxY, uauxP];
+		real tt = T0 + (i+1)*dt;
+		VhP2per SnapX, SnapY;
+		VhP1per SnapP;
+		
 		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +tt+ ".txt", real, SolX, 0);
 		readvector("../Snapshots/Vy_" + Reynolds + "_t_" +tt+ ".txt", real, SolY, 0);
 		readvector("../Snapshots/P_" + Reynolds + "_t_" +tt+ ".txt", real, SolP, 0);
-		uaux[] = SolX; uauxY[] = SolY; uauxP[] = SolP;
-		Vh2P2per [Vx,Vy]; VhP1per PPP;
-		[Vx,Vy] = [uaux,uauxY]; PPP = uauxP;
-		MBaseV(:,NbasesV+i) = Vx[];
-		MBaseP(:,NbasesP+i) = PPP[];
+		
+		SnapX[] = SolX; SnapY[] = SolY; SnapP[] = SolP;
+		
+		VhP2perL SnapXL, SnapYL; VhP1perL SnapPL;
+		SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
+		BasePL[] = SnapP[](mapVhP1per);
+		
+		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+		MBaseV(:, NbasesV+i) = VelXL[];
+		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
-		include "POD.idp"
+		include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
 		POD(MBaseV,prodV,BaseV,NbasesV,autovalVel);
 		POD(MBaseP,prodP,BaseP,NbasesP,autovalPres);
 	}
@@ -189,8 +208,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
 		
 		// Defino el nuevo producto escalar para la convección
-		varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
-		ConvPEM[i] = ConvPE(Vh2P2per, Vh2P2per);
+		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
+		ConvPEM[i] = ConvPE(Vh2P2perL, Vh2P2perL);
 	}
 	
 	// ** HASTA AQUI CREO QUE ESTA BIEN

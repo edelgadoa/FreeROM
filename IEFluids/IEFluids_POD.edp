@@ -113,12 +113,12 @@ ChangeNumbering(MatNormH1, VhL, Vhi);
 ChangeNumbering(MatNormL2, PhL, Phi);
 
 // Calculo de matrices de Correlacion
-real[int, int] AuxC(MatNormH1.n,VhL.m), AuxP(MatNormL2.n, PhL.m); 
-MatMatMult(MatNormH1, VhL, AuxC);
-MatMatMult(MatNormL2, PhL, AuxP);		
+real[int, int] AuxC(MatNormH1.n, Vhi.m), AuxP(MatNormL2.n, Phi.m); 
+MatMatMult(MatNormH1, Vhi, AuxC);
+MatMatMult(MatNormL2, Phi, AuxP);		
 
-real [int,int] CV(Nsnap, Nsnap) = VhL'*AuxC;
-real [int,int] CP(Nsnap, Nsnap) = PhL'*AuxP;
+real [int,int] CV(Nsnap, Nsnap) = Vhi'*AuxC;
+real [int,int] CP(Nsnap, Nsnap) = Phi'*AuxP;
 
 CV *= (1./Nsnap);
 CP *= (1./Nsnap);
