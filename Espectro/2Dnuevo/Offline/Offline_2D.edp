@@ -81,9 +81,9 @@ SnapX[] = SolX; SnapY[] = SolY; SnapP[] = SolP;
 VhP2perL SnapXL, SnapYL;
 VhP1perL SnapPL;
 SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
-BasePL[] = SnapP[](mapVhP1per);
+SnapPL[] = SnapP[](mapVhP1per);
 
-Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL]; 
 
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
@@ -149,7 +149,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 		VhP2perL SnapXL, SnapYL; VhP1perL SnapPL;
 		SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
-		BasePL[] = SnapP[](mapVhP1per);
+		SnapPL[] = SnapP[](mapVhP1per);
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
 		MBaseV(:, NbasesV+i) = VelXL[];
@@ -166,12 +166,12 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 	// Calculamos el supremizer
 	write("Output.txt","Supremizer construction...",1,1);
-	for(int i=0;i<NbasesP;i++)
-	{
-		Vh2P2per [supEF,supEFY];
-		include "supremizer.idp"
-		supremizer(BaseP[i],Reynolds,supEF);
-		BaseV[NbasesV+i][]=supEF[];
+	for(int i=0; i<NbasesP; i++){
+		
+		Vh2P2perL [supEF, supEFY];
+		{include "Supremizer.idp"} //El calculo del supremizer esta en paralelo (TODO: comprobar que funciona)
+		// supremizer(BaseP[i],Reynolds,supEF);
+		BaseV[NbasesV+i][] = supEF[];
 	}
 	NbasesV += NbasesP; 
 	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
@@ -182,14 +182,16 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	
+	// HASTA AQUÍ COMPILA BIEN
+	
 	include "GramSchmidt_2D.idp"
-	ortho(BaseV,NbasesV,prodV);
-	normalization(BaseV,NbasesV,prodV);
-	ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
-	ortho(BaseP,NbasesP,prodP);
-	normalization(BaseP,NbasesP,prodP);
-	ortho(BaseP,NbasesP,prodP); // Doble ortonormalizacion
-	write("Output.txt","Ok.",1,1);
+	// ortho(BaseV,NbasesV,prodV);
+	// normalization(BaseV,NbasesV,prodV);
+	// ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
+	// ortho(BaseP,NbasesP,prodP);
+	// normalization(BaseP,NbasesP,prodP);
+	// ortho(BaseP,NbasesP,prodP); // Doble ortonormalizacion
+	// write("Output.txt","Ok.",1,1);
 
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
 	for(int i=0;i<NbasesP;i++){
@@ -199,13 +201,13 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBaseV(:,i) = BaseV[i][];
 		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	
-		// Actualizo las soluciones filtradas
-		FBaseV[i][] = IPh2P22P1 * BaseV[i][];
-
-		FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; 
-		
-		FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
-		FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
+		// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
+		// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+		//
+		// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
+		//
+		// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
+		// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
 		
 		// Defino el nuevo producto escalar para la convección
 		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
