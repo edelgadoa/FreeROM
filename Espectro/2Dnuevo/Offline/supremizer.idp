@@ -1,7 +1,7 @@
 Mat Asup = MatAVh2P2per; 
 real[int] bsup(Vh2P2perL.ndof);
 
-varf Supremizer([u,uY],[v,vY])= int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY)) + int2d(ThL)(-BaseP[i]*div(v,vY));		
+varf Supremizer([u,uY],[v,vY])= int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY)) - int2d(ThL)(BaseP[i]*div(v,vY));		
 
 Asup = Supremizer(Vh2P2perL,Vh2P2perL);
 bsup = Supremizer(0,Vh2P2perL);
