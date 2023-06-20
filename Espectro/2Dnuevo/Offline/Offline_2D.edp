@@ -2,12 +2,12 @@
 // FreeROM 
 /////////////// 
 
-/////////////////////////////////////////
-/////////// FASE OFFLINE ////////////////
-//// NS + VMS-Smago + Estab Pres (LPS)///
-/////////////////////////////////////////
-/////////// NO SUPREMIZER ///////////////
-/////////////////////////////////////////
+//////////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////////
+//// Unsteady NS + Smago + BC periodicas /////////
+//////////////////////////////////////////////////
+
+verbosity = 0;
 
 // Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
 // Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
@@ -119,6 +119,7 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
 
+
 for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
@@ -183,7 +184,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	
 	// HASTA AQUÍ COMPILA BIEN
-	
+	/*
 	include "GramSchmidt_2D.idp"
 	// ortho(BaseV,NbasesV,prodV);
 	// normalization(BaseV,NbasesV,prodV);

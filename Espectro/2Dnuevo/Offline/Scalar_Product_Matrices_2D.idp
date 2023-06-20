@@ -4,18 +4,21 @@
 
 // Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
 
-Mat prodV;
+Mat prodV = MatAVh2P2per; 
 {
 	varf a([u,uY],[v,vY]) = int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY));
-	matrix prodVtemp = a(Vh2P2perL, Vh2P2perL);
-	prodV = prodVtemp;
+	// matrix prodVtemp = a(Vh2P2perL, Vh2P2perL);
+	// Mat prodVT = prodVtemp;
+	// prodV = prodVT;
+	prodV = a(Vh2P2perL, Vh2P2perL);
 }
 
 Mat prodP;
 {
 	varf a(u,v) = int2d(ThL)(u*v);
 	matrix prodPtemp = a(VhP1perL, VhP1perL);
-	prodP = prodPtemp;
+	Mat prodPT = prodPtemp;
+	prodP = prodPT;
 }
 
 // prodV y prodP están duplicados con MPescT, MPescX, MPescV. Decidir cuál nos quedamos #TODO
@@ -24,37 +27,44 @@ Mat MPescT, MPescX, MPescV;
 {
 	varf pescT ([uu, uuY], [v,vY]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
 	matrix pescTemp = pescT(Vh2P2perL, Vh2P2perL);
-	MPescT = pescTemp;
+	Mat pescTT = pescTemp;
+	MPescT = pescTT;
 
 
 	varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
 	matrix pescXTemp = pescX(Vh3P2perL, Vh3P2perL);
-	MPescX = pescXTemp;
+	Mat pescXT = pescXTemp;
+	MPescX = pescXT;
 
 	varf NormaVel([uu,uuY],[vv,vvY]) = int2d(ThL)(GradUGradV(uu,vv));
 	matrix MNormaVel = NormaVel(Vh2P2perL, Vh2P2perL);
-	MPescV = MNormaVel;
+	Mat MNormaVT = MNormaVel;
+	MPescV = MNormaVT;
 }
 ///////////////////////////////////////////////////////
 
-Mat DiffPEM, PenPEM, DTPEM;
+Mat DiffPEM, DivPPEM, PenPEM, DTPEM;
 
 {
 	varf DiffPE([uu,uuY], [v,vY]) = int2d(ThL)(GradUGradV(uu,v));
 	matrix DiffPEMT = DiffPE(Vh2P2perL,Vh2P2perL);
-	DiffPEM = DiffPEMT;
+	Mat DiffPEMTemp = DiffPEMT;
+	DiffPEM = DiffPEMTemp;
 
 	varf DivPPE([uu,uuY], [vP]) = int2d(ThL)(Div(uu)*vP);
 	matrix DivPPEMT = DivPPE(Vh2P2perL, VhP1perL);
 	Mat DivPPEMTemp(MatAVhP1per, MatAVh2P2per, DivPPEMT);
+	DivPPEM = DivPPEMTemp;
 
 	varf PenPE(uP, vP) = int2d(ThL)(epspen*uP*vP);
 	matrix PenPEMT = PenPE(VhP1perL, VhP1perL);
-	PenPEM = PenPEMT;
+	Mat PenPEMTemp = PenPEMT;
+	PenPEM = PenPEMTemp;
 
 	varf DTPE([uu,uuY], [v,vY]) = int2d(ThL)(UporV(uu,v));
 	matrix DTPEMT = DTPE(Vh2P2perL, Vh2P2perL);
-	DTPEM = DTPEMT;
+	Mat DTPEMTemp = DTPEMT;
+	DTPEM = DTPEMTemp;
 }
 
 Mat[int] ConvPEM(2*Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
