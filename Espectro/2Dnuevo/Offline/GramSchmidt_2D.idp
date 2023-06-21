@@ -5,7 +5,7 @@
 // Código para calcular las bases ortonormalizadas 
 
 //Redimensionamos con el numero de bases obtenidas en la POD
-MBaseV.resize(MBaseV.n, NbasesV);
+MBaseV.resize(Vh2P2perL.ndof, NbasesV);
 MBaseP.resize(MBaseP.n, NbasesP);
 
 
