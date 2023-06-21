@@ -13,12 +13,12 @@ Mat prodV = MatAVh2P2per;
 	prodV = a(Vh2P2perL, Vh2P2perL);
 }
 
-Mat prodP;
+Mat prodP = MatAVhP1per;
 {
 	varf a(u,v) = int2d(ThL)(u*v);
-	matrix prodPtemp = a(VhP1perL, VhP1perL);
-	Mat prodPT = prodPtemp;
-	prodP = prodPT;
+	// matrix prodPtemp = a(VhP1perL, VhP1perL);
+	// Mat prodPT = prodPtemp;
+	prodP = a(VhP1perL, VhP1perL);
 }
 
 // prodV y prodP están duplicados con MPescT, MPescX, MPescV. Decidir cuál nos quedamos #TODO

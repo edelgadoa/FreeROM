@@ -4,27 +4,40 @@
 
 // Código para calcular las bases ortonormalizadas 
 
+//Redimensionamos con el numero de bases obtenidas en la POD
+MBaseV.resize(MBaseV.n, NbasesV);
+MBaseP.resize(MBaseP.n, NbasesP);
+
+
+
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-real[int, int] MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:i-1);
+for (int i=0; i<NbasesP; i++){
+	real[int, int] MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:i-1);
+	
+	BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
 
-BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
+	// Doble Ortonormalización (de momento hacemos una unica ortonormalizacion)
+	// BasePi = OrtoX(BasePi, MBasePi, prodP); 
+}
+
+mpi(cout<<"Presion ortonormalizada..." <<endl;)
+
+/// ///////////////////////////////////////////
+//
+for (int i=0; i<NbasesV; i++){
+	real[int,int] MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:i-1);
+	real[int] BaseVi;
+	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+
+	BaseVi = OrtoX(BaseVi, MBaseVi, prodV);
 
 // Doble Ortonormalización
-BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
+// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
+}
+mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
 
-mpi(cout<<"Inicializacion matrices..." <<endl;)
-
-////////////////////////////////////////////
-real[int,int] MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:i-1);
-
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
-
-mpi(cout<<"Inicializacion matrices..." <<endl;)
-
-// Doble Ortonormalización
-BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
 
 // Para el filtrado (Smago -> no necesario)
 // BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];

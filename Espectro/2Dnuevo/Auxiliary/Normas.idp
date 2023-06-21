@@ -25,7 +25,7 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 
 func real innerprodL2(real[int] &u, real[int] &v){
 	varf norml2(uu, vv) = int2d(ThL)(uu*vv);
-	matrix XL2 = norml2(VhP2perL, VhP2perL);
+	matrix XL2 = norml2(VhP1perL, VhP1perL);
 	real result = innerprodX(u, v, XL2);
 	return result;
 }

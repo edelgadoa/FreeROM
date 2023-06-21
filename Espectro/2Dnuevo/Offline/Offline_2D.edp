@@ -184,7 +184,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	
 	// HASTA AQUÍ COMPILA BIEN
-	/*
+	
 	include "GramSchmidt_2D.idp"
 	// ortho(BaseV,NbasesV,prodV);
 	// normalization(BaseV,NbasesV,prodV);
@@ -200,21 +200,24 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	}
 	for(int i=0;i<NbasesV;i++){
 		MBaseV(:,i) = BaseV[i][];
-		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-	
-		// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
-		// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
-		//
-		// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
-		//
-		// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
-		// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
-		
-		// Defino el nuevo producto escalar para la convección
-		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
-		ConvPEM[i] = ConvPE(Vh2P2perL, Vh2P2perL);
 	}
 	
+	// 	BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
+	//
+	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
+	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+	// 	//
+	// 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
+	// 	//
+	// 	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
+	// 	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
+	//
+	// 	// Defino el nuevo producto escalar para la convección
+	// 	varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
+	// 	ConvPEM[i] = ConvPE(Vh2P2perL, Vh2P2perL);
+	// }
+	
+	/*
 	// ** HASTA AQUI CREO QUE ESTA BIEN
 	
 	// Construyo las matrices
