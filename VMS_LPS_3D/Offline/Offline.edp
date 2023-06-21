@@ -207,7 +207,7 @@ for (int i=0; i<Nbases; i++){
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
 	
 	mpi(cout<<"GramSchmidt"<<endl;)
-	//include "GramSchmidt.idp"
+	include "GramSchmidt.idp"
 	
 	
 
