@@ -5,10 +5,9 @@
 // Código para calcular las bases ortonormalizadas 
 
 //Redimensionamos con el numero de bases obtenidas en la POD
-MBaseV.resize(Vh2P2perL.ndof, NbasesV);
+// MBaseV.resize(Vh2P2perL.ndof, NbasesV);
+MBaseV.resize(MBaseV.n, NbasesV);
 MBaseP.resize(MBaseP.n, NbasesP);
-
-
 
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
@@ -26,15 +25,26 @@ mpi(cout<<"Presion ortonormalizada..." <<endl;)
 
 /// ///////////////////////////////////////////
 //
+pause;
+
+mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
 for (int i=0; i<NbasesV; i++){
 	real[int,int] MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:i-1);
 	real[int] BaseVi;
 	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+	real[int,int] MBaseViL(BaseVi.n,i);
+	for(int j=0; j<i;j++){
+		real[int] MBasei;
+		ChangeNumbering(MatAVh2P2per, MBaseV(:,j),MBasei);
+		MBaseViL(:,j) = MBasei;
+	}
+	// ChangeNumbering(MatAVh2P2per, MBaseV, MBaseVi);
+	cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
+	BaseVi = OrtoX(BaseVi, MBaseViL, prodV);
 
-	BaseVi = OrtoX(BaseVi, MBaseVi, prodV);
-
-// Doble Ortonormalización
-// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
+	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi, inverse=true); // He añadido esto para que se actualice
+	// Doble Ortonormalización
+	// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
 }
 mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
 

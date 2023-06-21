@@ -82,7 +82,7 @@ real[int] autoval(snaps.m); // Vector de autovalores ordenados de menor a mayor
 	real[int,int] C(snaps.m,snaps.m);
 	real time=mpiWtime();
 	matrixcorrelacion(snaps,C,prod);
-	mpi(cout<<"Correlation Matrix"<<C<<endl;)
+	// mpi(cout<<"Correlation Matrix"<<C<<endl;)
 	time=mpiWtime()-time;
 	write("Output.txt","    - time="+time,1,1);
 	real[int,int] autovect(C.n,C.n); // Matriz que contendra los autovectores en columna
