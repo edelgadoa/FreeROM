@@ -5,6 +5,7 @@
 // Parametros a usar durante la ejecucion del codigo
 
 // Parametros para el paralelo
+
 include "macro_ddm.idp";
 Mat MatAVh2P2per;
 int[int] mapVh2P2per;
@@ -43,7 +44,6 @@ mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
 }
 
 string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
-
 
 // Parametros del modelo VMS-Smago
 real CS=0.18; // Smago
