@@ -27,31 +27,40 @@ include "../Auxiliary/Parametros_2D.idp"
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
 
+/*
 varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh2P2, Vh2P2);
+matrix MNormaVel = NormaVel(Vh2P2per, Vh2P2per);
+*/
 
 // Cargamos Bases y Matrices
-include "Load_Basis_Data.idp"
-
+// include "Load_Basis_Data.idp"
+int Nbases = 1;
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "../Offline/EIM_Data.idp"
 
 Reynolds = 4892;
 
 //////////////////////////
+// Cargamos la condicion inicial
+Vh3P2per [uEF0,uEF0Y,uEF0P];
+
+Reynolds = Refijo;
+
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0); uEF0[] = SolX;
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
+readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
 real timeFE = clock();
 
-Vh3P2 [uEF, uEFY, uEFP]; 
+Vh3P2per [uEF, uEFY, uEFP]; 
+VhP2per uprev, uprevY;
 VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY; // La sol del paso anterior con Levantamiento
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
-include "../FOM/FE_VMS_LPS_2D.idp"
+include "../FOM/FE_VMS_2D.idp"
 
-uEF[] = uEF[] + Lev[];
-
-VhP2 UEF, UEFY, UEFP;
+VhP2per UEF, UEFY, UEFP;
 UEF = uEF; UEFY = uEFY; UEFP = uEFP;
 
 //plot([uEF, uEFY], cmm = "FE solution for Re = " + Reynolds);
@@ -63,21 +72,24 @@ timeFE = clock() - timeFE;
 
 /////////////////////////
 //	Resolvemos el problema de RB, y calculamos el tiempo en resolver
+
+real[int] uRBv(Nbases); // Vectores donde almaceno la Solución Reducida
+real[int,int] MRB(Nbases,Nbases); // Matriz para resolver el sistema
+real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
+
 real timeRB = clock();
 
-include "RB_VMS_LPS_2D.idp"
+// include "../Offline/RB_VMSSmago.idp"
 
-Vh2P2 [uN, uNY];
-VhP2 uNP;
+Vh2P2per [uN, uNY];
+VhP2per uNP;
 
-VhP2 UN, UNY;
+VhP2per UN, UNY;
 
-
-uN[] = MBaseV*uRB(0:Nbases-1);
-uNP[] = MBaseP*uRB(Nbases:2*Nbases-1);
-
-
-uN[] += LevV[];
+/*
+uN[] = MBaseV*uRB(0:NbasesV-1);
+uNP[] = MBaseP*uRB(NbasesV:Nbases-1);
+*/
 
 //plot([uN, uNY], cmm = "RB solution for Re = " + Reynolds);
 plot(uNP, cmm = "RB solution for Re = " + Reynolds);
@@ -98,7 +110,18 @@ uERRP = abs(UEFP - uNP);
 
 [uERR, uERRY] = [UERR, UERRY];
 
-real normErrorV = normX(uERR[], MNormaVel);
+VhP2per uFijo, uFijoY; //Para la normaT
+VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
+Mat prodV = MatAVh2P2per; 
+{
+	varf a([u,uY],[v,vY]) = int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY));
+	// matrix prodVtemp = a(Vh2P2perL, Vh2P2perL);
+	// Mat prodVT = prodVtemp;
+	// prodV = prodVT;
+	prodV = a(Vh2P2perL, Vh2P2perL);
+}
+
+real normErrorV = normX(uERR[], prodV);
 real normErrorP = normL2(uERRP[]);
 
 

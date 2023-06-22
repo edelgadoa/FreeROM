@@ -28,8 +28,9 @@ readtensor("../../Offline/MatricesRB/NUK.txt", real, NukN, 0);
 readtensor("../../Offline/MatricesRB/NGUK.txt", real, NGukN, 0);
 
 
-int NbasesV = ConvN.n;
-int NbasesP = ; // No sé que poner aquí
+int NbasesV = MBaseV.n;
+int NbasesP = MBaseP.n; // No sé que poner aquí
+int Nbases = NbasesV+NbasesP;
 // int Mbases = SmagoN.n;
 // int Taubases = StabPN.n;
 
