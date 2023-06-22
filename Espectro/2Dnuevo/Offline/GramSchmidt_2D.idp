@@ -14,9 +14,17 @@ MBaseP.resize(MBaseP.n, NbasesP);
 
 for (int i=0; i<NbasesP; i++){
 	real[int, int] MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:i-1);
+	real[int] BasePi;
+	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
+	real[int,int] MBasePiL(BasePi.n,i);
+	for(int j=0; j<i;j++){
+		real[int] MBasei;
+		ChangeNumbering(MatAVhP1per, MBaseP(:,j),MBasei);
+		MBasePiL(:,j) = MBasei;
+	}
 	
-	BaseP[i][] = OrtoL2(BaseP[i][], MBasePi);
-
+	BasePi = OrtoX(BasePi, MBasePiL, MPescP);
+	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi, inverse=true); 
 	// Doble Ortonormalización (de momento hacemos una unica ortonormalizacion)
 	// BasePi = OrtoX(BasePi, MBasePi, prodP); 
 }
@@ -39,8 +47,8 @@ for (int i=0; i<NbasesV; i++){
 		MBaseViL(:,j) = MBasei;
 	}
 	// ChangeNumbering(MatAVh2P2per, MBaseV, MBaseVi);
-	cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
-	BaseVi = OrtoX(BaseVi, MBaseViL, prodV);
+	// cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
+	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
 
 	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi, inverse=true); // He añadido esto para que se actualice
 	// Doble Ortonormalización

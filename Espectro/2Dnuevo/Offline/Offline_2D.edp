@@ -160,8 +160,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
 		include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
-		POD(MBaseV,prodV,BaseV,NbasesV,autovalVel);
-		POD(MBaseP,prodP,BaseP,NbasesP,autovalPres);
+		POD(MBaseV,MPescV,BaseV,NbasesV,autovalVel);
+		POD(MBaseP,MPescP,BaseP,NbasesP,autovalPres);
 	}
 	write("Output.txt","After POD, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);
 
@@ -201,14 +201,19 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// write("Output.txt","Ok.",1,1);
 
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas
-	/*
+	
 	for(int i=0;i<NbasesP;i++){
 		MBaseP(:,i) = BaseP[i][];
 	}
 	for(int i=0;i<NbasesV;i++){
 		MBaseV(:,i) = BaseV[i][];
+		// Defino el nuevo producto escalar para la convección
+		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
+		Mat ConvPEMi = MatAVh2P2per;
+		ConvPEMi = ConvPE(Vh2P2perL, Vh2P2perL);
+		ConvPEM[i] = ConvPEMi;
 	}
-	*/
+	
 	// 	BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
@@ -219,12 +224,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// 	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
 	// 	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
 	//
-	// 	// Defino el nuevo producto escalar para la convección
-	// 	varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
-	// 	ConvPEM[i] = ConvPE(Vh2P2perL, Vh2P2perL);
+
 	// }
 	
-	/*
+	
 	// ** HASTA AQUI CREO QUE ESTA BIEN
 	
 	// Construyo las matrices
