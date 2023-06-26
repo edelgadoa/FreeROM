@@ -160,7 +160,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
 		include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
-		POD(MBaseV,MPescV,BaseV,NbasesV,autovalVel);
+		POD(MBaseV,MPescT,BaseV,NbasesV,autovalVel);
 		POD(MBaseP,MPescP,BaseP,NbasesP,autovalPres);
 	}
 	write("Output.txt","After POD, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);

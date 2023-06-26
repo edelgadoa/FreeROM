@@ -104,28 +104,28 @@ for (int s=0; s<Mbases; s++){
     SmagoRB[s] += Sint;
 }
 
-mpi(cout<<SmagoRB[0]<<endl;)
+// mpi(cout<<SmagoRB[0]<<endl;)
 write("Output.txt","Smagorinsky OK.",1,1);
 
-/*
+
 // Matrices para el EIM de Smago
-for (int s=0; s<Mbases; s++){
-real[int,int] Dtk = GradPM[s];
 
-for (int i=0; i<NbasesV; i++){
-    Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
-    Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
-    Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
-    Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
-}
-GradPM[s] = Dtk;
-}
-pause;
+// int MbasesL;
+// for (int s=0; s<Mbases; s++){
+// 	real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
+// 	real[int,int] DtkK = GradPM[s];
+//
+// 	Dtk = 0;
+// 	for (int i=0; i<NbasesV; i++){
+//
+//     	Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
+//     	Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
+//     	Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
+//     	Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
+// 	}
+// 	GradPM[s] = Dtk;
+// }
 
-for (int s=0; s<Mbases; s++){
-    for (int i=0; i<NbasesV; i++){
-        bSmagoRB(s,i) = innerprodX(FBaseV[i][], FBaseV[i][], SmagoPEM[s]);
-    }
-}
-*/
+
+
 write("Output.txt","EIM Smagorinsky OK.",1,1);
