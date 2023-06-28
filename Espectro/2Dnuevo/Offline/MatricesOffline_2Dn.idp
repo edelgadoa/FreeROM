@@ -132,6 +132,7 @@ for (int i=0; i<NbasesV; i++){
 	}	
 }
 
+mpi(cout<<GradPM[0]<<endl;)
 
 
 write("Output.txt","EIM Smagorinsky OK.",1,1);

@@ -47,7 +47,7 @@ mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
 	createMat(ThL, MatAVhP2per, PkP2);
 }
 
-mapVhP2per = restrict(VhP1dcperL, VhP1dcper, myN2o);
+mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
 {
 	createMat(ThL, MatAVhP1dcper, PkP1dc);
 }
