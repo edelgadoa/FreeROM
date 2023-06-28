@@ -20,6 +20,7 @@ load "lapack"
 include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
+include "../Auxiliary/Functions_MP.idp"
 
 // Creamos la Malla
 include "../Auxiliary/Malla.idp"
@@ -27,11 +28,12 @@ include "../Auxiliary/Malla.idp"
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
-// Definimos las matrices de interpolacion y derivacion
-include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
-
 // Definimos los parametros a usar
 include "../Auxiliary/Parametros_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+include "../FOM/Interp_matrix_NoStab_VP_2D_Local.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
@@ -59,8 +61,8 @@ VhP2perL[int] BaseVelY(2*Nbases);
 
 //VhP2perL[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
 
-//VhP1dcperL[int] FVdX(2*Nbases), FVdY(2*Nbases);
-//VhP1dcperL[int] FVYdX(2*Nbases),FVYdY(2*Nbases);
+VhP1dcperL[int] BVdX(2*Nbases), BVdY(2*Nbases);
+VhP1dcperL[int] BVYdX(2*Nbases),BVYdY(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
 int NbasesV=1; 
@@ -156,6 +158,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
+	
+	
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
@@ -212,17 +216,20 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		Mat ConvPEMi = MatAVh2P2per;
 		ConvPEMi = ConvPE(Vh2P2perL, Vh2P2perL);
 		ConvPEM[i] = ConvPEMi;
+		
+		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
+		
+		BVdX[i][] = DXP2L*BaseVel[i][]; BVdY[i][] = DYP2L*BaseVel[i][];
+		BVYdX[i][] = DXP2L*BaseVelY[i][]; BVYdY[i][] = DYP2L*BaseVelY[i][];
 	}
 	
-	// 	BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
 	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	// 	//
 	// 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
 	// 	//
-	// 	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][];
-	// 	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][];
+
 	//
 
 	// }

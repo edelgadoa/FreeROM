@@ -110,21 +110,27 @@ write("Output.txt","Smagorinsky OK.",1,1);
 
 // Matrices para el EIM de Smago
 
-// int MbasesL;
-// for (int s=0; s<Mbases; s++){
-// 	real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
-// 	real[int,int] DtkK = GradPM[s];
-//
-// 	Dtk = 0;
-// 	for (int i=0; i<NbasesV; i++){
-//
-//     	Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
-//     	Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
-//     	Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
-//     	Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
-// 	}
-// 	GradPM[s] = Dtk;
-// }
+for (int i=0; i<NbasesV; i++){	
+	int MbasesL;
+	for (int s=0; s<Mbases; s++){
+		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
+		real[int,int] DtkL = GradPM[s];
+
+		Dtk = 0;
+
+		if (NumberPMSmago(s)>0){
+    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
+    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(MbasesL));
+			
+		    DtkL *= WeightPMSmago(s);
+		    MbasesL++;
+		}
+		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
+		GradPM[s] = Dtk;
+	}	
+}
 
 
 
