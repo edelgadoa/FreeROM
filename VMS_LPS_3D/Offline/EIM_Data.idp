@@ -28,8 +28,8 @@ set(MEIMS, solver= UMFPACK);
 
 //Cargo los Puntos Magicos Smago y los paso a local para trabajar con ellos
 readvector("../EIM/EIM_VMSSmago/Bases_EIM/TintEIM_Smago.txt", int, PuntosMSmago, 0);
-int[int] PuntosMSmagoL = MagicPointG2L(mapVhP0, PuntosMSmago); // Vector local de Puntos magicos
-real[int] NumberPMSmago = NumberMagicPoint(mapVhP0, PuntosMSmago); // 1: esta en proc, 0: no esta en proc
+int[int] PuntosMSmagoL = MagicPointG2L(mapVhP1dc, PuntosMSmago); // Vector local de Puntos magicos
+real[int] NumberPMSmago = NumberMagicPoint(mapVhP1dc, PuntosMSmago); // 1: esta en proc, 0: no esta en proc
 real[int] WeightPMSmago = WeightMagicPoint(NumberPMSmago); //Pesos de cada Magic Point
 
 
