@@ -221,7 +221,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 		BVdX[i][] = DXP2L*BaseVel[i][]; BVdY[i][] = DYP2L*BaseVel[i][];
 		BVYdX[i][] = DXP2L*BaseVelY[i][]; BVYdY[i][] = DYP2L*BaseVelY[i][];
+		
 	}
+	
+	cout<<BVdX[0][](392)<<endl;
 	
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
