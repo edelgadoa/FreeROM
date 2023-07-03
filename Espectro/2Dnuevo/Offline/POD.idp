@@ -2,7 +2,6 @@
 // FreeROM 
 /////////////// 
 
-
 ///////////////////////////////////////////////////////////////////////////////
 NewMacro matrixcorrelacion(snaps, C, prod)
 {
@@ -18,6 +17,7 @@ NewMacro matrixcorrelacion(snaps, C, prod)
         }
 	}
 	C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NÚMERO DE BASES POD
+	write("correlation.txt",C,0,0);
 }
 EndMacro
 
