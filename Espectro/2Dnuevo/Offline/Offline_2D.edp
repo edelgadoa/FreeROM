@@ -230,7 +230,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 	}
 	
-	cout<<BVdX[0][](392)<<endl;
+
 	
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)

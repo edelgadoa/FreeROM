@@ -115,9 +115,9 @@ for (int i=0; i<NbasesV; i++){
 	int MbasesL;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
-		real[int,int] DtkL = GradPM[s];
+		real[int,int] DtkL(GradPM[s].n, GradPM[s].m); // = GradPM[s];
 
-		Dtk = 0;
+		Dtk = 0; DtkL = 0;
 
 		if (NumberPMSmago(s)>0){
     		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
@@ -129,7 +129,8 @@ for (int i=0; i<NbasesV; i++){
 		    MbasesL++;
 		}
 		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
-		GradPM[s] = Dtk;
+		GradPM[s] += Dtk;
+		//mpi(cout<<Dtk<<endl;)
 	}	
 }
 
