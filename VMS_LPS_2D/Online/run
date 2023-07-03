@@ -1,8 +1,6 @@
 #!/bin/bash
 
-echo 'Numero de procesadores:'
-read NP
 
 verbosity=0
-rm freefem++.pref 
-ff-mpirun -np $NP ./Online.edp -glut ffglut
+
+ff-mpirun -np 1 ./Online.edp -glut ffglut
