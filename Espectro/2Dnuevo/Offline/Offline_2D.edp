@@ -76,9 +76,12 @@ readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
 readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
 
 // Cargamos los Snapshots en local
+Vh3P2per [SnapXa,SnapYa,SnapPa];
+SnapXa[] = SolX; SnapYa[] = SolY; SnapPa[] = SolP;
+
 VhP2per SnapX, SnapY; 
 VhP1per SnapP;  
-SnapX[] = SolX; SnapY[] = SolY; SnapP[] = SolP;
+SnapX = SnapXa; SnapY = SnapYa; SnapP = SnapPa;
 
 VhP2perL SnapXL, SnapYL;
 VhP1perL SnapPL;
@@ -86,7 +89,6 @@ SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
 SnapPL[] = SnapP[](mapVhP1per);
 
 Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL]; 
-
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
 MBaseV(:,0) = VelXL[];
@@ -108,10 +110,12 @@ mpi(cout<<"Inicializacion Greedy..." <<endl;)
 Reynolds = Remin; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
 MuBest(0) = Reynolds;
 
-
 /// Esto hay que mirarlo, en principio iría en LOCAL tambien (como no resolvemos el FOM, no hace falta ahora)
 VhP2per uFijo, uFijoY; //Para la normaT
+uFijo = SnapX; uFijoY = SnapY; 
 VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
+uFijodX[] = DXP2*uFijo[]; uFijodY[] = DYP2*uFijo[];
+uFijoYdX[] = DXP2*uFijoY[]; uFijoYdY[] = DYP2*uFijoY[];
 
 Vh3P2per [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
 VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior 
@@ -141,14 +145,16 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	MBaseP.resize(MBaseP.n, NbasesP + niT);
 	for(int i=0; i<niT; i++){
 		real tt = T0 + (i+1)*dt;
+		Vh3P2per [SnapXa,SnapYa,SnapPa];
 		VhP2per SnapX, SnapY;
 		VhP1per SnapP;
 		
 		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +tt+ ".txt", real, SolX, 0);
 		readvector("../Snapshots/Vy_" + Reynolds + "_t_" +tt+ ".txt", real, SolY, 0);
 		readvector("../Snapshots/P_" + Reynolds + "_t_" +tt+ ".txt", real, SolP, 0);
-		
-		SnapX[] = SolX; SnapY[] = SolY; SnapP[] = SolP;
+
+		SnapXa[] = SolX; SnapYa[] = SolY; SnapPa[] = SolP;
+		SnapX = SnapXa; SnapY = SnapYa; SnapP = SnapPa;
 		
 		VhP2perL SnapXL, SnapYL; VhP1perL SnapPL;
 		SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
@@ -188,12 +194,12 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
 	pause;
 	// HASTA AQUÍ COMPILA BIEN
-	/*
-	cout << BaseV[1][].n << endl;
-	real[int] BaseV1;
-	ChangeNumbering(MatAVh2P2per, BaseV[1][], BaseV1);
-	cout << BaseV1.n << endl;
-	*/
+	
+	//cout << BaseV[1][].n << endl;
+	//real[int] BaseV1;
+	//ChangeNumbering(MatAVh2P2per, BaseV[1][], BaseV1);
+	//cout << BaseV1.n << endl;
+	
 
 	include "GramSchmidt_2D.idp"
 	// ortho(BaseV,NbasesV,prodV);
