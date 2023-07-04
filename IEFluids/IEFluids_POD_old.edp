@@ -59,7 +59,7 @@ mapVhP1 = restrict(VhP1L,VhP1,myN2o);
 }
 
 
-int ReSnap = 1; // numero de Snapshots de Reynolds
+// int ReSnap = 1; // numero de Snapshots de Reynolds
 int ReSnap = 20; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
