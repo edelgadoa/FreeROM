@@ -1,0 +1,87 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago. 
+// Elemento Finito P2-P1 (no estable) en vel-pres 
+
+// Cargamos librerias
+load "iovtk" 
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Incluimos el levantamiento
+include "Levantamiento.idp"
+
+/////////////////////////////////////////////
+/// Establecemos la CI para EF: Cavidad 2D///
+/////////////////////////////////////////////
+
+Reynolds = Refijo;
+
+Vh3P2 [uEF0,uEF0Y,uEF0P];
+
+/*
+
+write("../Snapshots/Vx_" + Reynolds + "_t_" +t0+ ".txt", uEF0[], 0, 0);
+write("../Snapshots/Vy_" + Reynolds + "_t_" +t0+ ".txt", uEF0Y[], 0, 0);	
+write("../Snapshots/P_" + Reynolds + "_t_" +t0+ ".txt", uEF0P[], 0, 0);
+
+real[int] tSolved(1); 
+tSolved(0) = t0;
+write("../Snapshots/Snapshots.txt", tSolved, 0, 0);
+*/
+
+/////////////////////////////////////////////
+// Cargamos los valores de los tiempos calculados y la condicion inicial
+
+readvector("../Snapshots/Snapshots.txt", real, tSolved, 0);
+readvector("../Snapshots/Vx_CI.txt", real, SolX, 0); uEF0[]  = SolX;
+readvector("../Snapshots/Vy_CI.txt", real, SolY, 0); uEF0Y[] = SolY;
+readvector("../Snapshots/P_CI.txt", real, SolP, 0); uEF0P[] = SolP;
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cilindro 2D //
+/////////////////////////////////////////////
+
+Vh3P2 [uEF, uEFY, uEFP];
+write("Output.txt"," - Reynold="+Reynolds,1,1);
+
+// Comprobamos si la solucion no esta calculada
+if(search(tSolved,TF)==-1){
+	[uEF, uEFY, uEFP] = [uEF0,uEF0Y,uEF0P];
+	include "FE_VMS_2D.idp"
+	// Actualizamos parametros
+	//tSolved.resize(nit);
+	//tSolved = t0:dt:TF;
+	//write("../Snapshots/Snapshots.txt", tSolved, 0, 0);
+}
+else{
+	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0); uEF[]  = SolX;
+	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0); uEFY[] = SolY;
+	readvector("../Snapshots/P_"  + Reynolds + "_t_" +TF+ ".txt", real, SolP, 0); uEFP[] = SolP;
+}
+// plot([uEF,uEFY],wait=1,cmm="Re="+Reynolds);
+// plot(uEFP,wait=1,cmm="Re="+Reynolds);
+	
+write("Output.txt","FOM Done",1,1);
