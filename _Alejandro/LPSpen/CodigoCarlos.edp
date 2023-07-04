@@ -1,0 +1,369 @@
+// Author: Samuele Rubino - 30/01/2019 modified by Carlos Núñez 
+/*
+This script solves the offline phase (FOM) for a 2D laminar unsteady flow past a circular cylinder.
+*/
+//CALCULO DE LOS DATOS PARA DIFERENTES NUMERO DE REYNOLDS, CAMBIAR EL NOMBRE DE LOS FICHEROS Y LA VELOCIDAD DE ENTRADA PARA CADA REYNOLD DIFERENTE 
+
+// LOAD LIBRIERIES
+load "iovtk" // Post-process with ParaView
+load "lapack"
+// MACRO DEFINITION
+macro Grad(u)  [dx(u),dy(u)]//EOM 2D Gradient operator
+macro div(u,v) (dx(u)+dy(v))//EOM 2D Divergence operator
+macro rot(u,v) (dx(v)-dy(u))//EOM 2D Rotational operator/Vorticity field
+macro mod(u,v) (sqrt(dx(u)^2 + dx(v)^2 + dy(u)^2 + dy(v)^2)) //Frobenius norm 
+
+// GEOMETRICAL PARAMETERS
+real H 	  = 0.41; // Channel height
+real D    = 0.1;  // Cylinder diameter
+real xCyl = 0.2;  // Cylinder center x-position
+real yCyl = 0.2;  // Cylinder center y-position
+real xin  = 0.;   // Inlet position
+real xout = 2.2;  // Outlet position
+
+// PHYSICAL PARAMETERS
+real nu  = 1.e-3; // Kinematic viscosity
+
+// INFLOW CONDITION
+real Um  = 13.5; 			 // Max inlet velocity
+func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um 
+real Ubar= 2*Um/3; 			 // \int_{\Gamma_in} Uin / \int_{\Gamma_in} =1
+real Re  = Ubar*D/nu; 		 // Reynolds number = 100
+cout << "Ubar = " << Ubar << endl;
+cout << "Re = " << Re << endl;
+
+// MESH PARTITIONING (Intermediate grid)
+int n0 = 4;     // Mesh density base number 
+int n1 = 25*n0; // Points density on cylinder
+int n2 = 25*n0; // Points density on inlet
+int n3 = 15*n0; // Points density on top, outlet and bottom
+
+// BUILDING MESH
+border cylinder(t=2*pi,0)   {x=xCyl+D/2*cos(t); y=yCyl+D/2*sin(t); label=1;} ;
+border inlet   (t=H,0)      {x=xin;             y=t;               label=2;} ;
+border top     (t=xout,xin) {x=t;               y=H;               label=3;} ;
+border outlet  (t=0,H)      {x=xout;            y=t;               label=4;} ;
+border bottom  (t=xin,xout) {x=t;               y=0;               label=5;} ;
+mesh Th = buildmesh(cylinder(n1*pi*D)+inlet(n2*H)+top(n3*(xout-xin))+outlet(n3*H)+bottom(n3*(xout-xin))) ;
+//plot(Th,cmm="Mesh",ps="PostProcMesh.eps") ;
+savemesh(Th,"Data/Mesh.msh");
+
+// FE SPACES DEFINITION
+func PkU=P2;
+func PkP=P2;
+func Pk1dc=P1dc; 
+func Pk1=P1; 
+fespace Xh(Th,PkU); 		   	 // Velocity FE space
+fespace Qh(Th,PkP); 		   	 // Pressure FE space
+fespace Xh1dc(Th,Pk1dc); 		 // 2D Piecewise linear DC FE space
+fespace Xh1(Th,Pk1);	 		 // 2D Piecewise linear FE space
+fespace XhxQh(Th,[PkU,PkU,PkP]); // VelocityPressure FE product space ==> EO FE (not weakly divergence-free)
+fespace Ph(Th,P0);
+Ph h=hTriangle; Ph taum;//,tauc;
+cout << "size of mesh = " << h[].max << endl; 
+cout << "ndof velocity = " << 2*Xh.ndof << endl;
+cout << "ndof pressure = " << Qh.ndof << endl;
+cout << "------------------------------" << endl;
+
+// TIME SETUP FOR NUMERICAL SIMULATION
+real t  = 0.;	  // Initial time
+real dt = 2.e-3;  // Time step
+real dtt = 1./dt; // Inverse of time step
+real T  = 10;  // Final time
+int nit = T/dt;   // # Iterations
+int  it = 0;      // Initial iteration
+
+// STABILIZATION COEFF. 
+real cc1p=4;
+int  dim=2;  //Dimension
+int  l=2;    //Interpolation order
+int gamma=2; //Time accuracy
+real cc1=cc1p^2*l^4;
+real cc2=sqrt(cc1);
+taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+//plot(taum,fill=1,value=1,cmm="Pres.-Grad. Stab. Coef.",ps="PostProctaum.eps");// Plot of taum
+//tauc=(h^2)/(dim*cc2*taum);
+//plot(tauc,fill=1,value=1,cmm="grad-div Stab. Coef.",ps="PostProc/tauc.eps");// Plot of tauc
+//savevtk("PostProc/VTK2DFPCC_taum_5.vtu",Th,taum,dataname="taum"); 
+//savevtk("PostProc/VTK/2DFPCC_tauc.vtu",Th,tauc,dataname="tauc"); 
+
+// INITIALIZATION
+XhxQh [u1,u2,p];   		// Vectorial solution at time n+1 	
+
+XhxQh [rhs1,rhs2,rhs3]; // RHS
+
+Xh 	  vort,velmag,ut; 	// Vorticity, velocity magnitude and tangential velocity on cylinder to compute drag coefficient
+
+Xh    uscal1,uscal2;	// Scalar solution
+
+Qh    pscal;			
+
+Xh    umean1,umean2,velmagMean; // Mean fields
+
+real Fd,Cd;				// Drag force and coefficient
+real Fl,Cl;				// Lift force and coefficient
+real PD;				// Pressure difference
+
+// DEFINITION VARIATIONAL FORMULATION
+Xh up1,up2;    // u^{n}
+Xh upp1,upp2;  // u^{n-1}
+real a0,a1,a2; // Parameters for BDF fomulation
+real b0,b1;    // Parameters for extrapolation
+
+
+//Discretización para el término de smagorinsky 
+Xh ugorron,vgorron;
+
+ugorron = 2*up1-upp1;
+vgorron = 2*up2-upp2;
+
+//Constante de Smagorinsky 
+real Cs = 1.e-2;
+
+varf  NS ([u1,u2,p],[v1,v2,q])=
+	int2d(Th)(
+		  a0*dtt*(u1*v1+u2*v2)
+		+ nu*(Grad(u1)'*Grad(v1)+Grad(u2)'*Grad(v2))
+		//+ ((Cs*h)^2)*(mod(ugorron,vgorron)*(Grad(u1)'*Grad(v1)+Grad(u2)'*Grad(v2)))
+		+b0*(([up1,up2]'*Grad(u1))*v1+([up1,up2]'*Grad(u2))*v2)
+		+b1*(([upp1,upp2]'*Grad(u1))*v1+([upp1,upp2]'*Grad(u2))*v2)
+		- p*div(v1,v2)
+		//+ tauc*div(u1,u2)*div(v1,v2) // grad-div stab.
+		+ q*div(u1,u2)
+		)
+		+ on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+		+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+		+ on(3,5, u1=0.,u2=0.) 	// Label 3,5 = Top,Bottom: No-slip BCs
+								// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+			-int2d(Th)(a1*dtt*(up1*v1+up2*v2) + a2*dtt*(upp1*v1+upp2*v2))
+;
+
+// TIME RESOLUTION: 1st Step - BDF1 ; next steps - BDF2
+a0=1.; a1=-1.; a2=0.; b0=1.; b1=0.;  // Semi-implicit BDF1
+//a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
+
+//INTERP. MATRIX
+matrix IPh;
+{	
+	matrix Idh;
+	{
+		Xh1dc fAux1dc=1.;
+		Idh = fAux1dc[];
+	}
+	matrix PIg = interpolate(Xh1,Xh1dc); 
+	matrix IPg = interpolate(Xh1dc,Xh1); 
+	matrix IPPIg = IPg*PIg;
+	IPh = Idh + (-1.)*IPPIg;
+}
+
+
+int[int] cs2=[2];
+matrix Dxp = interpolate(Xh1dc,XhxQh,U2Vc=cs2,op=1);
+matrix Dyp = interpolate(Xh1dc,XhxQh,U2Vc=cs2,op=2);
+
+matrix DDx = IPh*Dxp;
+matrix DDy = IPh*Dyp;
+
+// TIME LOOP
+int  samplingRate=5;
+real Tsteady=7.;             // Time to reach a periodic-in-time (statistically steady) state
+int  steadyState=Tsteady/dt; // # Iterations to reach a periodic-in-time (statistically steady) state 
+int  firstPer=steadyState+200; // # Iterations to reach a first period of snapshot data 
+
+//Tomar cantidades para evaluacion con Reynolds 100
+
+//Initialization for Different reynolds number 
+//Inicializacion 
+u1[] = 0;
+up1 = 0;
+up2 = 0;
+upp1 = 0;
+upp2 = 0; 
+umean1 = 0;
+umean2 = 0; 
+Um = 1.5; //Max inlet velocity corresponding to Re=125;
+
+// INITIAL PRESSURE DIFFERENCE, DRAG AND LIFT COEFFICIENTS (cf. Schafer&Turek96)
+
+// TEST FUNCTIONS for DRAG/LIFT COEFFICIENTS
+Xh vd1=0,vd2=0;
+Xh vl1=0,vl2=0;
+
+varf vGammaCyl(u,v) = on(1,u=1);
+real[int] onGammaCyl=vGammaCyl(0,Xh);
+
+real vd1g=1.;
+vd1[] = onGammaCyl ? vd1g : vd1[]; // enforcing the boundary condition for vd1 just on cylinder ??
+
+real vl2g=1.;
+vl2[] = onGammaCyl ? vl2g : vl2[]; // enforcing the boundary condition for vl2 just on cylinder ??
+
+Fd=int2d(Th)(a0*dtt*(u1*vd1+u2*vd2)+a1*dtt*(up1*vd1+up2*vd2)+a2*dtt*(upp1*vd1+upp2*vd2)
+            + nu*(Grad(u1)'*Grad(vd1)+Grad(u2)'*Grad(vd2))
+            +b0*(([up1,up2]'*Grad(u1))*vd1+([up1,up2]'*Grad(u2))*vd2)
+            +b1*(([upp1,upp2]'*Grad(u1))*vd1+([upp1,upp2]'*Grad(u2))*vd2)
+            - p*div(vd1,vd2) //+ tauc*div(u1,u2)*div(vd1,vd2)
+            );			
+Fl=int2d(Th)(a0*dtt*(u1*vl1+u2*vl2)+a1*dtt*(up1*vl1+up2*vl2)+a2*dtt*(upp1*vl1+upp2*vl2)
+            + nu*(Grad(u1)'*Grad(vl1)+Grad(u2)'*Grad(vl2))
+            +b0*(([up1,up2]'*Grad(u1))*vl1+([up1,up2]'*Grad(u2))*vl2)
+            +b1*(([upp1,upp2]'*Grad(u1))*vl1+([upp1,upp2]'*Grad(u2))*vl2)
+            - p*div(vl1,vl2) //+ tauc*div(u1,u2)*div(vl1,vl2)
+            );
+        
+Cd=-2*Fd/(D*Ubar^2);
+Cl=-2*Fl/(D*Ubar^2);
+PD=p(xCyl-D/2,yCyl)-p(xCyl+D/2,yCyl);
+ofstream outCd("Data/DragCoef_1.txt");
+ofstream outCl("Data/LiftCoef_1.txt");
+ofstream outPD("Data/PresDiff_1.txt");
+
+cout << "Time = " << t << endl;
+cout << "Drag = " << Cd << ",\t Lift = " << Cl << ",\t Pressure Diff. = " << PD << endl;
+
+outCd << Cd << endl;
+outCl << Cl << endl;
+outPD << PD << endl;
+
+// INITIAL KINETIC ENERGY, MEAN PRESSURE AND STRONG/WEAK DIVERGENCE
+real Ekin; // Kinetic energy
+Ekin = 0.5*int2d(Th)(u1^2 + u2^2);
+ofstream outEkin("Data/Ekin_1.txt");
+
+real StrongDiv; // Strong divergence
+StrongDiv = sqrt(int2d(Th)(div(u1,u2)^2));
+ofstream outStrongDiv("Data/StrongDiv_1.txt");
+
+varf divergence([unused1,unused2,unused3],[rhs1,rhs2,rhs3])=int2d(Th)(div(u1,u2)*rhs3); // Weak divergence
+real [int] divVect=divergence(0,XhxQh);
+divVect = abs(divVect);	
+ofstream outWeakDiv("Data/WeakDiv_1.txt");
+
+cout << "Kinetic energy = " << Ekin << endl;
+outEkin << Ekin << endl;
+cout << "Strong divergence = " << StrongDiv << endl;
+outStrongDiv << StrongDiv << endl;
+cout << "Weak divergence = " << divVect.max << endl;
+outWeakDiv << divVect.max << endl;
+cout << "------------------------------" << endl;
+	
+for (it=1; it<=nit; it++)
+{
+	t+=dt;
+    cout << "Time = " << t << endl;
+	upp1=up1;
+	upp2=up2;
+	up1=u1;
+	up2=u2;
+	
+	//MATRIX GRAD-PRES. STAB.
+	Ubar = 2*Um/3;
+	//taum=((gamma*dtt)^2 + dim*cc1*(nu^2)/(h^4) + cc2*(Ubar^2)/(h^2))^(-0.5);
+	//varf termPres(p,q)=int2d(Th)(taum*p*q);
+	
+	//matrix TermP=termPres(Xh1dc,Xh1dc);
+	
+    /*
+	matrix DD;
+	
+	matrix DDxx;
+	{
+	DDxx=TermP*DDx; DDxx=DDx'*DDxx;
+	}
+	
+	matrix DDyy;
+	{
+	DDyy=TermP*DDy; DDyy=DDy'*DDyy;
+	}
+	
+	DD=DDxx+DDyy;
+    */
+	////////////////////////////////////////////
+	//DEFINIR LAS CONDICIONES DE CONTORNO CON EL UIN QUE VA CAMBIANDO POR CADA BUCLE
+	func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um
+	varf  NSaux ([u1,u2,p],[v1,v2,q])=
+						 on(1,   u1=0.,u2=0.)	// Label 1   = Cylinder:   No-slip BCs
+						+ on(2,   u1=Uin,u2=0.) // Label 2   = Inlet:      Inflow BCs
+						+ on(3,5, u1=0.,u2=0.);	// Label 3,5 = Top,Bottom: No-slip BCs
+												// Label 4	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+	
+	//LLAMAR AL VARF Y AÑADIRLE LAS CONDICIONES DE CONTORNO Y LA MATRIX DE ESTB.			
+	matrix NSMAT=NS(XhxQh,XhxQh);
+	matrix Aux = NSaux(XhxQh,XhxQh);
+	
+	matrix A = NSMAT + Aux; //+DD
+	set(A,solver=UMFPACK);//FACT.
+	
+	real[int] rhs=NS(0,XhxQh);
+	real[int] rhsaux=NSaux(0,XhxQh); 
+	real[int] B = rhs + rhsaux;
+	u1[]=A^-1*B;
+
+    Xh umod;
+    umod = u1^2+u2^2;
+	plot(umod,fill=1,value=1);
+    /*
+  	if (it%samplingRate==0)
+  	{	    
+		velmag = sqrt(u1^2 + u2^2);
+	    vort   = rot(u1,u2);
+		
+		//plot(vort,fill=1,dim=3,cmm="Vorticity, t = "+t);// Plot of vorticity	
+		
+		/////// TEST/VALIDATION SECTION for DRAG and LIFT COEFFICIENTS (cf. Schafer&Turek96)//////////////////////////////
+	  	
+	  	Fd=int2d(Th)(a0*dtt*(u1*vd1+u2*vd2)+a1*dtt*(up1*vd1+up2*vd2)+a2*dtt*(upp1*vd1+upp2*vd2)
+			+ nu*(Grad(u1)'*Grad(vd1)+Grad(u2)'*Grad(vd2))
+			+b0*(([up1,up2]'*Grad(u1))*vd1+([up1,up2]'*Grad(u2))*vd2)
+			+b1*(([upp1,upp2]'*Grad(u1))*vd1+([upp1,upp2]'*Grad(u2))*vd2)
+	    	- p*div(vd1,vd2) //+ tauc*div(u1,u2)*div(vd1,vd2)
+			);			
+		Fl=int2d(Th)(a0*dtt*(u1*vl1+u2*vl2)+a1*dtt*(up1*vl1+up2*vl2)+a2*dtt*(upp1*vl1+upp2*vl2)
+			+ nu*(Grad(u1)'*Grad(vl1)+Grad(u2)'*Grad(vl2))
+			+b0*(([up1,up2]'*Grad(u1))*vl1+([up1,up2]'*Grad(u2))*vl2)
+			+b1*(([upp1,upp2]'*Grad(u1))*vl1+([upp1,upp2]'*Grad(u2))*vl2)
+	    	- p*div(vl1,vl2) //+ tauc*div(u1,u2)*div(vl1,vl2)
+			);
+	  	 	
+	  	Cd=-2*Fd/(D*Ubar^2);
+	  	Cl=-2*Fl/(D*Ubar^2);
+	  	PD=p(xCyl-D/2,yCyl)-p(xCyl+D/2,yCyl);
+		
+		cout << "Drag = " << Cd << ",\t Lift = " << Cl << ",\t Pressure Diff. = " << PD << endl;
+	  	outCd << Cd << endl;
+	  	outCl << Cl << endl;
+		outPD << PD << endl;
+		
+		/////// TEST/VALIDATION SECTION for KINETIC ENERGY, MEAN PRESSURE and STRONG/WEAK DIVERGENCE////////////////////////////// 
+	    Ekin =0.5*int2d(Th)(u1^2 + u2^2);
+		StrongDiv = sqrt(int2d(Th)(div(u1,u2)^2));
+	    divVect=divergence(0,XhxQh);
+		divVect = abs(divVect);
+	    cout<< "Kinetic energy = " << Ekin << endl;
+	    outEkin << Ekin << endl;
+		cout << "Strong divergence = " << StrongDiv << endl;
+		outStrongDiv << StrongDiv << endl;
+	    cout << "Weak divergence = " << divVect.max << endl;
+		outWeakDiv << divVect.max << endl;
+		cout << "------------------------------" << endl;
+  	}
+    */
+	
+	
+}
+
+//plot(velmag,fill=1,nbiso=100,cmm="Final Velocity Magnitude",ps="PostProcFinVelMag.eps");
+/*
+savevtk("PostProc/VTK2DFPCC_FinU_5.vtu",Th,velmag,dataname="Fin.Vel.Mag."); 
+plot(p,fill=1,nbiso=100,cmm="Final Pressure",ps="PostProcFinPres.eps");
+savevtk("PostProc/VTK2DFPCC_FinP_5.vtu",Th,p,dataname="Fin.Pres."); 
+plot(vort,fill=1,nbiso=100,cmm="Final Vorticity",ps="PostProcFinVort.eps");
+savevtk("PostProc/VTK2DFPCC_FinV_5.vtu",Th,vort,dataname="Fin.Vort."); 
+*/
+
+real StrongDivMean = sqrt(int2d(Th)(div(umean1,umean2)^2));
+varf divergenceMean([unused1,unused2,unused3],[rhs1,rhs2,rhs3])=int2d(Th)(div(umean1,umean2)*rhs3);
+real [int] divVectMean=divergenceMean(0,XhxQh);
+divVectMean = abs(divVectMean);	
+cout << "Strong mean divergence = " << StrongDivMean << endl;
+cout << "Weak mean divergence = " << divVectMean.max << endl;
