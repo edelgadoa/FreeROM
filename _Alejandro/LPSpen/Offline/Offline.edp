@@ -1,0 +1,39 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+//////////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////////
+//// Unsteady NS + Smago + BC periodicas /////////
+//////////////////////////////////////////////////
+
+verbosity = 0;
+
+// Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+//Definicion de Constantes y variables varias
+int Nbases = nit; 
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
