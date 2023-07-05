@@ -14,7 +14,7 @@ varf FVFija([uu,uuY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(uu*v + uuY*vY))
 									//Segundo miembro
 								   - int2d(Th)(Antisimetric(Lev,Lev,v)) 
 								   - int2d(Th)(nu*GradUGradV(Lev,v))
-								   + on(1,2, uu=0., uuY=0.); 
+								   + on(1,2, uu=0., uuY=0.) +on(3, uu=0.); 
 //							
 
 MFija = FVFija(Vh3P2,Vh3P2);
