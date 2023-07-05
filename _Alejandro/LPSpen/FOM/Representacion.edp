@@ -1,0 +1,34 @@
+// Representación
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Variables de elementos finitos
+Vh3P2 [uEF,uEFY,uEFP]; // Etapa a calcular
+
+real[int] Ekin(nit);
+for(int n=1; n<=nit; n++){
+    real t = t0+n*dt;
+
+    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t+ ".txt", real, SolX, 0); uEF[]  = SolX;
+    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +t+ ".txt", real, SolY, 0); uEFY[] = SolY;
+
+    VhP2 uEFmod;
+    uEFmod = uEF^2+uEFY^2;
+    plot(uEFmod,fill=1,cmm = "t = "+t);
+    Ekin(n-1) = 0.5*int2d(Th)(uEFmod);
+
+}
+write("../Snapshots/Energy" + Reynolds + ".txt", Ekin, 0, 0);

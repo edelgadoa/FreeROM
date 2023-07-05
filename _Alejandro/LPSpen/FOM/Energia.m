@@ -1,0 +1,17 @@
+%% Figura
+
+% Lectura archivo
+
+name=strcat('../Snapshots/Energy100.txt');
+% close all
+fileID = fopen(name);
+v=fscanf(fileID,'%f');
+fclose(fileID);
+
+v = v(2:end);
+tf = 10;
+t0 = 0;
+dt = 2e-3;
+t = dt:dt:tf;
+
+plot(t,v)

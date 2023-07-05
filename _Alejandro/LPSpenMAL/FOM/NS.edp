@@ -58,7 +58,7 @@ write("../Snapshots/Snapshots.txt", tSolved, 0, 0);
 readvector("../Snapshots/Snapshots.txt", real, tSolved, 0);
 readvector("../Snapshots/Vx_CI.txt", real, SolX, 0); uEF0[]  = SolX;
 readvector("../Snapshots/Vy_CI.txt", real, SolY, 0); uEF0Y[] = SolY;
-readvector("../Snapshots/P_CI.txt", real, SolP, 0); uEF0P[] = SolP;
+readvector("../Snapshots/P_CI.txt", real, SolP, 0);  uEF0P[] = SolP;
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cilindro 2D //
