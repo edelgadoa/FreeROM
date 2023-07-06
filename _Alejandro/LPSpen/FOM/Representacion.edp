@@ -27,7 +27,7 @@ for(int n=1; n<=nit; n++){
 
     VhP2 uEFmod;
     uEFmod = uEF^2+uEFY^2;
-    plot(uEFmod,fill=1,cmm = "t = "+t);
+    plot(uEFmod,fill=1,value=1,cmm = "t = "+t);
     Ekin(n-1) = 0.5*int2d(Th)(uEFmod);
 
 }
