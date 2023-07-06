@@ -69,13 +69,13 @@ for (int s=0; s<NbasesV; s++){
             if(j<i){
                 Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
             } 
-            if (s==i && (j!=i)){
-                for (int k=0; k<s; k++){
-					real[int] BaseVk;
-					ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
-                    Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
-                }
-            } 
+            //if (s==i && (j!=i)){
+            //    for (int k=0; k<s; k++){
+			//		real[int] BaseVk;
+			//		ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
+            //        Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+            //    }
+            //} 
         }
     }
 
