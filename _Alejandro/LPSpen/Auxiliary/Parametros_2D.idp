@@ -1,0 +1,37 @@
+// PARAMATERS
+
+// GEOMETRICAL PARAMETERS
+real H 	  = 0.41; // Channel height
+real D    = 0.1;  // Cylinder diameter
+real xCyl = 0.2;  // Cylinder center x-position
+real yCyl = 0.2;  // Cylinder center y-position
+real xin  = 0.;   // Inlet position
+real xout = 2.2;  // Outlet position
+
+// PHYSICAL PARAMETERS
+real nu  = 1.e-3; // Kinematic viscosity
+
+// INFLOW CONDITION
+real Um  = 1.5; 			 // Max inlet velocity
+func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um 
+real Ubar= 2*Um/3; 			 // \int_{\Gamma_in} Uin / \int_{\Gamma_in} =1
+real Reynolds  = Ubar*D/nu; 		 // Reynolds number = 100
+
+cout << "Ubar = " << Ubar << endl;
+cout << "Re = " << Reynolds << endl;
+
+// TIME SETUP FOR NUMERICAL SIMULATION
+real t0  = 0.;	  // Initial time
+real dt = 2.e-3;  // Time step
+real TF  = 7;     // Final time
+real dtt = 1./dt; // Inverse of time step
+int nit = (TF-t0)/dt;   // # Iterations
+int  it = 0;      // Initial iteration
+real epsEF = 1.e-6;
+
+real a0,a1,a2; // Parameters for BDF fomulation
+real b0,b1;    // Parameters for extrapolation
+
+// TIME RESOLUTION: 1st Step - BDF1 ; next steps - BDF2
+// a0=1.; a1=-1.; a2=0.; b0=1.; b1=0.;  // Semi-implicit BDF1
+a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
