@@ -26,7 +26,7 @@ Vh3P2 [uEF,uEFY,uEFP]; // Etapa a calcular
 Vh3P2 [uEF0,uEF0Y,uEF0P]; // Etapa anterior
 Vh3P2 [uEF1,uEF1Y,uEF1P]; // Etapa 2anterior
 
-t0 = 0.13;
+t0 = dt;
 
 // Condicion inicial
 if(t0<1e-6){
