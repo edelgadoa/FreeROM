@@ -1,0 +1,95 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+///////////////////////////////////////////////////////////////////////////////
+NewMacro matrixcorrelacion(snaps, C, prod)
+{
+	real NPOD = C.n;
+	for(int ii=0;ii<C.n;ii++){
+		real[int] snapi = snaps(:,ii);
+		//ChangeNumbering(prod, snaps(:,ii), snapi);
+    	for(int jj=ii;jj<C.m;jj++){
+			real[int] snapj = snaps(:,jj);
+			//ChangeNumbering(prod, snaps(:,jj), snapj);
+        	C(ii,jj) = innerprodX(snapi, snapj, prod);
+                if(ii!=jj)C(jj,ii)=C(ii,jj);
+        }
+	}
+	C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NÚMERO DE BASES POD
+	write("correlation.txt",C,0,0);
+}
+EndMacro
+
+///////////////////////////////////////////////////////////////////////////////
+// Calculo de autovalores (puede hacerse SVD con dgesdd A=U*SIGMA*V^T)
+///////////////////////////////////////////////////////////////////////////////
+NewMacro eigenvaluescompute(C,autoval,autovect)
+{
+	autovect=0; autoval=0;
+	int keigen = dsyev(C,autoval,autovect); // devuelve los autovalores en forma ascendente
+	// keigen = 0 -> successful,  keigen = -i (<0) -> ith argument illegal value, keigen = i (>0) -> failed to converge
+}
+EndMacro
+
+///////////////////////////////////////////////////////////////////////////////
+// Seleccion del numero de bases (no lo he cambiado en la nueva version)
+///////////////////////////////////////////////////////////////////////////////
+NewMacro howmanybasis(autoval,nPOD)
+{
+    nPOD=1;
+    real[int] In(autoval.n);In=0;
+    real[int] autovalsave=abs(autoval);
+    real totalsum=autovalsave.sum;
+    for(int ii=0;ii<In.n;ii++)
+    {
+        In(In.n-ii-1)=autovalsave.sum;
+        autovalsave(ii)=0;
+    }
+    In/=totalsum;
+    for(int ii=0;ii<In.n;ii++)
+    {
+        if(In(ii)>=(1.-epsPOD))
+        {
+            nPOD=ii+1;
+            break;
+        }
+    }
+    mpi(cout << "    from " << autoval.n << " to " << nPOD <<" basis, with energy=" << In(nPOD-1) << endl;)
+}
+EndMacro
+
+///////////////////////////////////////////////////////////////////////////////
+// Construccion de la base POD
+///////////////////////////////////////////////////////////////////////////////
+NewMacro baseconstrunction(snaps,autovect,autoval,base,nPOD)
+{
+	for(int ii=0; ii<nPOD; ii++)
+	{
+		base[ii][]=snaps*autovect(:,autovect.m-ii-1);
+		base[ii][]/=sqrt(abs(autoval(autovect.m-ii-1)));
+	}
+}
+EndMacro
+
+///////////////////////////////////////////////////////////////////////////////
+// Funcion resumen
+///////////////////////////////////////////////////////////////////////////////
+NewMacro POD(snaps,prod,base,nPOD,autoval)
+real[int] autoval(snaps.m); // Vector de autovalores ordenados de menor a mayor
+{
+	write("Output.txt","    Starting the correlation matrix..." ,1,1);
+	real[int,int] C(snaps.m,snaps.m);
+	real time=mpiWtime();
+	matrixcorrelacion(snaps,C,prod);
+	// mpi(cout<<"Correlation Matrix"<<C<<endl;)
+	time=mpiWtime()-time;
+	write("Output.txt","    - time="+time,1,1);
+	real[int,int] autovect(C.n,C.n); // Matriz que contendra los autovectores en columna
+	write("Output.txt","    Eigenvalue computation...",1,1);	
+	eigenvaluescompute(C,autoval,autovect);
+	write("Output.txt","    Base construction...",1,1);
+	howmanybasis(autoval,nPOD);
+	baseconstrunction(snaps,autovect,autoval,base,nPOD);
+}
+EndMacro

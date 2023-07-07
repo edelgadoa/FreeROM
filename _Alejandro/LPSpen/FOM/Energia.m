@@ -9,7 +9,7 @@ v=fscanf(fileID,'%f');
 fclose(fileID);
 
 v = v(2:end);
-tf = 10;
+tf = 7;
 t0 = 0;
 dt = 2e-3;
 t = dt:dt:tf;

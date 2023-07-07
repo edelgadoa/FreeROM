@@ -35,3 +35,6 @@ real b0,b1;    // Parameters for extrapolation
 // TIME RESOLUTION: 1st Step - BDF1 ; next steps - BDF2
 // a0=1.; a1=-1.; a2=0.; b0=1.; b1=0.;  // Semi-implicit BDF1
 a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
+
+// Parametros POD
+real epsPOD = 1.e-12;
