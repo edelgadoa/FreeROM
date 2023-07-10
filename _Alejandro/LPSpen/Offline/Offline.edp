@@ -148,6 +148,7 @@ VhP2[int] BaseVDTau(niS);
     POD(MBaseVTau,MScalar2,BaseVTau,NbasesVTau,autovalVTau);
     POD(MBaseConv,MScalar2,BaseConv,NbasesConv,autovalVConv);
     POD(MBaseVDTau,MScalar,BaseVDTau,NbasesVDTau,autovalVDTau);
+    
 
 }
 write("Output.txt","After POD, for vel "+NbasesV+" basis, for veltau "+NbasesVTau+" basis, for conv "+NbasesConv+", and for ugradtau "+NbasesVDTau+".",1,1);
@@ -156,6 +157,7 @@ real[int,int] BV(Vh2P2.ndof,NbasesV);
 real[int,int] BVTau(Vh2P2.ndof,NbasesVTau);
 real[int,int] BConv(Vh2P2.ndof,NbasesConv);
 real[int,int] BVDTau(VhP2.ndof,NbasesVDTau);
+
 for(int i=0; i<NbasesV; i++){
     BV(:,i) = BaseV[i][];
     //VhP2 modvv;
@@ -181,7 +183,15 @@ for(int i=0; i<NbasesVDTau; i++){
 }
 
 
+
 write("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BV, 0, 0);
 write("Bases/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVTau, 0, 0);
 write("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BConv, 0, 0);
 write("Bases/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVDTau, 0, 0);
+
+
+write("Output.txt","Building offline matrices...",1,1);
+Vh2P2 [uM,uMY];
+uM[] = MediaV;
+include "MatricesOffline.idp"
+write("Output.txt","Reduced Matrices Ok.",1,1);
