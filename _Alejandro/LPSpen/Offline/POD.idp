@@ -16,7 +16,7 @@ NewMacro matrixcorrelacion(snaps, C, prod)
                 if(ii!=jj)C(jj,ii)=C(ii,jj);
         }
 	}
-	C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NÚMERO DE BASES POD
+	// C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NÚMERO DE BASES POD
 	write("correlation.txt",C,0,0);
 }
 EndMacro

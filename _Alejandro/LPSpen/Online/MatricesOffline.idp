@@ -1,0 +1,52 @@
+// Matrices Online
+
+real[int,int] MMasaR(NbasesV,NbasesV);
+real[int,int] MGradR(NbasesV,NbasesV);
+real[int,int] MContR(NbasesV,NbasesV);
+real[int,int] MConvRaux(NbasesV,NbasesV);
+real[int,int][int] MsConvR(NbasesV);
+
+{
+    varf varmasa([u,uY],[v,vY]) = int2d(Th)(u*v+uY*vY);
+    matrix MMasa = varmasa(Vh2P2,Vh2P2);
+
+    varf vargrad([u,uY],[v,vY]) = int2d(Th)(GradUGradV(u,v));
+    matrix MGrad = vargrad(Vh2P2,Vh2P2);
+
+    varf varcont([u,uY],[v,vY]) = on(1,2, u=0., uY=0.);
+    matrix MCont = varcont(Vh2P2,Vh2P2);
+ 
+    Vh2P2 [uu,uuY];
+    for(int i = 0; i<NbasesV; i++){
+        real[int] auxmasav = MMasa*BaseV(:,i);
+        real[int] auxgradv = MGrad*BaseV(:,i);
+        real[int] auxcontv = MCont*BaseV(:,i);
+        uu[]=BaseV(:,i);
+        varf varconv([u,uY],[v,vY]) = int2d(Th)(UGradVW(uu,u,v));
+        matrix MConv = varconv(Vh2P2,Vh2P2);
+        for(int j=0; j<NbasesV; j++){
+            real auxmasa = BaseV(:,j)'*auxmasav;
+            MMasaR(j,i) = auxmasa;
+            real auxgrad = BaseV(:,j)'*auxgradv;
+            MGradR(j,i) = auxgrad;
+            real auxcont = BaseV(:,j)'*auxcontv;
+            MContR(j,i) = auxcont;
+            real[int] auxconvv = MConv*BaseV(:,j);
+            for(int k=0; k<NbasesV; k++){
+                real auxconv = BaseV(:,k)'*auxconvv;
+                MConvRaux(k,j)=auxconv; 
+            }
+        }
+        MsConvR[i] = MConvRaux;
+    }
+}
+
+//cout << MContR << endl;
+real[int,int] aux(NbasesV,Vh2P2.ndof);
+real[int,int] auxv(NbasesV,NbasesV);
+real[int,int] auxx(Vh2P2.ndof,Vh2P2.ndof);
+auxv = BaseV';
+aux = MContR*auxv;
+auxx = BaseV*aux;
+
+cout << aux << endl;

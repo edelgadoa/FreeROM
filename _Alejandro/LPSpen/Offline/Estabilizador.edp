@@ -50,6 +50,8 @@ Triangles.resize(Th.nv, NTri.max);
 VhP0 indv;
 VhP1 tau;
 VhP0 h=hTriangle;
+cout << h[].max << endl;
+
 real hmax2 = 2*h[].max;
 cout << hmax2^2 << endl;
 

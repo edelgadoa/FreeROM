@@ -1,0 +1,56 @@
+// Online
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de bases
+readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+int NbasesV = BaseV.m; // Dimension reducido
+readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+int NbasesV = BaseV.m; // Dimension reducido
+
+// Matrices del FOM
+write("Output.txt","Building offline matrices...",1,1);
+include "MatricesOffline.idp"
+write("Output.txt","Ok.",1,1);
+
+// Condición inicial
+Vh3P2 [SnapX,SnapY,SnapP];
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0);
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0);
+SnapX[] = SolX; SnapY[] = SolY;
+
+Vh2P2 [uEFP,uEFPY];
+[uEFP,uEFPY] = [SnapX, SnapY];
+
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +(TF-dt)+ ".txt", real, SolPX, 0);
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +(TF-dt)+ ".txt", real, SolPY, 0);
+SnapX[] = SolPX; SnapY[] = SolPY;
+
+Vh2P2 [uEFP1,uEFP1Y];
+[uEFP1,uEFP1Y] = [SnapX, SnapY];
+//plot([uEFP,uEFPY],wait=1,fill=1,value=1);
+//plot([uEFP1,uEFP1Y],wait=1,fill=1,value=1);
+
+real[int] uR(NbasesV), uRP(NbasesV), uRP1(NbasesV);
+uRP = BaseV'*uEFP[];
+cout << uRP << endl;
+uRP1 = BaseV'*uEFP1[];
+cout << uRP1 << endl;
