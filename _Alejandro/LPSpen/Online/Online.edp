@@ -24,12 +24,17 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
 int NbasesV = BaseV.m; // Dimension reducido
 readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
-int NbasesV = BaseV.m; // Dimension reducido
+Vh2P2 [uM,uMY];
+uM[] = MediaV;
 
 // Matrices del FOM
 write("Output.txt","Building offline matrices...",1,1);
 include "MatricesOffline.idp"
 write("Output.txt","Ok.",1,1);
+real[int,int] MFijaR(NbasesV,NbasesV);
+MFijaR = a0*dtt*MMasaR;
+MFijaR += nu*MGradR;
+MFijaR += MConvMGR;
 
 // Condición inicial
 Vh3P2 [SnapX,SnapY,SnapP];
@@ -51,6 +56,6 @@ Vh2P2 [uEFP1,uEFP1Y];
 
 real[int] uR(NbasesV), uRP(NbasesV), uRP1(NbasesV);
 uRP = BaseV'*uEFP[];
-cout << uRP << endl;
+//cout << uRP << endl;
 uRP1 = BaseV'*uEFP1[];
-cout << uRP1 << endl;
+//cout << uRP1 << endl;
