@@ -19,7 +19,9 @@ include "FE_Spaces_NoStab_VP_2D.idp"
 Vh3P2 [uEF,uEFY,uEFP]; // Etapa a calcular
 
 real[int] Ekin(nit);
-for(int n=1; n<=nit; n++){
+for(int n=3000; n<=nit; n++){
+    real ti = dt*n;
+	write("Output.txt","t = " + ti,0,1);
     real t = t0+n*dt;
 
     readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t+ ".txt", real, SolX, 0); uEF[]  = SolX;
@@ -27,7 +29,7 @@ for(int n=1; n<=nit; n++){
 
     VhP2 uEFmod;
     uEFmod = uEF^2+uEFY^2;
-    plot(uEFmod,fill=1,wait=1,value=1,cmm = "t = "+t);
+    plot(uEFmod,fill=1,value=1,cmm = "t = "+t);
     //Ekin(n-1) = 0.5*int2d(Th)(uEFmod);
 
 }

@@ -50,7 +50,6 @@ Triangles.resize(Th.nv, NTri.max);
 VhP0 indv;
 VhP1 tau;
 VhP0 h=hTriangle;
-cout << h[].max << endl;
 
 real hmax2 = 2*h[].max;
 cout << hmax2^2 << endl;
@@ -58,7 +57,7 @@ cout << hmax2^2 << endl;
 real c1=16;
 real c2=4;
 
-for(int iter=3000; iter <=nit; iter++){
+for(int iter=3400; iter <=nit; iter++){
     real ti = t0+iter*dt;
     write("Output.txt","t = "+ti,1,1);
     // Snapshots

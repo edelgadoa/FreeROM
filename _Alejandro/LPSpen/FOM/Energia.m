@@ -2,7 +2,7 @@
 
 % Lectura archivo
 
-name=strcat('../Snapshots/Energy100.txt');
+name=strcat('../Snapshots/Energy200.txt');
 % close all
 fileID = fopen(name);
 v=fscanf(fileID,'%f');

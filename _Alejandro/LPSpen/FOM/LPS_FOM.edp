@@ -27,19 +27,29 @@ Vh3P2 [uEF0,uEF0Y,uEF0P]; // Etapa anterior
 Vh3P2 [uEF1,uEF1Y,uEF1P]; // Etapa 2anterior
 
 t0 = dt;
-
+t0 = TF;
+TF = TF+period;
 // Condicion inicial
 if(t0<1e-6){
     [uEF0,uEF0Y,uEF0P]=[0,0,0]; 
-}
-else{
+    [uEF1,uEF1Y,uEF1P]=[0,0,0]; 
+}else if(abs(t0-dt)<1e-6){
+    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t0+ ".txt", real, SolX, 0); uEF0[]  = SolX;
+	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +t0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
+	readvector("../Snapshots/P_"  + Reynolds + "_t_" +t0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+    [uEF1,uEF1Y,uEF1P]=[0,0,0]; 
+}else{
 	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t0+ ".txt", real, SolX, 0); uEF0[]  = SolX;
 	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +t0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
 	readvector("../Snapshots/P_"  + Reynolds + "_t_" +t0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +(t0-dt)+ ".txt", real, Sol1X, 0); uEF1[]  = Sol1X;
+	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +(t0-dt)+ ".txt", real, Sol1Y, 0); uEF1Y[] = Sol1Y;
+	readvector("../Snapshots/P_"  + Reynolds + "_t_" +(t0-dt)+ ".txt", real, Sol1P, 0); uEF1P[] = Sol1P;
 }
 
 // Matrices fijas
 include "MatricesFijas_2D.idp"
+
 
 for(real ti=t0+dt;ti<=TF+epsEF;ti+=dt){
 	write("Output.txt","t = " + ti,0,1);
@@ -71,9 +81,8 @@ for(real ti=t0+dt;ti<=TF+epsEF;ti+=dt){
     [uEF1,uEF1Y,uEF1P]=[uEF0,uEF0Y,uEF0P];
     [uEF0,uEF0Y,uEF0P]=[uEF, uEFY, uEFP];
 
-    
-    //VhP2 uEFmod;
-	//uEFmod = (uEF)^2+(uEFY)^2;
-	//plot(uEFmod,fill=1,value=1,cmm="t="+ti);
+    VhP2 uEFmod;
+	uEFmod = (uEF)^2+(uEFY)^2;
+	plot(uEFmod,fill=1,value=1,cmm="t="+ti);
 	//plot([uEF,uEFY],fill=1,value=1,cmm="t="+ti);
 }

@@ -37,8 +37,8 @@ include "../Auxiliary/Normas.idp"
 ////////////////////////////////////////////////////////////////////////////////////
 
 // Carga de datos importantes
-real tS0 = 7-0.332;
-real tSF = 7;
+real tS0 = TF-period;
+real tSF = TF;
 real niS = (tSF-tS0)/dt+1;
 
 //Definicion de Constantes y variables varias
