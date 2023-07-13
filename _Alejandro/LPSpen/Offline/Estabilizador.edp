@@ -57,7 +57,7 @@ cout << hmax2^2 << endl;
 real c1=16;
 real c2=4;
 
-for(int iter=3400; iter <=nit; iter++){
+for(int iter=3330; iter <=nit; iter++){
     real ti = t0+iter*dt;
     write("Output.txt","t = "+ti,1,1);
     // Snapshots
@@ -77,7 +77,7 @@ for(int iter=3400; iter <=nit; iter++){
         real areav = int2d(Th,qforder=0)(indv);
         tau[][i] = (c1*nu/(hmax2^2)+c2*sqrt(umod/areav)/(hmax2))^(-1);
     }
-    // plot(tau,wait=1,fill=1,cmm="t="+ti);
-	write("Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
+    plot(tau,wait=1,fill=1,value=1,cmm="t="+ti);
+	// write("Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
 }
 write("Output.txt","Estabilizador OK.",1,1);

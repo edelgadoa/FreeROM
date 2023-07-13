@@ -69,6 +69,7 @@ for (int s=0; s<NbasesV; s++){
             if(j<i){
                 Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
             } 
+            /*
             if (s==i && (j!=i)){
                 for (int k=0; k<s; k++){
 					real[int] BaseVk;
@@ -76,6 +77,7 @@ for (int s=0; s<NbasesV; s++){
                     Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
                 }
             } 
+            */
         }
     }
 

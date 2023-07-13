@@ -10,6 +10,7 @@ varf  NSfija ([uEF,uEFY,uEFP],[v1,v2,q])=
 matrix MNS=NSfija(Vh3P2,Vh3P2);
 real[int] bNS=NSfija(0,Vh3P2);
 
+
 varf NScon ([uEF,uEFY,uEFP],[v1,v2,q])=
     on(1,   uEF=0.,uEFY=0.)	    // Label 1   = Top,Bottom,Cylinder:   No-slip BCs
 	+ on(2,   uEF=Uin,uEFY=0.)  // Label 2   = Inlet:      Inflow BCs

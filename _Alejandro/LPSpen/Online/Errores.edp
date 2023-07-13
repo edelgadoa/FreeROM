@@ -27,7 +27,7 @@ Vh2P2 [err,errY];
 int nn = period/dt;
 real[int] errorl2(nn);
 int m = 0;
-TFR = TF +period;
+TFR = TF + period;
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);

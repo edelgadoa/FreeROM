@@ -39,13 +39,13 @@ include "../Auxiliary/Normas.idp"
 // Carga de datos importantes
 real tS0 = TF-period;
 real tSF = TF;
-real niS = (tSF-tS0)/dt+1;
+real niS = (tSF-tS0)/dt;
 
 //Definicion de Constantes y variables varias
 real[int,int] MBaseV(Vh2P2.ndof,niS+1);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
+real[int,int] MBaseConv(Vh2P2.ndof,niS+1); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
 real[int,int] MBaseVTau(Vh2P2.ndof,niS+1); real[int] MediaVTau(Vh2P2.ndof);  MediaVTau = 0.;
 real[int,int] MBaseVDTau(VhP2.ndof,niS+1); real[int] MediaVDTau(Vh2P2.ndof); MediaVDTau = 0.;
-real[int,int] MBaseConv(Vh2P2.ndof,niS+1); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
 
 // Recuperacion de resultados en tiempo
 for(int iter=0; iter <niS; iter++){
@@ -116,9 +116,9 @@ for(int iter=0; iter <niS; iter++){
 write("Output.txt","Substracting and saving mean value ...",1,1);
 for(int i=0; i <niS; i++){
     MBaseV(:,i) -= MediaV; 
+    //MBaseConv(:,i) -= MediaConv; 
     //MBaseVTau(:,i) -= MediaVTau; 
     //MBaseVDTau(:,i) -= MediaVDTau; 
-    MBaseConv(:,i) -= MediaConv; 
 }
 write("Bases/MediaV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaV, 0, 0);
 //write("Bases/MediaConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaConv, 0, 0);
@@ -131,8 +131,8 @@ write("Output.txt","Mean values OK.",1,1);
 write("Output.txt","Computing the complete basis...",1,1);
 int NbasesV, NbasesVTau, NbasesConv, NbasesVDTau;
 Vh2P2[int] [BaseV,BaseVY](niS);
-Vh2P2[int] [BaseVTau,BaseVTauY](niS);
 Vh2P2[int] [BaseConv,BaseConvY](niS);
+Vh2P2[int] [BaseVTau,BaseVTauY](niS);
 VhP2[int] BaseVDTau(niS);
 {
     varf scalar2L2([u,uY],[v,vY]) = int2d(Th)(u*v+uY*vY);
@@ -141,16 +141,16 @@ VhP2[int] BaseVDTau(niS);
 	matrix MScalar2 = scalar2L2(Vh2P2, Vh2P2);
     include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
     POD(MBaseV,MScalar2,BaseV,NbasesV,autovalV);
-    POD(MBaseVTau,MScalar2,BaseVTau,NbasesVTau,autovalVTau);
     POD(MBaseConv,MScalar2,BaseConv,NbasesConv,autovalVConv);
+    POD(MBaseVTau,MScalar2,BaseVTau,NbasesVTau,autovalVTau);
     POD(MBaseVDTau,MScalar,BaseVDTau,NbasesVDTau,autovalVDTau);
 }
 write("Output.txt","After POD, for vel "+NbasesV+" basis, for veltau "+NbasesVTau+" basis, for conv "+NbasesConv+", and for ugradtau "+NbasesVDTau+".",1,1);
 
 write("Output.txt","Saving basis...",1,1);
 real[int,int] BV(Vh2P2.ndof,NbasesV);
-real[int,int] BVTau(Vh2P2.ndof,NbasesVTau);
 real[int,int] BConv(Vh2P2.ndof,NbasesConv);
+real[int,int] BVTau(Vh2P2.ndof,NbasesVTau);
 real[int,int] BVDTau(VhP2.ndof,NbasesVDTau);
 
 for(int i=0; i<NbasesV; i++){
@@ -159,23 +159,23 @@ for(int i=0; i<NbasesV; i++){
 }
 write("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BV, 0, 0);
 
-for(int i=0; i<NbasesVTau; i++){
-    BVTau(:,i) = BaseVTau[i][];
-    //plot([BaseVTau[i],BaseVTauY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
-}
-write("Bases/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVTau, 0, 0);
-
 for(int i=0; i<NbasesConv; i++){
     BConv(:,i) = BaseConv[i][];
     //plot([BaseConv[i],BaseConvY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
 write("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BConv, 0, 0);
 
+for(int i=0; i<NbasesVTau; i++){
+    BVTau(:,i) = BaseVTau[i][];
+    //plot([BaseVTau[i],BaseVTauY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
+}
+write("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVTau, 0, 0);
+
 for(int i=0; i<NbasesVDTau; i++){
     BVDTau(:,i) = BaseVDTau[i][];
     //plot(BaseVDTau[i],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
-write("Bases/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVDTau, 0, 0);
+write("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVDTau, 0, 0);
 write("Output.txt","Basis saved.",1,1);
 
 write("Output.txt","Building offline matrices...",1,1);
@@ -183,3 +183,9 @@ Vh2P2 [uM,uMY];
 uM[] = MediaV;
 include "MatricesOffline.idp"
 write("Output.txt","Reduced Matrices Ok.",1,1);
+
+write("Output.txt","computing RBF...",1,1);
+//include "RBF.idp"
+write("RBF/DataVTau_" + Reynolds + ".txt", MBaseVTau, 0, 0);
+write("RBF/DataVDTau_" + Reynolds + ".txt", MBaseVDTau, 0, 0);
+write("Output.txt","RBF Ok.",1,1);
