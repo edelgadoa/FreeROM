@@ -185,6 +185,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BaseV[NbasesV+i][] = supEF[];
 	}
 	NbasesV += NbasesP; 
+	
 	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
 	write("Output.txt","Ok.",1,1);
 

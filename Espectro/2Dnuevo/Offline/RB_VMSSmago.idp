@@ -9,14 +9,13 @@ MRB += DivPRBTi;
 MRB += (1./dt) * DTRBi;
 MRB += PenRBi;	
 
-bDiffRBi = bDiffRB(0:I-1);
+// mpi(cout<<MRB<<endl;)
 
 for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	real[int, int] MRBF = MRB;
 	ConvRBi = 0;
 	SmagoRBi = 0;
 	bDTRBi = 0;
-	bSmagoRBi = 0;
 	bRB = 0;
 	
 	// Matriz de conveccion
@@ -35,7 +34,7 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 		real[int, int] Gradint(4,NbasesV);
 		Gradint = GradPM[s](0:3, 0:NbasesV-1);
 		GraduN = Gradint * uN;
-		mpi(cout<<GraduN<<endl;)
+		// mpi(cout<<GraduN<<endl;)
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
 	//mpi(cout<<bEIMS<<endl;)
@@ -49,11 +48,7 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 		SmagoRBi += SmagoRBint; 
 	}
 	//mpi(cout<<SmagoRBi<<endl;)
-		
-	// Segundo miembro Smago
-	for (int s=0; s<NbasesV; s++){
-		bSmagoRBi(s) = sigmaEIMS'*bSmagoRB(0:Mbases-1,s);
-	}
+
 	
 	// Segundos miembro dt
 	for (int s=0; s<NbasesV; s++){
@@ -67,11 +62,10 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	MRBF += ConvRBi;
 	MRBF += SmagoRBi; 
 	
+	//mpi(cout<<MRBF<<endl;)
 	bRB = (1./dt) * bDTRBi(0:I-1);
-	bRB -= nuRB * bDiffRBi(0:I-1);
-	bRB -= bConvRBi(0:I-1);
-	bRB -= bSmagoRBi(0:I-1);
-	
+
+	mpi(cout<<bRB<<endl;)
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = MRBF;
@@ -80,5 +74,5 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	mpi(cout<<"Aqui"<<endl;)
 	// real[int,int] MRBinv = MRB^-1;
 	uRBv = MRBs^-1*bRB;
-	mpi(cout<<"Aqui"<<endl;)
+	mpi(cout<<uRBv<<endl;)
 }

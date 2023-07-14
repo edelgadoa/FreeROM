@@ -83,7 +83,7 @@ for (int s=0; s<NbasesV; s++){
 }
 write("Output.txt","Conveccion OK.",1,1);
 
-mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+// mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
@@ -115,7 +115,7 @@ for (int i=0; i<NbasesV; i++){
 	int MbasesL;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
-		real[int,int] DtkL(GradPM[s].n, GradPM[s].m); // = GradPM[s];
+		real[int,int] DtkL(GradPM[s].n, GradPM[s].m);
 
 		Dtk = 0; DtkL = 0;
 
@@ -130,11 +130,8 @@ for (int i=0; i<NbasesV; i++){
 		}
 		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
 		GradPM[s] += Dtk;
-		//mpi(cout<<Dtk<<endl;)
 	}	
 }
-
-mpi(cout<<GradPM[0]<<endl;)
 
 
 write("Output.txt","EIM Smagorinsky OK.",1,1);

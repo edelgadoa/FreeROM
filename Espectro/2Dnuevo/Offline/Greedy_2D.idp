@@ -1,7 +1,7 @@
 ///////////////
 // FreeROM 
 /////////////// 
-int I=NbasesV+NbasesP; // Para ajustar los indices
+int I = NbasesV + NbasesP; // Para ajustar los indices
 
 // Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteración del Greedy
 real[int] TauG(NiterGreddy), DeltaG(NiterGreddy), ResG(NiterGreddy); 
@@ -12,16 +12,14 @@ real[int, int] DiffRBi(I, I), DivPRBi(I, I), DivPRBTi(I, I), PenRBi(I, I),
 			   DTRBi(I, I), ConvRBi(I, I), SmagoRBi(I, I);
 			   			   			 			  
 // Inicializamos los segundos miembros
-real[int] bDiffRBi(I), bSmagoRBi(I), bDTRBi(I), bConvRBi(I); 
+real[int] bDTRBi(I); 
 
 // Matrices fijas 
-DiffRBi = DiffRB;
-DivPRBi = DivPRB;
+DiffRBi = DiffRB(0:I-1, 0:I-1);
+DivPRBi = DivPRB(2*Nbases-NbasesV:2*Nbases-NbasesP-1, 0:I-1);;
 DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
-PenRBi = PenRB;
-DTRBi = DTRB;
-bDiffRBi = bDiffRB;
-bConvRBi = bConvRB;
+PenRBi = PenRB(2*Nbases-NbasesV:2*Nbases-NbasesP-1,2*Nbases-NbasesV:2*Nbases-NbasesP-1);
+DTRBi = DTRB(0:I-1, 0:I-1);
 
 // Comenzamos el bucle del greedy 
 
