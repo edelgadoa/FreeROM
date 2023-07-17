@@ -184,8 +184,8 @@ uM[] = MediaV;
 include "MatricesOffline.idp"
 write("Output.txt","Reduced Matrices Ok.",1,1);
 
-write("Output.txt","computing RBF...",1,1);
-//include "RBF.idp"
+write("Output.txt","Saving data for RBF...",1,1);
 write("RBF/DataVTau_" + Reynolds + ".txt", MBaseVTau, 0, 0);
 write("RBF/DataVDTau_" + Reynolds + ".txt", MBaseVDTau, 0, 0);
+include "RBF.idp"
 write("Output.txt","RBF Ok.",1,1);

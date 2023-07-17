@@ -27,7 +27,7 @@ readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt
 Vh2P2 [uM,uMY];
 uM[] = MediaV;
 
-// Condición inicial
+// Condicion inicial
 write("Output.txt","Computing initial conditions...",1,1);
 Vh3P2 [SnapX,SnapY,SnapP];
 readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0);

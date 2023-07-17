@@ -1,0 +1,103 @@
+// Matrices Online de la RBF
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Normas auxiliares
+include "../Auxiliary/Normas.idp"
+
+// Carga de datos
+readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseV,0);
+readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseConv,0);
+readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTau,0);
+readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTau,0);
+int NbasesV = BaseV.m;
+int NbasesConv = BaseConv.m;
+int NbasesVTau = BaseVTau.m;
+int NbasesVDTau = BaseVDTau.m;
+
+// Matrices 
+real[int,int][int] MsVDTauR(NbasesV*NbasesVDTau);
+real[int,int][int] MsVTauR(NbasesV*NbasesVTau);
+real[int,int] Maux(NbasesV,NbasesV);
+Maux = 0.;
+for(int i=0; i<NbasesV*NbasesVDTau; i++){
+    MsVDTauR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+for(int i=0; i<NbasesV*NbasesVTau; i++){
+    MsVTauR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+
+
+Vh2P2 [modes,modesY];
+VhP2 modeRBF1;
+Vh2P2 [modeRBF2,modeRBF2Y];
+for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
+    modes[] = BaseV(:,s);
+    for(int l=0;l<NbasesVDTau;l++){ // Bucle por el termino de la RBF
+        modeRBF1[] = BaseVDTau(:,l);
+        varf varVDTau([u,uY],[v,vY]) = int2d(Th)(
+            modeRBF1*((dx(modes)*u+modes*dx(u)+dy(modesY)*u+modesY*dy(u))*v
+            +(dx(modes)*uY+modes*dx(uY)+dy(modesY)*uY+modesY*dy(uY))*vY));
+        matrix MVDTau = varVDTau(Vh2P2,Vh2P2);
+        for(int i=0; i<NbasesV; i++){ // Bucle por el segundo termino de la conveccion
+            real[int] Vi = BaseV(:,i);
+            real[int] auxVDTauv = MVDTau*Vi;
+            for(int j=0; j<NbasesV; j++){ // Calculo los elementos
+                real[int] Vj = BaseV(:,j);
+                real auxVDTau = Vj'*auxVDTauv;
+                Maux(j,i) = auxVDTau;
+            }
+        }
+        MsVDTauR[s*NbasesVDTau+l] = Maux;
+    }
+
+    for(int l=0;l<NbasesVTau;l++){ // Bucle por el termino de la RBF
+        modeRBF2[] = BaseVTau(:,l);
+        varf varVTau([u,uY],[v,vY]) 
+            = int2d(Th)(modeRBF2*(
+                (dxx(modes)*u+2*dx(modes)*dx(u)+modes*dxx(u)+dxy(modesY)*u+dy(modesY)*dx(u)+dx(modesY)*dy(u)+modesY*dxy(u))*v+
+                (dxx(modes)*uY+2*dx(modes)*dx(uY)+modes*dxx(uY)+dxy(modesY)*uY+dy(modesY)*dx(uY)+dx(modesY)*dy(uY)+modesY*dxy(uY))*vY)
+            )
+            + int2d(Th)(modeRBF2Y*(
+                (dyx(modes)*u+dx(modes)*dy(u)+dy(modes)*dx(u)+modes*dyx(u)+dyy(modesY)*u+2*dy(modesY)*dy(u)+modesY*dyy(u))*v+
+                (dyx(modes)*uY+dx(modes)*dy(uY)+dy(modes)*dx(uY)+modes*dyx(uY)+dyy(modesY)*uY+2*dy(modesY)*dy(uY)+modesY*dyy(uY))*vY)
+            )
+        ;
+        matrix MVTau = varVTau(Vh2P2,Vh2P2);
+        for(int i=0; i<NbasesV; i++){ // Bucle por el segundo termino de la conveccion
+            real[int] Vi = BaseV(:,i);
+            real[int] auxVTauv = MVTau*Vi;
+            for(int j=0; j<NbasesV; j++){ // Calculo los elementos
+                real[int] Vj = BaseV(:,j);
+                real auxVTau = Vj'*auxVTauv;
+                Maux(j,i) = auxVTau;
+            }
+        }
+        MsVTauR[s*NbasesVTau+l] = Maux;
+    }
+}
+
+
+// real[int,int] MContR(NbasesV,NbasesV);
+
+// Vector de matrices
+write("ElementosOffline/MsVDTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauR, 0, 0);
+write("ElementosOffline/MsVTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);

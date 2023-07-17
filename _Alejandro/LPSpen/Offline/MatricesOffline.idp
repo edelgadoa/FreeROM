@@ -104,3 +104,4 @@ write("ElementosOffline/MsConvR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".t
 write("ElementosOffline/bMasaR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", bMasaR, 0, 0);
 write("ElementosOffline/bGradR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", bGradR, 0, 0);
 write("ElementosOffline/bConvR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", bConvR, 0, 0);	
+
