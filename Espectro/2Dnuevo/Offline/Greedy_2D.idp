@@ -33,7 +33,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real[int,int] MRB(I,I); // Matriz para resolver el sistema
 	real[int] bRB(I); // Segundo miembro para resolver el sistema
 	
-
+	uRBv = 0.01;
 	mpi(cout<<"Calculando solucion reducida..."<<endl;)
 	include "RB_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
