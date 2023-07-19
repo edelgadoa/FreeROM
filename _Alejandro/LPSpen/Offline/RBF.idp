@@ -22,8 +22,8 @@ int nPODVDTau = BaseVDTauRBF.m;
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if(1-r/(5*dt)>=0){
-	    return (1-r/(5*dt));
+ 	if(1-r/period>=0){
+	    return (1-r/period);
     }else{
 	    return 	 0;
     }

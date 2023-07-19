@@ -91,19 +91,23 @@ readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".t
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
 
-
 readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
 readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
-readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0)
-readtensor("../Offline/ElementosOffline/MsVtauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0)
+readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0);
+readtensor("../Offline/ElementosOffline/MsVtauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0);
 
+readmatrix("../Offline/ElementosOffline/MVDTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVDTauMMR,0);
+readtensor("../Offline/ElementosOffline/MsVDTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauMGR,0);
+readtensor("../Offline/ElementosOffline/MsVDTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauGMR,0);
 
-readmatrix("../Offline/RBF/DataVDTau_" + Reynolds + ".txt",real,SnapVDTau,0);
+readmatrix("../Offline/ElementosOffline/MVTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0);
+readtensor("../Offline/ElementosOffline/MsVTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0)
+readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0)
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if(1-r/(5*dt)>=0){
-	    return (1-r/(5*dt));
+ 	if(1-r/period>=0){
+	    return (1-r/period);
     }else{
 	    return 	 0;
     }
@@ -125,71 +129,45 @@ for(int i=0; i<nit; i++){
     }
 }
 
-real[int] VDTau(BaseVDTau.n);
-VDTau=0.;
-int nS = 0;
+/*
+real[int] VTau(BaseVTau.n);
+VTau=0.;
+int nS = 40;
 real[int] d = gaussRBF(nS,:);
 cout << d << endl;
 // real[int] uRBF = PesosVDTau'*d;
 real uRBF;
-for(int i=0; i<NbasesVDTau; i++){
-    uRBF = d(i)*PesosVDTau(nS,i);
-    VDTau += uRBF*BaseVDTau(:,i);
+for(int i=0; i<NbasesVTau; i++){
+    uRBF = d'*PesosVTau(:,i);
+    VTau += uRBF*BaseVTau(:,i);
+    //VhP2 ff;
+    //ff[] = VDTau; 
+    //plot(ff,fill=1,wait=1,value=1,cmm="Mode"+(i+1));
 }
-VhP2 uu;
-uu[] = VDTau;
-plot(uu);
-uu[] = SnapVDTau(:,nS);
-plot(uu);
-
+//VhP2 uu;
+Vh2P2 [uu,uuY]; VhP2 modu;
+uu[] = VTau;
+modu = uu^2+uuY^2;
+plot(modu);
+readmatrix("../Offline/RBF/DataVTau_" + Reynolds + ".txt",real,SnapVTau,0);
+uu[] = SnapVTau(:,nS);
+modu = uu^2+uuY^2;
+plot(modu);
+*/
 write("Output.txt","RBF Ok.",1,1);
 
 // Bucle temporal 
 real[int,int] MVarR(NbasesV,NbasesV);
 real[int] bVarR(NbasesV);
+real[int,int] Maux(NbasesV,NbasesV);
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);
 
     // Calculamos los coeficientes de las RBF
     int nn = (ti-TF)/dt-1;
-    real[int] d = X(:,nn); // Distancia paramétrica
-    real[int] uVTauRBF = PesosVTau*d;
-    real[int] uVDTauRBF = PesosVDTau*d;
+    real[int] d = gaussRBF(nn,:); // Distancia parametrica
 
-    // Calculo de los elementos variables
-    real[int,int] MVarConvPR(NbasesV,NbasesV); MVarConvPR = 0.;
-    real[int,int] MVarConvP1R(NbasesV,NbasesV); MVarConvP1R = 0.;
-    real[int,int] MVarVTauPR(NbasesV,NbasesV); MVarVTauPR = 0.;
-    real[int,int] MVarVTauP1R(NbasesV,NbasesV); MVarVTauP1R = 0.;
-    real[int,int] MVarVDTauPR(NbasesV,NbasesV); MVarVDTauPR = 0.;
-    real[int,int] MVarVDTauP1R(NbasesV,NbasesV); MVarVDTauP1R = 0.;
-    for(int i=0; i<NbasesV; i++){
-        MVarConvPR += uRP(i)*MsConvR[i];
-        MVarConvP1R += uRP1(i)*MsConvR[i];
-
-        for(int j=0; j<NbasesV; j++){
-            real uRPj = uRP(j);
-            real uRP1j = uRP1(j);
-            real[int,int] Maux(NbasesV,NbasesV);
-            for(int k=0; k<NbasesVDTau; k++){
-                Maux = uVDTauRBF(k)*MsVDTauR[j*NbasesVDTau+k];
-                MVarVDTauPR += uRPj*Maux;
-                MVarVDTauP1R += uRP1j*Maux;
-            }
-            for(int k=0; k<NbasesVTau; k++){
-                Maux = uVTauRBF(k)*MsVTauR[j*NbasesVTau+k];
-                MVarVTauPR += uRPj*Maux;
-                MVarVTauP1R += uRP1j*Maux;
-            }
-        }
-    }
-    MVarR = b0*MVarConvPR;
-    //MVarR -= b0*MVarVDTauPR;
-    //MVarR -= b0*MVarVTauPR;
-    MVarR += b1*MVarConvP1R;
-    //MVarR -= b1*MVarVDTauP1R;
-    //MVarR -= b1*MVarVTauP1R;
 
     real[int] aux=MMasaR*uRP;
     bVarR = a1*dtt*aux;
@@ -199,6 +177,83 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     bVarR += b0*aux;
     aux = MConvGMR*uRP1;
     bVarR += b1*aux;
+
+    // Calculo de los elementos variables
+    real[int,int] MVarConvPR(NbasesV,NbasesV); MVarConvPR = 0.;
+    real[int,int] MVarConvP1R(NbasesV,NbasesV); MVarConvP1R = 0.;
+
+    for(int i=0; i<NbasesV; i++){
+        MVarConvPR += uRP(i)*MsConvR[i];
+        MVarConvP1R += uRP1(i)*MsConvR[i];
+    }
+    MVarR = b0*MVarConvPR;
+    MVarR += b1*MVarConvP1R;
+
+    // Elementos de la estabilizacion (u grad tau)
+    real[int] uVDTauRBF(NbasesVDTau);
+    real[int,int] MVarVDTauPR(NbasesV,NbasesV); MVarVDTauPR = 0.;
+    real[int,int] MVarVDTauP1R(NbasesV,NbasesV); MVarVDTauP1R = 0.;
+    real[int] bVarVDTauMMR(NbasesV); bVarVDTauMMR = 0.;
+    real[int,int] MVarVDTauMGR(NbasesV,NbasesV); MVarVDTauMGR = 0.;
+    real[int,int] MVDTauGMRaux(NbasesV,NbasesV); MVDTauGMRaux = 0.;
+    real[int] bVarVDTauGMPR(NbasesV); bVarVDTauGMPR = 0.;
+    real[int] bVarVDTauGMP1R(NbasesV); bVarVDTauGMP1R = 0.;
+
+    for(int k=0; k<NbasesVDTau; k++){
+        uVDTauRBF(k) = d'*PesosVDTau(:,k);
+        bVarVDTauMMR += uVDTauRBF(k)*MVDTauMMR(:,k);
+        Maux = uVDTauRBF(k)*MsVDTauMGR[k];
+        MVarVDTauMGR += Maux;
+        MVDTauGMRaux = uVDTauRBF(k)*MsVDTauGMR[k];
+        for(int j=0; j<NbasesV; j++){
+            Maux = uVDTauRBF(k)*MsVDTauR[j*NbasesVDTau+k];
+            MVarVDTauPR += uRP(j)*Maux;
+            MVarVDTauP1R += uRP1(j)*Maux;
+            bVarVDTauGMPR += uRP(j)*MVDTauGMRaux(:,j);
+            bVarVDTauGMP1R += uRP1(j)*MVDTauGMRaux(:,j);
+        }
+    }
+
+    MVarR -= MVarVDTauMGR;
+    MVarR -= b0*MVarVDTauPR;
+    MVarR -= b1*MVarVDTauP1R;
+    bVarR -= bVarVDTauMMR;
+    bVarR -= b0*bVarVDTauGMPR;
+    bVarR -= b1*bVarVDTauGMP1R;
+
+    // Elementos de la estabilizacion (u tau)
+    real[int] uVTauRBF(NbasesVTau);
+    real[int,int] MVarVTauPR(NbasesV,NbasesV); MVarVTauPR = 0.;
+    real[int,int] MVarVTauP1R(NbasesV,NbasesV); MVarVTauP1R = 0.;
+    real[int] bVarVTauMMR(NbasesV); bVarVTauMMR = 0.;
+    real[int,int] MVarVTauMGR(NbasesV,NbasesV); MVarVTauMGR = 0.;
+    real[int,int] MVTauGMRaux(NbasesV,NbasesV); MVTauGMRaux = 0.;
+    real[int] bVarVTauGMPR(NbasesV); bVarVTauGMPR = 0.;
+    real[int] bVarVTauGMP1R(NbasesV); bVarVTauGMP1R = 0.;
+
+
+    for(int k=0; k<NbasesVTau; k++){
+        uVTauRBF(k) = d'*PesosVTau(:,k);
+        bVarVTauMMR += uVTauRBF(k)*MVTauMMR(:,k);
+        Maux = uVTauRBF(k)*MsVTauMGR[k];
+        MVarVTauMGR += Maux;
+        MVTauGMRaux = uVTauRBF(k)*MsVTauGMR[k];
+        for(int j=0; j<NbasesV; j++){
+            Maux = uVTauRBF(k)*MsVTauR[j*NbasesVTau+k];
+            MVarVTauPR += uRP(j)*Maux;
+            MVarVTauP1R += uRP1(j)*Maux;
+            bVarVTauGMPR += uRP(j)*MVTauGMRaux(:,j);
+            bVarVTauGMP1R += uRP1(j)*MVTauGMRaux(:,j);
+        }
+    }
+
+    MVarR -= MVarVTauMGR;
+    MVarR -= b0*MVarVTauPR;
+    MVarR -= b1*MVarVTauP1R;
+    bVarR -= bVarVTauMMR;
+    bVarR -= b0*bVarVTauGMPR;
+    bVarR -= b1*bVarVTauGMP1R;
+
 
     // Sistema lineal
     matrix MFinalR;

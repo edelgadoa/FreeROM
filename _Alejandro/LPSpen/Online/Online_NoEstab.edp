@@ -29,6 +29,10 @@ uM[] = MediaV;
 
 // Condicion inicial
 write("Output.txt","Computing initial conditions...",1,1);
+
+TFR = TF+period;
+TF = TFR-2*period;
+
 Vh3P2 [SnapX,SnapY,SnapP];
 readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0);
 readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0);
