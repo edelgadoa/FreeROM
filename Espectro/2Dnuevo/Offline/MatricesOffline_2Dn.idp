@@ -83,7 +83,7 @@ for (int s=0; s<NbasesV; s++){
 }
 write("Output.txt","Conveccion OK.",1,1);
 
-// mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
