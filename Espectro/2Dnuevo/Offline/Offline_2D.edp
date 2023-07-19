@@ -193,7 +193,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Orthonormalization...",1,1);
 
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-	pause;
+	//pause;
 	// HASTA AQUÍ COMPILA BIEN
 	
 	//cout << BaseV[1][].n << endl;
@@ -230,19 +230,13 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BVYdX[i][] = DXP2L*BaseVelY[i][]; BVYdY[i][] = DYP2L*BaseVelY[i][];
 		
 	}
-	
-
-	
+		
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
 	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	// 	//
 	// 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
 	// 	//
-
-	//
-
-	// }
 	
 	
 	// ** HASTA AQUI CREO QUE ESTA BIEN

@@ -42,7 +42,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 
 	Vh2P2per [uRB, uRBY];
-	VhP2per uRBP;
+	VhP1per uRBP;
 	
 	real[int,int] MBaseVi(Vh2P2per.ndof, NbasesV), MBasePi(VhP1per.ndof, NbasesP); // Matrices intermedias
 	MBaseVi = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
@@ -54,7 +54,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
 		plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
-		mpi(cout<<uRBv<<endl;)
+		//mpi(cout<<uRBv<<endl;)
 	}
 	
 	/*
