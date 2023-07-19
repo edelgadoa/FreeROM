@@ -33,7 +33,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real[int,int] MRB(I,I); // Matriz para resolver el sistema
 	real[int] bRB(I); // Segundo miembro para resolver el sistema
 	
-	uRBv = 0.01;
+	uRBv = 1; // Falta condicion INICIAL
 	mpi(cout<<"Calculando solucion reducida..."<<endl;)
 	include "RB_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
@@ -41,15 +41,20 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	mpi(cout<<"OK."<<endl;)
 	
 
+	Vh2P2perL [uRBL, uRBLY];
+	VhP1perL uRBPL;
+	
+	real[int,int] MBaseVi(Vh2P2perL.ndof, NbasesV), MBasePi(VhP1perL.ndof, NbasesP); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:NbasesV-1);
+	MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:NbasesP-1);
+	
+	uRBL[] = MBaseVi*uRBv(0:NbasesV-1);
+	uRBPL[] = MBasePi*uRBv(NbasesV:I-1);
+	
 	Vh2P2per [uRB, uRBY];
 	VhP1per uRBP;
 	
-	real[int,int] MBaseVi(Vh2P2per.ndof, NbasesV), MBasePi(VhP1per.ndof, NbasesP); // Matrices intermedias
-	MBaseVi = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
-	MBasePi = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
-	
-	uRB[] = MBaseVi*uRBv(0:NbasesV-1);
-	uRBP[] = MBasePi*uRBv(NbasesV:I-1);
+	reduceSolution(uRBL, uRB, MatAVh2P2per.D, mapVh2P2per)
 	
 	if(MuTrain(iRB)==Reynolds){
 		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
