@@ -28,4 +28,4 @@ int[int] PuntosMSmagoL = MagicPointG2L(mapVhP1dcper, PuntosMSmago); // Vector lo
 real[int] NumberPMSmago = NumberMagicPoint(mapVhP1dcper, PuntosMSmago); // 1: esta en proc, 0: no esta en proc
 real[int] WeightPMSmago = WeightMagicPoint(NumberPMSmago); //Pesos de cada Magic Point
 
-cout<<NumberPMSmago<<endl;
+// cout<<NumberPMSmago<<endl;

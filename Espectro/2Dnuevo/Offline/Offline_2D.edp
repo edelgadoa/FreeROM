@@ -20,6 +20,7 @@ load "lapack"
 include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
+include "../Auxiliary/fourier.idp"
 include "../Auxiliary/Functions_MP.idp"
 
 // Creamos la Malla
@@ -130,8 +131,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
-		// Si no lo he calculado todavía, lo calculo
 
+		// Si no lo he calculado todavía, lo calculo
 		include "../FOM/FE_VMS_2D.idp"	
 		
 		// Actualizamos el vector de parametros calculados
@@ -164,8 +165,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
-	
-	
+
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
@@ -239,8 +239,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	// 	//
 	
 	
-	// ** HASTA AQUI CREO QUE ESTA BIEN
-	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
 	include "MatricesOffline_2Dn.idp"
@@ -250,14 +248,14 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Solving Reduced problem...",1,1);
 	include "Greedy_2D.idp"
 	
-	/*
 	// Actualizo el nuevo Reynolds
-	Reynolds = MuBest(i+1);
+	Reynolds = MuBest(iGreedy+1);
 	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
 	
-	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
+	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
 	
-	if (DeltaN(i)<epsGreedy){
+	/*
+	if (DeltaN(iGreedy)<epsGreedy){
 		NRB = i + 1;
 		include "Save_Matrices.idp"
 		break;
