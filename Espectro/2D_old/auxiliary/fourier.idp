@@ -1,4 +1,4 @@
-complex[int,int] matrixDFFT(real epsi,int  n)
+func complex[int,int] matrixDFFT(real epsi,int n)
 {
 	// Matirz de Vandermonde
 	// - Si epsi=-1, obtenemos la transformada

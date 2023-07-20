@@ -162,7 +162,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		SnapPL[] = SnapP[](mapVhP1per);
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
-		plot(SnapPa,value=1);
+		plot(SnapPa, fill=1,value=1);
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
