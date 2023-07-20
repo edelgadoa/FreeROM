@@ -203,7 +203,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//cout << BaseV1.n << endl;
 	
 
-	include "GramSchmidt_2D.idp"
+	//include "GramSchmidt_2D.idp"
 	// ortho(BaseV,NbasesV,prodV);
 	// normalization(BaseV,NbasesV,prodV);
 	// ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
