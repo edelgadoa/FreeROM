@@ -1,0 +1,40 @@
+///////////////
+// FreeROM 
+///////////////
+
+Vh2P2[int] [uTau,uTauY](niS+1);
+VhP2[int] uDTau(niS+1);
+
+// Recuperacion de resultados en tiempo
+for(int iter=0; iter <niS; iter++){
+    real ti = tS0+iter*dt;
+    write("Output.txt","t = "+ti,1,1);
+
+    VhP2 aux, aux2;
+    // Snapshots
+    Vh3P2 [SnapX,SnapY,SnapP];
+    readvector("../../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SolX, 0);
+    readvector("../../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0);
+    SnapX[] = SolX; SnapY[] = SolY;
+
+    Vh2P2 [SX,SY];
+    [SX,SY] = [SnapX, SnapY];
+
+	// Estabilizador
+    VhP1 tau;
+    readvector("../Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", real, tauvec, 0);
+    tau[] = tauvec;
+
+	// Definicion de elementos para hacer la POD
+    // u por tau (2 componentes)
+    Vh2P2 [uxtau, uytau];
+    aux = tau*SX; aux2 = tau*SY;
+    [uxtau, uytau] = [aux,aux2];
+    uTau[iter][] = uxtau[];
+
+	// u por gradiente de tau (1 componente)
+    VhP2 udtau;
+    udtau = SX*dx(tau)+SY*dy(tau);
+    uDTau[iter][] = udtau[];
+	
+}
