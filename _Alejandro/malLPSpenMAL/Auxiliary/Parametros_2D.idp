@@ -1,0 +1,31 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Parametros a usar durante la ejecucion del codigo
+
+
+// Parametros del modelo VMS-Smago con LPS en la presion
+real Refijo = 1000; // Valor del Reynolds fijo
+
+// Parametros para el problema de EF
+real t0 = 0;
+real TF = 10.;
+real dt = 2.e-3;
+real epspen = 0.;
+int nit = (TF-t0)/dt;   // # Iterations
+int  it = 0;      // Initial iteration
+
+real epsEF = 1e-10;
+
+// Parametros para el problema ROM
+int niterRB = 2000;
+real epsRB = 1e-10; //parada de problema reducido
+
+real epsGreedy = 5e-5;
+
+int NRB = 0;
+
+// Parametros mu
+real Reynolds; // Esto es perceptible de cambiarlo
+

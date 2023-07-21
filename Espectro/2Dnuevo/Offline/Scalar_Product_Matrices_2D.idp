@@ -2,55 +2,65 @@
 // FreeROM 
 /////////////// 
 
-// Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
+// Defino las matrices de producto escalar, que voy a considerar para la ortonormalizacion #TODO: definir pescX en [P2,P2,P1]
 
-matrix prodV;
+Mat MPescT = MatAVh2P2per; 
+Mat MPescX;
+Mat MPescV = MatAVh2P2per;
+Mat MPescP = MatAVhP1per;
 {
-	varf a([u,uY],[v,vY])=int2d(Th)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY));
-	prodV=a(Vh2P2per,Vh2P2per);
+	varf pescT ([uu, uuY], [v,vY]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+	MPescT = pescT(Vh2P2perL, Vh2P2perL); 
+	
+	// varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
+	// MPescX = pescX(Vh3P2perL, Vh3P2perL); 
+
+	varf pescV([uu,uuY],[vv,vvY]) = int2d(ThL)(GradUGradV(uu,vv));
+	MPescV = pescV(Vh2P2perL, Vh2P2perL);
+	
+	varf pescP(u,v) = int2d(ThL)(u*v);
+	MPescP = pescP(VhP1perL, VhP1perL);
 }
-
-matrix prodP;
-{
-	varf a(u,v)=int2d(Th)(u*v);
-	prodP=a(VhP1per,VhP1per);
-}
-
-varf pescT ([uu, uuY], [v,vY]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
-matrix MPescT = pescT(Vh2P2per, Vh2P2per);
-
-varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
-matrix MPescX = pescX(Vh3P2per, Vh3P2per);
-
-varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh2P2per, Vh2P2per);
-
 ///////////////////////////////////////////////////////
 
-varf DiffPE([uu,uuY], [v,vY]) = int2d(Th)(GradUGradV(uu,v));
-matrix DiffPEM = DiffPE(Vh2P2per,Vh2P2per);
+Mat DiffPEM = MatAVh2P2per; 
+Mat DivPPEM;
+Mat PenPEM = MatAVhP1per;
+Mat DTPEM = MatAVh2P2per;
 
-varf DivPPE([uu,uuY], [vP]) = int2d(Th)(Div(uu)*vP);
-matrix DivPPEM = DivPPE(Vh2P2per, VhP1per);
+{
+	varf DiffPE([uu,uuY], [v,vY]) = int2d(ThL)(GradUGradV(uu,v));
+//	matrix DiffPEMT = DiffPE(Vh2P2perL,Vh2P2perL);
+//	Mat DiffPEMTemp = DiffPEMT;
+	DiffPEM = DiffPE(Vh2P2perL,Vh2P2perL); //DiffPEMTemp;
 
-varf PenPE(uP, vP) = int2d(Th)(epspen*uP*vP);
-matrix PenPEM = PenPE(VhP1per, VhP1per);
+	varf DivPPE([uu,uuY], [vP]) = int2d(ThL)(Div(uu)*vP);
+	matrix DivPPEMT = DivPPE(Vh2P2perL, VhP1perL);
+	Mat DivPPEMTemp(MatAVhP1per, MatAVh2P2per, DivPPEMT);
+	DivPPEM = DivPPEMTemp;
 
-varf DTPE([uu,uuY], [v,vY]) = int2d(Th)(UporV(uu,v));
-matrix DTPEM = DTPE(Vh2P2per, Vh2P2per);
+	varf PenPE(uP, vP) = int2d(ThL)(epspen*uP*vP);
+	// matrix PenPEMT = PenPE(VhP1perL, VhP1perL);
+	// Mat PenPEMTemp = PenPEMT;
+	PenPEM = PenPE(VhP1perL, VhP1perL);; //PenPEMTemp;
 
-matrix[int] ConvPEM(2*Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
+	varf DTPE([uu,uuY], [v,vY]) = int2d(ThL)(UporV(uu,v));
+	// matrix DTPEMT = DTPE(Vh2P2perL, Vh2P2perL);
+	// Mat DTPEMTemp = DTPEMT;
+	DTPEM = DTPE(Vh2P2perL, Vh2P2perL); //DTPEMTemp;
+}
+
+Mat[int] ConvPEM(2*Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 
-matrix[int] SmagoPEM(Mbases);
-{ 
-	int contS = 0; 
+Mat[int] SmagoPEM(Mbases);
+{
 	for (int s=0; s<Mbases; s++){
-		//if(mpirank==contS%mpisize){ //Si lo pongo para que lo haga en paralelo, me da un segmentation fault
-			// Matrices Smago
-			varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-			SmagoPEM[s] = SmagoPE(Vh2P2per, Vh2P2per);
-			//}
-		contS++;
+		Mat SmagoPEMs = MatAVh2P2per;
+		// Matrices Smago
+		varf SmagoPE([uu,uuY],[v,vY]) = int2d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+		// matrix SmagoL = SmagoPE(Vh2P2perL, Vh2P2perL);
+		SmagoPEMs = SmagoPE(Vh2P2perL, Vh2P2perL);
+		SmagoPEM[s] = SmagoPEMs;
 	}
 }

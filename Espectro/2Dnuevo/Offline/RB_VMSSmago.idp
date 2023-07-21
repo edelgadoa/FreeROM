@@ -29,7 +29,7 @@ for(real ti=T0+dt;ti<=T0+1.5*dt;ti+=dt){
 	}
 
 	// Matiz de Smagorinsky
-	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(NbasesV);
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(NbasesV);
 	uN = uRBv(0:NbasesV-1); //solo las componentes de la velocidad
 	for(int s=0; s<Mbases; s++){
 		real[int, int] Gradint(4,NbasesV);

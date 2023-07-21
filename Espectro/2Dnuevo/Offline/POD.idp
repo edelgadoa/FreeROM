@@ -1,49 +1,39 @@
-////////////////////////////
-// POD // 
-////////////////////////////
+///////////////
+// FreeROM 
+/////////////// 
 
 ///////////////////////////////////////////////////////////////////////////////
-// Matriz de Correlacion, en paralelo //
-///////////////////////////////////////////////////////////////////////////////
-NewMacro matrixcorrelacion(snaps,C,prod)
+NewMacro matrixcorrelacion(snaps, C, prod)
 {
-	real[int,int] CL=C;
-	C=0;CL=0;
-	int contmc=0;
-	real[int] auxii(snaps.n),auxjj(snaps.n);
-	for(int ii=0;ii<C.n;ii++)
-	{
-        if(mpirank==ii%mpisize)
-        {
-            real[int] aux=prod*snaps(:,ii);
-            for(int jj=ii;jj<C.m;jj++)
-            {
-                CL(ii,jj) = snaps(:,jj)'*aux;
-                if(ii!=jj)CL(jj,ii)=CL(ii,jj);
-            }
+	real NPOD = C.n;
+	for(int ii=0;ii<C.n;ii++){
+		real[int] snapi;
+		ChangeNumbering(prod, snaps(:,ii), snapi);
+    	for(int jj=ii;jj<C.m;jj++){
+			real[int] snapj;
+			ChangeNumbering(prod, snaps(:,jj), snapj);
+        	C(ii,jj) = innerprodX(snapi, snapj, prod);
+                if(ii!=jj)C(jj,ii)=C(ii,jj);
         }
-        contmc++;
 	}
-	pause;
-	mpiAllReduce(CL,C,mpiCommWorld,mpiSUM);
-	// write("verify/correlation.txt",C,0,0);
+	C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NÚMERO DE BASES POD
+	write("correlation.txt",C,0,0);
 }
 EndMacro
 
 ///////////////////////////////////////////////////////////////////////////////
-// Calculo de autovalores 
+// Calculo de autovalores (puede hacerse SVD con dgesdd A=U*SIGMA*V^T)
 ///////////////////////////////////////////////////////////////////////////////
 NewMacro eigenvaluescompute(C,autoval,autovect)
 {
 	autovect=0; autoval=0;
-	//real[int,int] I(C.n,C.m);I=0;
-	//for(int ii=0;ii<I.n;ii++)I(ii,ii)=1;
-	int k = dsyev(C,autoval,autovect); // devuelve los autovalores en forma ascendente
+	int keigen = dsyev(C,autoval,autovect); // devuelve los autovalores en forma ascendente
+	// keigen = 0 -> successful,  keigen = -i (<0) -> ith argument illegal value, keigen = i (>0) -> failed to converge
 }
 EndMacro
 
 ///////////////////////////////////////////////////////////////////////////////
-// Seleccion del numero de bases 
+// Seleccion del numero de bases (no lo he cambiado en la nueva version)
 ///////////////////////////////////////////////////////////////////////////////
 NewMacro howmanybasis(autoval,nPOD)
 {
@@ -92,6 +82,7 @@ real[int] autoval(snaps.m); // Vector de autovalores ordenados de menor a mayor
 	real[int,int] C(snaps.m,snaps.m);
 	real time=mpiWtime();
 	matrixcorrelacion(snaps,C,prod);
+	// mpi(cout<<"Correlation Matrix"<<C<<endl;)
 	time=mpiWtime()-time;
 	write("Output.txt","    - time="+time,1,1);
 	real[int,int] autovect(C.n,C.n); // Matriz que contendra los autovectores en columna

@@ -7,133 +7,134 @@
 // TODO: Posibilidad de dividirlo en varios archivos, para cada tipo de matriz 
 
 // Inicializo las matrices locales para el paralelo
-include "Allocate_matrices_local.idp"
+// include "Allocate_matrices_local.idp"
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
-int contFF = 0; // Contador para el paralelo
 for (int i=0; i<NbasesV; i++){
-    for (int j=0; j<=i; j++){
-        if (mpirank==contFF%mpisize){
-            // Matrices
-            DiffRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DiffPEM);
-            DTRBL(i,j) = innerprodX(BaseV[i][], BaseV[j][], DTPEM);
-            if (j<i){
-                DiffRBL(j,i) = DiffRBL(i,j);
-                DTRBL(j,i) = DTRBL(i,j);
-            }	
+	real[int] BaseVi;
+	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+    
+	for (int j=0; j<=i; j++){
+		real[int] BaseVj;
+		ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+        // Matrices
+        DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
+        DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+        if (j<i){
+            DiffRB(j,i) = DiffRB(i,j);
+            DTRB(j,i) = DTRB(i,j);	
         }
-        contFF++;
     }
     for (int j=0; j<NbasesP; j++){
-        if (mpirank==contFF%mpisize){
-            DivPRBL(j+2*Nbases, i) = innerprodX(BaseP[j][], BaseV[i][], DivPPEM);
-        }
-        contFF++;
+		real[int] BasePj;
+		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+    	DivPRB(j+2*Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
+        
     }
 }
 for (int i=0; i<NbasesP; i++){
+	real[int] BasePi;
+	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
+	
     for (int j=0; j<=i; j++){
-        if (mpirank==contFF%mpisize){
-            PenRBL(i+2*Nbases, j+2*Nbases) = innerprodX(BaseP[i][], BaseP[j][], PenPEM);
-            if (j<i){
-                PenRBL(j+2*Nbases, i+2*Nbases) = PenRBL(i+2*Nbases, j+2*Nbases);
-            } 
-        }
-        contFF++;
+		real[int] BasePj;
+		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+		// Matrices
+        PenRB(i+2*Nbases, j+2*Nbases) = innerprodX(BasePi, BasePj, PenPEM);
+        if (j<i){
+            PenRB(j+2*Nbases, i+2*Nbases) = PenRB(i+2*Nbases, j+2*Nbases);
+        }   
     }
 }
-
-pause;
-
-mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
-mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
-// mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
-
-DiffRB += DiffRBG;
-DivPRB += DivPRBG;
-PenRB += PenRBG;
-DTRB += DTRBG;
 
 write("Output.txt","Matrices varias OK.",1,1);
 
-/*
-mpi(cout << DiffRB << endl;)
-mpi(cout << DivPRB << endl;)
-mpi(cout << PenRB << endl;)
-mpi(cout << DTRB << endl;)*/
+
+// mpi(cout << DiffRB << endl;)
+// mpi(cout << DivPRB << endl;)
+// mpi(cout << PenRB << endl;)
+// mpi(cout << DTRB << endl;)
 
 // Conveccion
 for (int s=0; s<NbasesV; s++){
-    real[int, int] CintL(3*Nbases, 3*Nbases), CintG(3*Nbases, 3*Nbases);
-    CintL = 0; CintG = 0;
-    contFF = 0;
+    real[int, int] Cint(3*Nbases, 3*Nbases);
+    Cint = ConvRB[s]; 
     for (int i=0; i<NbasesV; i++){
+		real[int] BaseVi;
+		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
         for (int j=0; j<=i; j++){
-            if (mpirank==contFF%mpisize){
-                CintL(i,j) = innerprodX(BaseV[i][], BaseV[j][], ConvPEM[s]);
-                if(j<i){
-                    CintL(j,i) = innerprodX(BaseV[j][], BaseV[i][], ConvPEM[s]);
-                } 
-                if (s==i && (j!=i)){
-                    for (int k=0; k<s; k++){
-                        CintL(k,j) = innerprodX(BaseV[k][], BaseV[j][], ConvPEM[s]);
-                    }
-                } 
-            }
-            contFF++;		
+			real[int] BaseVj;
+			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+            Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
+            if(j<i){
+                Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
+            } 
+            /*
+            if (s==i && (j!=i)){
+                for (int k=0; k<s; k++){
+					real[int] BaseVk;
+					ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
+                    Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+                }
+            } 
+            */
         }
     }
-    pause;
-    mpiAllReduce(CintL, CintG, mpiCommWorld, mpiSUM);
-    
-    ConvRB[s] += CintG;
+
+    ConvRB[s] = Cint;
 }
 write("Output.txt","Conveccion OK.",1,1);
 
+// mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
-    real[int, int] SintL(3*Nbases, 3*Nbases), SintG(3*Nbases, 3*Nbases);
-    SintL = 0; SintG = 0;
-    contFF = 0;
+    real[int, int] Sint(3*Nbases, 3*Nbases);
+    Sint = SmagoRB[s]; 
     for (int i=0; i<NbasesV; i++){
+		real[int] BaseVi;
+		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
         for (int j=0; j<=i; j++){
-            if (mpirank==contFF%mpisize){
-                SintL(i,j) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*gradugradv(FBaseV[j],FBaseVY[j],FBaseV[i],FBaseVY[i]));
-                if(j<i){
-                    SintL(j,i) = SintL(i,j);
-                }
-            }
-            contFF++;		
+			real[int] BaseVj;
+			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+            Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]); 
+            if(j<i){
+                Sint(j,i) = Sint(i,j);
+            }	
         }
     }
-    pause;
-    mpiAllReduce(SintL, SintG, mpiCommWorld, mpiSUM);	
-    SmagoRB[s] += SintG;
+    SmagoRB[s] += Sint;
 }
 
+// mpi(cout<<SmagoRB[0]<<endl;)
 write("Output.txt","Smagorinsky OK.",1,1);
 
 
 // Matrices para el EIM de Smago
-for (int s=0; s<Mbases; s++){
-real[int,int] Dtk = GradPM[s];
 
-for (int i=0; i<NbasesV; i++){
-    Dtk(0,i) = FVdX[i][](PuntosMSmago(s));
-    Dtk(1,i) = FVdY[i][](PuntosMSmago(s));
-    Dtk(2,i) = FVYdX[i][](PuntosMSmago(s));
-    Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
-}
-GradPM[s] = Dtk;
-}
-pause;
+for (int i=0; i<NbasesV; i++){	
+	int MbasesL;
+	for (int s=0; s<Mbases; s++){
+		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
+		real[int,int] DtkL = GradPM[s];
 
-for (int s=0; s<Mbases; s++){
-    for (int i=0; i<NbasesV; i++){
-        bSmagoRB(s,i) = innerprodX(FBaseV[i][], FBaseV[i][], SmagoPEM[s]);
-    }
+		Dtk = 0;
+
+		if (NumberPMSmago(s)>0){
+    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
+    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(MbasesL));
+			
+		    DtkL *= WeightPMSmago(s);
+		    MbasesL++;
+		}
+		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
+		GradPM[s] = Dtk;
+	}	
 }
+
+mpi(cout<<GradPM[0]<<endl;)
+
 
 write("Output.txt","EIM Smagorinsky OK.",1,1);

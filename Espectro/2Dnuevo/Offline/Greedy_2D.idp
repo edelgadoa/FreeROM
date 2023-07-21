@@ -37,7 +37,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 
 	mpi(cout<<"Calculando solucion reducida..."<<endl;)
-	include "RB_LPS_VMSSmago.idp"
+	include "RB_VMSSmago.idp"
 	//mpi(cout<<uRBv<<endl;)
 	// Reconstruyo la solución reducida
 	mpi(cout<<"OK."<<endl;)
