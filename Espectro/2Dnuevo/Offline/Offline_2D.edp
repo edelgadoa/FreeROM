@@ -20,6 +20,7 @@ load "lapack"
 include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
+include "../Auxiliary/fourier.idp"
 include "../Auxiliary/Functions_MP.idp"
 
 // Creamos la Malla
@@ -130,8 +131,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
-		// Si no lo he calculado todavía, lo calculo
 
+		// Si no lo he calculado todavía, lo calculo
 		include "../FOM/FE_VMS_2D.idp"	
 		
 		// Actualizamos el vector de parametros calculados
@@ -161,11 +162,11 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		SnapPL[] = SnapP[](mapVhP1per);
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+		plot(SnapPa, fill=1,value=1);
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
-	
-	
+
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
 	{
@@ -185,6 +186,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BaseV[NbasesV+i][] = supEF[];
 	}
 	NbasesV += NbasesP; 
+	
 	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
 	write("Output.txt","Ok.",1,1);
 
@@ -192,7 +194,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Orthonormalization...",1,1);
 
 	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-	pause;
+	//pause;
 	// HASTA AQUÍ COMPILA BIEN
 	
 	//cout << BaseV[1][].n << endl;
@@ -201,7 +203,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//cout << BaseV1.n << endl;
 	
 
-	include "GramSchmidt_2D.idp"
+	//include "GramSchmidt_2D.idp"
 	// ortho(BaseV,NbasesV,prodV);
 	// normalization(BaseV,NbasesV,prodV);
 	// ortho(BaseV,NbasesV,prodV); // Doble ortonormalizacion
@@ -227,21 +229,16 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 		BVdX[i][] = DXP2L*BaseVel[i][]; BVdY[i][] = DYP2L*BaseVel[i][];
 		BVYdX[i][] = DXP2L*BaseVelY[i][]; BVYdY[i][] = DYP2L*BaseVelY[i][];
+		
 	}
-	
+		
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
 	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	// 	//
 	// 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
 	// 	//
-
-	//
-
-	// }
 	
-	
-	// ** HASTA AQUI CREO QUE ESTA BIEN
 	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
@@ -252,14 +249,14 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Solving Reduced problem...",1,1);
 	include "Greedy_2D.idp"
 	
-	/*
 	// Actualizo el nuevo Reynolds
-	Reynolds = MuBest(i+1);
+	Reynolds = MuBest(iGreedy+1);
 	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
 	
-	mpi(cout<<"-------FIN DE LA ITERACION "<<i<<"-------"<<endl;)
+	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
 	
-	if (DeltaN(i)<epsGreedy){
+	/*
+	if (DeltaN(iGreedy)<epsGreedy){
 		NRB = i + 1;
 		include "Save_Matrices.idp"
 		break;

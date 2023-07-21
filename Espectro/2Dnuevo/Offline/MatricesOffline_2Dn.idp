@@ -58,7 +58,7 @@ write("Output.txt","Matrices varias OK.",1,1);
 // Conveccion
 for (int s=0; s<NbasesV; s++){
     real[int, int] Cint(3*Nbases, 3*Nbases);
-    Cint = ConvRB[s]; 
+    Cint = 0; //ConvRB[s]; 
     for (int i=0; i<NbasesV; i++){
 		real[int] BaseVi;
 		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
@@ -81,11 +81,11 @@ for (int s=0; s<NbasesV; s++){
         }
     }
 
-    ConvRB[s] = Cint;
+    ConvRB[s] += Cint;
 }
 write("Output.txt","Conveccion OK.",1,1);
 
-// mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+//mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){
@@ -113,12 +113,13 @@ write("Output.txt","Smagorinsky OK.",1,1);
 // Matrices para el EIM de Smago
 
 for (int i=0; i<NbasesV; i++){	
+	
 	int MbasesL;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
-		real[int,int] DtkL = GradPM[s];
+		real[int,int] DtkL(GradPM[s].n, GradPM[s].m);
 
-		Dtk = 0;
+		Dtk = 0; DtkL = 0;
 
 		if (NumberPMSmago(s)>0){
     		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
@@ -130,11 +131,9 @@ for (int i=0; i<NbasesV; i++){
 		    MbasesL++;
 		}
 		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
-		GradPM[s] = Dtk;
+		GradPM[s] += Dtk;
 	}	
 }
-
-mpi(cout<<GradPM[0]<<endl;)
 
 
 write("Output.txt","EIM Smagorinsky OK.",1,1);
