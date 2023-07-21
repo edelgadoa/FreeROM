@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo 'Numero de procesadores:'
-read NP
 
 verbosity=0
-ff-mpirun -np $NP ./Snapshots.edp
+ff-mpirun -np 1 ./Snapshots.edp

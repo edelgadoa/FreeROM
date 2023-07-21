@@ -160,7 +160,7 @@ for (int s=0; s<Mbases; s++){
    Dtk(3,i) = FVYdY[i][](PuntosMSmago(s));
    GradPM[s] = Dtk;
 }
-
+cout<<GradPM<<endl;
 
 // Matrices para el EIM LPS (parte del levantamiento)
 

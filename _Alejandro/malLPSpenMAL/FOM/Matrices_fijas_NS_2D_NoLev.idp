@@ -1,0 +1,21 @@
+///////////////
+// FreeROM 
+///////////////
+
+real nu=1./Reynolds;
+
+// Construimos las matrices fijas de EF
+real Um  = 1; 			 // Max inlet velocity
+func G = 4.*Um/H^2*y*(H-y);
+
+varf FVFija([uu,uuY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(uu*v + uuY*vY))
+								   + int2d(Th)(Div(uu)*vP - Div(v)*uP)
+								   + int2d(Th)(nu*GradUGradV(uu,v))
+								   + int2d(Th)(epspen*uP*vP)
+									//Segundo miembro
+								   + on(2, uu=G, uuY=0.)
+								   + on(1, uu=0., uuY=0.); 
+//							
+
+MFija = FVFija(Vh3P2,Vh3P2);
+bFija = FVFija(0,Vh3P2);

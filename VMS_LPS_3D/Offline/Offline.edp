@@ -69,15 +69,15 @@ VhP2L[int] BaseVel(Nbases);
 VhP2L[int] BaseVelY(Nbases);
 VhP2L[int] BaseVelZ(Nbases);
 
-Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2L[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
 
-VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
+VhP2L[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
 
-VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
+// VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
-VhP1dc[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
-VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
-VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
+VhP1dcL[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
+VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
+VhP1dcL[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(Vh3P2L.ndof, Nbases), MBaseP(VhP2L.ndof, Nbases);
@@ -170,6 +170,7 @@ for (int i=0; i<Nbases; i++){
 		
 		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
 		
+        // ESTO LO TENGO QUE CAMBIAR PARA GUARDARLO EN GOLBAL
 		VhP2 SnapX, SnapY, SnapZ, SnapP;
 		SnapX = uEF;
 		SnapY = uEFY;
@@ -216,28 +217,29 @@ for (int i=0; i<Nbases; i++){
 
 
 	// Actualizo las soluciones filtradas
-	// FBaseV[i][] = IPh3P23P1 * BaseV[i][];
+	 FBaseV[i][] = IPh3P23P1L * BaseV[i][];
 	//
-	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
+	 FBaseVel[i][] = IPhP2P1L*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1L*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1L*BaseVelZ[i][];
 	//
-	// FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
-	// FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
-	// FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	 FVdX[i][] = DXP2L*FBaseVel[i][]; FVdY[i][] = DYP2L*FBaseVel[i][]; FVdZ[i][] = DZP2L*FBaseVel[i][];
+	 FVYdX[i][] = DXP2L*FBaseVelY[i][]; FVYdY[i][] = DYP2L*FBaseVelY[i][]; FVYdZ[i][] = DZP2L*FBaseVelY[i][];
+	 FVZdX[i][] = DXP2L*FBaseVelZ[i][]; FVZdY[i][] = DYP2L*FBaseVelZ[i][]; FVZdZ[i][] = DZP2L*FBaseVelZ[i][];
 	//
-	// FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
+	//FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	//
 	
 	// Defino el nuevo producto escalar para la convección
-	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(antisimetric(BaseV[i],BaseVY[i],BaseVZ[i],uu,uuY,uuZ,v,vY,vZ));
+    Vh3P2L [BV, BVY, BVZ];
+    BV[] = BaseV[i];
+	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(BV,uu,v));
 	{
 		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
-		Mat ConvTemp = TMP;
+		Mat ConvTemp(MatAVh3P2, TMP);
+        // ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
 		ConvPEM[i] = ConvTemp; 
 	}
 	
 	mpi(cout<<"Matrices Offline"<<endl;)
-	// Construyo las matrices
-	mpi(cout<<"Matrices offline"<<endl;)
 	include "MatricesOffline.idp"
 		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro

@@ -37,8 +37,8 @@ matrix EC1;
 	AUX[] += uEFYdc * LevdY[];
 	funcLev[] = IPhP1dcP1 * AUX[];
 	
-	real[int] bConv1 = btermConv(0, VhP1dc);
-	bLPSConv1 = IPhUD1' * bConv1;
+	//real[int] bConv1 = btermConv(0, VhP1dc);
+	//bLPSConv1 = IPhUD1' * bConv1;
 }
 
 // Segunda componente
