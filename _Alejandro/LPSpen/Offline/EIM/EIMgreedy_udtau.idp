@@ -16,7 +16,7 @@ real [int] bEIM(i),sigmai(i);
 pause; //Hacemos el siguiente for en paralelo
 for (int imu=0; imu<niS; imu++){
 	if (mpirank==imu%mpisize){
-		gEIM = uTau[imu]^2+uTauY[imu]^2;
+		gEIM = uDTau[imu]^2;
 		
 		for (int j=0; j<i; j++){
 			bEIM(j) = gEIM[](Tmax(j));
@@ -43,7 +43,7 @@ for (int imu=0; imu<niS; imu++){
 
 // Calculamos la base escogida
 int iT = Errorit.imax;
-gEIM = uTau[iT]^2+uTauY[iT]^2; // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIM = uDTau[iT]^2; // Tomo la base donde se encuentra el Reynolds con mayor error
 
 //bEIM = 0;
 for (int j=0; j<i; j++){
@@ -66,5 +66,5 @@ for (int j=0; j<=i; j++){
 }
 
 // Almacenamos la base escogida 
-write("Bases_EIM/Base_EIM_utau_" + tvec(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
+write("Bases_EIM/Base_EIM_udtau_" + tvec(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 muEIM(i) = tvec(Errorit.imax); //Almacenamos el valor de Reynolds escogido	

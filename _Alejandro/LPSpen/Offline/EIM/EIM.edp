@@ -66,7 +66,7 @@ BEIM[0][] /= BEIM[0][].max;
 
 BM(0,0) = BEIM[0][](Tmax(0));
 
-write("Bases_EIM/Base_EIM_" + tvec(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
+write("Bases_EIM/Base_EIM_utau_" + tvec(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
@@ -74,7 +74,7 @@ for (int i=1; i<Mmax; i++){
 	
 	include "EIMgreedy_utau.idp";
 
-	write("Output.txt", "Error EIM "+ErrorMaxEIM(i-1), 1,1);
+	write("Output.txt", "Error EIM _utau_ "+ErrorMaxEIM(i-1), 1,1);
 
 	if(ErrorMaxEIM(i-1)<epsEIM){
 		M = i;
@@ -101,4 +101,58 @@ write("Bases_EIM/TintEIM_utau.txt", TM, 0, 0);
 real[int] ErrorEIM(M);
 ErrorEIM = ErrorMaxEIM(0:M-1);
 write("Bases_EIM/ErrorEIM_utau.txt", ErrorEIM, 0, 0);
+write("Output.txt","Saved.",1,1);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM (udtau)
+///////////////////////////////////////////////////////////////////////////////
+
+write("Output.txt","Computing EIM for udtau ...",1,1);
+
+// Primera iteración //Tomamos el primer valor del parametro aleatorio
+muEIM(0) = tvec(0); //Almacenamos el valor de tiempo escogido
+
+BEIM[0] = uDTau[0]^2;
+
+Tmax(0) = BEIM[0][].imax;
+BEIM[0][] /= BEIM[0][].max;
+
+BM(0,0) = BEIM[0][](Tmax(0));
+
+write("Bases_EIM/Base_EIM_udtau_" + tvec(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
+
+// Hacemos el greedy para calcular todas las bases del EIM
+for (int i=1; i<Mmax; i++){
+	real[int] ErroritL(niS+1), Errorit(niS+1);
+	
+	include "EIMgreedy_udtau.idp";
+
+	write("Output.txt", "Error EIM_udtau "+ErrorMaxEIM(i-1), 1,1);
+
+	if(ErrorMaxEIM(i-1)<epsEIM){
+		M = i;
+		break;
+	}
+}
+write("Output.txt","EIM for udtau OK.",1,1);
+
+// Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
+
+write("Output.txt","Saving ...",1,1);
+real[int] muEIMF2(M);
+muEIMF2 = muEIM(0:M-1);
+write("Bases_EIM/muEIM_udtau.txt", muEIMF2, 0, 0);
+
+real[int, int] BFinal2(M,M);
+BFinal2 = BM(0:M-1,0:M-1);
+write("Bases_EIM/MatrizEIM_udtau.txt", BFinal2, 0, 0, 0, 20);
+
+real[int] TM2(M);
+TM2 = Tmax(0:M-1);
+write("Bases_EIM/TintEIM_udtau.txt", TM2, 0, 0);
+
+real[int] ErrorEIM2(M);
+ErrorEIM2 = ErrorMaxEIM(0:M-1);
+write("Bases_EIM/ErrorEIM_udtau.txt", ErrorEIM2, 0, 0);
 write("Output.txt","Saved.",1,1);
