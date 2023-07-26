@@ -106,13 +106,29 @@ readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if(1-r/period>=0){
-	    return (1-r/period);
+ 	if((1-r)>=0){
+	    return (1-r);
     }else{
 	    return 	 0;
     }
 }
 
+// Vector de parametros velocidades reducidas
+readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
+nit = SnapV.m;
+real[int,int] X(NbasesV,nit);
+for(int i=0;i<nit;i++){
+    real[int] Snapi = SnapV(:,i);
+    Vh2P2 [sV,sVY]; sV[] = Snapi;
+    [sV,sVY] = [sV-uM,sVY-uMY];
+    for(int j=0;j<NbasesV;j++){
+        real[int] Basej = BaseV(:,j);
+        Vh2P2 [bV,bVY]; bV[] = Basej;
+        X(j,i) = int2d(Th)(bV*sV+bVY+sVY);
+    }
+}
+cout << X << endl;
+/*
 nit = (TFR-TF)/dt+1;
 real[int] X(nit); // Vector de espacio de parametros
 for(int i=0; i<nit; i++){
@@ -128,21 +144,25 @@ for(int i=0; i<nit; i++){
         gaussRBF(j,i)=gaussRBF(i,j);
     }
 }
-
+*/
 /*
 real[int] VTau(BaseVTau.n);
 VTau=0.;
-int nS = 40;
-real[int] d = gaussRBF(nS,:);
+int nS = 0;
+real[int] d(nit);
+for(int j=0; j<nit; j++){
+    real[int] dist = X(:,j)-X(:,nS);
+    d(j)=gauss(dist.l2);
+}
 cout << d << endl;
 // real[int] uRBF = PesosVDTau'*d;
 real uRBF;
 for(int i=0; i<NbasesVTau; i++){
     uRBF = d'*PesosVTau(:,i);
     VTau += uRBF*BaseVTau(:,i);
-    //VhP2 ff;
-    //ff[] = VDTau; 
-    //plot(ff,fill=1,wait=1,value=1,cmm="Mode"+(i+1));
+    Vh2P2 [ff,ffY];
+    ff[] = VTau; 
+    plot([ff,ffY],fill=1,wait=1,value=1,cmm="Mode"+(i+1));
 }
 //VhP2 uu;
 Vh2P2 [uu,uuY]; VhP2 modu;
@@ -165,9 +185,16 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
 	write("Output.txt","t = " + ti,0,1);
 
     // Calculamos los coeficientes de las RBF
-    int nn = (ti-TF)/dt-1;
+    
+    /*int nn = (ti-TF)/dt-1;
     real[int] d = gaussRBF(nn,:); // Distancia parametrica
-
+    */
+    real[int] d(nit);
+    for(int j=0; j<nit; j++){
+        real[int] dist = X(:,j)-uRP;
+        d(j)=gauss(dist.l2);
+    }
+    cout << d << endl;
 
     real[int] aux=MMasaR*uRP;
     bVarR = a1*dtt*aux;

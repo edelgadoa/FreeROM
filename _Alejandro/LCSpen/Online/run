@@ -5,4 +5,4 @@ read NP
 
 verbosity=0
 
-ff-mpirun -np $NP Online_Estab.edp -glut ffglut
+ff-mpirun -np $NP Online_Estab_EIM.edp -glut ffglut
