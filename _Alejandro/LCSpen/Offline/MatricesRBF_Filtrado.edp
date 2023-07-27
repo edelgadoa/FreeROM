@@ -56,33 +56,26 @@ for(int i=0; i<NbasesV*NbasesVTau; i++){
 
 for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
     modes[] = BaseV(:,s);
+
+    // VDTau
     varf varVDTauF1([u,uY],[v,vY]) = int2d(Th)(
         (dx(modes)*u+modes*dx(u)+dy(modesY)*u+modesY*dy(u))*v
         +(dx(modes)*uY+modes*dx(uY)+dy(modesY)*uY+modesY*dy(uY))*vY);
     matrix MVDTauF1=varVDTauF1(Vh2P2,Vh2P2);
+    
     for(int l=0;l<NbasesVDTau;l++){ // Bucle por el termino de la RBF
         modeRBF1[] = BaseVDTau(:,l);
         varf varVDTauF2([u,uY],[v,vY]) = int2d(Th)(
             modeRBF1*(u*v+uY*vY));
         matrix MVDTauF2=varVDTauF2(Vh2P2,Vh2P2);
-        real[int,int] VDTauFTotal(Vh2P2.ndof,Vh2P2.ndof); VDTauFTotal = 0.;
-        real[int,int] VDTauFTotalL(Vh2P2.ndof,Vh2P2.ndof); VDTauFTotalL = 0.;
-        int cont=0.;
+        real[int,int] Faux1(Vh2P2.ndof,NbasesConv);
+        real[int,int] Faux2(Vh2P2.ndof,NbasesConv);
         for(int k=0; k<NbasesConv; k++){
-            if(mpirank==cont%mpisize){
-                cout << k << endl;
-                real[int] mConv = BaseConv(:,k);
-                real[int] Faux2 = MVDTauF2*mConv;
-                real[int] Faux1 = MVDTauF1'*mConv;
-                for(int i=0; i<Vh2P2.ndof;i++){
-                    VDTauFTotal(:,i) += Faux1(i)*Faux2;
-                }
-            }
-            cont++;
+            real[int] vConv = BaseConv(:,k);
+            Faux2(:,k) = MVDTauF2*vConv;
+            Faux1(:,k) = MVDTauF1'*vConv;
         }
-        pause;
-        mpiAllReduce(VDTauFTotalL,VDTauFTotal,mpiCommWorld,mpiSUM);
-
+    
         varf varVDTau([u,uY],[v,vY]) = int2d(Th)(
             modeRBF1*((dx(modes)*u+modes*dx(u)+dy(modesY)*u+modesY*dy(u))*v
             +(dx(modes)*uY+modes*dx(uY)+dy(modesY)*uY+modesY*dy(uY))*vY));
@@ -90,20 +83,68 @@ for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
         for(int i=0; i<NbasesV; i++){ // Bucle por el segundo termino de la conveccion
             real[int] Vi = BaseV(:,i);
             real[int] auxVDTauv = MVDTau*Vi;
-            real[int] auxVDTauFv = VDTauFTotal*Vi; 
+            real[int] auxVDTauFv1 = Faux1'*Vi; 
             for(int j=0; j<NbasesV; j++){ // Calculo los elementos
                 real[int] Vj = BaseV(:,j);
                 real auxVDTau = Vj'*auxVDTauv;
-                real auxVDTauF = Vj'*auxVDTauFv;
+                real[int] auxVDTauFv2 = Faux2'*Vj; 
+                real auxVDTauF = auxVDTauFv2'*auxVDTauFv1;
                 Maux(j,i) = auxVDTau-auxVDTauF;
             }
         }
         MsVDTauR[s*NbasesVDTau+l] = Maux;
     }
-
     
+    // VTau
+    // La matriz MF1 para el termino A es la misma que en el caso anterior
+    // Para los terminos B si hay que calcularlos
+    varf varVTauF1X([u,uY],[v,vY])  
+        = int2d(Th)(modeRBF2*(
+            (dxx(modes)*u +2*dx(modes)*dx(u) +modes*dxx(u) +dxy(modesY)*u +dy(modesY)*dx(u) +dx(modesY)*dy(u) +modesY*dxy(u) )*v+
+            (dxx(modes)*uY+2*dx(modes)*dx(uY)+modes*dxx(uY)+dxy(modesY)*uY+dy(modesY)*dx(uY)+dx(modesY)*dy(uY)+modesY*dxy(uY))*vY))
+        + int2d(Th)(
+            (dx(modes)*u+modes*dx(u)+dy(modesY)*u+modesY*dy(u))*dx(v)
+            +(dx(modes)*uY+modes*dx(uY)+dy(modesY)*uY+modesY*dy(uY))*dx(vY));
+    matrix MVTauF1X = varVTauF1X(Vh2P2,Vh2P2);
+
+    varf varVTauF1Y([u,uY],[v,vY])  
+        = int2d(Th)(modeRBF2Y*(
+            (dyx(modes)*u +dx(modes)*dy(u) +dy(modes)*dx(u) +modes*dyx(u) +dyy(modesY)*u +2*dy(modesY)*dy(u) +modesY*dyy(u) )*v+
+            (dyx(modes)*uY+dx(modes)*dy(uY)+dy(modes)*dx(uY)+modes*dyx(uY)+dyy(modesY)*uY+2*dy(modesY)*dy(uY)+modesY*dyy(uY))*vY))
+        + int2d(Th)(
+            (dx(modes)*u+modes*dx(u)+dy(modesY)*u+modesY*dy(u))*dy(v)
+            +(dx(modes)*uY+modes*dx(uY)+dy(modesY)*uY+modesY*dy(uY))*dy(vY));
+    matrix MVTauF1Y = varVTauF1Y(Vh2P2,Vh2P2);
+
     for(int l=0;l<NbasesVTau;l++){ // Bucle por el termino de la RBF
         modeRBF2[] = BaseVTau(:,l);
+        varf varVTauF2([u,uY],[v,vY])= int2d(Th)(
+            modeRBF2*(dx(u)*v+dx(uY)*vY)+
+            modeRBF2Y*(dy(u)*v+dy(uY)*vY));
+        matrix MVTauF2=varVTauF2(Vh2P2,Vh2P2);
+        varf varVTauF2X([u,uY],[v,vY])= int2d(Th)(
+            modeRBF2*(dx(u)*v+dx(uY)*vY));
+        matrix MVTauF2X=varVTauF2X(Vh2P2,Vh2P2);
+        varf varVTauF2Y([u,uY],[v,vY])= int2d(Th)(
+            modeRBF2Y*(dy(u)*v+dy(uY)*vY));
+        matrix MVTauF2Y=varVTauF2Y(Vh2P2,Vh2P2);
+
+        real[int,int] Faux1(Vh2P2.ndof,NbasesConv);
+        real[int,int] Faux2(Vh2P2.ndof,NbasesConv);
+        real[int,int] FauxX1(Vh2P2.ndof,NbasesConv);
+        real[int,int] FauxX2(Vh2P2.ndof,NbasesConv);
+        real[int,int] FauxY1(Vh2P2.ndof,NbasesConv);
+        real[int,int] FauxY2(Vh2P2.ndof,NbasesConv);
+        for(int k=0; k<NbasesConv; k++){
+            real[int] vConv = BaseConv(:,k);
+            Faux2(:,k) = MVTauF2*vConv;
+            Faux1(:,k) = MVDTauF1'*vConv;
+            FauxX2(:,k) = MVTauF2X*vConv;
+            FauxX1(:,k) = MVTauF1X'*vConv;
+            FauxY2(:,k) = MVTauF2Y*vConv;
+            FauxY1(:,k) = MVTauF1Y'*vConv;
+        }
+
         varf varVTau([u,uY],[v,vY]) 
             = int2d(Th)(modeRBF2*(
                 (dxx(modes)*u +2*dx(modes)*dx(u) +modes*dxx(u) +dxy(modesY)*u +dy(modesY)*dx(u) +dx(modesY)*dy(u) +modesY*dxy(u) )*v+
@@ -118,10 +159,19 @@ for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
         for(int i=0; i<NbasesV; i++){ // Bucle por el segundo termino de la conveccion
             real[int] Vi = BaseV(:,i);
             real[int] auxVTauv = MVTau*Vi;
+            real[int] auxVTauFv1 = Faux1'*Vi;
+            real[int] auxVTauFXv1 = FauxX1'*Vi;
+            real[int] auxVTauFYv1 = FauxY1'*Vi;
             for(int j=0; j<NbasesV; j++){ // Calculo los elementos
                 real[int] Vj = BaseV(:,j);
                 real auxVTau = Vj'*auxVTauv;
-                Maux(j,i) = auxVTau;
+                real[int] auxVTauFv2 = Faux2'*Vj; 
+                real[int] auxVTauFXv2 = FauxX2'*Vj; 
+                real[int] auxVTauFYv2 = FauxY2'*Vj; 
+                real auxVTauF = auxVTauFv2'*auxVTauFv1;
+                real auxVTauFX = auxVTauFXv2'*auxVTauFXv1;
+                real auxVTauFY = auxVTauFYv2'*auxVTauFYv1;
+                Maux(j,i) = auxVTau-auxVTauF-auxVTauFX-auxVTauFY;
             }
         }
         MsVTauR[s*NbasesVTau+l] = Maux;
@@ -133,7 +183,7 @@ write("ElementosOffline/MsVDTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ 
 write("ElementosOffline/MsVTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);
 
 write("Output.txt","Done.",1,1);
-
+/*
 // Elementos de la media (u grad tau)
 write("Output.txt","Building matrices depending on the mean (u grad tau) ...",1,1);
 
@@ -259,6 +309,6 @@ for(int l=0; l<NbasesVTau; l++){
 write("ElementosOffline/MsVTauMGR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauMGR, 0, 0);
 write("ElementosOffline/MsVTauGMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauGMR, 0, 0);
 write("ElementosOffline/MVTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVTauMMR, 0, 0);
-
+*/
 write("Output.txt","Done.",1,1);
 write("Output.txt","RBF elements computed",1,1);
