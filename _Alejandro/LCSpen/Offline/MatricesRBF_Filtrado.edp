@@ -304,9 +304,29 @@ for(int i=0; i<NbasesVTau; i++){
     MsVTauGMR[i] = MVTauGMaux(0:NbasesV-1,0:NbasesV-1);
 }
 
+// Términos del filtrado para el termino A (son los mismos que para VDTau) 
+// Termino media-media
+varf varVTauFA1mm([u,uY],[v,vY]) = int2d(Th)(
+    (dx(uM)*uM+uM*dx(uM)+dy(uMY)*uM+uMY*dy(uM))*v
+    +(dx(uM)*uMY+uM*dx(uMY)+dy(uMY)*uMY+uMY*dy(uMY))*vY);
+real[int] bVTauFA1MMaux = varVTauFA1mm(0,Vh2P2);
+
+// Termino media-gradiente
+varf varVTauFA1mg([u,uY],[v,vY]) = int2d(Th)(
+    (dx(uM)*u+uM*dx(u)+dy(uMY)*u+uMY*dy(u))*v
+    +(dx(uM)*uY+uM*dx(uY)+dy(uMY)*uY+uMY*dy(uY))*vY);
+matrix MVTauFA1MG = varVTauFA1mg(Vh2P2,Vh2P2);
+
+// Termino gradiente-media
+varf varVTauFA1gm([u,uY],[v,vY]) = int2d(Th)(
+    (dx(u)*uM+u*dx(uM)+dy(uY)*uM+uY*dy(uM))*v
+    +(dx(u)*uMY+u*dx(uMY)+dy(uY)*uMY+uY*dy(uMY))*vY);
+matrix MVTauFA1GM = varVTauFA1gm(Vh2P2,Vh2P2);
+
 for(int l=0; l<NbasesVTau; l++){
     modeRBF2[] = BaseVTau(:,l);
 
+    // Termino media-media
     varf varVTaumm([u,uY],[v,vY])
         = int2d(Th)(modeRBF2*(
             (dxx(uM)*uM +2*dx(uM)*dx(uM) +uM*dxx(uM) +dxy(uMY)*uM +dy(uMY)*dx(uM) +dx(uMY)*dy(uM) +uMY*dxy(uM) )*v+
@@ -318,6 +338,7 @@ for(int l=0; l<NbasesVTau; l++){
         );
     real[int] bVTaummaux = varVTaumm(0,Vh2P2);
 
+    // Termino media-gradiente
     varf varVTaumg([u,uY],[v,vY])
         = int2d(Th)(modeRBF2*(
             (dxx(uM)*u +2*dx(uM)*dx(u) +uM*dxx(u) +dxy(uMY)*u +dy(uMY)*dx(u) +dx(uMY)*dy(u) +uMY*dxy(u) )*v+
@@ -329,6 +350,7 @@ for(int l=0; l<NbasesVTau; l++){
         );
     matrix MVTauMG = varVTaumg(Vh2P2,Vh2P2);
 
+    // Termino gradiente-media
     varf varVTaugm([u,uY],[v,vY]) 
         = int2d(Th)(modeRBF2*(
             (dxx(u)*uM +2*dx(u)*dx(uM) +u*dxx(uM) +dxy(uY)*uM +dy(uY)*dx(uM) +dx(uY)*dy(uM) +uY*dxy(uM) )*v+
@@ -340,18 +362,50 @@ for(int l=0; l<NbasesVTau; l++){
         );
     matrix MVTauGM = varVTaugm(Vh2P2,Vh2P2);
 
+    // Termino del filtrado A drcha (es el mismo para todos los casos)
+    varf varVTauFA2m([u,uY],[v,vY]) = int2d(Th)(
+        modeRBF2*(dx(u)*v+dx(uY)*vY)+
+        modeRBF2Y*(dy(u)*v+dy(uY)*vY));
+    matrix MVTauFA2m=varVTauFA2m(Vh2P2,Vh2P2);
+    real[int] FAmmaux1(NbasesConv);
+    real[int,int] FAmgaux1(Vh2P2.ndof,NbasesConv);
+    real[int,int] FAgmaux1(Vh2P2.ndof,NbasesConv);
+    real[int,int] FAmaux2(Vh2P2.ndof,NbasesConv);
+
+    for(int k=0; k<NbasesConv; k++){
+        real[int] vConv = BaseConv(:,k);
+        FAmaux2(:,k) = MVTauFA2m*vConv;
+        FAmmaux1(k) = bVTauFA1MMaux'*vConv;
+        FAmgaux1(:,k) = MVTauFA1MG'*vConv;
+        FAgmaux1(:,k) = MVTauFA1GM'*vConv;
+    }
+
+
     for(int i=0; i<NbasesV; i++){
         real[int] Vi = BaseV(:,i);
         MVTauMMR(i,l) = Vi'*bVTaummaux;
         real[int] auxVTaumgv = MVTauMG*Vi;
         real[int] auxVTaugmv = MVTauGM*Vi;
+
+        // Filtrado A
+        real[int] auxVTauFAmv = FAmaux2'*Vi;    
+        MVTauMMR(i,l) -= auxVTauFAmv'*FAmmaux1;
+
         for(int j=0; j<NbasesV; j++){
             real[int] Vj = BaseV(:,j);
             real auxVTaumg = Vj'*auxVTaumgv;
             MVTauMGaux(j,i) = auxVTaumg;
             real auxVTaugm = Vj'*auxVTaugmv;
             MVTauGMaux(j,i) = auxVTaugm;
+
+            // Filtrado A
+            real[int] auxVTauFAmg = FAmgaux1'*Vj;
+            MVTauMGaux(j,i) -= auxVTauFAmv'*auxVTauFAmg;
+            real[int] auxVTauFAgm = FAgmaux1'*Vj;
+            MVTauGMaux(j,i) -= auxVTauFAmv'*auxVTauFAgm;
         }
+
+
     }
     MsVTauMGR[l] = MVTauMGaux;
     MsVTauGMR[l] = MVTauGMaux;
@@ -363,4 +417,3 @@ write("ElementosOffline/MVTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ 
 
 write("Output.txt","Done.",1,1);
 write("Output.txt","RBF elements computed",1,1);
-*/
