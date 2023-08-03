@@ -40,7 +40,7 @@ int NbasesVDTau = BaseVDTau.m;
 Vh2P2 [modes,modesY];
 VhP2 modeRBF1;
 Vh2P2 [modeRBF2,modeRBF2Y];
-
+/*
 write("Output.txt","Building matrices non-depending on the mean...",1,1);
 
 real[int,int][int] MsVDTauR(NbasesV*NbasesVDTau);
@@ -183,7 +183,7 @@ write("ElementosOffline/MsVDTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ 
 write("ElementosOffline/MsVTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);
 
 write("Output.txt","Done.",1,1);
-/*
+
 // Elementos de la media (u grad tau)
 write("Output.txt","Building matrices depending on the mean (u grad tau) ...",1,1);
 
@@ -198,35 +198,85 @@ for(int i=0; i<NbasesVDTau; i++){
     MsVDTauGMR[i] = MVDTauGMaux(0:NbasesV-1,0:NbasesV-1);
 }
 
+// Términos del filtrado
+// Termino media-media
+varf varVDTauF1mm([u,uY],[v,vY]) = int2d(Th)(
+    (dx(uM)*uM+uM*dx(uM)+dy(uMY)*uM+uMY*dy(uM))*v
+    +(dx(uM)*uMY+uM*dx(uMY)+dy(uMY)*uMY+uMY*dy(uMY))*vY);
+real[int] bVDTauF1MMaux = varVDTauF1mm(0,Vh2P2);
+
+// Termino media-gradiente
+varf varVDTauF1mg([u,uY],[v,vY]) = int2d(Th)(
+    (dx(uM)*u+uM*dx(u)+dy(uMY)*u+uMY*dy(u))*v
+    +(dx(uM)*uY+uM*dx(uY)+dy(uMY)*uY+uMY*dy(uY))*vY);
+matrix MVDTauF1MG = varVDTauF1mg(Vh2P2,Vh2P2);
+
+// Termino gradiente-media
+varf varVDTauF1gm([u,uY],[v,vY]) = int2d(Th)(
+    (dx(u)*uM+u*dx(uM)+dy(uY)*uM+uY*dy(uM))*v
+    +(dx(u)*uMY+u*dx(uMY)+dy(uY)*uMY+uY*dy(uMY))*vY);
+matrix MVDTauF1GM = varVDTauF1gm(Vh2P2,Vh2P2);
+
 for(int l=0; l<NbasesVDTau; l++){
     modeRBF1[] = BaseVDTau(:,l);
 
+    // Término media-media
     varf varVDTaumm([u,uY],[v,vY]) = int2d(Th)(
         modeRBF1*((dx(uM)*uM+uM*dx(uM)+dy(uMY)*uM+uMY*dy(uM))*v
         +(dx(uM)*uMY+uM*dx(uMY)+dy(uMY)*uMY+uMY*dy(uMY))*vY));
     real[int] bVDTaummaux = varVDTaumm(0,Vh2P2);
 
+    // Término media-gradiente
     varf varVDTaumg([u,uY],[v,vY]) = int2d(Th)(
         modeRBF1*((dx(uM)*u+uM*dx(u)+dy(uMY)*u+uMY*dy(u))*v
         +(dx(uM)*uY+uM*dx(uY)+dy(uMY)*uY+uMY*dy(uY))*vY));
     matrix MVDTauMG = varVDTaumg(Vh2P2,Vh2P2);
 
+    // Término gradiente-media
     varf varVDTaugm([u,uY],[v,vY]) = int2d(Th)(
         modeRBF1*((dx(u)*uM+u*dx(uM)+dy(uY)*uM+uY*dy(uM))*v
         +(dx(u)*uMY+u*dx(uMY)+dy(uY)*uMY+uY*dy(uMY))*vY));
     matrix MVDTauGM = varVDTaugm(Vh2P2,Vh2P2);
+
+    // Termino del filtrado drcha (es el mismo para todos los casos)
+    varf varVDTauF2m([u,uY],[v,vY]) = int2d(Th)(
+        modeRBF1*(u*v+uY*vY));
+    matrix MVDTauF2m=varVDTauF2m(Vh2P2,Vh2P2);
+    real[int] Fmmaux1(NbasesConv);
+    real[int,int] Fmgaux1(Vh2P2.ndof,NbasesConv);
+    real[int,int] Fgmaux1(Vh2P2.ndof,NbasesConv);
+    real[int,int] Fmaux2(Vh2P2.ndof,NbasesConv);
+
+    for(int k=0; k<NbasesConv; k++){
+        real[int] vConv = BaseConv(:,k);
+        Fmaux2(:,k) = MVDTauF2m*vConv;
+        Fmmaux1(k) = bVDTauF1MMaux'*vConv;
+        Fmgaux1(:,k) = MVDTauF1MG'*vConv;
+        Fgmaux1(:,k) = MVDTauF1GM'*vConv;
+    }
 
     for(int i=0; i<NbasesV; i++){
         real[int] Vi = BaseV(:,i);
         MVDTauMMR(i,l) = Vi'*bVDTaummaux;
         real[int] auxVDTaumgv = MVDTauMG*Vi;
         real[int] auxVDTaugmv = MVDTauGM*Vi;
+        
+        // Filtrado
+        real[int] auxVDTauFmv = Fmaux2'*Vi;    
+        MVDTauMMR(i,l) -= auxVDTauFmv'*Fmmaux1;
+
         for(int j=0; j<NbasesV; j++){
             real[int] Vj = BaseV(:,j);
             real auxVDTaumg = Vj'*auxVDTaumgv;
             MVDTauMGaux(j,i) = auxVDTaumg;
             real auxVDTaugm = Vj'*auxVDTaugmv;
             MVDTauGMaux(j,i) = auxVDTaugm;
+
+            // Filtrado
+            real[int] auxVDTauFmg = Fmgaux1'*Vj;
+            MVDTauMGaux(j,i) -= auxVDTauFmv'*auxVDTauFmg;
+            real[int] auxVDTauFgm = Fgmaux1'*Vj;
+            MVDTauGMaux(j,i) -= auxVDTauFmv'*auxVDTauFgm;
         }
     }
     MsVDTauMGR[l] = MVDTauMGaux;
@@ -238,6 +288,7 @@ write("ElementosOffline/MsVDTauGMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))
 write("ElementosOffline/MVDTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVDTauMMR, 0, 0);
 
 write("Output.txt","Done.",1,1);
+*/
 
 // Elementos de la media (u tau)
 write("Output.txt","Building matrices depending on the mean (u tau) ...",1,1);
@@ -309,6 +360,7 @@ for(int l=0; l<NbasesVTau; l++){
 write("ElementosOffline/MsVTauMGR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauMGR, 0, 0);
 write("ElementosOffline/MsVTauGMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauGMR, 0, 0);
 write("ElementosOffline/MVTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVTauMMR, 0, 0);
-*/
+
 write("Output.txt","Done.",1,1);
 write("Output.txt","RBF elements computed",1,1);
+*/
