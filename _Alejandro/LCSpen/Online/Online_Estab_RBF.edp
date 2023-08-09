@@ -100,9 +100,9 @@ readmatrix("../Offline/ElementosOffline/MVDTauMMR_F_"+Reynolds+"_PODtol_"+(-log1
 readtensor("../Offline/ElementosOffline/MsVDTauMGR_F_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauMGR,0);
 readtensor("../Offline/ElementosOffline/MsVDTauGMR_F_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauGMR,0);
 
-readmatrix("../Offline/ElementosOffline/MVTauMMR_F_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0);
-readtensor("../Offline/ElementosOffline/MsVTauMGR_F_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0)
-readtensor("../Offline/ElementosOffline/MsVTauGMR_F_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0)
+readmatrix("../Offline/ElementosOffline/MVTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0);
+readtensor("../Offline/ElementosOffline/MsVTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0)
+readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0)
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
