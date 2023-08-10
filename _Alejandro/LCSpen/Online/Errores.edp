@@ -29,8 +29,10 @@ real[int] errorl2(nn);
 real[int] errorEstabR0l2(nn);
 int m = 0;
 
-TFR = TF+period;
+TFR = TF;
 TF = TF - period;
+
+int NbasesConv = 2.;
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);
@@ -39,12 +41,12 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0); uEFY[] = SolY;
     [u,uY] = [uEF,uEFY];
     
-    readvector("Datos/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
-    readvector("Datos/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SY, 0); uRY[] = SY;
+    readvector("Datos/VxEstabR_" + NbasesConv + "_" + Reynolds + "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
+    readvector("Datos/VyEstabR_" + NbasesConv + "_" + Reynolds + "_t_" +ti+ ".txt", real, SY, 0); uRY[] = SY;
     
     [err,errY] = [u-uR,uY-uRY];
-    //VhP2 umod; umod = err^2+errY^2;
-    //plot(umod,fill=1,value=1,cmm="t = "+ti);
+    VhP2 umod; umod = err^2+errY^2;
+    plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
     cout << "Error (L2) = " << errorl2(m) << endl;
 

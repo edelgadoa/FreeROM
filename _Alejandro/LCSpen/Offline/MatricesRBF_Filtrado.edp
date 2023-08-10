@@ -31,7 +31,7 @@ readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",r
 readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTau,0);
 readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTau,0);
 int NbasesV = BaseV.m;
-int NbasesConv = BaseConv.m;
+int NbasesConv = BaseConv.m; NbasesConv = 2;
 int NbasesVTau = BaseVTau.m;
 int NbasesVDTau = BaseVDTau.m;
 
@@ -41,7 +41,6 @@ Vh2P2 [modes,modesY];
 VhP2 modeRBF1;
 Vh2P2 [modeRBF2,modeRBF2Y];
 
-/*
 write("Output.txt","Building matrices non-depending on the mean...",1,1);
 
 real[int,int][int] MsVDTauR(NbasesV*NbasesVDTau);
@@ -143,12 +142,11 @@ for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
 }
 
 // Vector de matrices
-write("ElementosOffline/MsVDTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauR, 0, 0);
-write("ElementosOffline/MsVTauR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);
+write("ElementosOffline/MsVDTauR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauR, 0, 0);
+write("ElementosOffline/MsVTauR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);
 
 write("Output.txt","Done.",1,1);
-*/
-/*
+
 // Elementos de la media (u grad tau)
 write("Output.txt","Building matrices depending on the mean (u grad tau) ...",1,1);
 
@@ -248,12 +246,11 @@ for(int l=0; l<NbasesVDTau; l++){
     MsVDTauGMR[l] = MVDTauGMaux;
 }
 
-write("ElementosOffline/MsVDTauMGR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauMGR, 0, 0);
-write("ElementosOffline/MsVDTauGMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauGMR, 0, 0);
-write("ElementosOffline/MVDTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVDTauMMR, 0, 0);
+write("ElementosOffline/MsVDTauMGR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauMGR, 0, 0);
+write("ElementosOffline/MsVDTauGMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauGMR, 0, 0);
+write("ElementosOffline/MVDTauMMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVDTauMMR, 0, 0);
 
 write("Output.txt","Done.",1,1);
-*/
 
 // Elementos de la media (u tau)
 write("Output.txt","Building matrices depending on the mean (u tau) ...",1,1);
@@ -376,9 +373,9 @@ for(int l=0; l<NbasesVTau; l++){
     MsVTauGMR[l] = MVTauGMaux;
 }
 
-write("ElementosOffline/MsVTauMGR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauMGR, 0, 0);
-write("ElementosOffline/MsVTauGMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauGMR, 0, 0);
-write("ElementosOffline/MVTauMMR_F_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVTauMMR, 0, 0);
+write("ElementosOffline/MsVTauMGR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauMGR, 0, 0);
+write("ElementosOffline/MsVTauGMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauGMR, 0, 0);
+write("ElementosOffline/MVTauMMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVTauMMR, 0, 0);
 
 write("Output.txt","Done.",1,1);
 
