@@ -90,7 +90,7 @@ readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".tx
 readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
-int NbasesConv = 2;
+int NbasesConv = 1;
 
 readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
 readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
@@ -107,8 +107,8 @@ readtensor("../Offline/ElementosOffline/MsVTauGMR_FR_" + NbasesConv + "_"+Reynol
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if((1-3*r/2)>=0){
-	    return (1-3*r/2);
+ 	if((1-r)>=0){
+	    return (1-r);
     }else{
 	    return 	 0;
     }
@@ -126,7 +126,7 @@ for(int i=0;i<nit;i++){
     for(int j=0;j<NbasesV;j++){
         real[int] Basej = BaseV(:,j);
         Vh2P2 [bV,bVY]; bV[] = Basej;
-        X(j,i) = int2d(Th)(bV*sV+bVY+sVY);
+        X(j,i) = int2d(Th)(bV*sV+bVY*sVY);
     }
 }
 write("../Offline/RBF/Parametros_" + Reynolds + ".txt", X, 0, 0);

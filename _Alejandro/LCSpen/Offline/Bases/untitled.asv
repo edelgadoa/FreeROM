@@ -1,0 +1,22 @@
+
+fileID = fopen('AutovalVConv_200.txt');
+v=fscanf(fileID,'%f');
+fclose(fileID);
+v=v(2:end);
+
+v = v(end:-1:1);
+w = cumsum(v)/sum(v);
+
+s(w)
+axis([1 81 0 1])
+
+tol = 0.99;
+info = 0 ;
+N = 0;
+
+while info<tol
+    N=N+1;
+    info = info + v(N)/sum(v);
+end
+
+disp(N)

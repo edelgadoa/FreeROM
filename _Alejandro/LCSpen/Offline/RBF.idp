@@ -17,7 +17,7 @@ for(int i=0;i<nSnap;i++){
     for(int j=0;j<nBasesV;j++){
         real[int] Basej = BaseVRBF(:,j);
         Vh2P2 [bV,bVY]; bV[] = Basej;
-        X(j,i) = int2d(Th)(bV*sV+bVY+sVY);
+        X(j,i) = int2d(Th)(bV*sV+bVY*sVY);
     }
 }
 
@@ -32,8 +32,8 @@ int nPODVDTau = BaseVDTauRBF.m;
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if(1-3*r>=0){
-	    return (1-3*r);
+ 	if(1-r>=0){
+	    return (1-r);
     }else{
 	    return 0;
     }
