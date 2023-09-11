@@ -29,8 +29,10 @@ real[int] errorl2(nn);
 real[int] errorEstabR0l2(nn);
 int m = 0;
 
-TFR = TF+period;
+TFR = TF;
 TF = TF - period;
+
+int NbasesConv = 2.;
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);
@@ -39,25 +41,24 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0); uEFY[] = SolY;
     [u,uY] = [uEF,uEFY];
     
-    readvector("Datos/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
-    readvector("Datos/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SY, 0); uRY[] = SY;
+    readvector("Datos/VxEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
+    readvector("Datos/VyEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SY, 0); uRY[] = SY;
     
     [err,errY] = [u-uR,uY-uRY];
-    //VhP2 umod; umod = err^2+errY^2;
+    VhP2 umod; umod = err^2+errY^2;
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
-    cout << "Error (L2) = " << errorl2(m) << endl;
+    cout << "Error with Estabilization (R=" + NbasesConv + ") (L2) = " << errorl2(m) << endl;
 
-    //readvector("Datos/VxEstabR0_" + Reynolds + "_t_" +ti+ ".txt", real, SEX, 0); uR[] = SEX;
-    //readvector("Datos/VyEstabR0_" + Reynolds + "_t_" +ti+ ".txt", real, SEY, 0); uRY[] = SEY;
-
-    //[err,errY] = [u-uR,uY-uRY];
-    //VhP2 umod; umod = err^2+errY^2;
+    readvector("Datos/VxEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEX, 0); uR[] = SEX;
+    readvector("Datos/VyEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEY, 0); uRY[] = SEY;
+    [err,errY] = [u-uR,uY-uRY];
+    umod = err^2+errY^2;
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
-    //errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
-    //cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
+    errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
 
     m+=1;
 }
-//write("Errores/Error_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);
-//write("Errores/ErrorEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorEstabR0l2, 0, 0);
+write("Errores/ErrorEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);
+write("Errores/ErrorEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorEstabR0l2, 0, 0);
