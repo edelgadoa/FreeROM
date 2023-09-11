@@ -200,7 +200,6 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
         d(j)=gauss(dist.l2);
     }
     cout << d << endl;
-    cout << uRP << endl;
 
     real[int] aux=MMasaR*uRP;
     bVarR = a1*dtt*aux;

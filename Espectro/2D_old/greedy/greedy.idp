@@ -22,7 +22,7 @@ for(int inRe=0;inRe<niRe;inRe++)
 	Re=vtrain(inRe);
 	write("Output.txt","   - Reynold="+Re[0],1,1);
 	BRSta(uBR,uNb,Re,StoN,NSN,SmaN);
-	if(1) // uso del error exacto
+	if(0) // uso del error exacto
 	{
 		EFSta(uEF,Re);
 		// estimate(uEF[nEF],uEFY[nEF],estiEF(inRe));
@@ -43,7 +43,7 @@ for(int inRe=0;inRe<niRe;inRe++)
 		estimate(uBR[nEF],uBRY[nEF],delta(inRe));
 		write("Output.txt","    - estimate= "+delta(inRe),1,1);
 	}
-	if(0)
+	if(1)
 	{
 		include "../auxiliary/search.idp";
 		// EFSta(uEF,Re);
