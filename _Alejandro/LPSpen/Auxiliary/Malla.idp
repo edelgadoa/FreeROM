@@ -1,7 +1,6 @@
 // MALLA
 
 // MESH PARTITIONING (Intermediate grid)
-int n0 = 4;     // Mesh density base number 
 int n1 = 25*n0; // Points density on cylinder
 int n2 = 25*n0; // Points density on inlet
 int n3 = 15*n0; // Points density on top, outlet and bottom

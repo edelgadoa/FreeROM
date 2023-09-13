@@ -75,7 +75,7 @@ NewMacro EFSta(uEF,Re)
 		int contti=1;
 		for(real ti=T0+dtsave;ti<=T+epsEF;ti+=dtsave)
 		{
-			ifstream fileRe("../solutions"+esquema+"/txt/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+T+".txt");
+			ifstream fileRe("../solutions"+esquema+"/txt/SolEF"+prob+"NN"+NN+"Reynold"+Re[0]+"t"+ti+".txt");
 			fileRe >> uEF[contti][];
 			contti++;
 		}

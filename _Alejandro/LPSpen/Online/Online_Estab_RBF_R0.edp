@@ -116,7 +116,7 @@ func real gauss(real r){
 // Vector de parametros velocidades reducidas
 readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
 nit = SnapV.m;
-/*
+
 real[int,int] X(NbasesV,nit);
 for(int i=0;i<nit;i++){
     real[int] Snapi = SnapV(:,i);
@@ -129,8 +129,8 @@ for(int i=0;i<nit;i++){
     }
 }
 write("../Offline/RBF/Parametros_" + Reynolds + ".txt", X, 0, 0);
-*/
-readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
+
+// readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
 // cout << X << endl;
 /*
 nit = (TFR-TF)/dt+1;

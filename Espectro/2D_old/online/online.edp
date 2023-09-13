@@ -11,10 +11,11 @@ IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BR
 infoparam;
 
 int Nv,Np,N;
-N=138;
+N=30;
 //30 72 98 113 119 134 139 142
 //30 72 100 119 134 135 139 142
 //36 70 96 116 126 133 134 138 
+//PODj 30 75 109 145 177 
 // dtRe/=8;
 write("Output"+N+".txt","Computing the online phase with N="+N,0,1);
 readTh(NN);
@@ -80,9 +81,15 @@ for(int inRe=0;inRe<niRe;inRe++)
 	// selected(0:numparam-1,cont)=Re;
 	write("Output"+N+".txt","   - Reynold="+Re[0],1,1);
 	BRSta(uBR,uNb,Re,StoN,NSN,SmaN);
-	if(1) // uso del error exacto
+	EFSta(uEF,Re);
+	
+	for(int j=0;j<nEF;j++){
+		plot(uBR,uBRY,wait=1);
+		plot(uEF,uEFY,wait=1);
+	}
+	if(0) // uso del error exacto
 	{
-		EFSta(uEF,Re);
+		
 		errorexacto[]=uEF[nEF][]-uBR[nEF][];
 		estimate(uEF[nEF],uEFY[nEF],estiEF(inRe));
 		errorexacto[]=abs(errorexacto[]);
