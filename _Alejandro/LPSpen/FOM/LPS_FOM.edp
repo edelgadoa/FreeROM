@@ -81,8 +81,8 @@ for(real ti=t0+dt;ti<=TF+epsEF;ti+=dt){
     [uEF1,uEF1Y,uEF1P]=[uEF0,uEF0Y,uEF0P];
     [uEF0,uEF0Y,uEF0P]=[uEF, uEFY, uEFP];
 
-    VhP2 uEFmod;
-	uEFmod = (uEF)^2+(uEFY)^2;
-	plot(uEFmod,fill=1,value=1,cmm="t="+ti);
+    //VhP2 uEFmod;
+	//uEFmod = (uEF)^2+(uEFY)^2;
+	//plot(uEFmod,fill=1,value=1,cmm="t="+ti);
 	//plot([uEF,uEFY],fill=1,value=1,cmm="t="+ti);
 }

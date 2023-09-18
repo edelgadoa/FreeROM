@@ -32,7 +32,7 @@ int m = 0;
 TFR = TF;
 TF = TF - period;
 
-int NbasesConv = 2.;
+int NbasesConv = 3.;
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);

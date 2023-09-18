@@ -57,7 +57,8 @@ cout << hmax2^2 << endl;
 real c1=16;
 real c2=4;
 
-for(int iter=3330; iter <=nit; iter++){
+int iter0 = 3500-period/dt;
+for(int iter=iter0; iter <=nit; iter++){
     real ti = t0+iter*dt;
     write("Output.txt","t = "+ti,1,1);
     // Snapshots
