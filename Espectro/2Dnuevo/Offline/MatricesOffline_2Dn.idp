@@ -10,82 +10,120 @@
 // include "Allocate_matrices_local.idp"
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
+
+Vh2P2perL[int] [BasePODV, BasePODVY](NbasesV);
+VhP1perL[int] BasePODP(NbasesP);
+//Me quedo solo con el numero de bases calculadas, y lo paso a real[int,int] con la numeracion PETSc
 for (int i=0; i<NbasesV; i++){
-	real[int] BaseVi;
-	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
-    
-	for (int j=0; j<=i; j++){
-		real[int] BaseVj;
-		ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
-        // Matrices
-        DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
-        DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
-        if (j<i){
-            DiffRB(j,i) = DiffRB(i,j);
-            DTRB(j,i) = DTRB(i,j);	
-        }
-    }
-    for (int j=0; j<NbasesP; j++){
-		real[int] BasePj;
-		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
-    	DivPRB(j+2*Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
-        
-    }
+	BasePODV[i][] = BaseV[i][];
 }
+
 for (int i=0; i<NbasesP; i++){
-	real[int] BasePi;
-	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
-	
-    for (int j=0; j<=i; j++){
-		real[int] BasePj;
-		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
-		// Matrices
-        PenRB(i+2*Nbases, j+2*Nbases) = innerprodX(BasePi, BasePj, PenPEM);
-        if (j<i){
-            PenRB(j+2*Nbases, i+2*Nbases) = PenRB(i+2*Nbases, j+2*Nbases);
-        }   
-    }
+	BasePODP[i][] = BaseP[i][];
 }
+
+real[int,int] MBasePODV(MatAVh2P2per.n, NbasesV), MBasePODP(MatAVhP1per.n, NbasesP);
+ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
+ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
+
+// for (int i=0; i<NbasesV; i++){
+// 	real[int] BaseVi;
+// 	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+//
+// 	for (int j=0; j<=i; j++){
+// 		real[int] BaseVj;
+// 		ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+//         // Matrices
+//         DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
+//         DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+//         if (j<i){
+//             DiffRB(j,i) = DiffRB(i,j);
+//             DTRB(j,i) = DTRB(i,j);
+//         }
+//     }
+//     for (int j=0; j<NbasesP; j++){
+// 		real[int] BasePj;
+// 		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+//     	DivPRB(j+2*Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
+//
+//     }
+// }
+cout<<"primera multiplicacion"<<endl;
+real[int,int] DiffRBaux(DiffPEM.n, MBasePODV.m);
+
+MatMatMult(DiffPEM, MBasePODV, DiffRBaux);
+
+cout<<"segunda multiplicacion"<<endl;
+real[int,int] DiffRBL = MBasePODV'*DiffRBaux;
+
+cout<<"reuno info"<<endl;
+cout<<"DiffRBL:"<<DiffRBL.n<<"x"<<DiffRBL.m<<endl<<"DiffRB:"<<DiffRB.n<<"x"<<DiffRB.m<<endl;
+
+mpiAllReduce(DiffRBL, DiffRB, mpiCommWorld, mpiSUM); 
+
+// for (int i=0; i<NbasesP; i++){
+// 	real[int] BasePi;
+// 	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
+//
+//     for (int j=0; j<=i; j++){
+// 		real[int] BasePj;
+// 		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+// 		// Matrices
+//         PenRB(i+2*Nbases, j+2*Nbases) = innerprodX(BasePi, BasePj, PenPEM);
+//         if (j<i){
+//             PenRB(j+2*Nbases, i+2*Nbases) = PenRB(i+2*Nbases, j+2*Nbases);
+//         }
+//     }
+// }
 
 write("Output.txt","Matrices varias OK.",1,1);
 
 
-// mpi(cout << DiffRB << endl;)
+write("DiffRB_new.txt", DiffRB, 0, 0);// mpi(cout << DiffRB << endl;)
 // mpi(cout << DivPRB << endl;)
 // mpi(cout << PenRB << endl;)
 // mpi(cout << DTRB << endl;)
 
 // Conveccion
-for (int s=0; s<NbasesV; s++){
-    real[int, int] Cint(3*Nbases, 3*Nbases);
-    Cint = 0; //ConvRB[s]; 
-    for (int i=0; i<NbasesV; i++){
-		real[int] BaseVi;
-		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
-        for (int j=0; j<=i; j++){
-			real[int] BaseVj;
-			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
-            Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
-            if(j<i){
-                Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
-            } 
-            /*
-            if (s==i && (j!=i)){
-                for (int k=0; k<s; k++){
-					real[int] BaseVk;
-					ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
-                    Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
-                }
-            } 
-            */
-        }
-    }
+// for (int s=0; s<NbasesV; s++){
+//     real[int, int] Cint(3*Nbases, 3*Nbases);
+//     Cint = 0; //ConvRB[s];
+//     for (int i=0; i<NbasesV; i++){
+// 		real[int] BaseVi;
+// 		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+//         for (int j=0; j<=i; j++){
+// 			real[int] BaseVj;
+// 			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+//             Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
+//             if(j<i){
+//                 Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
+//             }
+//             /*
+//             if (s==i && (j!=i)){
+//                 for (int k=0; k<s; k++){
+// 					real[int] BaseVk;
+// 					ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
+//                     Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+//                 }
+//             }
+//             */
+//         }
+//     }
+//
+//     ConvRB[s] += Cint;
+// }
 
-    ConvRB[s] += Cint;
+for(int s=0; s<NbasesV;s++){
+	real[int,int] ConvRBaux(ConvRB[s].n, MBasePODV.m), ConvRBG(NbasesV, NbasesV);
+	MatMatMult(ConvPEM[s], MBasePODV, ConvRBaux);
+	real[int,int] ConvRBL = MBasePODV'*ConvRBaux;
+	mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
+	ConvRB[s] = ConvRBG;
 }
+
 write("Output.txt","Conveccion OK.",1,1);
 
-//mpi(cout<<ConvRB[0]<<endl;) //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+write("ConvRB"+mpisize+".txt", ConvRB, 0, 0); //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
 
 // Smagorinsky
 for (int s=0; s<Mbases; s++){

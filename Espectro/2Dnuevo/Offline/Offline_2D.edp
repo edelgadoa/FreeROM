@@ -100,9 +100,7 @@ mpi(cout<<"Inicializacion EIM..." <<endl;)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
 
-// Inicializo las matrices para la fase offline
-mpi(cout<<"Inicializacion matrices..." <<endl;)
-include "Allocate_matrices_2D.idp"
+
 
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
@@ -186,6 +184,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BaseV[NbasesV+i][] = supEF[];
 	}
 	NbasesV += NbasesP; 
+	
+	// Inicializo las matrices para la fase offline
+	mpi(cout<<"Inicializacion matrices..." <<endl;)
+	include "Allocate_matrices_2D.idp"
 	
 	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
 	write("Output.txt","Ok.",1,1);

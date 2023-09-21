@@ -16,7 +16,7 @@ for (int i=0;i<Mbases;i++){
 }
 
 // Definicion de las Matrices Reducidas fijas
-real[int,int] DiffRB(3*Nbases, 3*Nbases), DivPRB(3*Nbases, 3*Nbases), PenRB(3*Nbases, 3*Nbases), 
+real[int,int] DiffRB(NbasesV, NbasesV), DivPRB(3*Nbases, 3*Nbases), PenRB(3*Nbases, 3*Nbases), 
 			  DTRB(3*Nbases, 3*Nbases);
 			  
 DiffRB = 0;
@@ -35,12 +35,12 @@ bDTRB = 0;
 bSmagoRB = 0;
 
 // Definicion de Matrices y Tensores variables
-real[int,int][int] ConvRB(2*Nbases), SmagoRB(Mbases);
+real[int,int][int] ConvRB(NbasesV), SmagoRB(Mbases);
 
-for (int k=0; k<2*Nbases; k++){
-	real[int,int] aux(3*Nbases, 3*Nbases);
+for (int k=0; k<NbasesV; k++){
+	real[int,int] aux(NbasesV, NbasesV);
 	aux=0;
-	ConvRB[k] = aux(0:3*Nbases-1, 0:3*Nbases-1);
+	ConvRB[k] = aux(0:NbasesV-1, 0:NbasesV-1);
 }
 
 for (int k=0;k<Mbases;k++){
