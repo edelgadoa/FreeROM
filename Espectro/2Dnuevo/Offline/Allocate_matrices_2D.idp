@@ -16,8 +16,8 @@ for (int i=0;i<Mbases;i++){
 }
 
 // Definicion de las Matrices Reducidas fijas
-real[int,int] DiffRB(NbasesV, NbasesV), DivPRB(3*Nbases, 3*Nbases), PenRB(3*Nbases, 3*Nbases), 
-			  DTRB(3*Nbases, 3*Nbases);
+real[int,int] DiffRB(NbasesV, NbasesV), DivPRB(NbasesP, NbasesV), PenRB(NbasesP, NbasesP), 
+			  DTRB(NbasesV, NbasesV);
 			  
 DiffRB = 0;
 DivPRB = 0;
@@ -44,7 +44,7 @@ for (int k=0; k<NbasesV; k++){
 }
 
 for (int k=0;k<Mbases;k++){
-	real[int,int] aux(3*Nbases,3*Nbases);
+	real[int,int] aux(NbasesV,NbasesV);
 	aux=0;
-	SmagoRB[k]=aux(0:3*Nbases-1,0:3*Nbases-1);
+	SmagoRB[k]=aux(0:NbasesV-1,0:NbasesV-1);
 }

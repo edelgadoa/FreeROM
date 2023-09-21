@@ -48,18 +48,24 @@ ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 //
 //     }
 // }
-cout<<"primera multiplicacion"<<endl;
-real[int,int] DiffRBaux(DiffPEM.n, MBasePODV.m);
+
+real[int,int] DiffRBaux(DiffPEM.n, MBasePODV.m), DivPRBaux(DiffPEM.n, MBasePODV.m), 
+			  DTRBaux(DTPEM.n, MBasePODV.m), PenRBaux(PenPEM.n, MBasePODP.m);
 
 MatMatMult(DiffPEM, MBasePODV, DiffRBaux);
+MatMatMult(DivPPEM, MBasePODV, DivPRBaux);
+MatMatMult(DTPEM, MBasePODV, DTRBaux);
+MatMatMult(PenPEM, MBasePODP, PenRBaux);
 
-cout<<"segunda multiplicacion"<<endl;
 real[int,int] DiffRBL = MBasePODV'*DiffRBaux;
+real[int,int] DivPRBL = MBasePODP'*DivPRBaux;
+real[int,int] DTRBL = MBasePODV'*DTRBaux;
+real[int,int] PenRBL = MBasePODP'*PenRBaux;
 
-cout<<"reuno info"<<endl;
-cout<<"DiffRBL:"<<DiffRBL.n<<"x"<<DiffRBL.m<<endl<<"DiffRB:"<<DiffRB.n<<"x"<<DiffRB.m<<endl;
-
-mpiAllReduce(DiffRBL, DiffRB, mpiCommWorld, mpiSUM); 
+mpiAllReduce(DiffRBL, DiffRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRB, mpiCommWorld, mpiSUM);
 
 // for (int i=0; i<NbasesP; i++){
 // 	real[int] BasePi;
@@ -79,7 +85,7 @@ mpiAllReduce(DiffRBL, DiffRB, mpiCommWorld, mpiSUM);
 write("Output.txt","Matrices varias OK.",1,1);
 
 
-write("DiffRB_new.txt", DiffRB, 0, 0);// mpi(cout << DiffRB << endl;)
+write("PenRB.txt", PenRB, 0, 0);// mpi(cout << DiffRB << endl;)
 // mpi(cout << DivPRB << endl;)
 // mpi(cout << PenRB << endl;)
 // mpi(cout << DTRB << endl;)
@@ -126,22 +132,30 @@ write("Output.txt","Conveccion OK.",1,1);
 write("ConvRB"+mpisize+".txt", ConvRB, 0, 0); //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
 
 // Smagorinsky
+// for (int s=0; s<Mbases; s++){
+//     real[int, int] Sint(3*Nbases, 3*Nbases);
+//     Sint = SmagoRB[s];
+//     for (int i=0; i<NbasesV; i++){
+// 		real[int] BaseVi;
+// 		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
+//         for (int j=0; j<=i; j++){
+// 			real[int] BaseVj;
+// 			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+//             Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]);
+//             if(j<i){
+//                 Sint(j,i) = Sint(i,j);
+//             }
+//         }
+//     }
+//     SmagoRB[s] += Sint;
+// }
+
 for (int s=0; s<Mbases; s++){
-    real[int, int] Sint(3*Nbases, 3*Nbases);
-    Sint = SmagoRB[s]; 
-    for (int i=0; i<NbasesV; i++){
-		real[int] BaseVi;
-		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
-        for (int j=0; j<=i; j++){
-			real[int] BaseVj;
-			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
-            Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]); 
-            if(j<i){
-                Sint(j,i) = Sint(i,j);
-            }	
-        }
-    }
-    SmagoRB[s] += Sint;
+    real[int, int] SmagoRBaux(SmagoRB[s].n, MBasePODV.m), SmagoRBG(NbasesV, NbasesV);
+	MatMatMult(SmagoPEM[s], MBasePODV, SmagoRBaux);
+	real[int,int] SmagoRBL = MBasePODV'*SmagoRBaux;
+	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
+    SmagoRB[s] = SmagoRBG;
 }
 
 // mpi(cout<<SmagoRB[0]<<endl;)
