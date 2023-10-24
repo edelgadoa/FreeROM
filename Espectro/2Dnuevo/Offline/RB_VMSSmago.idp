@@ -8,7 +8,7 @@ matrix MVRB; //solo las interaciones velocidad-velocidad
 MVRB = nuRB * DiffRBi;
 //MRB += DivPRBi;
 //MRB += DivPRBTi;
-MVRB += (1./dt) * DTRBi;
+MVRB = MVRB + (1./dt) * DTRBi;
 // MRB += PenRBi;	
 
 // mpi(cout<<MRB<<endl;)
@@ -62,8 +62,8 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){
 	}
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
-	MVRB += ConvRBi;
-	MVRB += SmagoRBi; 
+	MVRB = MVRB + ConvRBi;
+	MVRB = MVRB + SmagoRBi; 
 	
 	//mpi(cout<<MRBF<<endl;)
 	bRB += (1./dt) * bDTRBi;

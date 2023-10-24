@@ -7,7 +7,7 @@ int I = NbasesV + NbasesP; // Para ajustar los indices
 real[int] DeltaG(Ntrain); 
 
 // Inicializamos las matrices para el problema reducido
-matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;;
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;
 			   			   			 			  
 // Inicializamos los segundos miembros
 real[int] bDTRBi(I); 
