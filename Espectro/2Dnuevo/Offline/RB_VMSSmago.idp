@@ -14,11 +14,10 @@ MVRB += (1./dt) * DTRBi;
 // mpi(cout<<MRB<<endl;)
 
 for(real ti=T0+dt;ti<=TF;ti+=dt){
-	// ConvRBi = 0;
-	// SmagoRBi = 0;
+	matrix ConvRBi;
+	matrix SmagoRBi;
 	bDTRBi = 0;
 	bRB = 0;
-	mpi(cout<<"matriz de conveccion"<<endl;)
 
 	// Matriz de conveccion
 	for (int s=0; s<NbasesV; s++){
@@ -74,10 +73,11 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = [[MVRB , DivPRBTi],[DivPRBi, PenRBi]];
+	// mpi(cout<<MRBs<<endl;)
 	set(MRBs, solver=UMFPACK);
 
 	//mpi(cout<<"Aqui"<<endl;)
 	// real[int,int] MRBinv = MRB^-1;
 	uRBv = MRBs^-1*bRB;
-	//mpi(cout<<uRBv<<endl;)
+	// mpi(cout<<uRBv<<endl;)
 }

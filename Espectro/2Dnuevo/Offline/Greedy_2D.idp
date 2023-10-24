@@ -7,7 +7,7 @@ int I = NbasesV + NbasesP; // Para ajustar los indices
 real[int] DeltaG(Ntrain); 
 
 // Inicializamos las matrices para el problema reducido
-matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi, ConvRBi, SmagoRBi;
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;;
 			   			   			 			  
 // Inicializamos los segundos miembros
 real[int] bDTRBi(I); 
@@ -89,8 +89,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// write("Sol_vel" + mpisize + ".txt", uRBP[], 0, 0);
 	
 	if(MuTrain(iRB)==Reynolds){
-		// plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
-		plot(uRBP, fill=1, value=1, cmm="RB para Re="+Reynolds);
+		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
+		// plot(uRBP, fill=1, value=1, cmm="RB para Re="+Reynolds);
 		// mpi(cout<<uRBv<<endl;)
 	}
 	

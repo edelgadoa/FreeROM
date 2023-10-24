@@ -49,7 +49,7 @@ for (int i=0; i<NbasesV; i++){
 	// ChangeNumbering(MatAVh2P2per, MBaseV, MBaseVi);
 	// cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
 	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
-
+	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
 	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi, inverse=true); // He añadido esto para que se actualice
 	// Doble Ortonormalización
 	// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
