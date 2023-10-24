@@ -129,7 +129,7 @@ for(int s=0; s<NbasesV;s++){
 
 write("Output.txt","Conveccion OK.",1,1);
 
-write("ConvRB"+mpisize+".txt", ConvRB, 0, 0); //Cambia el valor de la matriz segun el num de procesadores. Hay que ver si funciona despues.
+//write("ConvRB"+mpisize+".txt", ConvRB, 0, 0); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
 
 // Smagorinsky
 // for (int s=0; s<Mbases; s++){
@@ -186,6 +186,5 @@ for (int i=0; i<NbasesV; i++){
 		GradPM[s] += Dtk;
 	}	
 }
-
 
 write("Output.txt","EIM Smagorinsky OK.",1,1);

@@ -39,8 +39,7 @@ macro reduceSolution(uL,u,D,map)
 	aux(map)=uL[];
 	u[]=0;
 	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
-}
-//EOM
+}//EOM
 
 NewMacro solvesystem(A,b,u)
 {

@@ -2,29 +2,32 @@
 // FreeROM 
 /////////////// 	
 
-// Comenzamos a resolver el problema reducido	
-MRB = nuRB * DiffRBi;
-MRB += DivPRBi;
-MRB += DivPRBTi;
-MRB += (1./dt) * DTRBi;
-MRB += PenRBi;	
+// Comenzamos a resolver el problema reducido
+
+matrix MVRB; //solo las interaciones velocidad-velocidad	
+MVRB = nuRB * DiffRBi;
+//MRB += DivPRBi;
+//MRB += DivPRBTi;
+MVRB += (1./dt) * DTRBi;
+// MRB += PenRBi;	
 
 // mpi(cout<<MRB<<endl;)
 
 for(real ti=T0+dt;ti<=TF;ti+=dt){
-	real[int, int] MRBF = MRB;
-	ConvRBi = 0;
-	SmagoRBi = 0;
+	// ConvRBi = 0;
+	// SmagoRBi = 0;
 	bDTRBi = 0;
 	bRB = 0;
-	
+	mpi(cout<<"matriz de conveccion"<<endl;)
+
 	// Matriz de conveccion
 	for (int s=0; s<NbasesV; s++){
-		real[int,int] ConvRBint(I,I), ConvRBN(3*Nbases, 3*Nbases);
-		ConvRBN = ConvRB[s];
-		ConvRBint = ConvRBN(0:I-1, 0:I-1);
-		ConvRBint = uRBv(s)*ConvRBint;
-		ConvRBi += ConvRBint;
+		real[int,int] ConvRBN(NbasesV, NbasesV);
+		matrix ConvRBaux;
+		ConvRBN = ConvRB[s](0:NbasesV-1,0:NbasesV-1);
+		ConvRBN *= uRBv(s);
+		ConvRBaux = ConvRBN;
+		ConvRBi = ConvRBi + ConvRBaux;
 	}
 
 	// Matiz de Smagorinsky
@@ -41,34 +44,36 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	// cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBint(I, I), SmagoRBN(3*Nbases, 3*Nbases);
+		real[int,int] SmagoRBN(NbasesV, NbasesV);
+		matrix SmagoRBaux;
 		SmagoRBN = SmagoRB[s];
-		SmagoRBint = SmagoRBN(0:I-1, 0:I-1);
-		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
-		SmagoRBi += SmagoRBint; 
+		SmagoRBN *= sigmaEIMS(s);
+		SmagoRBaux = SmagoRBN;
+		SmagoRBi = SmagoRBi + SmagoRBaux; 
 	}
 	//mpi(cout<<SmagoRBi<<endl;)
 
 	
 	// Segundos miembro dt
 	for (int s=0; s<NbasesV; s++){
-		real[int] bDTRBint(I);
+		real[int] bDTRBint(NbasesV);
 		bDTRBint = DTRB(s,:);
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
 	}
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
-	MRBF += ConvRBi;
-	MRBF += SmagoRBi; 
+	MVRB += ConvRBi;
+	MVRB += SmagoRBi; 
 	
 	//mpi(cout<<MRBF<<endl;)
-	bRB = (1./dt) * bDTRBi(0:I-1);
+	bRB += (1./dt) * bDTRBi;
+	bRB(NbasesV:I-1) = 0; //Nos aseguramos que es cero en los grados de libertad de la presion
 
 	// mpi(cout<<bRB<<endl;)
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
-	matrix MRBs = MRBF;
+	matrix MRBs = [[MVRB , DivPRBTi],[DivPRBi, PenRBi]];
 	set(MRBs, solver=UMFPACK);
 
 	//mpi(cout<<"Aqui"<<endl;)
