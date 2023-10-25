@@ -11,20 +11,7 @@
 
 // Comienzo el bucle de construccion de las matrices reducidas fijas
 
-Vh2P2perL[int] [BasePODV, BasePODVY](NbasesV);
-VhP1perL[int] BasePODP(NbasesP);
-//Me quedo solo con el numero de bases calculadas, y lo paso a real[int,int] con la numeracion PETSc
-for (int i=0; i<NbasesV; i++){
-	BasePODV[i][] = BaseV[i][];
-}
 
-for (int i=0; i<NbasesP; i++){
-	BasePODP[i][] = BaseP[i][];
-}
-
-real[int,int] MBasePODV(MatAVh2P2per.n, NbasesV), MBasePODP(MatAVhP1per.n, NbasesP);
-ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
-ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 
 // for (int i=0; i<NbasesV; i++){
 // 	real[int] BaseVi;

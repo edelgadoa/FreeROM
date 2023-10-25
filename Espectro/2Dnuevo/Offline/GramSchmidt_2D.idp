@@ -4,32 +4,37 @@
 
 // Código para calcular las bases ortonormalizadas 
 
-//Redimensionamos con el numero de bases obtenidas en la POD
-// MBaseV.resize(Vh2P2perL.ndof, NbasesV);
-MBaseV.resize(MBaseV.n, NbasesV);
-MBaseP.resize(MBaseP.n, NbasesP);
 
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
 for (int i=0; i<NbasesP; i++){
-	real[int, int] MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:i-1);
-	real[int] BasePi;
-	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
-	real[int,int] MBasePiL(BasePi.n,i);
-	for(int j=0; j<i;j++){
-		real[int] MBasei;
-		ChangeNumbering(MatAVhP1per, MBaseP(:,j),MBasei);
-		MBasePiL(:,j) = MBasei;
+	for (int j=0; j<=i; j++){
+		real[int,int] MBasePODPaux =  MBasePODP(0:MBasePODP.n-1,0:j-1);
+		real[int] BasePODPi;
+		ChangeNumbering(MatAVhP1per, BasePODP[i][], BasePODPi);
+		BasePODPi = OrtoX(BasePODPi, MBasePODPaux, MPescP);
+		BasePODPi = OrtoX(BasePODPi, MBasePODPaux, MPescP); //Doble ortonormalizacion
+		ChangeNumbering(MatAVhP1per, BasePODP[i][], BasePODPi, inverse=true);
 	}
-	
-	BasePi = OrtoX(BasePi, MBasePiL, MPescP);
-	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi, inverse=true); 
-	// Doble Ortonormalización (de momento hacemos una unica ortonormalizacion)
-	// BasePi = OrtoX(BasePi, MBasePi, prodP); 
 }
 
+
+
+
+
+// ChangeNumbering(MatAVhP1per, BaseP, MBasePODP, inverse=true);
 mpi(cout<<"Presion ortonormalizada..." <<endl;)
+
+VhP1per PHI0, PHI1;
+reduceSolution(BasePODP[0], PHI0, MatAVhP1per.D, mapVhP1per);
+reduceSolution(BasePODP[9], PHI1, MatAVhP1per.D, mapVhP1per);
+
+real norma1 = int2d(Th)(PHI0^2);
+real norma0 = int2d(Th)(PHI0*PHI1);
+
+mpi(cout<<"Norma1 = "<<norma1<<", Norma0 = "<<norma0<<endl<<"------------"<<endl;)
+
 
 /// ///////////////////////////////////////////
 //
@@ -37,24 +42,28 @@ pause;
 
 mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
 for (int i=0; i<NbasesV; i++){
-	real[int,int] MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:i-1);
-	real[int] BaseVi;
-	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
-	real[int,int] MBaseViL(BaseVi.n,i);
-	for(int j=0; j<i;j++){
-		real[int] MBasei;
-		ChangeNumbering(MatAVh2P2per, MBaseV(:,j),MBasei);
-		MBaseViL(:,j) = MBasei;
+	for (int j=0; j<=i; j++){
+		real[int,int] MBasePODVaux = MBasePODV(0:MBasePODV.n-1, 0:j-1);
+		real[int] BasePODVi;
+		ChangeNumbering(MatAVh2P2per, BasePODV[i][], BasePODVi);
+		BasePODVi = OrtoX(BasePODVi, MBasePODVaux, MPescV);
+		BasePODVi = OrtoX(BasePODVi, MBasePODVaux, MPescV); //Doble ortonormalizacion
+		ChangeNumbering(MatAVh2P2per, BasePODV[i][], BasePODVi, inverse=true);
 	}
-	// ChangeNumbering(MatAVh2P2per, MBaseV, MBaseVi);
-	// cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
-	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
-	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
-	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi, inverse=true); // He añadido esto para que se actualice
-	// Doble Ortonormalización
-	// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
 }
 mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
+
+
+Vh2P2per [PSI0,PSI0Y], [PSI1,PSI1Y];
+reduceSolution(BasePODV[NbasesV - 2], PSI0, MatAVh2P2per.D, mapVh2P2per);
+reduceSolution(BasePODV[1], PSI1, MatAVh2P2per.D, mapVh2P2per);
+
+real normav1 = int2d(Th)(GradUGradV(PSI0,PSI0));
+real normav0 = int2d(Th)(GradUGradV(PSI0,PSI1));
+
+mpi(cout<<"Norma1 = "<<normav1<<", Norma0 = "<<normav0<<endl<<"------------"<<endl;)
+
+
 
 
 // Para el filtrado (Smago -> no necesario)
