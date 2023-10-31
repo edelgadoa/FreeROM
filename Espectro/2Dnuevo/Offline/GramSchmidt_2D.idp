@@ -8,32 +8,12 @@
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-for (int i=0; i<NbasesP; i++){
-	for (int j=0; j<=i; j++){
-		real[int,int] MBasePODPaux =  MBasePODP(0:MBasePODP.n-1,0:j-1);
-		real[int] BasePODPi;
-		ChangeNumbering(MatAVhP1per, BasePODP[i][], BasePODPi);
-		BasePODPi = OrtoX(BasePODPi, MBasePODPaux, MPescP);
-		BasePODPi = OrtoX(BasePODPi, MBasePODPaux, MPescP); //Doble ortonormalizacion
-		ChangeNumbering(MatAVhP1per, BasePODP[i][], BasePODPi, inverse=true);
-	}
-}
-
-
-
+MBasePODP = OrtoX(MBasePODP, MPescP);
+ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP, inverse=true);
 
 
 // ChangeNumbering(MatAVhP1per, BaseP, MBasePODP, inverse=true);
 mpi(cout<<"Presion ortonormalizada..." <<endl;)
-
-VhP1per PHI0, PHI1;
-reduceSolution(BasePODP[0], PHI0, MatAVhP1per.D, mapVhP1per);
-reduceSolution(BasePODP[9], PHI1, MatAVhP1per.D, mapVhP1per);
-
-real norma1 = int2d(Th)(PHI0^2);
-real norma0 = int2d(Th)(PHI0*PHI1);
-
-mpi(cout<<"Norma1 = "<<norma1<<", Norma0 = "<<norma0<<endl<<"------------"<<endl;)
 
 
 /// ///////////////////////////////////////////
@@ -41,55 +21,13 @@ mpi(cout<<"Norma1 = "<<norma1<<", Norma0 = "<<norma0<<endl<<"------------"<<endl
 pause;
 
 mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
-for (int i=0; i<NbasesV; i++){
-	for (int j=0; j<=i; j++){
-		real[int,int] MBasePODVaux = MBasePODV(0:MBasePODV.n-1, 0:j-1);
-		real[int] BasePODVi;
-		ChangeNumbering(MatAVh2P2per, BasePODV[i][], BasePODVi);
-		BasePODVi = OrtoX(BasePODVi, MBasePODVaux, MPescV);
-		BasePODVi = OrtoX(BasePODVi, MBasePODVaux, MPescV); //Doble ortonormalizacion
-		ChangeNumbering(MatAVh2P2per, BasePODV[i][], BasePODVi, inverse=true);
-	}
-}
+
+MBasePODV = OrtoX(MBasePODV, MPescV);
+MBasePODV = OrtoX(MBasePODV, MPescV);
+ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV, inverse=true);
+
 mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
-
-
-Vh2P2per [PSI0,PSI0Y], [PSI1,PSI1Y];
-reduceSolution(BasePODV[NbasesV - 2], PSI0, MatAVh2P2per.D, mapVh2P2per);
-reduceSolution(BasePODV[1], PSI1, MatAVh2P2per.D, mapVh2P2per);
-
-real normav1 = int2d(Th)(GradUGradV(PSI0,PSI0));
-real normav0 = int2d(Th)(GradUGradV(PSI0,PSI1));
-
-mpi(cout<<"Norma1 = "<<normav1<<", Norma0 = "<<normav0<<endl<<"------------"<<endl;)
-
-
 
 
 // Para el filtrado (Smago -> no necesario)
 // BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-
-///////////////////////////////////////////////////////////////////////////////
-// func real[int] proy(real[int] & u,real[int] & v, matrix & X)
-// {
-// 	real[int] aux=X*u;
-// 	real vu=v'*aux;
-// 	real uu=u'*aux;
-// 	real[int] result=u;
-// 	result*=vu/uu;
-// 	return result;
-// }
-//
-//
-// func real innerprod(real[int] & u,real[int] & v,matrix & A){real[int] aux=A*v;real result=u'*aux;return result;}
-// func real normL2(real[int] & u, matrix & A){real result=innerprod(u,u,A);return sqrt(result);}
-//
-// macro ortho(base,NN,prod)
-// {real[int] proyection(base[0][].n);
-// proyection=0;
-// for(int ii=0;ii<NN-1;ii++)proyection+=proy(base[ii][],base[NN-1][],prod);
-// base[NN-1][]-=proyection;}
-// //EOM
-//
-// macro normalization(base,nbasis,X)
-// {for(int ii=0; ii<nbasis;ii++)base[ii][]/=normL2(base[ii][],X);}//EOM

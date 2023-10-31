@@ -228,8 +228,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	include "GramSchmidt_2D.idp"
 	
 	// Actualizo las matrices MBasePOD 
-	ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
-	ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
+	//ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
+	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 	
 	for (int i=0; i<NbasesV; i++){
 		 BaseV[i][] = BasePODV[i][];

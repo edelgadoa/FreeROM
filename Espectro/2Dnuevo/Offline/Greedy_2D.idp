@@ -89,8 +89,8 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// write("Sol_vel" + mpisize + ".txt", uRBP[], 0, 0);
 	
 	if(MuTrain(iRB)==Reynolds){
-		plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
-		// plot(uRBP, fill=1, value=1, cmm="RB para Re="+Reynolds);
+		plot([uRB, uRBY], cmm="vel RB para Re="+Reynolds);
+		plot(uRBP, fill=1, value=1, cmm="pres RB para Re="+Reynolds);
 		// mpi(cout<<uRBv<<endl;)
 	}
 	
