@@ -16,9 +16,9 @@ load "iovtk"
 load "medit"
 
 // Cargamos macros
-include "../../Auxiliary/Macros_3D.idp"
-include "../../Auxiliary/IO.idp" 
-include "../../Auxiliary/search.idp"
+include "../Auxiliary/Macros_3D.idp"
+include "../Auxiliary/IO.idp" 
+include "../Auxiliary/search.idp"
 
 // Creamos la malla
 include "../Auxiliary/CuboNxNyNZ.idp"
@@ -30,7 +30,7 @@ real techo = 2; //para las condiciones de contorno
 include "FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos los parametros a usar
-include "Parametros_3D.idp"
+include "../Auxiliary/Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_3D.idp"
