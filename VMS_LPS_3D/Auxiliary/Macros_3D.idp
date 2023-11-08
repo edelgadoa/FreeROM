@@ -78,7 +78,7 @@ NewMacro solvesystem(A,b,u)
 	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
 	MatAVh4P2 = A;
 	
-    Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
+    Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
     string[int] names(2);
     names[0] = "velocity";
     names[1] = "pressure";

@@ -9,7 +9,7 @@
 Gr=MOD(uEF); //Aunque parezca que el gradiente se calcula de la solucion sin levantamiento, lo hace ya con el levantamiento, por como he definido uEFXdX, uEFXdY, etc.
 
 
-Vh4P1dc [Levf,LevfY,LevfZ,LevfP];
+Vh4P1dcL [Levf,LevfY,LevfZ,LevfP];
 
 
 varf FVSmago([uu,uuY,uuZ,pun],[v,vY,vZ,qun])=intN(ThL)((CS*hTriangle)^2*Gr*UporV(uu,v));
@@ -29,7 +29,7 @@ matrix DXX,DYY,DZZ;
 	DXX=(Maux')*M;
 	DXX=DXX*Maux;
 	
-	MauxG = DX4P2*IPh4P24P1;
+	MauxG = DX4P2L*IPh4P24P1L;
 	Levf[]=MauxG*Lev[]; //seg miembro x
 	real[int] bS=FVSmagob(0,Vh4P1dcL);
 	bSx=(Maux')*bS;
@@ -39,7 +39,7 @@ matrix DXX,DYY,DZZ;
 	DYY=(Maux')*M;
 	DYY=DYY*Maux;
 	
-	MauxG = DY4P2*IPh4P24P1;
+	MauxG = DY4P2L*IPh4P24P1L;
 	Levf[]=MauxG*Lev[]; //seg miembro y
 	bS=FVSmagob(0,Vh4P1dcL);
 	bSy=(Maux')*bS;
@@ -49,7 +49,7 @@ matrix DXX,DYY,DZZ;
 	DZZ=(Maux')*M;
 	DZZ=DZZ*Maux;
 	
-	MauxG = DX4P2*IPh4P24P1;
+	MauxG = DX4P2L*IPh4P24P1L;
 	Levf[]=MauxG*Lev[]; //seg miembro Z
 	bS=FVSmagob(0,Vh4P1dcL);
 	bSz=(Maux')*bS;
