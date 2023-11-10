@@ -67,11 +67,11 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	MFinal = MFija + LPSpres;
 	MFinal = MFinal + MNS;
-	// MFinal = MFinal + Smago;
+	MFinal = MFinal + Smago;
 	
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
-	// bFinal = bFinal + bSmago;
+	bFinal = bFinal + bSmago;
 	
 	// Actualizamos la solución
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error

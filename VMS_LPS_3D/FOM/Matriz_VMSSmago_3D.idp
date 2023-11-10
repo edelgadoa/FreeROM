@@ -49,7 +49,7 @@ matrix DXX,DYY,DZZ;
 	DZZ=(Maux')*M;
 	DZZ=DZZ*Maux;
 	
-	MauxG = DX4P2L*IPh4P24P1L;
+	MauxG = DZ4P2L*IPh4P24P1L;
 	Levf[]=MauxG*Lev[]; //seg miembro Z
 	bS=FVSmagob(0,Vh4P1dcL);
 	bSz=(Maux')*bS;

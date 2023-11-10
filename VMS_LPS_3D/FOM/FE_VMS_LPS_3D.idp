@@ -55,7 +55,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix Smago;
 	real[int] bSmago(Vh4P2L.ndof);
 	
-	include "Matriz_VMSSmago_3D.idp"
+	// include "Matriz_VMSSmago_3D.idp"
 	
 	
 	// incluimos la matriz de estabilizacion LPS de la presion
@@ -70,12 +70,12 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	MFinal = MFija;
 	MFinal = MFinal + MNS;
-	MFinal = MFinal + Smago;
+	// MFinal = MFinal + Smago;
 	MFinal = MFinal + LPSpres;
 	
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
-	bFinal = bFinal + bSmago;
+	// bFinal = bFinal + bSmago;
 	
 	// Actualizamos la solución
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
