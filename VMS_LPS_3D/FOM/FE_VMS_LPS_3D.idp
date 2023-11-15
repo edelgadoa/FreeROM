@@ -25,7 +25,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uprevLY = uEFY + LevY;
 	uprevLZ = uEFZ + LevZ;
 	
-	
+	mpi(cout<<"filtrado de solucion anterior"<<endl;)
 	{
 		VhP2 udcAux;
 		udcAux[] = IPhP2P1*uprevL[];
@@ -48,7 +48,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
 	real[int] bNS(Vh4P2L.ndof);
-	
+	mpi(cout<<"Matriz variable"<<endl;)
 	include "Matrices_variables_NS_3D.idp"
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
@@ -60,7 +60,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// incluimos la matriz de estabilizacion LPS de la presion
 	matrix LPSpres;
-	
+	mpi(cout<<"Matriz LPS"<<endl;)
 	include "Matriz_LPS_Pres_3D.idp"
 	
 	
@@ -68,6 +68,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	matrix MFinal;
 	real[int] bFinal(Vh4P2L.ndof);
 	
+	mpi(cout<<"ensamblaje de matrices"<<endl;)
 	MFinal = MFija;
 	MFinal = MFinal + MNS;
 	// MFinal = MFinal + Smago;
@@ -76,12 +77,12 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
 	// bFinal = bFinal + bSmago;
-	
+	mpi(cout<<"Actualizamos la solucion"<<endl;)
 	// Actualizamos la solución
 	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[] = uEF[];
 	
-	
+	mpi(cout<<"solving sistem"<<endl;)
 	//real timeLS = clock();
 	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	//timeLS = clock() - timeLS;
