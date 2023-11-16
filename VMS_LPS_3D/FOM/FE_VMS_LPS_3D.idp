@@ -94,7 +94,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	errEF[] = uEF[] - uEFp[];
 	
 	real ERRORabs = sqrt(intN(Th)(errEF^2 + errEFY^2 + errEFZ^2));
-	ERROR = ERRORabs / sqrt(intN(Th)(uEF^2 + uEFY^2 + uEFZ^2));
+	//ERROR = ERRORabs / sqrt(intN(Th)(uEF^2 + uEFY^2 + uEFZ^2));
 	
 	mpi(cout<<ERROR<<endl;)
 

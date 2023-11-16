@@ -9,7 +9,7 @@ verbosity = 0;
 // Mesh Creation
 include "CubeN.idp"
 
-// Macro definition:
+// Macros definition:
 macro Div(U) (dx(U) + dy(U#Y) + dz(U#Z)) //EOM
 macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
 					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
@@ -18,19 +18,18 @@ macro UGradV(U,V)  [[U, U#Y, U#Z]'*[dx(V),   dy(V),   dz(V)],
 				    [U, U#Y, U#Z]'*[dx(V#Y), dy(V#Y), dz(V#Y)],
 					[U, U#Y, U#Z]'*[dx(V#Z), dy(V#Z), dz(V#Z)]] //EOM
 macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y, W#Z]) //EOM
-macro UGradT(U,temp) ([U, U#Y, U#Z]'*Grad(temp)) //EOM
 macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
 macro MOD(U) (sqrt(dx(U)^2 + dy(U)^2 + dz(U)^2 + 
 				   dx(U#Y)^2 + dy(U#Y)^2 + dz(U#Y)^2 +
 				   dx(U#Z)^2 + dy(U#Z)^2 + dz(U#Z)^2)) //EOM
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
-
+///////////////////
 
 // FE spaces
 // Global Mesh
 fespace Vh4P2(Th, [P2, P2, P2, P2]); 
-
+fespace VhP2(Th, P2); 
 
 // Local Mesh
 fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
@@ -81,8 +80,8 @@ matrix IPhD4X4P2L, IPhD4Y4P2L, IPhD4Z4P2L; // (?) -> Go to Mat structure? (using
 // Parameters for the problem
 real CS = 0.1; // Smagorinsky constant
 
-real dt = 0.1;
-real T = 1; // Final time
+real dt = 1;
+real T = 100; // Final time
 real epspen = 1e-8;
 
 int niterFE = 1500; 
@@ -95,9 +94,10 @@ func g1=1.*(z>=1);
 VhP2L GP2 = g1;
 VhP2L GzeroP2 = 0.;
 
-Vh4P2L [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
+Vh4P2L [Lev, LevY, LevZ, LevP] = [GP2, 0., 0., 0.];
 
-// Start solving the Problem
+//////////////////////////////
+// Start solving the FE Problem
 Vh4P2L [uEF, uEFY, uEFZ, uEFP], [uEFp, uEFpY, uEFpZ, uEFpP]; 
 
 matrix MFixed; // (?) -> Change for Mat structure? 
@@ -115,8 +115,8 @@ real[int] bFixed(Vh4P2L.ndof);
 									          + on(1,2, uu=0., uuY=0., uuZ=0.); 
 											 
 	// Ensambling the matrix and RHS
-	MFixed = FVFixed(Vh4P2L,Vh4P2L); // (?) -> tgv = -1 better?
-	bFixed = FVFixed(0,Vh4P2L);  // (?) -> tgv = -1 better?
+	MFixed = FVFixed(Vh4P2L,Vh4P2L, tgv=1); // For having mean pressure ~ 0
+	bFixed = FVFixed(0,Vh4P2L, tgv=-1);  // For having mean pressure ~ 0
 }
 
 // Start the loop in time
@@ -132,8 +132,8 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 										 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
 				
 						
-		MNS = FVNS(Vh4P2L,Vh4P2L); // (?) -> tgv = -1 better?
-		bNS = FVNS(0,Vh4P2L); // (?) -> tgv = -1 better?
+		MNS = FVNS(Vh4P2L,Vh4P2L); 
+		bNS = FVNS(0,Vh4P2L); 
 	}
 	
 	// Smagorinsky term
@@ -199,11 +199,15 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	 + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names); // (?) -> what should be the best configuration of parameters: 
 	  */ 
 	
-	//(?) -> This configuation 
-	set(MatAVh4P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // works, but it slower increasing the number of processors.
+	//(?) -> This configuation ->
+	set(MatAVh4P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // -> works, but it gets slower when increasing the number of processors.
 	if (mpirank==0){ cout<<"Solve the linear system"<<endl;}   
 	uEF[] = MatAVh4P2^-1*bFinal; 
 	
+	
+	// (?) -> Other possibilities???
+	
+	/* // SAVING THE GLOBAL SOLUTION
 	Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; // For saving the solutions in time
 	Vh4P2L [aux, auxY, auxZ, auxP];
 	aux[] = uEF[] + Lev[];
@@ -212,5 +216,12 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	real[int] auxv(uEFG[].n); auxv= 0;
 	auxv(mapVh4P2) = aux[];
 	mpiAllReduce(auxv, uEFG[], mpiCommWorld, mpiSUM);
-	savevtk("VMS_Smago_"+ittime+".vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, dataname="Velocity Pressure", order=fforder, bin=true);
+	real meanp = intN(Th)(uEFGP);
+	
+	Vh4P2 [uMP, uMPY, uMPZ, uMPP] = [0., 0., 0., meanp];
+	uEFGP[] -= uMP[];
+
+	
+	savevtk("VMS_Smago_"+ittime+".vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, uMPP, dataname="Velocity Pressure mean_pressure", order=fforder, bin=true);
+	*/
 }
