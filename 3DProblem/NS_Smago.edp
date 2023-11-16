@@ -29,7 +29,6 @@ macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 // FE spaces
 // Global Mesh
 fespace Vh4P2(Th, [P2, P2, P2, P2]); 
-fespace VhP2(Th, P2); 
 
 // Local Mesh
 fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
@@ -207,21 +206,4 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	
 	// (?) -> Other possibilities???
 	
-	/* // SAVING THE GLOBAL SOLUTION
-	Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP]; // For saving the solutions in time
-	Vh4P2L [aux, auxY, auxZ, auxP];
-	aux[] = uEF[] + Lev[];
-	// savevtk("Local_VMS_Smago_"+ittime+".vtu", Th, [aux, auxY, auxZ], auxP, dataname="Velocity Pressure", order=fforder, bin=true);
-	aux[] .*= MatAVh4P2.D;
-	real[int] auxv(uEFG[].n); auxv= 0;
-	auxv(mapVh4P2) = aux[];
-	mpiAllReduce(auxv, uEFG[], mpiCommWorld, mpiSUM);
-	real meanp = intN(Th)(uEFGP);
-	
-	Vh4P2 [uMP, uMPY, uMPZ, uMPP] = [0., 0., 0., meanp];
-	uEFGP[] -= uMP[];
-
-	
-	savevtk("VMS_Smago_"+ittime+".vtu", Th, [uEFG, uEFGY, uEFGZ], uEFGP, uMPP, dataname="Velocity Pressure mean_pressure", order=fforder, bin=true);
-	*/
 }

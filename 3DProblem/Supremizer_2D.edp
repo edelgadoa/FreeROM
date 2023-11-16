@@ -1,0 +1,123 @@
+//  run with MPI:  ff-mpirun -np 4 script.edp
+// NBPROC 4
+load "iovtk"
+
+int[int] fforder=[1,1,1,1];
+
+load "PETSc"
+verbosity = 0;
+
+//////////////////////////////////////////
+// Mesh creation 
+
+// Mesh paramaters
+int NN = 32;
+real x01 = -0.5, x11 = 0.5;
+real y01 = -0.5, y11 = 0.5;
+mesh Th, ThL;
+{
+	Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1); //global mesh
+
+	ThL = Th; // For the local mesh
+}
+
+
+//////////////////////////////////////////
+//FE Spaces
+int[int] labPeriodic = [2, 4, 1, 3];
+fespace VhP1per(Th, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1perL(ThL, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+
+fespace Vh2P2per(Th,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh2P2perL(ThL,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+
+
+//////////////////////////////////////////
+// Macros
+
+macro gradugradv(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//EOM
+macro div(u1,u2) (dx(u1)+dy(u2)) //EOM
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);
+	aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+	} //EOM
+
+macro dimension()2 //EOM
+include "macro_ddm.idp"
+
+Mat MatAVhP1per;
+int[int] mapVhP1per;
+
+Mat MatAVh2P2per;
+int[int] mapVh2P2per;
+
+
+int[int] myN2o;
+macro ThLN2O() myN2o //EOM
+macro ThLPeriodicity()labPeriodic //EOM
+buildDmesh(ThL);
+
+macro PkP1() P1 , periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]// EOM
+macro Pk2P2() [P2,P2] , periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]// EOM
+
+// For pressure
+mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
+{
+	createMat(ThL, MatAVhP1per, PkP1);
+}
+
+// For supremizer
+mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
+{
+	macro def(i) [i, iY] //
+	macro init(i) [i, i] // EOM
+	createMat(ThL, MatAVh2P2per, Pk2P2); 
+}
+
+//////////////////////////////////////////
+// Read Pressure Snapshot
+VhP1per Pressure;
+
+ifstream readPres("Pressure_snapshot.txt");
+readPres >> Pressure[];
+
+// plot(Pressure);
+
+VhP1perL PressureL; 
+PressureL[] = Pressure[](mapVhP1per); // Transform the pressure in the local mesh
+
+//////////////////////////////////////////
+// Computation of the supremizer
+Mat Asup = MatAVh2P2per; 
+real[int] bsup(Vh2P2perL.ndof);
+
+varf Supremizer([u,uY],[v,vY])= int2d(ThL)(gradugradv(u,uY,v,vY)) - int2d(ThL)(PressureL*div(v,vY));
+
+Asup = Supremizer(Vh2P2perL,Vh2P2perL);
+bsup = Supremizer(0,Vh2P2perL);
+
+set(Asup, sparams = "-ksp_type gmres -ksp_rtol 1e-10 -ksp_atol 1e-10 -mat_solver_type mumps"); // (?) -> How to change the parameters for not having difference depending on the number of processors
+
+Vh2P2perL [supEF, supEFY];
+supEF[] = Asup^-1*bsup; 
+
+
+//////////////////////////////////////////
+// Visualization on the Global mesh
+
+Vh2P2per [supEFG, supEFGY];
+
+
+reduceSolution(supEF, supEFG, MatAVh2P2per.D, mapVh2P2per); //it's a macro defined previously
+plot([supEFG, supEFGY]);
+// savevtk("Supremizer.vtk", ThL, [supEF, supEFY, 0], dataname="Velocity Pressure", order=fforder, bin=true);
+
+ofstream Savesol("Supremizer_"+mpisize+".txt");
+Savesol<<supEFG[];
+
