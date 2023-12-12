@@ -204,6 +204,6 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	uEF[] = MatAVh4P2^-1*bFinal; 
 	
 	
-	// (?) -> Other possibilities???
+	// (?) -> Other possibilities for sparams???
 	
 }
