@@ -72,3 +72,5 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 `git branch -r` -- muestra las ramas (si no son del tipo origin/nombre_branch es una rama LOCAL)
 
+`git hist` -- muestra el historial de commits
+
