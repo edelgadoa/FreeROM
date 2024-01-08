@@ -8,4 +8,4 @@
 module load freefem/4.9
 
 name=Offline
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "$name.edp" > "Terminal.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 "Offline.edp" > "Terminal.txt"

@@ -116,7 +116,7 @@ Vh2P2per [supEFG, supEFGY];
 
 reduceSolution(supEF, supEFG, MatAVh2P2per.D, mapVh2P2per); //it's a macro defined previously
 plot([supEFG, supEFGY]);
-// savevtk("Supremizer.vtk", ThL, [supEF, supEFY, 0], dataname="Velocity Pressure", order=fforder, bin=true);
+savevtk("Supremizer.vtk", ThL, [supEF, supEFY, 0], dataname="Velocity Pressure", order=fforder, bin=true);
 
 ofstream Savesol("Supremizer_"+mpisize+".txt");
 Savesol<<supEFG[];
