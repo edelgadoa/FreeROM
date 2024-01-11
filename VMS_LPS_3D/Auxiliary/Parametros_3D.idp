@@ -4,8 +4,6 @@
 // Parametros a usar durante la ejecucion del codigo
 
 // Parametros del PETSC
-int petsc = 1; //Para usar el paralelo = 1
-
 macro dimension()3 //EOM
 include "macro_ddm.idp";
 

@@ -80,7 +80,7 @@ VhP1dcL[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
 VhP1dcL[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
-real[int, int] MBaseV(Vh3P2L.ndof, Nbases), MBaseP(VhP2L.ndof, Nbases);
+real[int, int] MBaseV(MatAVh3P2.n, Nbases), MBaseP(MatAVhP2.n, Nbases);
 
 /////////////////////////////////////////
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
@@ -209,11 +209,20 @@ for (int i=0; i<Nbases; i++){
 	mpi(cout<<"GramSchmidt"<<endl;)
 	//include "GramSchmidt.idp"
 	
+	VhP2L[int] BasePi(i);
+	Vh3P2L[int] [BaseVi, BaseViY, BaseViZ](i);
+	real[int, int] MBaseVi(MatAVh3P2.n, i), MBasePi(MatAVhP2.n, i);
 	
+	for (int k=0;k<i;k++){
+		BasePi[k][] = BaseP[k][];
+		BaseVi[k][] = BaseV[k][];
+	}
 
-	// Almaceno en las matrices las Bases ortonormalizadas por columnas
-	MBaseV(:,i) = BaseV[i][];
-	MBaseP(:,i) = BaseP[i][];
+	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC)
+	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVi);
+	ChangeNumbering(MatAVhP2, BasePi, MBasePi);
+	//MBaseV(:,i) = BaseV[i][];
+	//MBaseP(:,i) = BaseP[i][];
 
 
 	// Actualizo las soluciones filtradas

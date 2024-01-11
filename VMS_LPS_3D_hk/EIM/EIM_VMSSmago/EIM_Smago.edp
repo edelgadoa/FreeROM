@@ -30,7 +30,7 @@ include "../../FOM/Levantamiento_3D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 
-readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 0); 
+readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 1); 
 int nSnapshots = vReynolds.n;
 
 VhP2[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);

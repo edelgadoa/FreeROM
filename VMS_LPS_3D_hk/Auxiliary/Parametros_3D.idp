@@ -4,37 +4,43 @@
 // Parametros a usar durante la ejecucion del codigo
 
 // Parametros del PETSC
-int petsc = 1; //Para usar el paralelo = 1
-
 macro dimension()3 //EOM
 include "macro_ddm.idp";
 
 load "PETSc";
 Mat MatAVh4P2;
 Mat MatAVh3P2;
-int[int] mapVh4P2, mapVh3P2;
+Mat MatAVhP1dc;
+Mat MatAVhP2;
+
+int[int] mapVh4P2, mapVhP1dc, mapVhP0, mapVhP2;
 
 string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
 
 
-
-if(petsc){	
-	int[int] myN2o;
-	macro ThLN2O() myN2o // EOM
-	buildDmesh(ThL);
-	mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);  
-	mapVh3P2 = restrict(Vh3P2L,Vh3P2,myN2o);
-	{
-		macro def(i) [i, iY, iZ, iP] //
-		macro init(i) [i, i, i, i] // EOM
-		createMat(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
-	}
-	{
-		macro def(i) [i, iY, iZ] //
-		macro init(i) [i, i, i] //EOM
-		createMat(ThL, MatAVh3P2, [P2, P2, P2]);
-	}	
+// Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
+mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);  
+mapVhP2 = restrict(VhP2L,VhP2,myN2o); 
+mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
+mapVhP0 = restrict(VhP0L, VhP0, myN2o);  
+{
+	macro def(i) [i, iY, iZ, iP] //
+	macro init(i) [i, i, i, i] // EOM
+	createMat(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
 }
+{
+	createMat(ThL, MatAVhP1dc, P1dc);
+	createMat(ThL, MatAVhP2, P2);
+}	
+{
+	macro def(i) [i, iY, iZ] //
+	macro init(i) [i, i, i] // EOM
+	createMat(ThL, MatAVh3P2, [P2, P2, P2]); 
+}
+
 
 // Parametros del modelo VMS-Smago con LPS en la presion
 real CS = 0.1; // Smago
@@ -43,20 +49,27 @@ real CS = 0.1; // Smago
 real cc1=16.; // tauk
 real cc2=sqrt(cc1);
 
-VhP0 mk,tKcod,tKTcod,tau;
+VhP0L mk,tKcod,tKTcod,tau;
 
-varf med(unused,v)=intN(Th)(1.*v);
-real[int] medk=med(0,VhP0);
-mk[]=sqrt(medk); 
+varf med(unused,v)=intN(ThL)(1.*v);
+real[int] medk=med(0,VhP0L);
+mk[] = sqrt(medk); 
 
-VhP0 hk = hTriangle;
-real hT = hk[].max; //El máximo de los diámetros de la malla
+VhP0L hk = hTriangle;
+real hT, hTL = hk[].max;
+mpiAllReduce(hTL, hT, mpiCommWorld, mpiMAX); //El máximo de los diámetros de la malla
+
+VhP0 mkG, hkG;
+hkG = hTriangle;
+varf medG(unused,v)=intN(Th)(1.*v);
+real[int] medkG=medG(0,VhP0);
+mkG[] = sqrt(medkG); 
 
 //Construyo el vector que bloqueará el residuo de SMAGO
 varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2, un1=1,un2=1,un3=1); 
 
-real[int] cc = CC(0,Vh4P2);
-for (int gf=0; gf<Vh4P2.ndof; gf++){
+real[int] cc = CC(0,Vh4P2L);
+for (int gf=0; gf<Vh4P2L.ndof; gf++){
 	cc(gf) = (cc(gf)>10^10) ? 0 : 1;
 } 
 
@@ -67,11 +80,11 @@ real epspen = 1e-8;
 real ERROR = 10; // inicializacion del error para el bucle
 
 int niterFE = 1500; 
-real epsFE = 1e-6;
+real epsFE = 1e-8;
 
 // Parametros para el problema ROM
 int niterRB = 2000;
-real epsRB = 1e-6; //parada de problema reducido
+real epsRB = 1e-8; //parada de problema reducido
 
 real epsGreedy = 5e-5;
 real epsEIM = 1e-5;

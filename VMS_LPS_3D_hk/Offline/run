@@ -5,4 +5,4 @@ read NP
 
 verbosity=0
 
-ff-mpirun -np $NP ./Offline.edp 
+ff-mpirun -np $NP ./Offline.edp -on_error_attach_debugger
