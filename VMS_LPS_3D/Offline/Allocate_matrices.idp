@@ -42,8 +42,8 @@ for (int i=0; i<Taubases; i++){
 }
 
 // Definicion de las Matrices Reducidas fijas
-real[int,int] DiffRB(2*Nbases, 2*Nbases), DivPRB(2*Nbases, 2*Nbases), PenRB(2*Nbases, 2*Nbases), 
-			  ConvLevRB(2*Nbases, 2*Nbases), DTRB(2*Nbases, 2*Nbases), StabhkRB(2*Nbases, 2*Nbases);
+real[int,int] DiffRB(Nbases, Nbases), DivPRB(Nbases, Nbases), PenRB(Nbases, Nbases), 
+			  ConvLevRB(Nbases, Nbases), DTRB(Nbases, Nbases), StabhkRB(Nbases, Nbases);
 			  
 DiffRB = 0;
 DivPRB = 0;
@@ -53,8 +53,8 @@ DTRB = 0;
 StabhkRB = 0;
 
 // Definicion de los segundos miembros
-real[int] bDiffRB(2*Nbases), bConvRB(2*Nbases), bDTRB(2*Nbases), bSmagoRBi(2*Nbases);			   
-real[int,int] bSmagoRB(Mbases, 2*Nbases);
+real[int] bDiffRB(Nbases), bConvRB(Nbases), bDTRB(Nbases), bSmagoRBi(Nbases);			   
+real[int,int] bSmagoRB(Mbases, Nbases);
 
 bDiffRB = 0;
 bConvRB = 0;

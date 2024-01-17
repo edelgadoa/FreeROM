@@ -79,7 +79,7 @@ Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 
 // LPS-pressure
 
-mpi(cout<<"lps matrix PEM"<<endl;)
+
 {
     for (int s=0; s<Taubases; s++){
         

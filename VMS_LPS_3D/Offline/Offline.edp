@@ -207,20 +207,20 @@ for (int i=0; i<Nbases; i++){
 	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
 	
 	mpi(cout<<"GramSchmidt"<<endl;)
-	//include "GramSchmidt.idp"
+	// include "GramSchmidt.idp"
 	
-	VhP2L[int] BasePi(i);
-	Vh3P2L[int] [BaseVi, BaseViY, BaseViZ](i);
-	real[int, int] MBaseVi(MatAVh3P2.n, i), MBasePi(MatAVhP2.n, i);
+	VhP2L[int] BasePi(i+1);
+	Vh3P2L[int] [BaseVi, BaseViY, BaseViZ](i+1);
+	real[int, int] MBaseVii(MatAVh3P2.n, i+1), MBasePii(MatAVhP2.n, i+1);
 	
-	for (int k=0;k<i;k++){
+	for (int k=0;k<=i;k++){
 		BasePi[k][] = BaseP[k][];
 		BaseVi[k][] = BaseV[k][];
 	}
-	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC)
-	ChangeNumbering(MatAVhP2, BasePi, MBasePi);
-	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVi);
+	
+	ChangeNumbering(MatAVhP2, BasePi, MBasePii);
+	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVii);
 
 	//MBaseV(:,i) = BaseV[i][];
 	//MBaseP(:,i) = BaseP[i][];
@@ -243,11 +243,14 @@ for (int i=0; i<Nbases; i++){
     BV[] = BaseV[i][];
 	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(BV,uu,v));
 	{
-		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
-		Mat ConvTemp(MatAVh3P2, TMP);
-        // ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
+		// matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
+		Mat ConvTemp = MatAVh3P2;
+        ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
 		ConvPEM[i] = ConvTemp; 
 	}
+	
+	// real antisim=int3d(ThL)(antisimetric(BV,BVY,BVZ,BaseV[i], BaseVY[i],BaseVZ[i],BaseV[i], BaseVY[i],BaseVZ[i]));
+    // mpi(cout<<"Antisimetric:"<<antisim<<endl;)
 	
 	mpi(cout<<"Matrices Offline"<<endl;)
 	include "MatricesOffline.idp"
