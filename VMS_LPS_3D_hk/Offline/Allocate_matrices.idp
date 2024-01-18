@@ -21,8 +21,8 @@ for (int i=0;i<Mbases;i++){
 	GradPM[i] = Aux(0:8,0:Nbases-1);
 }
 
-/*
-//Definicion de los arrays para calcular el tauk en el EIM de Tau
+
+//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO TENGO QUE VER LA NUMERACION
 real[int,int][int] NUK(Taubases), NGUK(Taubases);
 for (int i=0; i<Taubases; i++){
 	real [int,int] Aux (Nbases+1,Nbases+1);
@@ -40,7 +40,6 @@ for (int i=0; i<Taubases; i++){
 	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);
 }
-*/
 
 // Definicion de las Matrices Reducidas fijas
 real[int,int] DiffRB(Nbases, Nbases), DivPRB(Nbases, Nbases), PenRB(Nbases, Nbases), 
@@ -54,33 +53,32 @@ DTRB = 0;
 StabhkRB = 0;
 
 // Definicion de los segundos miembros
-real[int] bDiffRB(2*Nbases), bConvRB(2*Nbases), bDTRB(2*Nbases), bSmagoRBi(2*Nbases);			   
-// real[int,int] bSmagoRB(Mbases, 2*Nbases);
+real[int] bDiffRB(Nbases), bConvRB(Nbases), bDTRB(Nbases), bSmagoRBi(Nbases);			   
+real[int,int] bSmagoRB(Mbases, Nbases);
 
 bDiffRB = 0;
 bConvRB = 0;
 bDTRB = 0;
-//bSmagoRBi = 0;
-//bSmagoRB = 0;
+bSmagoRBi = 0;
+bSmagoRB = 0;
 
 
 // Definicion de Matrices y Tensores variables
-real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases);// StabPRB(Taubases);
+real[int,int][int] ConvRB(Nbases), SmagoRB(Mbases), StabPRB(Taubases);
 
 for (int k=0; k<Nbases; k++){
-	real[int,int] aux(Nbases, Nbases);
+	real[int,int] aux(2*Nbases, 2*Nbases);
 	aux = 0;
-	ConvRB[k] = aux(0:Nbases-1, 0:Nbases-1);
+	ConvRB[k] = aux(0:2*Nbases-1, 0:2*Nbases-1);
 }
 
 for (int k=0;k<Mbases;k++){
-	real[int,int] aux(Nbases,Nbases);
+	real[int,int] aux(2*Nbases,2*Nbases);
 	aux = 0;
-	SmagoRB[k] = aux(0:Nbases-1,0:Nbases-1);
+	SmagoRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
 }
-/*
 for (int k=0;k<Taubases;k++){
 	real[int,int] aux(2*Nbases,2*Nbases);
 	aux = 0;
 	StabPRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
-}*/
+}

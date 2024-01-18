@@ -147,6 +147,7 @@ for (int s=0; s<Taubases; s++){
 	real[int,int] StabPRBL = MBasePii'*LPSRBaux;
 	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
     StabPRB[s] = StabPRBG;
+	// mpi(cout<<StabPRBG<<endl;)
 }
 
 //
@@ -196,6 +197,7 @@ for (int s=0; s<Mbases; s++){
     GradPM[s] = Dtk;
 }
 
+// cout<<GradPMLev[0]<<endl;
 //
 //
 {
@@ -254,6 +256,8 @@ for (int s=0; s<Mbases; s++){
     	NGUK[s] += Nggk;
     }
 }
+//mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
+//mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
 //
 {
 	// Matrices para el EIM LPS (Funciones de base)
@@ -325,8 +329,8 @@ for (int s=0; s<Mbases; s++){
     }
 }
 //
-// mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
-// mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
+//mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
+//mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
 
 //mpi(cout<<"RHS"<<endl;)
 
@@ -367,4 +371,4 @@ for (int s=0; s<Mbases; s++){
 // 		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
 // }
 
-cout<<"bsmago"<<endl<<bSmagoRBG<<endl;
+//cout<<"bsmago"<<endl<<bSmagoRBG<<endl;
