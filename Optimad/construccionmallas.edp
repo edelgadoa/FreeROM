@@ -1,0 +1,27 @@
+
+int Nx1=100; 
+int Nx2=35;
+int Nx3=100;  
+
+
+real ha=(0.252735-0.12018)/49.;
+int paso=15;
+real alfa=0.12018+paso*ha;
+//alfa=0.160758;
+cout << "alfa" << alfa << endl;
+
+border fro5(t=pi/2,3*pi/2){x=2.144+0.144*cos(t); y=0.189+0.144*sin(t); label=1;}
+border fro1(t=2.144,2.144+0.8){x=t; y=0.045; label=1;}
+border fro3(t=0,1){x=2.944-t*(0.2); y=0.045+alfa+t*(0.288-alfa); label=1;}
+border fro2(t=0.045,alfa+0.045){x=2.944; y=t; label=1;}
+border fro4(t=2.744,2.144){x=t;y=0.333; label=1;}
+
+border frb1(t=1.8,3.044){x=t; y=0; label =5;}
+border frb2(t=0,0.4333){x=3.044; y=t; label=2;}
+border frb3(t=3.044,1.8){x=t; y=0.4333; label=3;}
+border frb4(t=0.4333,0){x=1.8; y=t;label =4;}
+//plot(frb1(2*Nx1)+frb2(Nx2)+frb3(Nx2)+frb4(Nx2)+fro1(-Nx3)+fro2(-Nx3)+fro3(-Nx3)+fro4(-Nx3)+fro5(-Nx3));
+
+mesh Thb=buildmesh(frb1(2*Nx1)+frb2(Nx2)+frb3(Nx2)+frb4(Nx2)+fro1(-Nx3)+fro2(-Nx3)+fro3(-Nx3)+fro4(-Nx3)+fro5(-Nx3));
+plot(Thb,wait=1);
+savemesh(Thb,"malla160758.am_fmt");
