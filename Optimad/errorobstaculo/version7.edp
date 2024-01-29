@@ -1,7 +1,7 @@
-load "Element_P4"
-load "Element_P3"
-load "Element_P3dc"
-load "UMFPACK64"
+//load "Element_P4"
+//load "Element_P3"
+//load "Element_P3dc"
+//load "UMFPACK64"
 
 
 macro grad(u) [dx(u),dy(u)] //
@@ -88,7 +88,7 @@ real dt  = 1.e-3/2;
 real dtt = 1/dt;
 
 real epsilon1=1.e-8;
-real epsilon2=1.e-0;
+real epsilon2=1.e-4;
 int itmax=50000.;
 real error;
 
@@ -242,8 +242,9 @@ cout << "c2=" << c2 << endl;
 cout << "c3= " << c3 << endl;
 cout << "c4=" << c4 << endl; 
 */
-//plot([u1,u2],wait=1, cmm=" velocidad ");
-//plot(p,wait=1,nbiso=100, cmm=" presion ");
+//plot([u1,u2],wait=0, cmm=" velocidad ");
+//plot(p,wait=0,nbiso=100, cmm=" presion ");
+plot(u1,wait=0, cmm=" velocidad horizontal ");
 {
 ofstream ftxt(sfxt,append);
 ftxt<<error << endl;
