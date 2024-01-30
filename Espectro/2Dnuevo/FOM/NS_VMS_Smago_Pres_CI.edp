@@ -7,7 +7,7 @@
 /////////////////////////////////////////
 
 // Codigo para resolver el problema de EF de VMS-Smago. 
-// Elemento Finito P2-P2 (no estable) en vel-pres 
+// Elemento Finito P2-P1 (no estable) en vel-pres 
 
 // Cargamos librerias
 load "iovtk" 
@@ -15,16 +15,16 @@ load "iovtk"
 // Cargamos macros
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/macro_ddm.idp"
+// include "../Auxiliary/macro_ddm.idp"
 
 // Creamos la malla
 include "../Auxiliary/Malla.idp"
 
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
-
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
@@ -78,8 +78,8 @@ VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
 VhP2per uprev, uprevY;
 VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-T0 = 15;
-TF = 30;
+T0 = 0;
+TF = 15;
 
 Reynolds = 8500;
 [uEF, uEFY,uEFP] = [uEF0,uEF0Y,0];
@@ -97,4 +97,6 @@ include "FE_VMS_2D.idp"
 
 // Dibujamos la solucion
 plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
+uprev = uEF^2+uEFY^2;
+plot(uprev, cmm="Modulo presiomn para Re="+Reynolds);
 plot(uEFP, cmm="FE pres para Re="+Reynolds);

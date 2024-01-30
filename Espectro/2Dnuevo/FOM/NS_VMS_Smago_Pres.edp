@@ -21,11 +21,11 @@ include "../Auxiliary/search.idp"
 // Definimos los parametros a usar
 include "../Auxiliary/Parametros_2D.idp"
 
-// Creamos la malla
-include "../Auxiliary/Malla.idp"
-
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_2D.idp"
