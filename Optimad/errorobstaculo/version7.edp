@@ -10,7 +10,7 @@ macro nor(u,w) (dx(u)-dx(w))^2+(dy(u)-dy(w))^2 //
 macro norm1(u)(dx(u)^2+dy(u)^2) //
 
 
-real caso=3;
+real caso=1;
 string solux="cx"+caso+".txt";
 string soluy="cy"+caso+".txt";
 
@@ -81,10 +81,10 @@ func Pk1dc=P1dc;
  
 
 
-real reynoldsNew = 2*1.e+6;
+real reynoldsNew = 1.e+3;
 
 real epsError = 1.e-4;
-real dt  = 1.e-3/2;
+real dt  = 1.e-1/2;
 real dtt = 1/dt;
 
 real epsilon1=1.e-8;
@@ -153,7 +153,7 @@ cout << " Grados de libertad  pres" << Vh.ndof<< endl;
 
  varf va([u1,u2,p],[v1,v2,q]) =
     int2d(Th,qforder=qfo)(u1*v1+u2*v2+ grad(u1)'* grad(v1) * nu *dt+  grad(u2)'* grad(v2) * nu *dt
-	       - dt*div(u1,u2)*q - dt*div(v1,v2)*p - 1e-6*dt*p*q )
+	       - dt*div(u1,u2)*q - dt*div(v1,v2)*p - 1e-8*grad(p)'*grad(q) )
     + int2d(Th,qforder=qfo)(dt*f1*v1+dt*f2*v2); 
   
   matrix A= va(Wh,Wh,solver=UMFPACK);
@@ -229,46 +229,46 @@ u1[]=AT^-1*bt;
 //plot(u1,wait=1,value=1);
 u1r=u1;
 u2r=u2; 
-error=int2d(Thb,qforder=qfo)(nor(u1r,w1r)+nor(u2r,w2r))/int2d(Th)(norm1(u1r)+norm1(u2r));
+error=int2d(Thb,qforder=qfo)(nor(u1r,w1r)+nor(u2r,w2r))/int2d(Thb)(norm1(u1r)+norm1(u2r));
 error=sqrt(error)*100; 
-real c1=-int1d(Th,1)(-p*N.x+nu*(dx(u1)*N.x+dy(u2)*N.x)); 
-real c2=-int1d(Th,1)(-p*N.y+nu*(dx(u1)*N.y+dy(u2)*N.y)); 
-real c3=int1d(Th,1)(-p*N.x);
-real c4=int1d(Th,1)(-p*N.y);
-
-cout << "c1= " << c1 << endl; 
-cout << "c2=" << c2 << endl; 
+// real c1=-int1d(Th,1)(-p*N.x+nu*(dx(u1)*N.x+dy(u2)*N.x));
+// real c2=-int1d(Th,1)(-p*N.y+nu*(dx(u1)*N.y+dy(u2)*N.y));
+// real c3=int1d(Th,1)(-p*N.x);
+// real c4=int1d(Th,1)(-p*N.y);
+//
+// cout << "c1= " << c1 << endl;
+// cout << "c2=" << c2 << endl;
 /*
 cout << "c3= " << c3 << endl;
 cout << "c4=" << c4 << endl; 
 */
 //plot([u1,u2],wait=0, cmm=" velocidad ");
 //plot(p,wait=0,nbiso=100, cmm=" presion ");
-plot(u1,wait=0, cmm=" velocidad horizontal ");
-{
-ofstream ftxt(sfxt,append);
-ftxt<<error << endl;
-}
+//plot(u1,wait=0, cmm=" velocidad horizontal ");
+//{
+//ofstream ftxt(sfxt,append);
+//ftxt<<error << endl;
+//}
 
 cout << "Numero de iteraciones=" << it+1 << " " << error <<  endl; 
-
+/*
 if (error < epsilon2) // ||(abs(erp)< 1.e-4))	
 { 
-	/*
+	
 plot(Th,wait=1);
 //plot([u1,u2],wait=1, cmm="velocidad");
 plot(u1,wait=1, cmm=" solucion aproximada 1 " );
 plot(u2,wait=1, cmm=" solucion aproximada 2 " );
-//plot(p,wait=1, cmm=" solucion aproximada 3 " ); */
+//plot(p,wait=1, cmm=" solucion aproximada 3 " ); 
 w1=u1;
 w2=u2;
 w1r=u1r;
 w2r=u2r;
 pr=p;
 
-/*
+
 plot([u1,u2],wait=1, cmm=" velocidad ");
-plot(p,wait=1,nbiso=100, cmm=" presion "); */
+plot(p,wait=1,nbiso=100, cmm=" presion "); 
 
 {
 ofstream ftxt(veloh,append);
@@ -282,6 +282,7 @@ ftxt<<u2r[];
 ofstream ftxt(pres,append);
 ftxt<<pr[];
 }
+*/
 
 /*
 plot(Thb,wait=1);
@@ -298,10 +299,10 @@ plot(pr,wait=1,nbiso=100, cmm=" presion ");
 // Calculo de los coeficientes
 real c1=-int1d(Th,1)(-p*N.x+nu*(dx(u1)*N.x+dy(u2)*N.x)); 
 real c2=-int1d(Th,1)(-p*N.y+nu*(dx(u1)*N.y+dy(u2)*N.y)); 
-/*
-cout << "c1 final" << c1 << endl; 
-cout << "c2 final" << c2 << endl; 
-*/
+
+cout << "c1=" << c1 << endl; 
+cout << "c2=" << c2 << endl; 
+
 {
 ofstream ftxt(solux,append);
 ftxt<<c1 <<endl;
@@ -313,20 +314,20 @@ ftxt<<c2 <<endl;
 
 
 
-break;
-}
+//break;
+//}
 
-if((it%1000)==0)
-{
-	Vh u,v;
-	solve corriente(u,v)=int2d(Th)(dx(u)*dx(v)+dx(u)*dx(v))-int2d(Th)(dx(u1)*v+dy(u2)*v)+on(1,2,3,u=0); 
-	plot(u,wait=1, cmm="corriente");
-	plot(u1,wait=1, cmm="horizontal");
-	plot(u2,wait=1, cmm="vertical");
-	plot([u1,u2],wait=1, cmm=" velocidad ");
-	plot(p,wait=1, cmm=" presion ");
-	
-}
+// if((it%50)==0)
+// {
+//     Vh u,v;
+//     solve corriente(u,v)=int2d(Th)(dx(u)*dx(v)+dx(u)*dx(v))-int2d(Th)(dx(u1)*v+dy(u2)*v)+on(1,2,3,u=0);
+//     plot(u,wait=0, cmm="corriente");
+//     plot(u1,wait=0, cmm="horizontal");
+//     plot(u2,wait=0, cmm="vertical");
+//     plot([u1,u2],wait=0, cmm=" velocidad ");
+//     plot(p,wait=0, cmm=" presion ");
+//
+// }
 
 // Actualización de la velocidad de convección 
 w1=u1;
@@ -335,14 +336,14 @@ w1r=u1r;
 w2r=u2r; 
 //
 // Final de iteración en tiempo
-if(it==itmax-1)
-{
-ofstream ftxt(solux,append);
-ftxt << u1;
-plot([u1,u2],wait=1);
-plot(p,wait=1,nbiso=100);
+// if(it==itmax-1)
+// {
+// ofstream ftxt(solux,append);
+// ftxt << u1;
+// plot([u1,u2],wait=1);
+// plot(p,wait=1,nbiso=100);
 
-}
+//}
 //}
 
 }
