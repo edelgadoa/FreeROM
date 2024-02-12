@@ -20,7 +20,7 @@ Mat PenPEM = MatAVhP2;
 Mat DivPPEM;
 Mat ConvLevPEM = MatAVh3P2;
 Mat DTPEM = MatAVh3P2;
-
+Mat StabhkPEM = MatAVhP2;
 varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
 {
 	DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
@@ -93,7 +93,7 @@ matrix SPPEM2 = StabhK(VhP1dcL, VhP1dcL);
 matrix StabhkPEML = FiltroX + FiltroY;
 StabhkPEML += FiltroZ;
 
-Mat StabhkPEM(MatAVhP2, StabhkPEML);
+StabhkPEM=StabhkPEML;
 
 
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));

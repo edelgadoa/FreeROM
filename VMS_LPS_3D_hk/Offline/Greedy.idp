@@ -8,7 +8,7 @@ real[int] TauG(Ntrain), DeltaG(Ntrain), ResG(Ntrain);
 //, ResVel(Ntrain), ResPres(Ntrain); //De  momento no mido los residuos de vel y pres
 
 // Inicializamos las matrices para el problema reducido
-matrix DiffRBi, DivPRBi, DivPRBTi, ConvLRBi, PenRBi, DTRBi;
+matrix DiffRBi, DivPRBi, DivPRBTi, ConvLRBi, PenRBi, DTRBi, StabhkRBi;
 real[int,int] ConvRBi(I, I), SmagoRBi(I, I), StabPRBi(I, I);
 			   			   			 			  
 // Inicializamos los segundos miembros
@@ -21,7 +21,9 @@ DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
 ConvLRBi = ConvLRBG;
 PenRBi = PenRBG;
 DTRBi = DTRBG;
+StabhkRBi = StabhkRBG;
 
+cout<<StabhkRBG<<endl;
 
 //
 // // Inicializamos las matrices para el problema reducido

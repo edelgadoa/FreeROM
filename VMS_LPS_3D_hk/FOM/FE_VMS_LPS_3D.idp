@@ -78,7 +78,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	uEFp[] = uEF[];
 	
 	//real timeLS = clock();
-	solvesystemLPS(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
+	solvesystem(MFinal, bFinal, uEF);  // Este macro está en Auxiliary/Macros_3D.idp
 	//timeLS = clock() - timeLS;
 	//mpi(cout<<"Tiempo LS: "<<timeLS<<endl;)
 	

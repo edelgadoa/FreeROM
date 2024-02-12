@@ -211,16 +211,20 @@ for (int i=0; i<Nbases; i++){
 	
 	VhP2L[int] BasePi(i+1);
 	Vh3P2L[int] [BaseVi, BaseViY, BaseViZ](i+1);
-	real[int, int] MBaseVii(MatAVh3P2.n, i+1), MBasePii(MatAVhP2.n, i+1);
+	Vh4P2L[int] [Basei, BaseiY, BaseiZ, BaseiP](i+1);
+	real[int, int] MBaseVii(MatAVh3P2.n, i+1), MBasePii(MatAVhP2.n, i+1), MBaseii(MatAVh4P2.n, i+1);
 	
 	for (int k=0;k<=i;k++){
 		BasePi[k][] = BaseP[k][];
 		BaseVi[k][] = BaseV[k][];
+	 	[Basei[k], BaseiY[k], BaseiZ[k], BaseiP[k]] = [BaseVi[k], BaseViY[k], BaseViZ[k], BasePi[k]];
 	}
+
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC)
 	
 	ChangeNumbering(MatAVhP2, BasePi, MBasePii);
 	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVii);
+	ChangeNumbering(MatAVh4P2, Basei, MBaseii);
 
 	//MBaseV(:,i) = BaseV[i][];
 	//MBaseP(:,i) = BaseP[i][];

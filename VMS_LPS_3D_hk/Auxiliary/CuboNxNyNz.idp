@@ -44,4 +44,4 @@ mesh3 Th, ThL;
 	ThL = Th; // For the local mesh
 }
 
-plot(Th);
+// plot(Th);

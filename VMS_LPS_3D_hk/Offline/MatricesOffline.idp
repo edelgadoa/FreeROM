@@ -43,28 +43,28 @@ include "Allocate_matrices_local.idp"
 // }
 
 real[int,int] DiffRBaux(DiffPEM.n, MBaseVii.m), DivPRBaux(DiffPEM.n, MBaseVii.m), ConvLRBaux(ConvLevPEM.n, MBaseVii.m), 
-			  DTRBaux(DTPEM.n, MBaseVii.m), PenRBaux(PenPEM.n, MBasePii.m);// StabhkRBaux(StabhkPEM.n, MBaseP.m);
+			  DTRBaux(DTPEM.n, MBaseVii.m), PenRBaux(PenPEM.n, MBasePii.m), StabhkRBaux(StabhkPEM.n, MBaseP.m);
 
 MatMatMult(DiffPEM, MBaseVii, DiffRBaux);
 MatMatMult(DivPPEM, MBaseVii, DivPRBaux);
 MatMatMult(ConvLevPEM, MBaseVii, ConvLRBaux);
 MatMatMult(DTPEM, MBaseVii, DTRBaux);
 MatMatMult(PenPEM, MBasePii, PenRBaux);
-//MatMatMult(StabhkPEM, MBaseP, StabhkRBaux);
+MatMatMult(StabhkPEM, MBasePii, StabhkRBaux);
 
 real[int,int] DiffRBL = MBaseVii'*DiffRBaux;
 real[int,int] DivPRBL = MBasePii'*DivPRBaux;
 real[int,int] ConvLRBL = MBaseVii'*ConvLRBaux;
 real[int,int] DTRBL = MBaseVii'*DTRBaux;
 real[int,int] PenRBL = MBasePii'*PenRBaux;
-//real[int,int] StabhkRBL = MBaseP'*StabhkRBaux;
+real[int,int] StabhkRBL = MBasePii'*StabhkRBaux;
 
 mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(ConvLRBL, ConvLRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
-//mpiAllReduce(StabhkRBL, StabhkRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
 
 // DiffRB(0:i,0:i) = DiffRBG(0:i,0:i);
@@ -141,14 +141,14 @@ for (int s=0; s<Mbases; s++){
 }
 
 
-for (int s=0; s<Taubases; s++){
-    real[int, int] LPSRBaux(StabPRB[s].n, MBaseVii.m), StabPRBG(i+1, i+1);
-	MatMatMult(StabPPEM[s], MBasePii, LPSRBaux);
-	real[int,int] StabPRBL = MBasePii'*LPSRBaux;
-	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
-    StabPRB[s] = StabPRBG;
-	// mpi(cout<<StabPRBG<<endl;)
-}
+// for (int s=0; s<Taubases; s++){
+//     real[int, int] LPSRBaux(StabPRB[s].n, MBaseVii.m), StabPRBG(i+1, i+1);
+// 	MatMatMult(StabPPEM[s], MBasePii, LPSRBaux);
+// 	real[int,int] StabPRBL = MBasePii'*LPSRBaux;
+// 	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
+//     StabPRB[s] = StabPRBG;
+// 	// mpi(cout<<StabPRBG<<endl;)
+// }
 
 //
 // // LPS
@@ -336,6 +336,7 @@ for (int s=0; s<Mbases; s++){
 
 // Segundo miembro
 real[int] LevVB, FLevVB;
+
 ChangeNumbering(MatAVh3P2, LevV[], LevVB);
 ChangeNumbering(MatAVh3P2, FLev[], FLevVB); //Esto solo lo debo hacer una vez. Hay que cambiarlo de sitio.
 

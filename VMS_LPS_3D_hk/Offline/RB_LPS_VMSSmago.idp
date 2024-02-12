@@ -13,7 +13,7 @@ MRBV = nuRB * DiffRBi;
 MRBV += (1./dt) * DTRBi;
 MRBV += ConvLRBi;
 MRBP = PenRBi;	
-// MRB += StabhkRBi;
+MRBP += StabhkRBi;
 
 // bDiffRBi = bDiffRBG(0:2*I-1);
 
@@ -64,37 +64,37 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		bSmagoRBi(s) = sigmaEIMS'*bSmagoRBG(0:Mbases-1,s);
 	}
 	
-	// Matriz LPS
-	real[int] uN1(I+1), sigmaEIMTau(Taubases), bEIMTau(Taubases);
-	real[int,int] CuN(I+1,I+1);
-	uN1(0) = 1;
-	uN1(1:I) = uN;
-	CuN = uN1*uN1';
-	for (int s=0; s<Taubases; s++){
-		real Nuk, Nguk;
-		Nuk = 0; Nguk = 0;
-		real[int, int] Nuki(I+1,I+1), Nguki(I+1,I+1), Auxi(I+1,I+1);
-		
-		Nuki = NUK[s](0:I, 0:I);
-		Auxi = CuN.*Nuki;
-		Nuk = sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
-		
-		Nguki = NGUK[s](0:I,0:I);
-		Auxi = CuN.*Nguki;
-		Nguk = (CS*hkG[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
-
-		bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTau(s))^2 + cc2*Nuk/hkG[](PuntosMTau(s)))^-1;	
-	}
-	
-	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-	cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<bEIMTau<<endl;
-	for (int s=0; s<Taubases; s++){
-		real[int,int] StabPRBN(I, I);
-		StabPRBN = StabPRB[s];
-		StabPRBN = sigmaEIMTau(s)*StabPRBN;
-		StabPRBi += StabPRBN; 
-	}
-	mpi(cout<<"LPS:"<<endl<<StabPRBi<<endl;)
+	// // Matriz LPS
+	// real[int] uN1(I+1), sigmaEIMTau(Taubases), bEIMTa
+	// real[int,int] CuN(I+1,I+1);
+	// uN1(0) = 1;
+	// uN1(1:I) = uN;
+	// CuN = uN1*uN1';
+	// for (int s=0; s<Taubases; s++){
+	// 	real Nuk, Nguk;
+	// 	Nuk = 0; Nguk = 0;
+	// 	real[int, int] Nuki(I+1,I+1), Nguki(I+1,I+1),
+	//
+	// 	Nuki = NUK[s](0:I, 0:I);
+	// 	Auxi = CuN.*Nuki;
+	// 	Nuk = sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
+	//
+	// 	Nguki = NGUK[s](0:I,0:I);
+	// 	Auxi = CuN.*Nguki;
+	// 	Nguk = (CS*hkG[](PuntosMTau(s)))^2*sqrt(Auxi.
+	//
+	// 	bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTa
+	// }
+	//
+	// sigmaEIMTau = MEIMTau^-1*bEIMTau;
+	// cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<bEIMT
+	// for (int s=0; s<Taubases; s++){
+	// 	real[int,int] StabPRBN(I, I);
+	// 	StabPRBN = StabPRB[s];
+	// 	StabPRBN = sigmaEIMTau(s)*StabPRBN;
+	// 	StabPRBi += StabPRBN;
+	// }
+	// mpi(cout<<"LPS:"<<endl<<StabPRBi<<endl;)
 	// mpi(cout<<"--------------------------------"<<endl;)	
 	
 	// Segundos miembro dt
@@ -108,7 +108,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
 	MRBFV += SmagoRBi; 
-	MRBFP += StabPRBi;
+	// MRBFP += StabPRBi;
 	
 	//mpi(cout<< MRBF<<endl;)
 	
