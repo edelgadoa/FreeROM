@@ -10,7 +10,7 @@ macro nor(u,w) (dx(u)-dx(w))^2+(dy(u)-dy(w))^2 //
 macro norm1(u)(dx(u)^2+dy(u)^2) //
 
 
-real caso=1;
+real caso=2;
 string solux="cx"+caso+".txt";
 string soluy="cy"+caso+".txt";
 
@@ -81,15 +81,15 @@ func Pk1dc=P1dc;
  
 
 
-real reynoldsNew = 1.e+3;
+real reynoldsNew = 2.e+6;
 
 real epsError = 1.e-4;
-real dt  = 1.e-1/2;
+real dt  = 1.e-3/2;
 real dtt = 1/dt;
 
 real epsilon1=1.e-8;
 real epsilon2=1.e-4;
-int itmax=50000.;
+int itmax=20001;
 real error;
 
 
