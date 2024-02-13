@@ -18,7 +18,7 @@ real L=1;
 real H=3;
 real ha=(0.252735-0.12018)/10.;
 
-string c1total="c2_completo.txt";
+string c1total="c1_completo.txt";
 string c2total="c2_completo.txt";
 {
     ofstream ftxt3(c1total);
