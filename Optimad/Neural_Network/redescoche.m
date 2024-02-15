@@ -9,12 +9,12 @@ nrandom = 10000; %numero de puntos aleatorios para verificar la red
 
 
 [X,Y]=creacion(nt,na);
-X=X'; Y=Y(:,3:4)';
+X=X'; Y=Y(:,1:2)';
 
 alphas = linspace(alpha_min, alpha_max, nalpha)
 X_Data = [];
 for k=1:nalpha
-    X_aux = [X(1, 1:100:nt), ones(1, nt/100)*alphas(k)];
+    X_aux = [X(1, 1:1000:nt), ones(1, nt/1000)*alphas(k)];
     X_Data = [X_Data ; X_aux];
 end
 
