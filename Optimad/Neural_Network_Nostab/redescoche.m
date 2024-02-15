@@ -1,24 +1,6 @@
 function redescoche
-%Datos del problema
-nt = 18000;
-na = 5; %numero de alphas calculados
-alpha_min = 0.12018;
-alpha_max = 0.199713;
-nalpha = 100; %numero de alphas a interpolar
-nrandom = 10000; %numero de puntos aleatorios para verificar la red
-
-
-[X,Y]=creacion(nt,na);
+[X,Y]=creacion(18000,3);
 X=X'; Y=Y(:,3:4)';
-
-alphas = linspace(alpha_min, alpha_max, nalpha)
-X_Data = [];
-for k=1:nalpha
-    X_aux = [X(1, 1:100:nt), ones(1, nt/100)*alphas(k)];
-    X_Data = [X_Data ; X_aux];
-end
-
-
 net = fitnet([20, 30, 20]);
 % view(net);
 [net, entre] = train(net,X,Y); 
@@ -27,16 +9,13 @@ Real_testY = Y(:,entre.testInd);
 Pred_testY = net(testX); 
 perf = mse(net,Real_testY, Pred_testY)
 
-rand_points = randi(nt*na,nrandom,1);
+rand_points = randi(3*18000,10000,1);
 X_test = X(:,rand_points);
-Y_test = Y(:,rand_points); 
-%Pred_test = net(X_test); 
+Y_test= Y(:,rand_points); 
+Pred_test = net(X_test); 
 perf = mse(net, Y_test, Pred_test)
 plotregression(Y_test(1,:),Pred_test(1,:))
 
-
-%Calculo la media de los coeficientes para los datos deseados
-Pred_Test = net
 % T=table(X_test(1,:)',X_test(2,:)',Pred_test(1,:)',Pred_test(2,:)',Pred_test(3,:)',Pred_test(4,:)');
 % T.Properties.VariableNames={'Time','Angle','Drag Coefficient','Lift Coefficient', 'Mean Drag','Mean Lift'}
 % filename = 'patientdata.xlsx';

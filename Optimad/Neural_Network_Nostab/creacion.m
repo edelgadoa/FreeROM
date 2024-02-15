@@ -1,6 +1,5 @@
 function [X,Y]=creacion(nt,na)
-%alpha = linspace(0.12018,0.212968,na); %Cuando tengamos todos los alphas calculados, cambiamos esto
-alpha = [0.12018, 0.133435, 0.146691, 0.186457, 0.199713];
+alpha = linspace(0.12018,0.186457,na); %Cuando tengamos todos los alphas calculados, cambiamos esto
 t = linspace(1,10,nt);
 for i=1:na
     k = (i-1)*nt;
@@ -13,8 +12,8 @@ for i=1:na
     k = (i-1)*nt;
     C1 = load("c1_"+num2str(alpha(i),6)+".txt"); 
     C2 = load("c2_"+num2str(alpha(i),6)+".txt");
-    %(abs(C1)>1e3) = 0;
-    %C2(abs(C2)>1e3) = 0;% mean(C1(imax-9:2:imax+9));
+    C1(abs(C1)>1e3) = 0;
+    C2(abs(C2)>1e3) = 0;% mean(C1(imax-9:2:imax+9));
     
     Y(k+1:k+nt,1) = C1;
     Y(k+1:k+nt,2) = C2;
