@@ -1,4 +1,4 @@
-function redescoche
+function [net]=redescoche
 
 %Datos del problema
 nt = 18000;
@@ -15,13 +15,14 @@ X=X'; Y=Y(:,3:4)';
 
 alphas = linspace(alpha_min, alpha_max, nalpha);
 X_Data = [];
+X(1, [1:1000:nt, nt])
 for k=1:nalpha
-    X_aux = [X(1, 1:1000:nt); ones(1, nt/1000)*alphas(k)];
+    X_aux = [X(1, [1:1000:nt, nt]); ones(1, nt/1000+1)*alphas(k)];
     X_Data = [X_Data X_aux];
 end
 
-net = fitnet([20, 30, 20]);
-
+%net = fitnet([20, 30, 20]);
+net = fitnet([3]);
 % view(net);
 [net, entre] = train(net,X,Y); 
 testX = X(:,entre.testInd); 
