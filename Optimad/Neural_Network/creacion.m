@@ -1,6 +1,6 @@
 function [X,Y]=creacion(nt,na)
 %alpha = linspace(0.12018,0.212968,na); %Cuando tengamos todos los alphas calculados, cambiamos esto
-alpha = [0.12018, 0.133435, 0.146691, 0.186457, 0.199713, 0.239479];
+alpha = [0.12018, 0.146691, 0.186457, 0.199713, 0.239479];
 t = linspace(1,10,nt);
 for i=1:na
     k = (i-1)*nt;
