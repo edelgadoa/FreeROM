@@ -250,8 +250,8 @@ for (int paso=0; paso<10; paso++){
 
         time += dt;
         
-        if(it%20==0){
-            savevtk("Solution_"+alpha+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
+        if(it==itmax){
+            savevtk("Solution_"+alpha+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
         }
     }
 }
