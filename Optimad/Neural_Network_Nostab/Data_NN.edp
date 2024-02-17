@@ -11,9 +11,9 @@ macro nor(u,w) (dx(u)-dx(w))^2+(dy(u)-dy(w))^2 //
 macro norm1(u)(dx(u)^2+dy(u)^2) //
 
 
-int Nx1=100; 
-int Nx2=35;
-int Nx3=100;  
+int Nx1=70; 
+int Nx2=30;
+int Nx3=50;  
 real L=1;
 real H=3;
 real ha=(0.252735-0.12018)/10.;
@@ -26,11 +26,11 @@ string c2total="c2_completo.txt";
 }
 
 int qfo = 10; // order of the Quadature Form. 
-func Pk = P2; 
+func Pk = P1b; 
 func Pk1 = P1;
 func Pk1dc = P1dc;
 
-
+real viscosity = 1.51037e-5;
 
 real dt  = 1.e-3/2;
 real dtt = 1/dt;
@@ -38,14 +38,10 @@ int itmax = 20001;
 
 real cs=0.18*0.18;
 
-real U0 = 0.4;
+real U0 = 40;
 func inlet =((U0/0.01393)*y)*(y<0.01393)+U0*(y>=0.01393);
 
-real viscosity = 1.51037e-5;
-
-real reynoldsNew = U0/viscosity; //2.e6;
-
-cout<<"Reynolds = " << reynoldsNew<<endl;
+real reynoldsNew = U0/viscosity; //2.6e+6; //2.e6;
 
 real velMaxima = U0;
 
@@ -68,19 +64,31 @@ for (int paso=0; paso<10; paso++){
     }
 
     //Marco total 
+    //Marco total 
     border fr11(t=0,4){x=t; y=0; label =5;}
     border fr12(t=4,9.2){x=t; y=0; label =5;}
     border fr2(t=0,1.393){x=9.2; y=t; label=2;}
-    border fr3(t=9.2,0){x=t; y=1.393; label=3;}
-    border fr4(t=1.393,0){x=0; y=t; label=4;}
+    border fr31(t=9.2,4){x=t; y=1.393; label=3;}
+    border fr32(t=4,0){x=t; y=1.393; label=3;}
+    border fr41(t=1.393,0.1){x=0; y=t; label=4;}
+    border fr42(t=0.1,0){x=0; y=t; label=4;}
 
 
+    // Definir la curva de Bézier a la izquierda
 
-    border fro5(t=pi/2,3*pi/2){x=2.144+0.144*cos(t); y=0.189+0.144*sin(t); label=1;}
+    real px1 = 2.144; real px2 = 2; real px3=2; real px4=2.144;
+    real py1 = 0.045; real py2=0.045; real py3=0.333; real py4=0.333;
+    
+
+    border bezier(t=0,1){x=(1-t)^3*px1+3*(1-t)^2*t*px2+3*(1-t)*t^2*px3+t^3*px4;
+                         y=(1-t)^3*py1+3*(1-t)^2*t*py1+3*(1-t)*t^2*py3+t^3*py4; label=1;}
+    border fro5(t=pi/2,3*pi/2){x=2.144+0.144*cos(t); y=0.189+0.072*sin(t); label=1;}
     border fro1(t=2.144,2.144+0.8){x=t; y=0.045; label=1;}
     border fro3(t=0,1){x=2.944-t*(0.2); y=0.045+alpha+t*(0.288-alpha); label=1;}
     border fro2(t=0.045,alpha+0.045){x=2.944; y=t; label=1;}
     border fro4(t=2.744,2.144){x=t;y=0.333; label=1;}
+    
+    // plot(bezier(20)+fro1(2)+fro3(2)+fro2(2)+fro4(2), dim=2);
 
     border frb1(t=1.8,3.044){x=t; y=0; label =5;}
     border frb2(t=0,0.4333){x=3.044; y=t; label=2;}
@@ -88,19 +96,18 @@ for (int paso=0; paso<10; paso++){
     border frb4(t=0.4333,0){x=1.8; y=t;label =4;}
     //plot(frb1(2*Nx1)+frb2(Nx2)+frb3(Nx2)+frb4(Nx2)+fro1(-Nx3)+fro2(-Nx3)+fro3(-Nx3)+fro4(-Nx3)+fro5(-Nx3));
 
-    mesh Thb = buildmesh(frb1(2*Nx1)+frb2(Nx2)+frb3(Nx2)+frb4(Nx2)+fro1(-Nx3)+fro2(-Nx3)+fro3(-Nx3)+fro4(-Nx3)+fro5(-Nx3));
+    mesh Thb = buildmesh(frb1(2*Nx1)+frb2(Nx2)+frb3(Nx2)+frb4(Nx2)+fro1(-Nx3)+fro2(-Nx3)+fro3(-Nx3)+fro4(-Nx3)+bezier(Nx3));
 
     //savemesh(Thb,"malla.am_fmt");
 
     //mesh Thb=buildmesh(fro1(Nx3)+fro2(Nx3)+fro3(Nx3)+fro4(Nx3)+fro5(Nx3)); 
     //plot(Thb, wait=1); 
 
-    mesh Th=buildmesh(fr11(4*Nx1)+fr12(Nx1)+fr2(Nx2)+fr3(Nx2)+fr4(Nx2)+fro1(-3*Nx3)+fro2(-3*Nx3)+fro3(-3*Nx3)+fro4(-3*Nx3)+fro5(-3*Nx3));
-    //plot(Th, wait=1);  
+    mesh Th=buildmesh(fr11(4*Nx1)+fr12(2*Nx1)+fr2(Nx2)+fr32(2*Nx2)+fr31(Nx3)+fr41(Nx2)+fr42(7)+fro1(-3*Nx3)+fro2(-Nx2)+fro3(-2*Nx2)+fro4(-2*Nx3)+bezier(2*Nx2));
     //plot(fr1(Nx1)+fr2(-Nx1)+fr3(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx3)+fr7(Nx2)+fr8(Nx1)+fr9(Nx1));
     //mesh Th=buildmesh(fr1(Nx1)+fr2(Nx1)+fr3(Nx1)+fr4(Nx1)+fro1(Nx3)+fro2(Nx3)+fro3(Nx3)+fro4(Nx3)+fro5(Nx3));
 
-    //plot(Th,wait=1); 
+    plot(Th); 
 
 
     fespace Whh(Th,Pk);
@@ -257,7 +264,7 @@ for (int paso=0; paso<10; paso++){
         time += dt;
         
         if(it%20==0){
-            savevtk("Solution_"+alpha+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
+            savevtk("Solution_"+alpha+"_"+U0+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
         }
     }
 }
