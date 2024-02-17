@@ -39,7 +39,7 @@ int itmax = 20001;
 real cs=0.18*0.18;
 
 real U0 = 40;
-func inlet =((U0/0.01393)*y)*(y<0.01393)+U0*(y>=0.01393);
+func inlet =((U0/(0.01393*5))*y)*(y<(0.01393*5))+U0*(y>=(0.01393*5));
 
 real reynoldsNew = U0/viscosity; //2.6e+6; //2.e6;
 
@@ -107,7 +107,7 @@ for (int paso=0; paso<10; paso++){
     //plot(fr1(Nx1)+fr2(-Nx1)+fr3(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx3)+fr7(Nx2)+fr8(Nx1)+fr9(Nx1));
     //mesh Th=buildmesh(fr1(Nx1)+fr2(Nx1)+fr3(Nx1)+fr4(Nx1)+fro1(Nx3)+fro2(Nx3)+fro3(Nx3)+fro4(Nx3)+fro5(Nx3));
 
-    plot(Th); 
+    //plot(Th); 
 
 
     fespace Whh(Th,Pk);
