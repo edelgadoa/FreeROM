@@ -30,7 +30,7 @@ func Pk = P2;
 func Pk1 = P1;
 func Pk1dc = P1dc;
 
-real reynoldsNew = 2.6e+6; //2.e6;
+
 
 real dt  = 1.e-3/2;
 real dtt = 1/dt;
@@ -38,8 +38,14 @@ int itmax = 20001;
 
 real cs=0.18*0.18;
 
-real U0 = 40;
+real U0 = 0.4;
 func inlet =((U0/0.01393)*y)*(y<0.01393)+U0*(y>=0.01393);
+
+real viscosity = 1.51037e-5;
+
+real reynoldsNew = U0/viscosity; //2.e6;
+
+cout<<"Reynolds = " << reynoldsNew<<endl;
 
 real velMaxima = U0;
 
