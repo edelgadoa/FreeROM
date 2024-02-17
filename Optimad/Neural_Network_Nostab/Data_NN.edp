@@ -30,7 +30,7 @@ func Pk = P1b;
 func Pk1 = P1;
 func Pk1dc = P1dc;
 
-real reynoldsNew = 2.6e+6; //2.e6;
+real viscosity = 1.51037e-5;
 
 real dt  = 1.e-3/2;
 real dtt = 1/dt;
@@ -38,8 +38,10 @@ int itmax = 20001;
 
 real cs=0.18*0.18;
 
-real U0 = 1;
+real U0 = 40;
 func inlet =((U0/0.01393)*y)*(y<0.01393)+U0*(y>=0.01393);
+
+real reynoldsNew = U0/viscosity; //2.6e+6; //2.e6;
 
 real velMaxima = U0;
 
@@ -262,7 +264,7 @@ for (int paso=0; paso<10; paso++){
         time += dt;
         
         if(it%20==0){
-            savevtk("Solution_"+alpha+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
+            savevtk("Solution_"+alpha+"_"+U0+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
         }
     }
 }
