@@ -11,9 +11,10 @@ macro nor(u,w) (dx(u)-dx(w))^2+(dy(u)-dy(w))^2 //
 macro norm1(u)(dx(u)^2+dy(u)^2) //
 
 
-int Nx1=70; 
-int Nx2=30;
-int Nx3=50;  
+// int Nx1=70;
+// int Nx2=30;
+// int Nx3=50;
+ 
 real L=1;
 real H=3;
 real ha=(0.252735-0.12018)/10.;
@@ -39,7 +40,8 @@ int itmax = 20001;
 real cs=0.18*0.18;
 
 real U0 = 40;
-func inlet =((U0/(0.01393*5))*y)*(y<(0.01393*5))+U0*(y>=(0.01393*5));
+func inlet =((U0/(0.01393))*y)*(y<(0.01393))+U0*(y>=(0.01393));
+//func inlet =((U0/(0.045))*y)*(y<(0.045))+U0*(y>=(0.045));
 
 real reynoldsNew = U0/viscosity; //2.6e+6; //2.e6;
 
@@ -63,7 +65,7 @@ for (int paso=0; paso<10; paso++){
         ofstream ftxt2(c2alpha);
     }
 
-    //Marco total 
+    /*
     //Marco total 
     border fr11(t=0,4){x=t; y=0; label =5;}
     border fr12(t=4,9.2){x=t; y=0; label =5;}
@@ -108,7 +110,11 @@ for (int paso=0; paso<10; paso++){
     //mesh Th=buildmesh(fr1(Nx1)+fr2(Nx1)+fr3(Nx1)+fr4(Nx1)+fro1(Nx3)+fro2(Nx3)+fro3(Nx3)+fro4(Nx3)+fro5(Nx3));
 
     //plot(Th); 
-
+    */
+    
+    include "Car_Mesh.idp"
+    
+    
 
     fespace Whh(Th,Pk);
     //Inicializacion de la velocidad 
@@ -119,14 +125,14 @@ for (int paso=0; paso<10; paso++){
     //espacios elementos finitos
     fespace Wh(Th,[Pk,Pk,Pk1]);
     fespace Wh1(Th,Pk);
-    fespace Vhb(Thb,Pk1);
-    fespace Wh1b(Thb,Pk);
+    // fespace Vhb(Thb,Pk1);
+    // fespace Wh1b(Thb,Pk);
     fespace Vh(Th,Pk1);
     fespace Vdch(Th,Pk1dc);
-    Wh1b w1r=0; 
-    Wh1b w2r=0; 
-    Wh1b u1r,u2r; 
-    Vhb pr;
+    //Wh1b w1r=0; 
+    //Wh1b w2r=0; 
+    //Wh1b u1r,u2r; 
+    //Vhb pr;
     //cout << " Grados de libertad totales: " << Wh.ndof<< endl;
     //cout << " Grados de libertad  veloc: " << Wh1.ndof<< endl;
     //cout << " Grados de libertad  pres: " << Vh.ndof<< endl;
@@ -220,8 +226,8 @@ for (int paso=0; paso<10; paso++){
         Wh [u1,u2,p];
         u1[] = AT^-1*bt;
     
-        u1r = u1;
-        u2r = u2; 
+        //u1r = u1;
+        //u2r = u2; 
 
 
         /*
@@ -258,13 +264,13 @@ for (int paso=0; paso<10; paso++){
         // Actualización de la velocidad de convección 
         w1=u1;
         w2=u2;
-        w1r=u1r; 
-        w2r=u2r; 
+        //w1r=u1r; 
+        //w2r=u2r; 
 
         time += dt;
         
         if(it%20==0){
-            savevtk("Solution_"+alpha+"_"+U0+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
+            savevtk("Solution_"+alpha+"_"+it+".vtu", Th, [u1, u2, 0], p, dataname="Velocity Pressure", order=fforder);
         }
     }
 }
