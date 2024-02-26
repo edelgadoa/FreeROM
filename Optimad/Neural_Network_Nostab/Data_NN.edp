@@ -27,7 +27,7 @@ string c2total="c2_completo.txt";
 }
 
 int qfo = 10; // order of the Quadature Form. 
-func Pk = P1b; 
+func Pk = P2; 
 func Pk1 = P1;
 func Pk1dc = P1dc;
 
