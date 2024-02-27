@@ -101,8 +101,6 @@ mpi(cout<<"Inicializacion EIM..." <<endl;)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
 
-
-
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 mpi(cout<<"Inicializacion Greedy..." <<endl;)
@@ -124,7 +122,6 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
-
 
 for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
@@ -155,7 +152,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 		SnapXa[] = SolX; SnapYa[] = SolY; SnapPa[] = SolP;
 		SnapX = SnapXa; SnapY = SnapYa; SnapP = SnapPa;
-		
 		
 		VhP2perL SnapXL, SnapYL; VhP1perL SnapPL;
 		SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
@@ -189,8 +185,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//Me quedo solo con el numero de bases calculadas, y lo paso a real[int,int] con la numeracion PETSc
 	Vh2P2perL[int] [BasePODV, BasePODVY](NbasesV);
 	VhP1perL[int] BasePODP(NbasesP);
-
-
 	
 	// Inicializo las matrices para la fase offline
 	mpi(cout<<"Inicializacion matrices..." <<endl;)
@@ -210,7 +204,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//real[int] BaseV1;
 	//ChangeNumbering(MatAVh2P2per, BaseV[1][], BaseV1);
 	//cout << BaseV1.n << endl;
-	
 	
 	for (int i=0; i<NbasesV; i++){
 		BasePODV[i][] = BaseV[i][];
@@ -232,7 +225,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 	
 	for (int i=0; i<NbasesV; i++){
-		 BaseV[i][] = BasePODV[i][];
+		BaseV[i][] = BasePODV[i][];
 	}
 
 	for (int i=0; i<NbasesP; i++){
@@ -271,13 +264,11 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 	}
 		
-	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
 	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
 	// 	//
 	// 	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
 	// 	//
-	
 	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
