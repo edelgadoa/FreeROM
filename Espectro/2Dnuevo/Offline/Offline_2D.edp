@@ -23,7 +23,7 @@ include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/fourier.idp"
 include "../Auxiliary/Functions_MP.idp"
-include "../Auxiliary/macro_ddm.idp"
+include "macro_ddm.idp"
 
 // Creamos la Malla
 include "../Auxiliary/Malla.idp"
@@ -55,6 +55,28 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 ////DEFINICION DE LOS ESPACIOS DE BR//////
 //////////////////////////////////////////
 mpi(cout<<"Inicializacion espacios BR..." <<endl;)
+
+mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
+{
+    macro def(i) [i, iY] //
+    macro init(i) [i, i] // EOM
+    createMat(ThL, MatAVh2P2per, Pk2P2);
+}
+
+mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
+{
+    createMat(ThL, MatAVhP1per, PkP1);
+}
+
+mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
+{
+    createMat(ThL, MatAVhP2per, PkP2);
+}
+
+mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
+{
+    createMat(ThL, MatAVhP1dcper, PkP1dc);
+}
 
 Vh2P2perL[int] [BaseV,BaseVY](2*Nbases);
 VhP1perL[int] BaseP(Nbases);
@@ -171,8 +193,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
-        if(i==20){macro def(i) [i, i#Y]//
-        plotMPI(ThL, [VelXL,VelYL], Pk2P2, def, real,cmm="BASE 20");}
 	}
 
 	// Calculamos la POD
@@ -221,7 +241,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	for (int i=0; i<NbasesV; i++){
 		BasePODV[i][] = BaseV[i][];
 	}
-
+ 
 	for (int i=0; i<NbasesP; i++){
 		BasePODP[i][] = BaseP[i][];
 		VhP1per BasePG;
@@ -229,6 +249,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		write
 		plot(BasePG);
 	}
+    plotMPI(ThL, BaseP[0], PkP1, def, real, cmm="Base 0");
 	
 	real[int,int] MBasePODV(MatAVh2P2per.n, NbasesV), MBasePODP(MatAVhP1per.n, NbasesP);
 	ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);

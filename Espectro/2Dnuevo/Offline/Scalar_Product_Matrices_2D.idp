@@ -7,8 +7,11 @@
 Mat MPescT = MatAVh2P2per; 
 Mat MPescX;
 Mat MPescV;//= MatAVh2P2per;
-MatCreate(ThL, MPescV, Pk2P2);
-Mat MPescP = MatAVhP1per;
+{macro def(i) [i, i#Y] //
+macro init(i) [i, i] // EOM
+MatCreate(ThL, MPescV, Pk2P2);}
+Mat MPescP;// = MatAVhP1per;
+MatCreate(ThL, MPescP, PkP1);
 {
 	varf pescT ([uu, uuY], [v,vY]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
 	MPescT = pescT(Vh2P2perL, Vh2P2perL); 
@@ -21,7 +24,8 @@ Mat MPescP = MatAVhP1per;
 	MPescV = PescV;//pescV(Vh2P2perL, Vh2P2perL);
 	
 	varf pescP(u,v) = int2d(ThL)(u*v);
-	MPescP = pescP(VhP1perL, VhP1perL);
+    matrix PescP = pescP(VhP1perL, VhP1perL);
+	MPescP = PescP;
 }
 ///////////////////////////////////////////////////////
 
