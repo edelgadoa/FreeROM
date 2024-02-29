@@ -4,13 +4,13 @@
 
 // Defino las matrices de producto escalar, que voy a considerar para la ortonormalizacion #TODO: definir pescX en [P2,P2,P1]
 Mat MPescT;
-Mat MPescV(MatAVh2P2per);// = MatAVh2P2per;
-// {
-// 	macro def(i) [i, i#Y] //
-// 	macro init(i) [i, i] // EOM
-//
-// 	MatCreate(ThL, MPescV, Pk2P2);
-// }
+Mat MPescV;//MatAVh2P2per;// = MatAVh2P2per;
+{
+	macro def(i) [i, i#Y] //
+	macro init(i) [i, i] // EOM
+
+	MatCreate(ThL, MPescV, Pk2P2);
+}
 
 Mat MPescP;
 MatCreate(ThL, MPescP, PkP1);
