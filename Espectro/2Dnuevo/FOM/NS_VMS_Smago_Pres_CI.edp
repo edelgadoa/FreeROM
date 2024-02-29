@@ -15,7 +15,7 @@ load "iovtk"
 // Cargamos macros
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-// include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/macro_ddm.idp"
 
 // Creamos la malla
 include "../Auxiliary/Malla.idp"

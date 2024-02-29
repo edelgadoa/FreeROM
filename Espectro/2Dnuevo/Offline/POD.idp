@@ -7,17 +7,18 @@ NewMacro matrixcorrelacion(snaps, C, prod)
 {
 	real NPOD = C.n;
 	for(int ii=0;ii<C.n;ii++){
-		real[int] snapi;
-		ChangeNumbering(prod, snaps(:,ii), snapi);
+		//real[int] snapi;
+		//ChangeNumbering(prod, snaps(:,ii), snapi);
     	for(int jj=ii;jj<C.m;jj++){
-			real[int] snapj;
-			ChangeNumbering(prod, snaps(:,jj), snapj);
-        	C(ii,jj) = innerprodX(snapi, snapj, prod);
+			//real[int] snapj;
+			//ChangeNumbering(prod, snaps(:,jj), snapj);
+            // dscalprod(D,snapi,snapj);
+        	C(ii,jj) = prod(snaps(:,ii),snaps(:,jj));// innerprodX(snapi, snapj, prod);
                 if(ii!=jj)C(jj,ii)=C(ii,jj);
         }
 	}
 	// C *= (1/NPOD); // HAY QUE DIVIDIR LA MATRIZ DE CORRELACION POR EL NUMERO DE BASES POD
-	write("correlation.txt",C,0,0);
+	write("correlation"+mpisize+".txt",C,1,1);
 }
 EndMacro
 

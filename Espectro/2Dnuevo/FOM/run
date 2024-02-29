@@ -6,5 +6,5 @@ nameedp="NS_VMS_Smago_Pres.edp"
 
 verbosity=0
 
-rm freefem++.pref
+# rm freefem++.pref
 ff-mpirun -np $NP ./$nameedp -glut ffglut

@@ -50,7 +50,6 @@ for(int ii = NbasesV; ii<I; ii++){
 
 write("Output.txt", "Condicion inicial OK.", 1, 1);
 
-
 // Comenzamos el bucle del greedy 
 for (int iRB=0; iRB<Ntrain; iRB++){
 	
