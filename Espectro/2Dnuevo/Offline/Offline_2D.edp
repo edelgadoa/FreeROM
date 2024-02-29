@@ -16,21 +16,25 @@ verbosity = 0;
 load "iovtk" 
 load "lapack"
 
+
 // Cargamos macros, funciones i/o
 include "../Auxiliary/Macros_2D.idp"
 include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/fourier.idp"
 include "../Auxiliary/Functions_MP.idp"
+include "../Auxiliary/macro_ddm.idp"
 
 // Creamos la Malla
 include "../Auxiliary/Malla.idp"
 
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
+
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
@@ -91,6 +95,9 @@ SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
 SnapPL[] = SnapP[](mapVhP1per);
 
 Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL]; 
+//macro Pk2P2() [P2,P2] , periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]// EOM
+
+
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
 MBaseV(:,0) = VelXL[];
@@ -158,8 +165,11 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		SnapPL[] = SnapP[](mapVhP1per);
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
+        if(i==20){macro def(i) [i, i#Y]//
+        plotMPI(ThL, [VelXL,VelYL], Pk2P2, def, real,cmm="BASE 20");}
 	}
 
 	// Calculamos la POD

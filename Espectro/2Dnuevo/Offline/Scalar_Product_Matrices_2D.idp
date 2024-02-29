@@ -6,7 +6,8 @@
 
 Mat MPescT = MatAVh2P2per; 
 Mat MPescX;
-Mat MPescV = MatAVh2P2per;
+Mat MPescV;//= MatAVh2P2per;
+MatCreate(ThL, MPescV, Pk2P2);
 Mat MPescP = MatAVhP1per;
 {
 	varf pescT ([uu, uuY], [v,vY]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
@@ -16,7 +17,8 @@ Mat MPescP = MatAVhP1per;
 	// MPescX = pescX(Vh3P2perL, Vh3P2perL); 
 
 	varf pescV([uu,uuY],[vv,vvY]) = int2d(ThL)(GradUGradV(uu,vv));
-	MPescV = pescV(Vh2P2perL, Vh2P2perL);
+    matrix PescV =  pescV(Vh2P2perL, Vh2P2perL);
+	MPescV = PescV;//pescV(Vh2P2perL, Vh2P2perL);
 	
 	varf pescP(u,v) = int2d(ThL)(u*v);
 	MPescP = pescP(VhP1perL, VhP1perL);
