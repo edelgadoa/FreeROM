@@ -58,24 +58,24 @@ mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
 mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
 {
-    macro def(i) [i, iY] //
+    macro def(i) [i, i#Y] //
     macro init(i) [i, i] // EOM
-    createMat(ThL, MatAVh2P2per, Pk2P2);
+    MatCreate(ThL, MatAVh2P2per, Pk2P2);
 }
 
 mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
 {
-    createMat(ThL, MatAVhP1per, PkP1);
+    MatCreate(ThL, MatAVhP1per, PkP1);
 }
 
 mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
 {
-    createMat(ThL, MatAVhP2per, PkP2);
+    MatCreate(ThL, MatAVhP2per, PkP2);
 }
 
 mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
 {
-    createMat(ThL, MatAVhP1dcper, PkP1dc);
+    MatCreate(ThL, MatAVhP1dcper, PkP1dc);
 }
 
 Vh2P2perL[int] [BaseV,BaseVY](2*Nbases);
@@ -246,7 +246,6 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BasePODP[i][] = BaseP[i][];
 		VhP1per BasePG;
 		reduceSolution(BasePODP[i], BasePG, MatAVhP1per.D, mapVhP1per);
-		write
 		plot(BasePG);
 	}
     plotMPI(ThL, BaseP[0], PkP1, def, real, cmm="Base 0");

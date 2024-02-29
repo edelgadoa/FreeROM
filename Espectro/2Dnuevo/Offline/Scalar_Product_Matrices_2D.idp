@@ -3,25 +3,24 @@
 /////////////// 
 
 // Defino las matrices de producto escalar, que voy a considerar para la ortonormalizacion #TODO: definir pescX en [P2,P2,P1]
+Mat MPescT;
+Mat MPescV(MatAVh2P2per);// = MatAVh2P2per;
+// {
+// 	macro def(i) [i, i#Y] //
+// 	macro init(i) [i, i] // EOM
+//
+// 	MatCreate(ThL, MPescV, Pk2P2);
+// }
 
-Mat MPescT = MatAVh2P2per; 
-Mat MPescX;
-Mat MPescV;//= MatAVh2P2per;
-{macro def(i) [i, i#Y] //
-macro init(i) [i, i] // EOM
-MatCreate(ThL, MPescV, Pk2P2);}
-Mat MPescP;// = MatAVhP1per;
+Mat MPescP;
 MatCreate(ThL, MPescP, PkP1);
 {
-	varf pescT ([uu, uuY], [v,vY]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
-	MPescT = pescT(Vh2P2perL, Vh2P2perL); 
 	
-	// varf pescX ([uu, uuY, uuP], [v,vY, vP]) = int2d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
-	// MPescX = pescX(Vh3P2perL, Vh3P2perL); 
-
 	varf pescV([uu,uuY],[vv,vvY]) = int2d(ThL)(GradUGradV(uu,vv));
     matrix PescV =  pescV(Vh2P2perL, Vh2P2perL);
 	MPescV = PescV;//pescV(Vh2P2perL, Vh2P2perL);
+	ObjectView(MPescV,format="ascii_info_detail");
+	
 	
 	varf pescP(u,v) = int2d(ThL)(u*v);
     matrix PescP = pescP(VhP1perL, VhP1perL);
@@ -29,10 +28,15 @@ MatCreate(ThL, MPescP, PkP1);
 }
 ///////////////////////////////////////////////////////
 
-Mat DiffPEM = MatAVh2P2per; 
+Mat DiffPEM;
 Mat DivPPEM;
 Mat PenPEM = MatAVhP1per;
 Mat DTPEM = MatAVh2P2per;
+{
+	macro def(i) [i, i#Y] //
+	macro init(i) [i, i] // EOM
+	MatCreate(ThL, DiffPEM, Pk2P2);
+}
 
 {
 	varf DiffPE([uu,uuY], [v,vY]) = int2d(ThL)(GradUGradV(uu,v));
