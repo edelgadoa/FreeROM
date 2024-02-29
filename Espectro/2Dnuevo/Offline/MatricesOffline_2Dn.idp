@@ -72,10 +72,11 @@ mpiAllReduce(PenRBL, PenRB, mpiCommWorld, mpiSUM);
 write("Output.txt","Matrices varias OK.",1,1);
 
 
-write("PenRB.txt", PenRB, 0, 0);// mpi(cout << DiffRB << endl;)
+write("PenRB.txt", PenRB, 0, 0);
+// mpi(cout << DiffRB << endl;)
 // mpi(cout << DivPRB << endl;)
 // mpi(cout << PenRB << endl;)
-// mpi(cout << DTRB << endl;)
+mpi(cout << DTRB << endl;)
 
 // Conveccion
 // for (int s=0; s<NbasesV; s++){
@@ -114,9 +115,10 @@ for(int s=0; s<NbasesV;s++){
 	ConvRB[s] = ConvRBG;
 }
 
+
 write("Output.txt","Conveccion OK.",1,1);
 
-write("ConvRB"+mpisize+".txt", ConvRB, 0, 0); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
+write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
 
 // Smagorinsky
 // for (int s=0; s<Mbases; s++){

@@ -141,6 +141,9 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	}
 
 	// Cargamos todos los snapshots en tiempo
+	NbasesV -= NbasesP;
+	if (iGreedy == 0)NbasesV=1;
+	
 	MBaseV.resize(MBaseV.n, NbasesV + niT);
 	MBaseP.resize(MBaseP.n, NbasesP + niT);
 	for(int i=0; i<niT; i++){
@@ -162,6 +165,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		SnapPL[] = SnapP[](mapVhP1per);
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+		// plot(SnapP);
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
@@ -218,6 +222,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 	for (int i=0; i<NbasesP; i++){
 		BasePODP[i][] = BaseP[i][];
+		VhP1per BasePG;
+		reduceSolution(BasePODP[i], BasePG, MatAVhP1per.D, mapVhP1per);
+		write
+		plot(BasePG);
 	}
 	
 	real[int,int] MBasePODV(MatAVh2P2per.n, NbasesV), MBasePODP(MatAVhP1per.n, NbasesP);
@@ -271,6 +279,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 	}
 		
+	
 	//
 	// 	// Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
 	// 	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];

@@ -8,7 +8,7 @@ PresL[] = BaseP[i][];
 
 reduceSolution(PresL, PresG, MatAVhP1per.D, mapVhP1per);
 
-if (i==0) plot(PresG, value=1, cmm="Base"+i);
+// if (i==0) plot(PresG, value=1, cmm="Base"+i);
 
 varf Supremizer([u,uY],[v,vY])= int2d(ThL)(//(1./Refijo+MOD(uFijo))*
 gradugradv(u,uY,v,vY)) + int2d(ThL)(1e-6*(u*v + uY*vY)) - int2d(ThL)(BaseP[i]*div(v,vY));
@@ -29,4 +29,4 @@ Vh2P2per [supEFG, supEFGY];
 
 reduceSolution(supEF, supEFG, MatAVh2P2per.D, mapVh2P2per);
 
-if (i==0) plot([supEFG, supEFGY], cmm="sup"+i);
+//if (i==0) plot([supEFG, supEFGY], cmm="sup"+i);
