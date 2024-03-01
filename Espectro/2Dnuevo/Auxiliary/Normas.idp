@@ -99,16 +99,24 @@ func real[int] OrtoX(real[int] &u, real[int,int] &M, Mat &X){
 
 func real[int,int] OrtoX(real[int,int] &M, Mat &X){
 	real[int,int] result(M.n, M.m);
-	result(:,0) = M(:,0) / normX(M(:,0), X);
+	real[int] M0;
+	ChangeNumbering(X, M(:,0), M0);
+	result(:,0) = M(:,0) / normX(M0, X);
 	for (int j=1; j<M.m; j++){
 		real[int] Proy(M.n);
 		Proy = 0;
+		real[int] Mj;
+		ChangeNumbering(X, M(:,j), Mj);
 		for (int k=0; k<j; k++){
-			real Pesc = innerprodX(M(:,j), M(:,k), X);
+			real[int] Mk;
+			ChangeNumbering(X, M(:,k), Mk);
+			real Pesc = innerprodX(Mj, Mk, X);
 			Proy += Pesc*M(:,k);
 		}
 		real[int] vector =  M(:,j) - Proy;
-		real norm = normX(vector, X);
+		real[int] vPETSc;
+		ChangeNumbering(X, vector, vPETSc);
+		real norm = normX(vPETSc, X);
 		result(:,j) = vector / norm;
 	}
 	

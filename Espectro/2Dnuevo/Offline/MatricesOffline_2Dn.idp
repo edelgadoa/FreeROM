@@ -14,27 +14,29 @@
 
 
 for (int i=0; i<NbasesV; i++){
-    //real[int] BaseVi;
-    //ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+    real[int] BaseVi;
+    ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
 
     for (int j=0; j<=i; j++){
-        //real[int] BaseVj;
-        // ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+        real[int] BaseVj;
+        ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
         // Matrices
-        DiffRB(i,j) = DiffPEM(BaseV[i][], BaseV[j][]);//, DiffPEM);
+        DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
         DTRB(i,j) = DTPEM(BaseV[i][], BaseV[j][]);//, DTPEM);
         if (j<i){
             DiffRB(j,i) = DiffRB(i,j);
             DTRB(j,i) = DTRB(i,j);
         }
     }
-    // for (int j=0; j<NbasesP; j++){
-    //     // real[int] BasePj;
-    //     // ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
-    //     // DivPRB(j+2*Nbases, i) = DivPPEM(BaseP[j][], BaseV[i][]);//, DivPPEM);
-    //
-    // }
+    for (int j=0; j<NbasesP; j++){
+        real[int] BasePj;
+        ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+        DivPRB(j, i) = innerprodX(BasePj, BaseVi, DivPPEM); //Esta tiene que ir asi por construccion. 
+
+    }
 }
+
+mpi(cout<<DivPRB<<endl;)
 
 // real[int,int] DiffRBaux(DiffPEM.n, MBasePODV.m), DivPRBaux(DiffPEM.n, MBasePODV.m),
 //               DTRBaux(DTPEM.n, MBasePODV.m), PenRBaux(PenPEM.n, MBasePODP.m);
@@ -54,51 +56,51 @@ for (int i=0; i<NbasesV; i++){
 // mpiAllReduce(DTRBL, DTRB, mpiCommWorld, mpiSUM);
 // mpiAllReduce(PenRBL, PenRB, mpiCommWorld, mpiSUM);
 
-// for (int i=0; i<NbasesP; i++){
-//     //real[int] BasePi;
-//     //ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
-//
-//     for (int j=0; j<=i; j++){
-//         //real[int] BasePj;
-//         //ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
-//         // Matrices
-//         PenRB(i+2*Nbases, j+2*Nbases) = PenPEM(BaseP[i][], BaseP[j][]);//, PenPEM);
-//         if (j<i){
-//             PenRB(j+2*Nbases, i+2*Nbases) = PenRB(i+2*Nbases, j+2*Nbases);
-//         }
-//     }
-// }
+for (int i=0; i<NbasesP; i++){
+    real[int] BasePi;
+    ChangeNumbering(PenPEM, BaseP[i][], BasePi);
+
+    for (int j=0; j<=i; j++){
+        real[int] BasePj;
+        ChangeNumbering(PenPEM, BaseP[j][], BasePj);
+        // Matrices
+        PenRB(i, j) = innerprodX(BasePi, BasePj, PenPEM);
+        if (j<i){
+            PenRB(j, i) = PenRB(i, j);
+        }
+    }
+}
 
 write("Output.txt","Matrices varias OK.",1,1);
 
 
 write("PenRB.txt", PenRB, 0, 0);
-// mpi(cout << DiffRB << endl;)
+mpi(cout << DiffRB << endl;)
 // mpi(cout << DivPRB << endl;)
 // mpi(cout << PenRB << endl;)
 mpi(cout << DTRB << endl;)
 
 // Conveccion
 for (int s=0; s<NbasesV; s++){
-    real[int, int] Cint(3*Nbases, 3*Nbases);
+    real[int, int] Cint(NbasesV, NbasesV);
     Cint = 0; //ConvRB[s];
-    Mat ConvPEMs = ConvPEM[s];
+    // Mat ConvPEMs = ConvPEM[s];
     for (int i=0; i<NbasesV; i++){
-        //real[int] BaseVi;
-        //ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+        real[int] BaseVi;
+        ChangeNumbering(ConvPEM[s], BaseV[i][], BaseVi);
         for (int j=0; j<=i; j++){
-            //real[int] BaseVj;
-            //ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
-            Cint(i,j) = ConvPEMs(BaseV[i][], BaseV[j][]);// ConvPEM[s]);
+            real[int] BaseVj;
+            ChangeNumbering(ConvPEM[s], BaseV[j][], BaseVj);
+            Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
             if(j<i){
-                Cint(j,i) = ConvPEMs(BaseV[j][], BaseV[i][]);//, ConvPEM[s]);
+                Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
             }
             
             if (s==i && (j!=i)){
                 for (int k=0; k<s; k++){
-                   // real[int] BaseVk;
-                    //ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
-                    Cint(k,j) = ConvPEMs(BaseV[k][], BaseV[j][]);//, ConvPEM[s]);
+                   real[int] BaseVk;
+                    ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
+                    Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
                 }
             }
             
@@ -139,13 +141,13 @@ write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO 
 //     SmagoRB[s] += Sint;
 // }
 
-for (int s=0; s<Mbases; s++){
-    real[int, int] SmagoRBaux(SmagoRB[s].n, MBasePODV.m), SmagoRBG(NbasesV, NbasesV);
-	MatMatMult(SmagoPEM[s], MBasePODV, SmagoRBaux);
-	real[int,int] SmagoRBL = MBasePODV'*SmagoRBaux;
-	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
-    SmagoRB[s] = SmagoRBG;
-}
+// for (int s=0; s<Mbases; s++){
+//     real[int, int] SmagoRBaux(SmagoRB[s].n, MBasePODV.m), SmagoRBG(NbasesV, NbasesV);
+// 	MatMatMult(SmagoPEM[s], MBasePODV, SmagoRBaux);
+// 	real[int,int] SmagoRBL = MBasePODV'*SmagoRBaux;
+// 	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
+//     SmagoRB[s] = SmagoRBG;
+// }
 
 // mpi(cout<<SmagoRB[0]<<endl;)
 write("Output.txt","Smagorinsky OK.",1,1);

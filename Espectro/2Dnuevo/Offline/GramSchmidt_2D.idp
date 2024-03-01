@@ -9,7 +9,7 @@
 // Ortonormalizacion de la Presion
 
 MBasePODP = OrtoX(MBasePODP, MPescP);
-ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP, inverse=true);
+//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP, inverse=true, exchange=true);
 
 
 // ChangeNumbering(MatAVhP1per, BaseP, MBasePODP, inverse=true);
@@ -23,8 +23,8 @@ pause;
 mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
 
 MBasePODV = OrtoX(MBasePODV, MPescV);
-MBasePODV = OrtoX(MBasePODV, MPescV);
-ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV, inverse=true);
+// MBasePODV = OrtoX(MBasePODV, MPescV);
+//ChangeNumbering(MPescV, BasePODV[5][], MBasePODV(:,5), inverse=true, exchange=true);
 
 mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
 

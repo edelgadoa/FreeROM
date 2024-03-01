@@ -34,17 +34,34 @@ include "../Auxiliary/Parametros_2D.idp"
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
-
-
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 include "../FOM/Interp_matrix_NoStab_VP_2D_Local.idp"
+
+// Creo las matrices de numeracion de EF y los mappings de EF local a global
+mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
+{
+    macro def(i) [i, i#Y] //
+    macro init(i) [i, i] // EOM
+    MatCreate(ThL, MatAVh2P2per, Pk2P2);
+}
+
+mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
+MatCreate(ThL, MatAVhP1per, PkP1);
+
+mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
+MatCreate(ThL, MatAVhP2per, PkP2);
+
+mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
+MatCreate(ThL, MatAVhP1dcper, PkP1dc);
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
 
 //Definicion de Constantes y variables varias
 int Nbases = NiterGreddy*niT; 
+int NbasesV=1; 
+int NbasesP=1;
 
 real[int] MuBest(NiterGreddy+1), DeltaN(NiterGreddy), TauN(NiterGreddy), ErrorVN(NiterGreddy), ErrorPN(NiterGreddy);
 
@@ -56,27 +73,7 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
-mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
-{
-    macro def(i) [i, i#Y] //
-    macro init(i) [i, i] // EOM
-    MatCreate(ThL, MatAVh2P2per, Pk2P2);
-}
 
-mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
-{
-    MatCreate(ThL, MatAVhP1per, PkP1);
-}
-
-mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
-{
-    MatCreate(ThL, MatAVhP2per, PkP2);
-}
-
-mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
-{
-    MatCreate(ThL, MatAVhP1dcper, PkP1dc);
-}
 
 Vh2P2perL[int] [BaseV,BaseVY](2*Nbases);
 VhP1perL[int] BaseP(Nbases);
@@ -92,9 +89,6 @@ VhP1dcperL[int] BVdX(2*Nbases), BVdY(2*Nbases);
 VhP1dcperL[int] BVYdX(2*Nbases),BVYdY(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
-int NbasesV=1; 
-int NbasesP=1;
-
 real[int, int] MBaseV(Vh2P2perL.ndof, 1), MBaseP(VhP1perL.ndof, 1);
 Reynolds = Refijo;
 MuBest(0) = Reynolds;
@@ -102,7 +96,7 @@ readvector("../Snapshots/Vx_" + Reynolds + "_t_" + T0 + ".txt", real, SolX, 0);
 readvector("../Snapshots/Vy_" + Reynolds + "_t_" + T0 + ".txt", real, SolY, 0);
 readvector("../Snapshots/P_" + Reynolds + "_t_" + T0 + ".txt", real, SolP, 0);
 
-// Cargamos los Snapshots en local
+// Cargamos el Snapshot de la condicion inicial en local
 Vh3P2per [SnapXa,SnapYa,SnapPa];
 SnapXa[] = SolX; SnapYa[] = SolY; SnapPa[] = SolP;
 
@@ -118,7 +112,6 @@ SnapPL[] = SnapP[](mapVhP1per);
 
 Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL]; 
 //macro Pk2P2() [P2,P2] , periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]// EOM
-
 
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
@@ -167,8 +160,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	}
 
 	// Cargamos todos los snapshots en tiempo
-	NbasesV -= NbasesP;
-	if (iGreedy == 0)NbasesV=1;
+	
+	NbasesV = (iGreedy == 0) ? 1 : NbasesV-NbasesP;
 	
 	MBaseV.resize(MBaseV.n, NbasesV + niT);
 	MBaseP.resize(MBaseP.n, NbasesP + niT);
@@ -191,9 +184,16 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
 
+		// {
+		//
+		// 	macro def(i) [i, i#Y] // EOM
+		// 	plotMPI(ThL, [VelXL, VelYL], Pk2P2, def, real, cmm="Base 0")
+		//
+		// }
 		MBaseV(:, NbasesV+i) = VelXL[];
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
+	 
 
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
@@ -228,47 +228,47 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 	// Hacemos la ortonormalizacion
 	write("Output.txt","Orthonormalization...",1,1);
-
-	// for(int i=0;i<NbasesV;i++)BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
-	//pause;
-	// HASTA AQUÍ COMPILA BIEN
 	
-	//cout << BaseV[1][].n << endl;
-	//real[int] BaseV1;
-	//ChangeNumbering(MatAVh2P2per, BaseV[1][], BaseV1);
-	//cout << BaseV1.n << endl;
-	
+	real[int,int] MBasePODV(Vh2P2perL.ndof, NbasesV), MBasePODP(VhP1perL.ndof, NbasesP);
 	for (int i=0; i<NbasesV; i++){
-		BasePODV[i][] = BaseV[i][];
+		MBasePODV(:,i) = BaseV[i][];
 	}
- 
-	for (int i=0; i<NbasesP; i++){
-		BasePODP[i][] = BaseP[i][];
-		VhP1per BasePG;
-		reduceSolution(BasePODP[i], BasePG, MatAVhP1per.D, mapVhP1per);
-		plot(BasePG);
-	}
-    plotMPI(ThL, BaseP[0], PkP1, def, real, cmm="Base 0");
-	
-	real[int,int] MBasePODV(MatAVh2P2per.n, NbasesV), MBasePODP(MatAVhP1per.n, NbasesP);
-	ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
-	ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
-	
 
-	// include "GramSchmidt_2D.idp"
-	
-	// Actualizo las matrices MBasePOD 
+	for (int i=0; i<NbasesP; i++){
+		MBasePODP(:,i) = BaseP[i][];
+	}
+
+	{
+		macro def(i) [i, i#Y] // EOM
+		plotMPI(ThL, [BaseV[13], BaseVY[13]], Pk2P2, def, real, cmm="Base 0");
+
+	}
+
 	//ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
 	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 	
+
+	 include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
+	
+
+
+	// Actualizo las matrices MBasePOD 
+	// ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
+	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
+	
 	for (int i=0; i<NbasesV; i++){
-		BaseV[i][] = BasePODV[i][];
+		BaseV[i][] = MBasePODV(:,i);
+	}
+	
+	{
+		macro def(i) [i, i#Y] // EOM
+		plotMPI(ThL, [BaseV[13], BaseVY[13]], Pk2P2, def, real, cmm="Base 0 orto");
 	}
 
 	for (int i=0; i<NbasesP; i++){
-		BaseP[i][] = BasePODP[i][];
+		BaseP[i][] = MBasePODP(:,i);
+		// plotMPI(ThL, BaseP[i], PkP1, def, real, cmm="Base");
 	}
-	
 	mpi(cout<<"Bases almacenadas"<<endl;)
 	// ortho(BaseV,NbasesV,prodV);
 	// normalization(BaseV,NbasesV,prodV);
@@ -285,19 +285,21 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	}
 	mpi(cout<<"Matriz de conveccion"<<endl;)
 	
-	for(int i=0;i<NbasesV;i++){
-		mpi(cout<<i<<endl;)
-		MBaseV(:,i) = BaseV[i][];
+	for(int s=0;s<NbasesV;s++){
+	
+		MBaseV(:,s) = BaseV[s][];
 		// Defino el nuevo producto escalar para la convección
-		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[i],BaseVY[i],uu,uuY,v,vY));
-		Mat ConvPEMi = MatAVh2P2per;
-		ConvPEMi = ConvPE(Vh2P2perL, Vh2P2perL);
-		ConvPEM[i] = ConvPEMi;
+		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[s],BaseVY[s],uu,uuY,v,vY));
+		macro def(i) [i, i#Y] // EOM
+		macro init(i) [i, i] // EOM
+		MatCreate(ThL, ConvPEM[s], Pk2P2);
+		matrix ConvPEMs = ConvPE(Vh2P2perL, Vh2P2perL);
+		ConvPEM[s] = ConvPEMs;
 		
-		BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
+		BaseVel[s] = BaseV[s]; BaseVelY[s] = BaseVY[s];
 		
-		BVdX[i][] = DXP2L*BaseVel[i][]; BVdY[i][] = DYP2L*BaseVel[i][];
-		BVYdX[i][] = DXP2L*BaseVelY[i][]; BVYdY[i][] = DYP2L*BaseVelY[i][];
+		BVdX[s][] = DXP2L*BaseVel[s][]; BVdY[s][] = DYP2L*BaseVel[s][];
+		BVYdX[s][] = DXP2L*BaseVelY[s][]; BVYdY[s][] = DYP2L*BaseVelY[s][];
 		
 	}
 		
