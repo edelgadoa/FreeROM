@@ -83,7 +83,7 @@ real alpha = 5./3.;
 
 // Parametros para el problema ROM
 int niterRB = 2000;
-real epsPOD = 1.e-10;
+real epsPOD = 1.e-4;
 real epsEIM = 5.e-5;
 
 // Parametros para el Greedy

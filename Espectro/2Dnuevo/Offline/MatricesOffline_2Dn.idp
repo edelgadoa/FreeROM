@@ -22,7 +22,7 @@ for (int i=0; i<NbasesV; i++){
         ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
         // Matrices
         DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
-        DTRB(i,j) = DTPEM(BaseV[i][], BaseV[j][]);//, DTPEM);
+        DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
         if (j<i){
             DiffRB(j,i) = DiffRB(i,j);
             DTRB(j,i) = DTRB(i,j);
@@ -36,7 +36,7 @@ for (int i=0; i<NbasesV; i++){
     }
 }
 
-mpi(cout<<DivPRB<<endl;)
+
 
 // real[int,int] DiffRBaux(DiffPEM.n, MBasePODV.m), DivPRBaux(DiffPEM.n, MBasePODV.m),
 //               DTRBaux(DTPEM.n, MBasePODV.m), PenRBaux(PenPEM.n, MBasePODP.m);
@@ -75,16 +75,15 @@ write("Output.txt","Matrices varias OK.",1,1);
 
 
 write("PenRB.txt", PenRB, 0, 0);
-mpi(cout << DiffRB << endl;)
+// mpi(cout << DiffRB << endl;)
 // mpi(cout << DivPRB << endl;)
 // mpi(cout << PenRB << endl;)
-mpi(cout << DTRB << endl;)
+// mpi(cout << DTRB << endl;)
 
 // Conveccion
 for (int s=0; s<NbasesV; s++){
     real[int, int] Cint(NbasesV, NbasesV);
-    Cint = 0; //ConvRB[s];
-    // Mat ConvPEMs = ConvPEM[s];
+    Cint = 0; 
     for (int i=0; i<NbasesV; i++){
         real[int] BaseVi;
         ChangeNumbering(ConvPEM[s], BaseV[i][], BaseVi);
@@ -99,7 +98,7 @@ for (int s=0; s<NbasesV; s++){
             if (s==i && (j!=i)){
                 for (int k=0; k<s; k++){
                    real[int] BaseVk;
-                    ChangeNumbering(MatAVh2P2per, BaseV[k][], BaseVk);
+                    ChangeNumbering(ConvPEM[s], BaseV[k][], BaseVk);
                     Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
                 }
             }
@@ -120,26 +119,26 @@ for (int s=0; s<NbasesV; s++){
 
 write("Output.txt","Conveccion OK.",1,1);
 
-write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
+// write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
 
 // Smagorinsky
-// for (int s=0; s<Mbases; s++){
-//     real[int, int] Sint(3*Nbases, 3*Nbases);
-//     Sint = SmagoRB[s];
-//     for (int i=0; i<NbasesV; i++){
-// 		real[int] BaseVi;
-// 		ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
-//         for (int j=0; j<=i; j++){
-// 			real[int] BaseVj;
-// 			ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
-//             Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]);
-//             if(j<i){
-//                 Sint(j,i) = Sint(i,j);
-//             }
-//         }
-//     }
-//     SmagoRB[s] += Sint;
-// }
+for (int s=0; s<Mbases; s++){
+    real[int, int] Sint(NbasesV, NbasesV);
+    Sint = SmagoRB[s];
+    for (int i=0; i<NbasesV; i++){
+		real[int] BaseVi;
+		ChangeNumbering(SmagoPEM[s], BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
+        for (int j=0; j<=i; j++){
+			real[int] BaseVj;
+			ChangeNumbering(SmagoPEM[s], BaseV[j][], BaseVj);
+            Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]);
+            if(j<i){
+                Sint(j,i) = Sint(i,j);
+            }
+        }
+    }
+    SmagoRB[s] += Sint;
+}
 
 // for (int s=0; s<Mbases; s++){
 //     real[int, int] SmagoRBaux(SmagoRB[s].n, MBasePODV.m), SmagoRBG(NbasesV, NbasesV);

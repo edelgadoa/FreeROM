@@ -20,8 +20,6 @@ MatCreate(ThL, MPescP, PkP1);
     matrix PescV =  pescV(Vh2P2perL, Vh2P2perL);
 	MPescV = PescV;//pescV(Vh2P2perL, Vh2P2perL);
 
-	
-	
 	varf pescP(u,v) = int2d(ThL)(u*v);
     matrix PescP = pescP(VhP1perL, VhP1perL);
 	MPescP = PescP;

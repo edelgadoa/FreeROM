@@ -194,6 +194,14 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBaseP(:, NbasesP+i) = SnapPL[];
 	}
 	 
+	{
+		Vh2P2perL [VEL, VELY];
+		VEL[] = MBaseV(:,NbasesV);
+
+		macro def(i) [i, i#Y] // EOM
+		plotMPI(ThL, [VEL, VELY], Pk2P2, def, real, cmm="Sol FE RE 1000")
+
+	}
 
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
@@ -238,17 +246,17 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBasePODP(:,i) = BaseP[i][];
 	}
 
-	{
-		macro def(i) [i, i#Y] // EOM
-		plotMPI(ThL, [BaseV[13], BaseVY[13]], Pk2P2, def, real, cmm="Base 0");
-
-	}
+	// {
+	// 	macro def(i) [i, i#Y] // EOM
+	// 	plotMPI(ThL, [BaseV[13], BaseVY[13]], Pk2P2, def, real, cmm="Base 0");
+	//
+	// }
 
 	//ChangeNumbering(MatAVh2P2per, BasePODV, MBasePODV);
 	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 	
 
-	 include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
+	// include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
 	
 
 
@@ -260,14 +268,14 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		BaseV[i][] = MBasePODV(:,i);
 	}
 	
-	{
-		macro def(i) [i, i#Y] // EOM
-		plotMPI(ThL, [BaseV[13], BaseVY[13]], Pk2P2, def, real, cmm="Base 0 orto");
-	}
+	// {
+	// 	macro def(i) [i, i#Y] // EOM
+	// 	plotMPI(ThL, [BaseV[19], BaseVY[19]], Pk2P2, def, real, cmm="Base 0 orto");
+	// }
 
 	for (int i=0; i<NbasesP; i++){
 		BaseP[i][] = MBasePODP(:,i);
-		// plotMPI(ThL, BaseP[i], PkP1, def, real, cmm="Base");
+		plotMPI(ThL, BaseP[i], PkP1, def, real, cmm="Base");
 	}
 	mpi(cout<<"Bases almacenadas"<<endl;)
 	// ortho(BaseV,NbasesV,prodV);

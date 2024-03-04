@@ -31,15 +31,15 @@ Vh2P2perL [uCI, uCIY];
 [uCI,uCIY] = [uCIa,uCIYa];
 VhP1perL uCIP; uCIP = uCIPa;
 real[int] uCIv;
-ChangeNumbering(MPescT, uCI[], uCIv);
+ChangeNumbering(MPescV, uCI[], uCIv);
 real[int] uCIPv;
 ChangeNumbering(MPescP, uCIP[], uCIPv);
 
 real[int] uCIRBv(I);
 for(int ii = 0; ii<NbasesV;ii++){
 	real[int] Vi;
-	ChangeNumbering(MPescT, BaseV[ii][], Vi);
-	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescT);
+	ChangeNumbering(MPescV, BaseV[ii][], Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescV);
 }
 for(int ii = NbasesV; ii<I; ii++){
 	real[int] Pi;
@@ -78,6 +78,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 	uRBL[] = MBaseVi*uRBv(0:NbasesV-1);
 	uRBPL[] = MBasePi*uRBv(NbasesV:I-1);
+
 	
 	Vh2P2per [uRB, uRBY];
 	VhP1per uRBP;
@@ -88,6 +89,10 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// write("Sol_vel" + mpisize + ".txt", uRBP[], 0, 0);
 	
 	if(MuTrain(iRB)==Reynolds){
+		{
+			macro def(i) [i, i#Y] // EOM
+			plotMPI(ThL, [uRBL, uRBLY], Pk2P2, def, real, cmm="Sol RB  RE 1000")
+		}
 		plot([uRB, uRBY], cmm="vel RB para Re="+Reynolds);
 		plot(uRBP, fill=1, value=1, cmm="pres RB para Re="+Reynolds);
 		// mpi(cout<<uRBv<<endl;)
