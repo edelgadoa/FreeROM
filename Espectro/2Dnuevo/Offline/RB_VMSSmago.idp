@@ -10,10 +10,11 @@ MVRB = nuRB * DiffRBi;
 //MRB += DivPRBTi;
 MVRB = MVRB + (1./dt) * DTRBi;
 // MRB += PenRBi;	
-
+// mpi(cout<<DTRB<<endl;)
 // mpi(cout<<MRB<<endl;)
 
-for(real ti=T0+dt;ti<=TF;ti+=dt){
+for(real ti=T0+dt;ti<=TF;ti+=dt){ // estaba en ti=T0+dt
+	matrix MVRBT = MVRB;
 	matrix ConvRBi;
 	matrix SmagoRBi;
 	bDTRBi = 0;
@@ -50,30 +51,33 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){
 		SmagoRBaux = SmagoRBN;
 		SmagoRBi = SmagoRBi + SmagoRBaux; 
 	}
-	//mpi(cout<<SmagoRBi<<endl;)
+	// mpi(cout<<SmagoRBi<<endl;)
 
 	
 	// Segundos miembro dt
 	for (int s=0; s<NbasesV; s++){
 		real[int] bDTRBint(NbasesV);
+		bDTRBint = 0;
 		bDTRBint = DTRB(s,:);
+		//mpi(cout << DTRB(s,:) << endl;)
 		bDTRBint = uRBv(s)*bDTRBint;
-		bDTRBi += bDTRBint;
+		bDTRBi = bDTRBi + bDTRBint;
 	}
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
-	MVRB = MVRB + ConvRBi;
-	MVRB = MVRB + SmagoRBi; 
+	MVRBT = MVRBT + ConvRBi;
+	// MVRBT = MVRBT + SmagoRBi; 
 	
 	//mpi(cout<<MRBF<<endl;)
-	bRB += (1./dt) * bDTRBi;
+	bRB = (1./dt)*bDTRBi;
+	
 	bRB(NbasesV:I-1) = 0; //Nos aseguramos que es cero en los grados de libertad de la presion
 
 	// mpi(cout<<bRB<<endl;)
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
-	matrix MRBs = [[MVRB , DivPRBTi],[DivPRBi, PenRBi]];
-	// mpi(cout<<MRBs<<endl;)
+	matrix MRBs = [[MVRBT , DivPRBTi],[DivPRBi, PenRBi]];
+	//mpi(cout<<MRBs<<endl;)
 	set(MRBs, solver=UMFPACK);
 
 	//mpi(cout<<"Aqui"<<endl;)

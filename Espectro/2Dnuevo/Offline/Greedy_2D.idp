@@ -22,14 +22,32 @@ DTRBi = DTRB;
 // Condicion inicial
 write("Output.txt", "Calculando condicion inicial ...", 1, 1);
 real ReInit = 8500; 
-Vh3P2per [uCIa,uCIYa,uCIPa];
-readvector("../Snapshots/Vx_" + ReInit + "_t_" +T0+ ".txt", real, initX, 0); uCIa[] = initX;
-readvector("../Snapshots/Vy_" + ReInit + "_t_" +T0+ ".txt", real, initY, 0); uCIYa[] = initY;
-readvector("../Snapshots/P_" + ReInit + "_t_" +T0+ ".txt", real, initP, 0); uCIPa[] = initP;
-
 Vh2P2perL [uCI, uCIY];
-[uCI,uCIY] = [uCIa,uCIYa];
-VhP1perL uCIP; uCIP = uCIPa;
+VhP1perL uCIP;
+
+{
+	Vh3P2per [uCIa,uCIYa,uCIPa];
+	readvector("../Snapshots/Vx_" + ReInit + "_t_" +T0+ ".txt", real, initX, 0); uCIa[] = initX; // Esto tal y como está es ineficiente, hay que cambiarlo
+	//readvector("../Snapshots/Vy_" + ReInit + "_t_" +T0+ ".txt", real, initY, 0); uCIYa[] = initY;
+	//readvector("../Snapshots/P_" + ReInit + "_t_" +T0+ ".txt", real, initP, 0); uCIPa[] = initP;
+	
+	VhP2per CIaux, CIauxY;
+	VhP1per CIauxP;
+	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
+	
+	VhP2perL CIauxL, CIauxYL;
+
+	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
+	uCIP[] = CIauxP[](mapVhP1per);
+	
+	[uCI, uCIY] = [CIauxL, CIauxYL];
+}
+
+// {
+// 	macro def(i) [i, i#Y] // EOM
+// 	plotMPI(ThL, [uCI, uCIY], Pk2P2, def, real, cmm="Condicion Inicial");
+// }
+
 real[int] uCIv;
 ChangeNumbering(MPescV, uCI[], uCIv);
 real[int] uCIPv;
@@ -46,7 +64,7 @@ for(int ii = NbasesV; ii<I; ii++){
 	ChangeNumbering(MPescP, BaseP[ii-NbasesV][], Pi);
 	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
 }
-//mpi(cout << uCIRBv << endl;)
+
 
 write("Output.txt", "Condicion inicial OK.", 1, 1);
 
@@ -89,10 +107,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// write("Sol_vel" + mpisize + ".txt", uRBP[], 0, 0);
 	
 	if(MuTrain(iRB)==Reynolds){
-		{
-			macro def(i) [i, i#Y] // EOM
-			plotMPI(ThL, [uRBL, uRBLY], Pk2P2, def, real, cmm="Sol RB  RE 1000")
-		}
+
 		plot([uRB, uRBY], cmm="vel RB para Re="+Reynolds);
 		plot(uRBP, fill=1, value=1, cmm="pres RB para Re="+Reynolds);
 		// mpi(cout<<uRBv<<endl;)

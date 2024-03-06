@@ -184,10 +184,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		
 		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
 
-		// {
+		// if (Reynolds==1000 && tt == TF){
 		//
 		// 	macro def(i) [i, i#Y] // EOM
-		// 	plotMPI(ThL, [VelXL, VelYL], Pk2P2, def, real, cmm="Base 0")
+		// 	plotMPI(ThL, [VelXL, VelYL], Pk2P2, def, real, cmm="Sol FE Reynolds="+Reynolds+", t="+tt);
 		//
 		// }
 		MBaseV(:, NbasesV+i) = VelXL[];
@@ -196,10 +196,10 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	 
 	{
 		Vh2P2perL [VEL, VELY];
-		VEL[] = MBaseV(:,NbasesV);
+		VEL[] = MBaseV(:,niT);
 
-		macro def(i) [i, i#Y] // EOM
-		plotMPI(ThL, [VEL, VELY], Pk2P2, def, real, cmm="Sol FE RE 1000")
+		macro defPK2(i) [i, i#Y] // EOM
+		plotMPI(ThL, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
 
 	}
 
@@ -256,7 +256,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP);
 	
 
-	// include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
+	include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
 	
 
 
@@ -275,7 +275,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 
 	for (int i=0; i<NbasesP; i++){
 		BaseP[i][] = MBasePODP(:,i);
-		plotMPI(ThL, BaseP[i], PkP1, def, real, cmm="Base");
+		// plotMPI(ThL, BaseP[i], PkP1, def, real, cmm="Base");
 	}
 	mpi(cout<<"Bases almacenadas"<<endl;)
 	// ortho(BaseV,NbasesV,prodV);

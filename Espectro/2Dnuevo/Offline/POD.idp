@@ -51,7 +51,7 @@ NewMacro howmanybasis(autoval,nPOD)
     In/=totalsum;
     for(int ii=0;ii<In.n;ii++)
     {
-        if(In(ii)>=(1.-epsPOD))
+        if(In(ii)>=(1.-epsPOD^2)) //aquí faltaba el cuadrado
         {
             nPOD=ii+1;
             break;
@@ -66,10 +66,12 @@ EndMacro
 ///////////////////////////////////////////////////////////////////////////////
 NewMacro baseconstrunction(snaps,autovect,autoval,base,nPOD)
 {
+	mpi(cout<<"Autovalores:"<<autoval<<endl;)
 	for(int ii=0; ii<nPOD; ii++)
 	{
+		mpi(cout<<"Val:"<<sqrt(abs(autoval(autovect.m-ii-1)))<<endl;)
 		base[ii][]=snaps*autovect(:,autovect.m-ii-1);
-		base[ii][]/=sqrt(abs(autoval(autovect.m-ii-1)));
+		base[ii][]/=sqrt(abs(autoval(autovect.m-ii-1))); 
 	}
 }
 EndMacro
