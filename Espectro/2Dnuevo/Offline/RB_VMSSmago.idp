@@ -6,14 +6,9 @@
 
 matrix MVRB; //solo las interaciones velocidad-velocidad	
 MVRB = nuRB * DiffRBi;
-//MRB += DivPRBi;
-//MRB += DivPRBTi;
 MVRB = MVRB + (1./dt) * DTRBi;
-// MRB += PenRBi;	
-// mpi(cout<<DTRB<<endl;)
-// mpi(cout<<MRB<<endl;)
 
-for(real ti=T0+dt;ti<=TF;ti+=dt){ // estaba en ti=T0+dt
+for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){ 
 	matrix MVRBT = MVRB;
 	matrix ConvRBi;
 	matrix SmagoRBi;
@@ -37,12 +32,9 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){ // estaba en ti=T0+dt
 		real[int, int] Gradint(4,NbasesV);
 		Gradint = GradPM[s](0:3, 0:NbasesV-1);
 		GraduN = Gradint * uN;
-		// mpi(cout<<GraduN<<endl;)
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	//mpi(cout<<bEIMS<<endl;)
 	sigmaEIMS = MEIMS^-1 * bEIMS;
-	// cout<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] SmagoRBN(NbasesV, NbasesV);
 		matrix SmagoRBaux;
@@ -51,7 +43,6 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){ // estaba en ti=T0+dt
 		SmagoRBaux = SmagoRBN;
 		SmagoRBi = SmagoRBi + SmagoRBaux; 
 	}
-	// mpi(cout<<SmagoRBi<<endl;)
 
 	
 	// Segundos miembro dt
@@ -59,29 +50,20 @@ for(real ti=T0+dt;ti<=TF;ti+=dt){ // estaba en ti=T0+dt
 		real[int] bDTRBint(NbasesV);
 		bDTRBint = 0;
 		bDTRBint = DTRB(s,:);
-		//mpi(cout << DTRB(s,:) << endl;)
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi = bDTRBi + bDTRBint;
 	}
 	
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MVRBT = MVRBT + ConvRBi;
-	// MVRBT = MVRBT + SmagoRBi; 
+	MVRBT = MVRBT + SmagoRBi; 
 	
-	//mpi(cout<<MRBF<<endl;)
-	bRB = (1./dt)*bDTRBi;
-	
+	bRB(0:NbasesV-1) = (1./dt)*bDTRBi;	
 	bRB(NbasesV:I-1) = 0; //Nos aseguramos que es cero en los grados de libertad de la presion
 
-	// mpi(cout<<bRB<<endl;)
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = [[MVRBT , DivPRBTi],[DivPRBi, PenRBi]];
-	//mpi(cout<<MRBs<<endl;)
 	set(MRBs, solver=UMFPACK);
-
-	//mpi(cout<<"Aqui"<<endl;)
-	// real[int,int] MRBinv = MRB^-1;
 	uRBv = MRBs^-1*bRB;
-	// mpi(cout<<uRBv<<endl;)
 }

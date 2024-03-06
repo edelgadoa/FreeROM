@@ -12,16 +12,13 @@ NewMacro matrixcorrelacion(snaps, C, prod)
     	for(int jj=ii;jj<C.m;jj++){
 			real[int] snapj;
 			ChangeNumbering(prod, snaps(:,jj), snapj);
-            // dscalprod(D,snapi,snapj);
-        	C(ii,jj) = //prod(snaps(:,ii),snaps(:,jj));
-			innerprodX(snapi, snapj, prod);
+        	C(ii,jj) = innerprodX(snapi, snapj, prod);
                 if(ii!=jj)C(jj,ii)=C(ii,jj);
         }
 	}
 }
 EndMacro
 	
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // Calculo de autovalores (puede hacerse SVD con dgesdd A=U*SIGMA*V^T)
@@ -66,10 +63,8 @@ EndMacro
 ///////////////////////////////////////////////////////////////////////////////
 NewMacro baseconstrunction(snaps,autovect,autoval,base,nPOD)
 {
-	mpi(cout<<"Autovalores:"<<autoval<<endl;)
 	for(int ii=0; ii<nPOD; ii++)
 	{
-		mpi(cout<<"Val:"<<sqrt(abs(autoval(autovect.m-ii-1)))<<endl;)
 		base[ii][]=snaps*autovect(:,autovect.m-ii-1);
 		base[ii][]/=sqrt(abs(autoval(autovect.m-ii-1))); 
 	}

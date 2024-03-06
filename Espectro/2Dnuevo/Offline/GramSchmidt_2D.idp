@@ -4,30 +4,22 @@
 
 // Código para calcular las bases ortonormalizadas 
 
-
 /////////////////////////////////////////////
 // Ortonormalizacion de la Presion
 
-MBasePODP = OrtoX(MBasePODP, MPescP);
-//ChangeNumbering(MatAVhP1per, BasePODP, MBasePODP, inverse=true, exchange=true);
+MBaseP = OrtoX(MBaseP, MPescP);
 
-
-// ChangeNumbering(MatAVhP1per, BaseP, MBasePODP, inverse=true);
-mpi(cout<<"Presion ortonormalizada..." <<endl;)
-
+for (int i=0; i<NbasesP; i++){
+	BaseP[i][] = MBaseP(:,i);
+}
 
 //////////////////////////////////////////////
-//
-pause;
+// Ortonormalizacion de la Velocidad
 
-mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
+MBaseV = OrtoX(MBaseV, MPescV);
 
-MBasePODV = OrtoX(MBasePODV, MPescV);
-// MBasePODV = OrtoX(MBasePODV, MPescV);
-//ChangeNumbering(MPescV, BasePODV[5][], MBasePODV(:,5), inverse=true, exchange=true);
-
-mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
+for (int i=0; i<NbasesV; i++){
+	BaseV[i][] = MBaseV(:,i);
+}
 
 
-// Para el filtrado (Smago -> no necesario)
-// BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
