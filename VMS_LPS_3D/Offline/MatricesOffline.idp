@@ -43,28 +43,28 @@ include "Allocate_matrices_local.idp"
 // }
 
 real[int,int] DiffRBaux(DiffPEM.n, MBaseVii.m), DivPRBaux(DiffPEM.n, MBaseVii.m), ConvLRBaux(ConvLevPEM.n, MBaseVii.m), 
-			  DTRBaux(DTPEM.n, MBaseVii.m), PenRBaux(PenPEM.n, MBasePii.m);// StabhkRBaux(StabhkPEM.n, MBaseP.m);
+			  DTRBaux(DTPEM.n, MBaseVii.m), PenRBaux(PenPEM.n, MBasePii.m), StabhkRBaux(StabhkPEM.n, MBasePii.m);
 
 MatMatMult(DiffPEM, MBaseVii, DiffRBaux);
 MatMatMult(DivPPEM, MBaseVii, DivPRBaux);
 MatMatMult(ConvLevPEM, MBaseVii, ConvLRBaux);
 MatMatMult(DTPEM, MBaseVii, DTRBaux);
 MatMatMult(PenPEM, MBasePii, PenRBaux);
-//MatMatMult(StabhkPEM, MBaseP, StabhkRBaux);
+MatMatMult(StabhkPEM, MBasePii, StabhkRBaux);
 
 real[int,int] DiffRBL = MBaseVii'*DiffRBaux;
 real[int,int] DivPRBL = MBasePii'*DivPRBaux;
 real[int,int] ConvLRBL = MBaseVii'*ConvLRBaux;
 real[int,int] DTRBL = MBaseVii'*DTRBaux;
 real[int,int] PenRBL = MBasePii'*PenRBaux;
-//real[int,int] StabhkRBL = MBaseP'*StabhkRBaux;
+real[int,int] StabhkRBL = MBasePii'*StabhkRBaux;
 
 mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(ConvLRBL, ConvLRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
-//mpiAllReduce(StabhkRBL, StabhkRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
 
 
 // DiffRB(0:i,0:i) = DiffRBG(0:i,0:i);
@@ -100,18 +100,18 @@ mpi(cout<<"Convection matrix"<<endl;)
 //
 // 	ConvRB[s] = Cint;
 // }
-real[int,int][int] ConvRBii(i+1);
+
 for(int s=0; s<=i;s++){
-	real[int,int] ConvRBaux(ConvRBii[s].n, MBaseVii.m), ConvRBG(i+1, i+1);
+	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVii.m), ConvRBG(i+1, i+1);
 	MatMatMult(ConvPEM[s], MBaseVii, ConvRBaux);
 	real[int,int] ConvRBL = MBaseVii'*ConvRBaux;
 	//cout<<ConvRBL<<endl;
 	mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
-	// cout<<"conv MatrixG i=0"<<ConvRBG<<endl;
-	ConvRBii[s] = ConvRBG(0:i,0:i);
+	equal(ConvRB[s],ConvRBG(0:i,0:i))
+	//mpi(cout<<"conv MatrixG i=0"<<ConvRB[]<<endl;)
 }
 //cout<<" "<<endl<<endl<<endl;
-//cout<<"conv Matrix"<<endl<<ConvRB[0]<<endl;
+mpi(cout<<"conv Matrix"<<endl<<ConvRB<<endl;)
 //
 // // Smagorinsky
 // mpi(cout<<"Smago matrix"<<endl;)
@@ -137,7 +137,8 @@ for (int s=0; s<Mbases; s++){
 	MatMatMult(SmagoPEM[s], MBaseVii, SmagoRBaux);
 	real[int,int] SmagoRBL = MBaseVii'*SmagoRBaux;
 	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
-    SmagoRB[s] = SmagoRBG;
+    equal(SmagoRB[s],SmagoRBG)
+	
 }
 
 
@@ -146,9 +147,10 @@ for (int s=0; s<Taubases; s++){
 	MatMatMult(StabPPEM[s], MBasePii, LPSRBaux);
 	real[int,int] StabPRBL = MBasePii'*LPSRBaux;
 	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
-    StabPRB[s] = StabPRBG;
-	// mpi(cout<<StabPRBG<<endl;)
+    equal(StabPRB[s],StabPRBG)
+	
 }
+
 
 //
 // // LPS
@@ -256,8 +258,8 @@ for (int s=0; s<Mbases; s++){
     	NGUK[s] += Nggk;
     }
 }
-//mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
-//mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
+// mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+// mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
 //
 {
 	// Matrices para el EIM LPS (Funciones de base)
@@ -268,21 +270,21 @@ for (int s=0; s<Mbases; s++){
 
 	for (int j=0; j<=i; j++){
 
-		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
-		varf NGL(un,v) = int3d(ThL)(UporV(fvel,ffvel)*v);
-
+		VhP2L fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
+		varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
+		// varf NGL(un,v) = intN(ThL)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
 		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i];
-		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[i];
+		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[j]; 
 
 		real[int] ngaux = NGL(0,VhP0L);
 
 
         ///////////////////////////////////////////
 
-		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
-			   DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
+		VhP1dcL dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
+			    DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
 
-	    varf NDG(un,v) = int3d(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1
+	    varf NDG(un,v) = intN(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1
 			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
 								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
 
@@ -329,11 +331,12 @@ for (int s=0; s<Mbases; s++){
     }
 }
 //
-//mpi(cout<<"NUK"<<endl<<NUK[0]<<endl;)
-//mpi(cout<<"NGUK"<<endl<<NGUK[0]<<endl;)
+mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
 
 //mpi(cout<<"RHS"<<endl;)
 
+/////////////////////////
 // Segundo miembro
 real[int] LevVB, FLevVB;
 ChangeNumbering(MatAVh3P2, LevV[], LevVB);

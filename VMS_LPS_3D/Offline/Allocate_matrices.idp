@@ -22,13 +22,13 @@ for (int i=0;i<Mbases;i++){
 }
 
 
-//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO TENGO QUE VER LA NUMERACION
+//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO TENGO QUE VER LA NUMERACION + HACERLO EN PARALELO!!! 
 real[int,int][int] NUK(Taubases), NGUK(Taubases);
 for (int i=0; i<Taubases; i++){
 	real [int,int] Aux (Nbases+1,Nbases+1);
-	Aux=0;
+	Aux = 0;
 	
-	varf Ngk(un1,v) = int3d(Th)((Lev^2+LevY^2+LevZ^2)*v);
+	varf Ngk(un1,v) = int3d(Th)((Lev^2 + LevY^2 + LevZ^2)*v);
 	real[int] ngk = Ngk(0,VhP0); 
 	Aux(0,0) = ngk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NUK[i] = Aux(0:Nbases,0:Nbases);
@@ -37,7 +37,7 @@ for (int i=0; i<Taubases; i++){
 								   + FLevYdX^2 + FLevYdY^2 + FLevYdZ^2
 								   + FLevZdX^2 + FLevZdY^2 + FLevZdZ^2)*v);
 	real[int] nggk = Ngradgk(0,VhP0); 
-	Aux(0,0)= nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
+	Aux(0,0) = nggk(PuntosMTau(i)); //Tomo el valor en el elemento correspondiente
 	NGUK[i] = Aux(0:Nbases,0:Nbases);
 }
 

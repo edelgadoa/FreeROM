@@ -21,7 +21,7 @@ DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
 ConvLRBi = ConvLRBG;
 PenRBi = PenRBG;
 DTRBi = DTRBG;
-
+matrix StabhkRBs = StabhkRBG;
 
 //
 // // Inicializamos las matrices para el problema reducido
@@ -39,7 +39,7 @@ DTRBi = DTRBG;
 // PenRBi = PenRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
 // ConvLevRBi = ConvLevRB(0:2*I-1, 0:2*I-1);
 // DTRBi = DTRB(0:2*I, 0:2*I);
-// // StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
+// StabhkRBi = StabhkRB(Nbases-I:Nbases+I-1, Nbases-I:Nbases+I-1);
 // bDiffRBi = bDiffRB(0:2*I-1);
 // bConvRBi = bConvRB(0:2*I-1);
 

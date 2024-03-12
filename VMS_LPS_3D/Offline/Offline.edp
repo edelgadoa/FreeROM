@@ -17,6 +17,7 @@ verbosity = 0;
 // Cargamos librerias
 load "iovtk" 
 load "lapack"
+load "PETSc";
 load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
 
 // Creamos la Malla
@@ -29,11 +30,43 @@ include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp" 
 include "../Auxiliary/Functions_MP.idp"
 
-// Definimos los espacios de EF
-include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
+macro dimension()3 //EOM
+include "macro_ddm.idp"
 
 // Definimos los parametros a usar
 include "../Auxiliary/Parametros_3D.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
+
+VhP0L mk,tKcod,tKTcod,tau;
+
+varf med(unused,v) = intN(ThL)(1.*v);
+real[int] medk = med(0,VhP0L);
+mk[] = sqrt(medk); 
+
+VhP0L hk = hTriangle;
+real hT, hTL = hk[].max;
+mpiAllReduce(hTL, hT, mpiCommWorld, mpiMAX); //El máximo de los diámetros de la malla
+
+VhP0 mkG, hkG;
+hkG = hTriangle;
+varf medG(unused,v) = intN(Th)(1.*v);
+real[int] medkG = medG(0,VhP0);
+mkG[] = sqrt(medkG); 
+
+//Construyo el vector que bloqueará el residuo de SMAGO
+varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2, un1=1,un2=1,un3=1); 
+
+real[int] cc = CC(0,Vh4P2L);
+for (int gf=0; gf<Vh4P2L.ndof; gf++){
+	cc(gf) = (cc(gf)>10^10) ? 0 : 1;
+} 
+
+mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
+mapVhP2 = restrict(VhP2L,VhP2,myN2o);
+mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
+mapVhP0 = restrict(VhP0L, VhP0, myN2o);
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_3D.idp"
@@ -199,12 +232,11 @@ for (int i=0; i<Nbases; i++){
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
 		BaseP[i][] = SnapP[](mapVhP2);		
-		
+	
 		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
 			
 	}
-	VhP2 UL, ULY, ULZ;
-	UL = BaseV[i] + Lev; ULY = BaseVY[i] + LevY; ULZ = BaseVZ[i] + LevZ;
+	//savevtk("BaseEIM.vtu", Th, [BaseV[i], BaseVY[i], BaseVZ[i]],BaseP[i], dataname = "Vel Pres", order=fforder);//, communicator = mpiCommSelf);
 	
 	mpi(cout<<"GramSchmidt"<<endl;)
 	// include "GramSchmidt.idp"
@@ -243,10 +275,12 @@ for (int i=0; i<Nbases; i++){
     BV[] = BaseV[i][];
 	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(BV,uu,v));
 	{
-		// matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
-		Mat ConvTemp = MatAVh3P2;
-        ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
-		ConvPEM[i] = ConvTemp; 
+		matrix TMP = ConvPE(Vh3P2L,Vh3P2L);
+		macro def(i) [i, iY, iZ] // EOM
+		macro init(i) [i, i, i] // EOM
+		MatCreate(ThL, ConvPEM[i], [P2,P2,P2]);// = MatAVh3P2;
+        //ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
+		ConvPEM[i] = TMP; 
 	}
 	
 	// real antisim=int3d(ThL)(antisimetric(BV,BVY,BVZ,BaseV[i], BaseVY[i],BaseVZ[i],BaseV[i], BaseVY[i],BaseVZ[i]));

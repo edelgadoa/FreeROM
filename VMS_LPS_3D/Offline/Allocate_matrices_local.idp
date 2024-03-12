@@ -4,7 +4,7 @@
 
 // Definicion de las Matrices Reducidas fijas Globales para el cálculo en paralelo
 real[int,int] DiffRBG(i+1, i+1), DivPRBG(i+1, i+1), PenRBG(i+1, i+1), 
-			  ConvLRBG(i+1, i+1), DTRBG(i+1, i+1), StabhkRBG(i, i);
+			  ConvLRBG(i+1, i+1), DTRBG(i+1, i+1), StabhkRBG(i+1, i+1);
 			  
 DiffRBG = 0;
 DivPRBG = 0;

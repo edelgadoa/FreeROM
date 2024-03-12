@@ -17,6 +17,7 @@ VhP2L GzeroP2 = 0.;
 [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
 [LevV, LevVY, LevVZ] = [GP2, GzeroP2, GzeroP2];
 
+
 // Filtro el levantamiento y lo derivo
 VhP1dcL FLevdXL, FLevdYL, FLevdZL, FLevYdXL, FLevYdYL, FLevYdZL, FLevZdXL, FLevZdYL, FLevZdZL;
 
@@ -26,6 +27,7 @@ VhP1dcL FLevdXL, FLevdYL, FLevdZL, FLevYdXL, FLevYdYL, FLevYdZL, FLevZdXL, FLevZ
 //	FLevZdXL[] = DXP2IPhL * GzeroP2[]; FLevZdYL[] = DYP2IPhL * GzeroP2[]; FLevZdZL[] = DZP2IPhL * GzeroP2[];
 }
 
+// Esto lo uso simplemente para hacer más sencilla la matriz de nu_T(G)
 VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
 Local2Global(FLevdX, MatAVhP1dc.D, mapVhP1dc);
 Local2Global(FLevdY, MatAVhP1dc.D, mapVhP1dc);

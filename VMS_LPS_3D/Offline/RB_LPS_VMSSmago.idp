@@ -8,14 +8,18 @@ real errRB = 1.;
 matrix MRBV, MRBP; // Matrix para las interacciones Velocidad-Velocidad	 y Presion-Presion
 	
 MRBV = nuRB * DiffRBi;
+mpi(cout<<MRBV<<endl;)
 //MRBVP += DivPRBi;
 //MRBVP += DivPRBTi;
-MRBV += (1./dt) * DTRBi;
-MRBV += ConvLRBi;
+MRBV = MRBV +(1./dt) * DTRBi;
+mpi(cout<<MRBV<<endl;)
+MRBV = MRBV + ConvLRBi;
+mpi(cout<<MRBV<<endl;)
 MRBP = PenRBi;	
-// MRB += StabhkRBi;
+MRBP = MRBP + StabhkRBs;
 
 // bDiffRBi = bDiffRBG(0:2*I-1);
+
 
 	
 for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
@@ -30,11 +34,13 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	
 	// Matriz de conveccion
 	for (int s=0; s<I; s++){
-		real[int,int] ConvRBN(I, I);
-		ConvRBN = ConvRB[s];
+		real[int,int] ConvRBint(2*Nbases, 2*Nbases), ConvRBN(I, I);
+		ConvRBint = ConvRB[s];
+		ConvRBN = ConvRBint(0:I, 0:I);
 		ConvRBN = uRBv(s)*ConvRBN;
 		ConvRBi += ConvRBN;
 	}
+	// mpi(cout<<"CONV:"<<endl<<ConvRBi<<endl;)
 
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(I);
@@ -70,6 +76,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	uN1(0) = 1;
 	uN1(1:I) = uN;
 	CuN = uN1*uN1';
+	mpi(cout<<"CuN"<<endl<<CuN<<endl;)
 	for (int s=0; s<Taubases; s++){
 		real Nuk, Nguk;
 		Nuk = 0; Nguk = 0;
@@ -78,19 +85,20 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		Nuki = NUK[s](0:I, 0:I);
 		Auxi = CuN.*Nuki;
 		Nuk = sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
-		
 		Nguki = NGUK[s](0:I,0:I);
 		Auxi = CuN.*Nguki;
 		Nguk = (CS*hkG[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
+		
 
 		bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTau(s))^2 + cc2*Nuk/hkG[](PuntosMTau(s)))^-1;	
+		mpi(cout<<"hk^2="<<hkG[](PuntosMTau(s))^2<<endl;)
 	}
 	
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-	cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<bEIMTau<<endl;
+	cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBN(I, I);
-		StabPRBN = StabPRB[s];
+		StabPRBN = StabPRB[s](0:I-1, 0:I-1);
 		StabPRBN = sigmaEIMTau(s)*StabPRBN;
 		StabPRBi += StabPRBN; 
 	}
@@ -100,24 +108,29 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
 		real[int] bDTRBint(I);
-		bDTRBint = DTRB(s,:);
+		bDTRBint = DTRBG(s,:);
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
 	}
 	
+	mpi(cout<<"bdt "<< bDTRBi<<endl;)
+	
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
-	MRBFV += SmagoRBi; 
-	MRBFP += StabPRBi;
+	// MRBFV += SmagoRBi; 
+	//MRBFP += StabPRBi;
 	
 	//mpi(cout<< MRBF<<endl;)
 	
-	bRB(0:I-1) = (1./dt) * bDTRBi;
-	bRB(0:I-1) -= nuRB * bDiffRBG;
-	bRB(0:I-1) -= bConvLRBG;
-	bRB(0:I-1) -= bSmagoRBi;
-	
-	//mpi(cout<<bRB<<endl;)
+	bRB = (1./dt) * bDTRBi;
+	mpi(cout<<"bdt: "<<bRB<<endl;)
+	bRB -= nuRB * bDiffRBG;
+	mpi(cout<<"-bdiff: "<<bRB<<endl;)
+	bRB -= bConvLRBG;
+	mpi(cout<<"-bconvL: "<<bRB<<endl;)
+	// bRB -= bSmagoRBi;
+	mpi(cout<<"-bSmago: "<<bSmagoRBi<<endl;)
+	mpi(cout<<"bRB="<<bRB<<endl;)
 	
 	//MRBF = [[MRBV, DivPRBTi],[DivPRBi, MRBP]]; //matriz por bloques
 	

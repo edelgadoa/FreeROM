@@ -3,104 +3,137 @@
 /////////////// 
 
 // Defino las matrices de producto escalar T que voy a considerar para la ortonormalizacion
-varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
-matrix MPescT = pescT(Vh3P2L, Vh3P2L);
+// varf pescT ([uu, uuY, uuZ], [v,vY,vZ]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v));
+// matrix MPescT = pescT(Vh3P2L, Vh3P2L);
 
-varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)((1./Refijo + MOD(uFijo))*GradUGradV(uu,v) + uuP*vP);
-matrix MPescX = pescX(Vh4P2L, Vh4P2L);
-
-varf NormaVel([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
-Mat MNormaVel = MatAVh3P2;
-
-MNormaVel = NormaVel(Vh3P2L, Vh3P2L);
-
-///////////////////////////////////////////////////////
-Mat DiffPEM  = MatAVh3P2;
-Mat PenPEM = MatAVhP2;
-Mat DivPPEM;
-Mat ConvLevPEM = MatAVh3P2;
-Mat DTPEM = MatAVh3P2;
-
-varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+Mat MPescX;
 {
-	DiffPEM = DiffPE(Vh3P2L,Vh3P2L);
-	//matrix DiffPEML = DiffPE(Vh3P2L,Vh3P2L);
-  	//Mat DiffPEMTemp = DiffPEML;
-	//DiffPEM = DiffPEMTemp;
+	varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)(//(1./Refijo + MOD(uFijo))*
+	GradUGradV(uu,v) + uuP*vP);
+	macro def(i) [i, i#Y, i#Z, i#P] //EOM
+	macro init(i) [i, i, i, i] //EOM
+	MatCreate(ThL, MPescX, [P2,P2,P2,P2]);
+	matrix MPescXTemp = pescX(Vh4P2L, Vh4P2L);
+	MPescX = MPescXTemp;
 }
 
-varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
+
+Mat MPescV;
 {
+	varf PescV([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(ThL, MPescV, [P2,P2,P2]);
+	matrix MPescVTemp = PescV(Vh3P2L, Vh3P2L);
+	MPescV = MPescVTemp;
+}
+
+///////////////////////////////////////////////////////
+Mat DiffPEM;
+Mat PenPEM;
+Mat DivPPEM;
+Mat ConvLevPEM;
+Mat DTPEM;
+Mat StabhkPEM;
+
+// Diff matrix
+{
+	varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
+	matrix DiffPEMT = DiffPE(Vh3P2L,Vh3P2L);
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(ThL, DiffPEM, [P2,P2,P2]);
+	DiffPEM = DiffPEMT;
+}
+
+// Div(u)*p matrix
+{
+	varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
 	matrix DivPPEMT = DivPPE(Vh3P2L,VhP2L);
     Mat DivPPEMTemp(MatAVhP2, MatAVh3P2, DivPPEMT);
 	DivPPEM = DivPPEMTemp;
 }
 
-varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
+// Penalization matrix
+
 {
-	PenPEM = PenPE(VhP2L, VhP2L);
-	//matrix PenPEML = PenPE(VhP2L,VhP2L);
-    //Mat PenPEMTemp = PenPEML;
-	//PenPEM = PenPEMTemp;
+	varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
+	matrix PenPEMT = PenPE(VhP2L, VhP2L);
+	MatCreate(ThL, PenPEM, P2);
+	PenPEM = PenPEMT;
 }
 
-varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+
 {
-	ConvLevPEM = ConvLevPE(Vh3P2L,Vh3P2L); 
-	//matrix ConvLevPEML = ConvLevPE(Vh3P2L,Vh3P2L);
-    //Mat ConvLevPEMTemp = ConvLevPEML;
-	//ConvLevPEM = ConvLevPEMTemp;
+	varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+	matrix ConvLevPEMT = ConvLevPE(Vh3P2L,Vh3P2L); 
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(ThL, ConvLevPEM, [P2, P2, P2]);
+	ConvLevPEM = ConvLevPEMT;
 }
 
-varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
+
 {
-	DTPEM = DTPE(Vh3P2L,Vh3P2L);
-	// matrix DTPEML = DTPE(Vh3P2L,Vh3P2L);
-    //Mat DTPEMTemp = DTPEML;
-	// DTPEM = DTPEMTemp;
+	varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
+	matrix DTPEMT = DTPE(Vh3P2L,Vh3P2L);
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(ThL, DTPEM, [P2, P2, P2]);
+	DTPEM = DTPEMT;
 }
 
+{
+	varf StabhK(uP,vP) = int3d(ThL)(hTriangle^2*uP*vP);
+	matrix FiltroX, FiltroY, FiltroZ;
+	matrix SPPEM2 = StabhK(VhP1dcL, VhP1dcL);
+	{
+		FiltroX = SPPEM2 * IPhDXP2L;
+		FiltroX = (IPhDXP2L') * FiltroX;
+		FiltroY = SPPEM2 * IPhDYP2L;
+		FiltroY = (IPhDYP2L') * FiltroY;	
+		FiltroZ = SPPEM2 * IPhDZP2L;
+		FiltroZ = (IPhDZP2L') * FiltroZ;	
+	}
+	matrix StabhkPEML = FiltroX + FiltroY + FiltroZ;
+	MatCreate(ThL, StabhkPEM, P2);
+	StabhkPEM = StabhkPEML;
+}
 
 Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
 
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 // VMS-SMAGO
-{
-    for (int s=0; s<Mbases; s++){
-        
-        varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-        {
-            matrix SmagoPEML = SmagoPE(Vh3P2L,Vh3P2L);
-            Mat SmagoPEMtem(MatAVh3P2, SmagoPEML); // = SmagoPE(Vh3P2L,Vh3P2L);
-            SmagoPEM[s] = SmagoPEMtem;
-        }
-    }
+for (int s=0; s<Mbases; s++){
+	varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+	matrix SmagoPEMT = SmagoPE(Vh3P2L,Vh3P2L);
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(ThL, SmagoPEM[s], [P2, P2, P2]);
+	SmagoPEM[s] = SmagoPEMT;
 }
+
 
 // LPS-pressure
-
-
-{
-    for (int s=0; s<Taubases; s++){
+for (int s=0; s<Taubases; s++){
         
-		varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
-		matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
-		matrix FiltroX, FiltroY, FiltroZ;
-		{
-			FiltroX = SPPEM * IPhDXP2L;
-			FiltroX = (IPhDXP2L') * FiltroX;
-			FiltroY = SPPEM * IPhDYP2L;
-			FiltroY = (IPhDYP2L') * FiltroY;
-			FiltroZ = SPPEM * IPhDZP2L;
-			FiltroZ = (IPhDZP2L') * FiltroZ;	
-		}
-        matrix SPPEML = FiltroX + FiltroY + FiltroZ;
-        // SPPEML = SPPEML + FiltroZ;
-	    Mat StabPPEMtem(MatAVhP2, SPPEML);
-        StabPPEM[s] =  StabPPEMtem;
-    }
+	varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
+	matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
+	matrix FiltroX, FiltroY, FiltroZ;
+	{
+		FiltroX = SPPEM * IPhDXP2L;
+		FiltroX = (IPhDXP2L') * FiltroX;
+		FiltroY = SPPEM * IPhDYP2L;
+		FiltroY = (IPhDYP2L') * FiltroY;
+		FiltroZ = SPPEM * IPhDZP2L;
+		FiltroZ = (IPhDZP2L') * FiltroZ;	
+	}
+    matrix SPPEMT = FiltroX + FiltroY + FiltroZ;
+	MatCreate(ThL, StabPPEM[s], P2);
+    StabPPEM[s] =  SPPEMT;
 }
 
-varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));
-real[int] bDiffPEv = bDiffPE(0, Vh3P2L);
+
+// varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));
+// real[int] bDiffPEv = bDiffPE(0, Vh3P2L);
 

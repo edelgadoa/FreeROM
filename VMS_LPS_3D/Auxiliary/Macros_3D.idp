@@ -45,6 +45,8 @@ macro MOD(U) (sqrt(U#dX^2 + U#dY^2 + U#dZ^2 +
 macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
 
+// macro para la igualdad de matrices
+macro equal(MatrixBig, MatrixSmall) for [i,j, aij : MatrixSmall]{MatrixBig(i,j) = aij;} //EOM
 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
