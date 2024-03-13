@@ -4,11 +4,15 @@ load "iovtk"
 
 int[int] fforder=[1,1,1,1];
 verbosity = 0;
-
+macro dimension()3 //EOM
+include "macro_ddm.idp";
+load "PETSc"
 
 // Mesh Creation
 include "CubeN.idp"
-
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
 // Macros definition:
 macro Div(U) (dx(U) + dy(U#Y) + dz(U#Z)) //EOM
 macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
@@ -24,11 +28,34 @@ macro MOD(U) (sqrt(dx(U)^2 + dy(U)^2 + dz(U)^2 +
 				   dx(U#Z)^2 + dy(U#Z)^2 + dz(U#Z)^2)) //EOM
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
+func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
+{
+	real[int] aux(u.n); aux = 0;
+	real[int] auxL = uL;
+	auxL .*= D;
+	aux(map) = auxL;
+	real[int] result(u.n); result = 0;
+	mpiAllReduce(aux, result, mpiCommWorld, mpiSUM);
+}
+
 ///////////////////
+
+
+
+
+Mat MatAVh4P2;
+
+int[int] mapVh4P2;
+
+
+
 
 // FE spaces
 // Global Mesh
 fespace Vh4P2(Th, [P2, P2, P2, P2]); 
+fespace VhP2(Th, P2); 
+
+real volOmega = int3d(Th)(1); // Lo hago en global porque solo lo hago una unica vez. Se puede hacer sobre ThL, pero se necesita de la particion de la unidad.
 
 // Local Mesh
 fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
@@ -36,16 +63,7 @@ fespace VhP2L(ThL, P2);
 fespace VhP1dcL(ThL, P1dc);
 fespace VhP1L(ThL, P1);
 
-macro dimension()3 //EOM
-include "macro_ddm.idp";
-load "PETSc"
 
-Mat MatAVh4P2;
-
-int[int] mapVh4P2;
-int[int] myN2o;
-macro ThLN2O() myN2o // EOM
-buildDmesh(ThL);
 mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);  
 
 {
@@ -55,21 +73,22 @@ mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
 }
 
 
+
 // Interpolation matrices 
 matrix IPhD4X4P2L, IPhD4Y4P2L, IPhD4Z4P2L; // (?) -> Go to Mat structure? (using MatMatMult if necessary)
 {
 	VhP1dcL faux1 = 1.;
 	matrix IdP1dcL = faux1[];
 	
-	matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
-	matrix IPg = interpolate(VhP1dcL,VhP1L); 
+	matrix PIg = interpolate(VhP1L,VhP1dcL, inside=1); //(Id-πh) P1dc->P1->P1dc
+	matrix IPg = interpolate(VhP1dcL,VhP1L, inside=1); 
 	matrix IPPIg = IPg*PIg;
 	matrix IPhP1dcP1L = IdP1dcL + (-1.)*IPPIg;
 	
 	int[int] cs2=[3];
-	matrix D4X4P2L = interpolate(VhP1dcL,Vh4P2L,U2Vc=cs2,op=1);
-	matrix D4Y4P2L = interpolate(VhP1dcL,Vh4P2L,U2Vc=cs2,op=2);
-	matrix D4Z4P2L = interpolate(VhP1dcL,Vh4P2L,U2Vc=cs2,op=3);
+	matrix D4X4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1, U2Vc=cs2,op=1);
+	matrix D4Y4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1,U2Vc=cs2,op=2);
+	matrix D4Z4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1,U2Vc=cs2,op=3);
 
 	IPhD4X4P2L = IPhP1dcP1L * D4X4P2L; 
 	IPhD4Y4P2L = IPhP1dcP1L * D4Y4P2L; 
@@ -192,18 +211,26 @@ for (real ittime = 0; ittime <= T; ittime += dt){
     names[1] = "pressure";
 	
 	// (?) MAIN PROBLEM: HOW TO DECIDE THE BETTER CONFIGURATION OF PARAMETER FOR SOLVING THE LINEAR SYSTEM
-	/*
-	set(MatAVh4P2, prefix = "block_", sparams = "-block_pc_type fieldsplit -block_ksp_type fgmres -block_pc_fieldsplit_type schur  -block_pc_fieldsplit_schur_fact_type lower -block_pc_fieldsplit_detect_saddle_point "
-	 + " -block_fieldsplit_velocity_pc_type lu -block_fieldsplit_velocity_mat_solver_type mumps"
-	 + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names); // (?) -> what should be the best configuration of parameters: 
-	  */ 
+	
+	// set(MatAVh4P2, sparams="-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -pc_fieldsplit_detect_saddle_point -fieldsplit_velocity_sub_pc_type lu -fieldsplit_pressure_sub_pc_type lu " + " -fieldsplit_velocity_sub_pc_factor_mat_solver_type mumps -fieldsplit_pressure_sub_pc_factor_mat_solver_type mumps " + " -ksp_monitor -ksp_view -fieldsplit_velocity_ksp_type gmres -fieldsplit_velocity_ksp_max_it 5 -fieldsplit_pressure_ksp_type gmres -fieldsplit_pressure_ksp_max_it 5 -ksp_rtol 1e-6", fields = uuL[], names = names); // (?) -> what should be the best configuration of parameters:
+	  
 	
 	//(?) -> This configuation ->
 	set(MatAVh4P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // -> works, but it gets slower when increasing the number of processors.
-	if (mpirank==0){ cout<<"Solve the linear system"<<endl;}   
+	if (mpirank==0){ cout<<"Solve the linear system"<<endl;}  
+	// uEF[] = 0.0; 
 	uEF[] = MatAVh4P2^-1*bFinal; 
-	
-	
+
+	Vh4P2 [uG, uGY, uGZ, uGP];
+	uG[] = reduceSolution(uEF[], uG[], MatAVh4P2.D, mapVh4P2);
+	ofstream Sol("Solution_u_MPI"+mpisize+"_"+ittime+".txt");
+	// VhP2 presAux = uGP;
+	// presAux[] -= (1./volOmega)*int3d(Th)(uGP);
+	// [uG, uGY, uGZ, uGP] = [uG, uGY, uGZ, presAux];
+	Sol<<uG[];
+	real medpres = intN(Th)(uGP);
+	if (mpirank==0){cout<<"media presion="<<medpres<<endl; }   
+	savevtk("Solution_MPI"+mpisize+"_"+ittime+".vtu", Th, [uG, uGY, uGZ], uGP, dataname="vel pres", order=fforder);
 	// (?) -> Other possibilities???
 	
 }

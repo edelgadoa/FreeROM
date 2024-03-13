@@ -28,10 +28,10 @@ mesh3 Th, ThL;
 	int wallR = 1; // Right wall
 	int wallF = 1; // Frontal wall
 	int wallB = 1; // Back wall
-	int floor = 1; // In my problem, floor and walls have the same BC
-	int roof = 2; 
+	int floorCube = 1; // In my problem, floor and walls have the same BC
+	int roofCube = 2; 
 	
-	int [int,int]  Lxyz=[[wallB,wallF],[wallL,wallR],[floor,roof]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	int [int,int]  Lxyz=[[wallB,wallF],[wallL,wallR],[floorCube,roofCube]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
 
 	
 	Th = Cube(Nxyz, Bxyz, Lxyz);

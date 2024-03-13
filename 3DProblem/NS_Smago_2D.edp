@@ -1,0 +1,220 @@
+// Transitory NS + Smagorinsky with LPS pressure stabilization
+
+load "iovtk"
+
+int[int] fforder=[1,1,1,1];
+verbosity = 0;
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+load "PETSc"
+
+// Mesh Creation
+mesh Th = square(30,30);
+mesh ThL = Th; //local mesh (with DDM overlapping)
+
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
+
+// Macros definition:
+macro Div(U) (dx(U) + dy(U#Y)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y))//EOM
+macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
+macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
+macro MOD(U) (sqrt(dx(U)^2 + dy(U)^2 + dx(U#Y)^2 + dy(U#Y)^2) ) //EOM
+macro UporV(U,V) (U*V + U#Y*V#Y) //EOM
+
+func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
+{
+	real[int] aux(u.n); aux = 0;
+	real[int] auxL = uL;
+	auxL .*= D;
+	aux(map) = auxL;
+	real[int] result(u.n); result = 0;
+	mpiAllReduce(aux, result, mpiCommWorld, mpiSUM);
+}
+
+///////////////////
+
+
+
+
+// FE spaces
+// Global Mesh
+fespace Vh3P2(Th, [P2, P2, P2]); 
+fespace VhP2(Th, P2); 
+
+
+// Local Mesh
+fespace Vh3P2L(ThL, [P2, P2, P2]); 
+fespace VhP2L(ThL, P2); 
+fespace VhP1dcL(ThL, P1dc);
+fespace VhP1L(ThL, P1);
+
+
+
+int[int] mapVh3P2 = restrict(Vh3P2L,Vh3P2,myN2o);  
+
+Mat MatVh3P2;
+{
+	macro def(i) [i, i#Y, iP] // EOM
+	macro init(i) [i, i, i] // EOM
+	createMat(ThL, MatVh3P2, [P2, P2, P2]); 
+}
+
+
+
+// Interpolation matrices for LPS
+matrix IPhD3X3P2L, IPhD3Y3P2L, IPhD3Z3P2L; // (?) -> Go to Mat structure? (using MatMatMult if necessary)
+{
+	VhP1dcL faux1 = 1.;
+	matrix IdP1dcL = faux1[];
+	
+	matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
+	matrix IPg = interpolate(VhP1dcL,VhP1L); 
+	matrix IPPIg = IPg*PIg;
+	matrix IPhP1dcP1L = IdP1dcL + (-1.)*IPPIg;
+	
+	int[int] cs2=[2];
+	matrix D3X3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=1);
+	matrix D3Y3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=2);
+	matrix D3Z3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=3);
+
+	IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; 
+	IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; 
+	IPhD3Z3P2L = IPhP1dcP1L * D3Z3P2L;
+}
+
+// Parameters for the problem
+real CS = 0.1; // Smagorinsky constant
+
+real dt = 1;
+real T = 5; // Final time
+real epspen = 1e-8;
+
+real Reynolds = 1000;
+
+// Definition of the Lift function:
+func g1 = 1.*(y>=1);
+VhP2L GP2 = g1;
+VhP2L GzeroP2 = 0.;
+
+Vh3P2L [Lev, LevY, LevP] = [GP2, 0., 0.];
+
+//////////////////////////////
+// Start solving the FE Problem
+Vh3P2L [uEF, uEFY, uEFP], [uEFp, uEFpY, uEFpP]; 
+
+matrix MFixed; 
+real[int] bFixed(Vh3P2L.ndof);
+
+{
+	real nu = 1./Reynolds;
+
+	// Build the fixed matrix 
+
+	varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v)) + Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) 
+											              + Antisimetric(uu, Lev, v) + Antisimetric(Lev, uu, v) + epspen*uuP*vP 
+														  // + hTriangle^2*(dx(uuP)*dx(vP) + dy(uuP)*dy(vP)) 
+														  )
+											  // RHS
+									   	   	  - intN(ThL)(Antisimetric(Lev,Lev,v) + nu*GradUGradV(Lev,v))
+									          + on(1,2,3,4, uu=0., uuY=0.); 
+											 
+	// Ensambling the matrix and RHS
+	MFixed = FVFixed(Vh3P2L,Vh3P2L); // For having mean pressure ~ 0
+	bFixed = FVFixed(0,Vh3P2L);  // For having mean pressure ~ 0
+}
+
+// LPS Stabilization term
+matrix LPSpres;
+{
+	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
+	matrix TermP = termPres(VhP1dcL,VhP1dcL);
+
+	matrix DDxx, DDyy, DDzz;
+
+	DDxx = TermP * IPhD3X3P2L; 
+	DDxx = IPhD3X3P2L' * DDxx;
+	
+	DDyy = TermP * IPhD3Y3P2L; 
+	DDyy = IPhD3Y3P2L' * DDyy;
+	
+	DDzz = TermP * IPhD3Z3P2L; 
+	DDzz = IPhD3Z3P2L' * DDzz;
+
+
+	LPSpres = DDxx + DDyy + DDzz;
+}
+
+// Start the loop in time
+for (real ittime = 0; ittime <= T; ittime += dt){
+	if (mpirank==0){ cout<<"Time = "<<ittime<<endl;}
+	
+	// Convective term
+	matrix MNS;
+	real[int] bNS(Vh3P2L.ndof);
+	{
+		varf FVNS ([uu,uuY,uuP],[v,vY,vP])= intN(ThL)(Antisimetric(uEF, uu, v))			
+										  		// RHS
+										 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
+				
+						
+		MNS = FVNS(Vh3P2L,Vh3P2L); 
+		bNS = FVNS(0,Vh3P2L); 
+	}
+	
+	
+
+	
+	// Matrix of the system
+	matrix MFinal;
+	real[int] bFinal(Vh3P2L.ndof);
+	{
+		MFinal = MFixed + LPSpres;
+		MFinal = MFinal + MNS;
+
+		// RHS
+		bFinal = bFixed;
+		bFinal = bFinal + bNS;
+	}
+	
+	uEFp[] = uEF[]; // Save the previous iteration
+	
+	// Solve the system
+	MatVh3P2 = MFinal;
+    
+	/*
+	Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
+    string[int] names(2);
+    names[0] = "velocity";
+    names[1] = "pressure";
+	
+	// (?) MAIN PROBLEM: HOW TO DECIDE THE BETTER CONFIGURATION OF PARAMETER FOR SOLVING THE LINEAR SYSTEM
+	
+	// set(MatAVh4P2, sparams="-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -pc_fieldsplit_detect_saddle_point -fieldsplit_velocity_sub_pc_type lu -fieldsplit_pressure_sub_pc_type lu " + " -fieldsplit_velocity_sub_pc_factor_mat_solver_type mumps -fieldsplit_pressure_sub_pc_factor_mat_solver_type mumps " + " -ksp_monitor -ksp_view -fieldsplit_velocity_ksp_type gmres -fieldsplit_velocity_ksp_max_it 5 -fieldsplit_pressure_ksp_type gmres -fieldsplit_pressure_ksp_max_it 5 -ksp_rtol 1e-6", fields = uuL[], names = names); // (?) -> what should be the best configuration of parameters:
+	  
+	*/
+	//(?) -> This configuation ->
+	set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // -> works, but it gets slower when increasing the number of processors.
+
+	// uEF[] = 0.0; 
+	uEF[] = MatVh3P2^-1*bFinal; 
+	uEF[]+= Lev[];
+	Vh3P2 [uG, uGY, uGP];
+	uG[] = reduceSolution(uEF[], uG[], MatVh3P2.D, mapVh3P2);
+	
+	VhP2 presAux = uGP;
+	presAux[] -= int2d(Th)(uGP)/int2d(Th)(1);
+	[uG, uGY, uGP] = [uG, uGY, presAux];
+	
+	ofstream Sol("Solution_u_MPI"+mpisize+"_"+ittime+".txt");
+	Sol<<uG[];
+	
+	real medpres = intN(Th)(uGP);
+	if (mpirank==0){cout<<"Mean pressure = "<<medpres<<endl; }   
+	savevtk("Solution_MPI"+mpisize+"_"+ittime+".vtu", Th, [uG, uGY, 0], uGP, dataname="vel pres", order=fforder);
+	// plotMPI(ThL, uEFP, P2, def, real, cmm="presion");
+	
+}
