@@ -9,7 +9,7 @@ include "macro_ddm.idp";
 load "PETSc"
 
 // Mesh Creation
-mesh Th = square(30,30);
+mesh Th = square(32,32);
 mesh ThL = Th; //local mesh (with DDM overlapping)
 
 int[int] myN2o;
@@ -38,8 +38,6 @@ func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int
 ///////////////////
 
 
-
-
 // FE spaces
 // Global Mesh
 fespace Vh3P2(Th, [P2, P2, P2]); 
@@ -53,7 +51,6 @@ fespace VhP1dcL(ThL, P1dc);
 fespace VhP1L(ThL, P1);
 
 
-
 int[int] mapVh3P2 = restrict(Vh3P2L,Vh3P2,myN2o);  
 
 Mat MatVh3P2;
@@ -64,8 +61,7 @@ Mat MatVh3P2;
 }
 
 
-
-// Interpolation matrices for LPS
+// Interpolation matrices for LPS (IS THIS CORRECT????)
 matrix IPhD3X3P2L, IPhD3Y3P2L, IPhD3Z3P2L; // (?) -> Go to Mat structure? (using MatMatMult if necessary)
 {
 	VhP1dcL faux1 = 1.;
@@ -79,11 +75,11 @@ matrix IPhD3X3P2L, IPhD3Y3P2L, IPhD3Z3P2L; // (?) -> Go to Mat structure? (using
 	int[int] cs2=[2];
 	matrix D3X3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=1);
 	matrix D3Y3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=2);
-	matrix D3Z3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=3);
+
 
 	IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; 
 	IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; 
-	IPhD3Z3P2L = IPhP1dcP1L * D3Z3P2L;
+
 }
 
 // Parameters for the problem
@@ -95,16 +91,10 @@ real epspen = 1e-8;
 
 real Reynolds = 1000;
 
-// Definition of the Lift function:
-func g1 = 1.*(y>=1);
-VhP2L GP2 = g1;
-VhP2L GzeroP2 = 0.;
-
-Vh3P2L [Lev, LevY, LevP] = [GP2, 0., 0.];
 
 //////////////////////////////
 // Start solving the FE Problem
-Vh3P2L [uEF, uEFY, uEFP], [uEFp, uEFpY, uEFpP]; 
+Vh3P2L [uEF, uEFY, uEFP], [uEFp, uEFpY, uEFpP], [uEFLEV, uEFLEVY, uEFLEVP]; 
 
 matrix MFixed; 
 real[int] bFixed(Vh3P2L.ndof);
@@ -114,20 +104,18 @@ real[int] bFixed(Vh3P2L.ndof);
 
 	// Build the fixed matrix 
 
-	varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v)) + Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) 
-											              + Antisimetric(uu, Lev, v) + Antisimetric(Lev, uu, v) + epspen*uuP*vP 
+	varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v)) + Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) + epspen*uuP*vP 
 														  // + hTriangle^2*(dx(uuP)*dx(vP) + dy(uuP)*dy(vP)) 
 														  )
 											  // RHS
-									   	   	  - intN(ThL)(Antisimetric(Lev,Lev,v) + nu*GradUGradV(Lev,v))
-									          + on(1,2,3,4, uu=0., uuY=0.); 
+									          + on(1,2,4, uu=0., uuY=0.) + on(3, uu=1., uuY=0.); 
 											 
 	// Ensambling the matrix and RHS
-	MFixed = FVFixed(Vh3P2L,Vh3P2L); // For having mean pressure ~ 0
-	bFixed = FVFixed(0,Vh3P2L);  // For having mean pressure ~ 0
+	MFixed = FVFixed(Vh3P2L,Vh3P2L);
+	bFixed = FVFixed(0,Vh3P2L);
 }
 
-// LPS Stabilization term
+// LPS Stabilization term (WHERE I THINK I'M NOT DOING WELL)
 matrix LPSpres;
 {
 	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
@@ -141,16 +129,11 @@ matrix LPSpres;
 	DDyy = TermP * IPhD3Y3P2L; 
 	DDyy = IPhD3Y3P2L' * DDyy;
 	
-	DDzz = TermP * IPhD3Z3P2L; 
-	DDzz = IPhD3Z3P2L' * DDzz;
-
-
-	LPSpres = DDxx + DDyy + DDzz;
+	LPSpres = DDxx + DDyy;
 }
 
 // Start the loop in time
 for (real ittime = 0; ittime <= T; ittime += dt){
-	if (mpirank==0){ cout<<"Time = "<<ittime<<endl;}
 	
 	// Convective term
 	matrix MNS;
@@ -164,9 +147,6 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 		MNS = FVNS(Vh3P2L,Vh3P2L); 
 		bNS = FVNS(0,Vh3P2L); 
 	}
-	
-	
-
 	
 	// Matrix of the system
 	matrix MFinal;
@@ -184,37 +164,27 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	
 	// Solve the system
 	MatVh3P2 = MFinal;
-    
-	/*
-	Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
-    string[int] names(2);
-    names[0] = "velocity";
-    names[1] = "pressure";
-	
-	// (?) MAIN PROBLEM: HOW TO DECIDE THE BETTER CONFIGURATION OF PARAMETER FOR SOLVING THE LINEAR SYSTEM
-	
-	// set(MatAVh4P2, sparams="-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -pc_fieldsplit_detect_saddle_point -fieldsplit_velocity_sub_pc_type lu -fieldsplit_pressure_sub_pc_type lu " + " -fieldsplit_velocity_sub_pc_factor_mat_solver_type mumps -fieldsplit_pressure_sub_pc_factor_mat_solver_type mumps " + " -ksp_monitor -ksp_view -fieldsplit_velocity_ksp_type gmres -fieldsplit_velocity_ksp_max_it 5 -fieldsplit_pressure_ksp_type gmres -fieldsplit_pressure_ksp_max_it 5 -ksp_rtol 1e-6", fields = uuL[], names = names); // (?) -> what should be the best configuration of parameters:
-	  
-	*/
-	//(?) -> This configuation ->
-	set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // -> works, but it gets slower when increasing the number of processors.
+    	
+	set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); 
 
-	// uEF[] = 0.0; 
 	uEF[] = MatVh3P2^-1*bFinal; 
-	uEF[]+= Lev[];
-	Vh3P2 [uG, uGY, uGP];
-	uG[] = reduceSolution(uEF[], uG[], MatVh3P2.D, mapVh3P2);
-	
-	VhP2 presAux = uGP;
-	presAux[] -= int2d(Th)(uGP)/int2d(Th)(1);
-	[uG, uGY, uGP] = [uG, uGY, presAux];
-	
-	ofstream Sol("Solution_u_MPI"+mpisize+"_"+ittime+".txt");
-	Sol<<uG[];
-	
-	real medpres = intN(Th)(uGP);
-	if (mpirank==0){cout<<"Mean pressure = "<<medpres<<endl; }   
-	savevtk("Solution_MPI"+mpisize+"_"+ittime+".vtu", Th, [uG, uGY, 0], uGP, dataname="vel pres", order=fforder);
-	// plotMPI(ThL, uEFP, P2, def, real, cmm="presion");
-	
+
 }
+
+Vh3P2 [uG, uGY, uGP];
+uG[] = reduceSolution(uEF[], uG[], MatVh3P2.D, mapVh3P2);
+
+// Not really important, just to assure mean pressure = 0.
+VhP2 presAux = uGP;
+presAux[] -= int2d(Th)(uGP)/int2d(Th)(1);
+[uG, uGY, uGP] = [uG, uGY, presAux];
+
+
+real medpres = intN(Th)(uGP);
+if (mpirank==0){cout<<"Mean pressure = "<<medpres<<endl; }  
+
+ofstream Sol("Solution_u_MPI"+mpisize+".txt");
+Sol<<uG[];
+
+savevtk("Solution_MPI"+mpisize+".vtu", Th, [uG, uGY, 0], uGP, dataname="vel pres", order=fforder);
+plotMPI(ThL, uEFP, P2, def, real, cmm="presion");

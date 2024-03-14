@@ -93,7 +93,7 @@ matrix SPPEM2 = StabhK(VhP1dcL, VhP1dcL);
 matrix StabhkPEML = FiltroX + FiltroY;
 StabhkPEML += FiltroZ;
 
-StabhkPEM=StabhkPEML;
+StabhkPEM = StabhkPEML;
 
 
 varf bDiffPE([un, unY, unZ], [v, vY, vZ]) = int3d(ThL)(GradUGradV(Lev, v));

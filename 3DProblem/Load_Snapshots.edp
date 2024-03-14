@@ -1,0 +1,40 @@
+//////////////////////////////////////////
+// Mesh creation 
+
+// Mesh paramaters
+
+mesh Th = square(32,32);
+
+fespace Vh3P2(Th,[P2,P2,P2]); 
+
+Vh3P2 [u1, u1Y, u1P], [u2, u2Y, u2P];
+
+ifstream Loadsol1("Solution_u_MPI1_5.txt"); // Solution for 1 processors
+Loadsol1>>u1[];
+
+ifstream LoadSol2("Solution_u_MPI8_5.txt"); // Solution for 8 processors
+LoadSol2>>u2[];
+
+Vh3P2 [Error, ErrorY, ErrorP];
+
+Error[] = (u1[] - u2[]);
+
+Error[] = abs(Error[]);
+plot(Error, value=1, cmm="Error componente X");
+plot(ErrorY, value=1, cmm="Error componente Y");
+plot(ErrorP, value=1);
+
+real norml2 = Error[].l2/u1[].l2;
+
+real normL2 = sqrt(int2d(Th)(Error'*Error + ErrorY'*ErrorY))/sqrt(int2d(Th)(u1'*u1 + u1Y'*u1Y));
+
+real normlinf = Error[].max/u1[].max;
+
+cout<<"Norma l2 error relativo= "<<norml2<<endl;
+cout<<"Norma L2 error relativo= "<<normL2<<endl;
+cout<<"Norma linf error relativo= "<<normlinf<<endl;
+
+
+
+
+
