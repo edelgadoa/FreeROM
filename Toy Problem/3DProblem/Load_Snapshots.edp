@@ -6,23 +6,37 @@
 mesh Th = square(32,32);
 
 fespace Vh3P2(Th,[P2,P2,P2]); 
+fespace VhP1dc(Th, P1dc);
 
 Vh3P2 [u1, u1Y, u1P], [u2, u2Y, u2P];
+VhP1dc dxp1, dxp2;
 
-ifstream Loadsol1("Solution_u_MPI1_5.txt"); // Solution for 1 processors
+ifstream Loadsol1("Solution_u_MPI1.txt"); // Solution for 1 processors
 Loadsol1>>u1[];
 
-ifstream LoadSol2("Solution_u_MPI8_5.txt"); // Solution for 8 processors
+ifstream LoadSol2("Solution_u_MPI8.txt"); // Solution for 8 processors
 LoadSol2>>u2[];
 
+
+ifstream Loadp1("dxP_MPI1.txt"); // Solution for 1 processors
+Loadp1>>dxp1[];
+
+ifstream Loadp2("dxP_MPI8.txt"); // Solution for 8 processors
+Loadp2>>dxp2[];
+
 Vh3P2 [Error, ErrorY, ErrorP];
+VhP1dc Edxp;
 
 Error[] = (u1[] - u2[]);
+Edxp[] = dxp1[] - dxp2[];
+
 
 Error[] = abs(Error[]);
+Edxp[] = abs(Edxp[]);
 plot(Error, value=1, cmm="Error componente X");
 plot(ErrorY, value=1, cmm="Error componente Y");
 plot(ErrorP, value=1);
+plot(Edxp, value=1, cmm="Error en la derivada de p");
 
 real norml2 = Error[].l2/u1[].l2;
 

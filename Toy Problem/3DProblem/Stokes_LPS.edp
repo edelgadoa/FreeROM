@@ -25,6 +25,7 @@ macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
 macro MOD(U) (sqrt(dx(U)^2 + dy(U)^2 + dx(U#Y)^2 + dy(U#Y)^2) ) //EOM
 macro UporV(U,V) (U*V + U#Y*V#Y) //EOM
 
+// Function to obtain the solution on the global mesh
 func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
 {
 	real[int] aux(u.n); aux = 0;
@@ -37,12 +38,11 @@ func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int
 
 ///////////////////
 
-
 // FE spaces
 // Global Mesh
 fespace Vh3P2(Th, [P2, P2, P2]); 
 fespace VhP2(Th, P2); 
-
+fespace VhP1dc(Th, P1dc); 
 
 // Local Mesh
 fespace Vh3P2L(ThL, [P2, P2, P2]); 
@@ -59,6 +59,10 @@ Mat MatVh3P2;
 	macro init(i) [i, i, i] // EOM
 	createMat(ThL, MatVh3P2, [P2, P2, P2]); 
 }
+
+Mat MatVhP1dc;
+createMat(ThL, MatVhP1dc, P1dc);
+int[int] mapVhP1dc = restrict(VhP1dcL, VhP1dc, myN2o);
 
 
 // Interpolation matrices for LPS (IS THIS CORRECT????)
@@ -79,41 +83,27 @@ matrix IPhD3X3P2L, IPhD3Y3P2L, IPhD3Z3P2L; // (?) -> Go to Mat structure? (using
 
 	IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; 
 	IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; 
-
 }
-
-// Parameters for the problem
-real CS = 0.1; // Smagorinsky constant
-
-real dt = 1;
-real T = 5; // Final time
-real epspen = 1e-8;
 
 real Reynolds = 1000;
 
-
 //////////////////////////////
 // Start solving the FE Problem
-Vh3P2L [uEF, uEFY, uEFP], [uEFp, uEFpY, uEFpP], [uEFLEV, uEFLEVY, uEFLEVP]; 
+Vh3P2L [uEF, uEFY, uEFP];
 
-matrix MFixed; 
-real[int] bFixed(Vh3P2L.ndof);
+real nu = 1./Reynolds;
 
-{
-	real nu = 1./Reynolds;
+// Build the fixed matrix 
 
-	// Build the fixed matrix 
-
-	varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)( (1./dt)*(UporV(uu,v)) + Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) + epspen*uuP*vP 
-														  // + hTriangle^2*(dx(uuP)*dx(vP) + dy(uuP)*dy(vP)) 
-														  )
-											  // RHS
-									          + on(1,2,4, uu=0., uuY=0.) + on(3, uu=1., uuY=0.); 
+varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)(Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) + 1e-8*uuP*vP )
+										// + hTriangle^2*(dx(uuP)*dx(vP) + dy(uuP)*dy(vP))) //This is an alternative stabilization term that 
+										// RHS
+									    + on(1,2,4, uu=0., uuY=0.) + on(3, uu=1., uuY=0.); 
 											 
-	// Ensambling the matrix and RHS
-	MFixed = FVFixed(Vh3P2L,Vh3P2L);
-	bFixed = FVFixed(0,Vh3P2L);
-}
+// Ensambling the matrix and RHS
+matrix MFixed = FVFixed(Vh3P2L,Vh3P2L);
+real[int] b = FVFixed(0,Vh3P2L);
+
 
 // LPS Stabilization term (WHERE I THINK I'M NOT DOING WELL)
 matrix LPSpres;
@@ -121,7 +111,7 @@ matrix LPSpres;
 	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
 	matrix TermP = termPres(VhP1dcL,VhP1dcL);
 
-	matrix DDxx, DDyy, DDzz;
+	matrix DDxx, DDyy;
 
 	DDxx = TermP * IPhD3X3P2L; 
 	DDxx = IPhD3X3P2L' * DDxx;
@@ -132,45 +122,28 @@ matrix LPSpres;
 	LPSpres = DDxx + DDyy;
 }
 
-// Start the loop in time
-for (real ittime = 0; ittime <= T; ittime += dt){
-	
-	// Convective term
-	matrix MNS;
-	real[int] bNS(Vh3P2L.ndof);
-	{
-		varf FVNS ([uu,uuY,uuP],[v,vY,vP])= intN(ThL)(Antisimetric(uEF, uu, v))			
-										  		// RHS
-										 	   	 + intN(ThL)((1./dt)*UporV(uEF,v));
-				
-						
-		MNS = FVNS(Vh3P2L,Vh3P2L); 
-		bNS = FVNS(0,Vh3P2L); 
-	}
-	
-	// Matrix of the system
-	matrix MFinal;
-	real[int] bFinal(Vh3P2L.ndof);
-	{
-		MFinal = MFixed + LPSpres;
-		MFinal = MFinal + MNS;
+// Matrix of the system
+matrix MFinal = MFixed + LPSpres;
 
-		// RHS
-		bFinal = bFixed;
-		bFinal = bFinal + bNS;
-	}
-	
-	uEFp[] = uEF[]; // Save the previous iteration
-	
-	// Solve the system
-	MatVh3P2 = MFinal;
-    	
-	set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); 
+		
+// Solve the system
+MatVh3P2 = MFinal;
+set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); 
 
-	uEF[] = MatVh3P2^-1*bFinal; 
+uEF[] = MatVh3P2^-1*b; 
 
-}
+VhP1dcL dxuP;
+dxuP[] = IPhD3X3P2L * uEF[];
+ofstream Soldx("dxP_MPI"+mpisize+".txt");
 
+VhP1dc dxPG;
+dxPG[] = reduceSolution(dxuP[], dxPG[], MatVhP1dc.D, mapVhP1dc);
+Soldx<<dxPG[];
+plotMPI(ThL, dxuP, P1dc, def, real, cmm="dx presion");
+
+
+
+// Obtain the solution on the global mesh
 Vh3P2 [uG, uGY, uGP];
 uG[] = reduceSolution(uEF[], uG[], MatVh3P2.D, mapVh3P2);
 

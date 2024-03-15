@@ -12,6 +12,7 @@ load "PETSc"
 include "CubeN.idp"
 int[int] myN2o;
 macro ThLN2O() myN2o // EOM
+macro ThLOverlap() 2 // EOM
 buildDmesh(ThL);
 // Macros definition:
 macro Div(U) (dx(U) + dy(U#Y) + dz(U#Z)) //EOM
@@ -55,7 +56,7 @@ int[int] mapVh4P2;
 fespace Vh4P2(Th, [P2, P2, P2, P2]); 
 fespace VhP2(Th, P2); 
 
-real volOmega = int3d(Th)(1); // Lo hago en global porque solo lo hago una unica vez. Se puede hacer sobre ThL, pero se necesita de la particion de la unidad.
+// real volOmega = int3d(Th)(1); // Lo hago en global porque solo lo hago una unica vez. Se puede hacer sobre ThL, pero se necesita de la particion de la unidad.
 
 // Local Mesh
 fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
