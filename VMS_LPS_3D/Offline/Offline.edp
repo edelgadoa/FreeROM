@@ -20,9 +20,11 @@ load "lapack"
 load "PETSc";
 load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
 
+macro dimension()3 //EOM
+include "macro_ddm.idp"
+
 // Creamos la Malla
 include "../Auxiliary/CuboNxNyNz.idp"
-
 
 // Cargamos macros, funciones i/o
 include "../Auxiliary/Macros_3D.idp"
@@ -30,8 +32,6 @@ include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp" 
 include "../Auxiliary/Functions_MP.idp"
 
-macro dimension()3 //EOM
-include "macro_ddm.idp"
 
 // Definimos los parametros a usar
 include "../Auxiliary/Parametros_3D.idp"
@@ -43,7 +43,7 @@ VhP0L mk,tKcod,tKTcod,tau;
 
 varf med(unused,v) = intN(ThL)(1.*v);
 real[int] medk = med(0,VhP0L);
-mk[] = sqrt(medk); 
+mk[] = sqrt(medk);
 
 VhP0L hk = hTriangle;
 real hT, hTL = hk[].max;
@@ -53,7 +53,7 @@ VhP0 mkG, hkG;
 hkG = hTriangle;
 varf medG(unused,v) = intN(Th)(1.*v);
 real[int] medkG = medG(0,VhP0);
-mkG[] = sqrt(medkG); 
+mkG[] = sqrt(medkG);
 
 //Construyo el vector que bloqueará el residuo de SMAGO
 varf CC([un1,un2,un3,unp],[vvel1,vvel2,vvel3,vpres]) = on(1,2, un1=1,un2=1,un3=1); 
@@ -67,6 +67,21 @@ mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
 mapVhP2 = restrict(VhP2L,VhP2,myN2o);
 mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
 mapVhP0 = restrict(VhP0L, VhP0, myN2o);
+
+{
+	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
+	macro init(i) [i, i, i, i] // EOM
+	MatCreate(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
+}
+
+MatCreate(ThL, MatAVhP1dc, P1dc);
+MatCreate(ThL, MatAVhP2, P2);
+	
+{
+	macro def(i) [i, i#Y, i#Z] // EOM
+	macro init(i) [i, i, i] // EOM
+	MatCreate(ThL, MatAVh3P2, [P2, P2, P2]); 
+}
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_3D.idp"
@@ -141,7 +156,7 @@ MuBest(0) = Reynolds;
 
 
 real CSobolev;
-// include "Sobolev_3D.idp"
+include "Sobolev_3D.idp"
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
@@ -243,16 +258,18 @@ for (int i=0; i<Nbases; i++){
 	
 	VhP2L[int] BasePi(i+1);
 	Vh3P2L[int] [BaseVi, BaseViY, BaseViZ](i+1);
-	real[int, int] MBaseVii(MatAVh3P2.n, i+1), MBasePii(MatAVhP2.n, i+1);
+	real[int, int] MBaseVi(MatAVh3P2.n, i+1), MBasePi(MatAVhP2.n, i+1);
 	
 	for (int k=0;k<=i;k++){
 		BasePi[k][] = BaseP[k][];
 		BaseVi[k][] = BaseV[k][];
 	}
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC)
+	mpi(cout<<"n="<<MatAVh3P2.n<<", B:"<<MBaseVi.n<<"x"<<MBaseVi.m<<endl;)
 	
-	ChangeNumbering(MatAVhP2, BasePi, MBasePii);
-	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVii);
+	ChangeNumbering(MatAVhP2, BasePi, MBasePi);
+	ChangeNumbering(MatAVh3P2, BaseVi, MBaseVi);
+	mpi(cout<<"B:"<<MBaseVi.n<<"x"<<MBaseVi.m<<endl;)
 
 	//MBaseV(:,i) = BaseV[i][];
 	//MBaseP(:,i) = BaseP[i][];

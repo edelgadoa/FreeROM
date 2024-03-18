@@ -52,7 +52,7 @@ real[int] bSmagoRes(Vh4P2.ndof);
 
 //mpi(cout<<bSmagoRes<<endl;)
 // Termino LPS
-real[int] bStabPRes(Vh4P2.ndof);
+real[int] bStabPRes(Vh4P2L.ndof);
 
 {
 	VhP0 tKres, tKTres, taures;
@@ -62,26 +62,26 @@ real[int] bStabPRes(Vh4P2.ndof);
 	real[int] tKT = tauKTres(0, VhP0);
 	tKres[] = sqrt(tK); tKTres[] = sqrt(tKT);
 	
-	taures = ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
+	taures = hTriangle^2;// ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
 	
-	VhP1dc uFRBP;
+	VhP1dcL uFRBP;
 	varf StabPRes(unP,vP) = int3d(Th)(taures*uFRBP*vP);
 	
-	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof), bSPaux(VhP1dc.ndof);
+	real[int] bSPx(Vh4P2L.ndof), bSPy(Vh4P2L.ndof), bSPz(Vh4P2L.ndof), bSPaux(VhP1dcL.ndof);
 	// Componente X
-	uFRBP[] = IPhDXP2 * uRBP[];
-	bSPaux = StabPRes(0, VhP1dc);
-	bSPx = IPhD4X4P2'*bSPaux;  
+	uFRBP[] = IPhDXP2L * uRBP[];
+	bSPaux = StabPRes(0, VhP1dcL);
+	bSPx = IPhD4X4P2L'*bSPaux;  
 	
 	// Componente Y
-	uFRBP[] = IPhDYP2 * uRBP[];
-	bSPaux = StabPRes(0, VhP1dc);
-	bSPy = IPhD4Y4P2'*bSPaux;  
+	uFRBP[] = IPhDYP2L * uRBP[];
+	bSPaux = StabPRes(0, VhP1dcL);
+	bSPy = IPhD4Y4P2L'*bSPaux;  
 	
 	// Componente Z
-	uFRBP[] = IPhDZP2 * uRBP[];
-	bSPaux = StabPRes(0, VhP1dc);
-	bSPz = IPhD4Z4P2'*bSPaux; 
+	uFRBP[] = IPhDZP2L * uRBP[];
+	bSPaux = StabPRes(0, VhP1dcL);
+	bSPz = IPhD4Z4P2L'*bSPaux; 
 
 	bStabPRes = bSPx + bSPy; 
 	bStabPRes += bSPz;
@@ -93,7 +93,7 @@ bRes += bSmagoRes;
 bRes += bStabPRes;
 
 {
-	Vh4P2 [RES, RESY, RESZ, RESP];
+	Vh4P2L [RES, RESY, RESZ, RESP];
 	mpi(cout<<"Resuelvo el residuo"<<endl;)
 	RES[] = MRes^-1*bRes;  // ESTO PUEDE QUE NO LO RESUELVA POR MEMORIA
 	ResG(iRB) = normX(RES[], MPescX);

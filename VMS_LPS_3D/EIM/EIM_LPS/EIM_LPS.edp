@@ -7,7 +7,10 @@ verbosity = 0;
 
 // Cargamos librerias
 load "lapack"
+load "PETSc"
+macro dimension()3 //EOM
 
+include "macro_ddm.idp"
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_3D.idp"
 include "../../Auxiliary/IO.idp" 
@@ -40,13 +43,13 @@ VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots),
 			BVZdX(nSnapshots), BVZdY(nSnapshots), BVZdZ(nSnapshots); 
 
 // Definimos las cantidades que usaremos para el segundo miembro del EIM
-//VhP0 tKcod,tKTcod,tau,mk;
+VhP0 tKcod,tKTcod,tau,mk;
 VhP1dc UXdX, UXdY, UXdZ, UYdX, UYdY, UYdZ, UZdX, UZdY, UZdZ;	
 VhP2 UX, UY, UZ;
 
-// varf med(unused,v)=int2d(Th)(1.*v);
-// real[int] medk=med(0,VhP0);
-// mk[]=sqrt(medk);
+varf med(unused,v)=intN(Th)(1.*v);
+real[int] medk=med(0,VhP0);
+mk[]=sqrt(medk);
 
 varf tauK(unused,v) = int3d(Th)((UX^2+UY^2+UZ^2)*v);
 varf tauKT(unused,v) = int3d(Th)((UXdX^2+UXdY^2+UXdZ^2+ UYdX^2+UYdY^2+UYdZ^2 + UZdX^2+UZdY^2+UZdZ^2)*v);

@@ -15,10 +15,15 @@ verbosity = 0;
 load "iovtk" 
 load "medit"
 
+macro dimension() 3 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
 // Cargamos macros
 include "../Auxiliary/Macros_3D.idp"
 include "../Auxiliary/IO.idp" 
 include "../Auxiliary/search.idp"
+
 
 // Creamos la malla
 include "../Auxiliary/CuboNxNyNZ.idp"
@@ -26,11 +31,35 @@ include "../Auxiliary/CuboNxNyNZ.idp"
 real paredes = 1;
 real techo = 2; //para las condiciones de contorno
 
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_3D.idp" 
+
 // Definimos los espacios de EF y de los EF locales
 include "FE_Spaces_NoStab_VP_3D.idp"
 
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_3D.idp"
+
+// Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
+
+
+mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
+mapVhP2 = restrict(VhP2L,VhP2,myN2o);
+mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
+mapVhP0 = restrict(VhP0L, VhP0, myN2o);
+{
+	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
+	macro init(i) [i, i, i, i] // EOM
+	MatCreate(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
+}
+
+MatCreate(ThL, MatAVhP1dc, P1dc);
+MatCreate(ThL, MatAVhP2, P2);
+	
+{
+	macro def(i) [i, i#Y, i#Z] // EOM
+	macro init(i) [i, i, i] // EOM
+	MatCreate(ThL, MatAVh3P2, [P2, P2, P2]); 
+}
+
 
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_3D.idp"
@@ -47,18 +76,21 @@ Reynolds = 1000;
 // Resolvemos el problema de EF: Cavidad 3D//
 /////////////////////////////////////////////
 
-Vh4P2 [uEF, uEFY, uEFZ, uEFP]; 
-VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
-VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+Vh4P2L [uEF, uEFY, uEFZ, uEFP]; 
+// VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+// VhP2L uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
 
 include "FE_VMS_LPS_3D.idp"
 
 
 // Guardamos la solucion en paraview, con levantamiento
 
-Vh4P2 [uEFL, uEFLY, uEFLZ, uEFLP];
-uEFL[] = uEF[] + Lev[];
+Vh4P2L [uEFLev, uEFLevY, uEFLevZ, uEFLevP];
+uEFLev[] = uEF[] + Lev[];
 
-int[int] fforder=[1,1,1,1];
-savevtk("VMS_Smago.vtu", Th, [uEFL, uEFLY, uEFLZ], uEFLP, dataname="Velocity Pressure", order=fforder, bin=true);
+Vh4P2 [uG, uGY, uGZ, uGP];
+uG[] = reduceSolution(uEFLev[], uG[], MatAVh4P2.D, mapVh4P2);
+
+// int[int] fforder=[1,1,1,1];
+savevtk("VMS_Smago_MPI_"+mpisize+".vtu", Th, [uG, uGY, uGZ], uGP, dataname="Velocity Pressure", order=fforder, bin=true);

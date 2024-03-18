@@ -10,9 +10,9 @@ mesh3 Th, ThL;
  
 {
 
-	int Nx = 8; // X
-	int Ny = 8; // Y
-	int Nz = 8; // Z
+	int Nx = 5; // X
+	int Ny = 5; // Y
+	int Nz = 5; // Z
 
 	int[int] Nxyz = [Nx,Ny,Nz]; // 3 directions
 	

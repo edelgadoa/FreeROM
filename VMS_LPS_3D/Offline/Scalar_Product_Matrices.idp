@@ -105,12 +105,30 @@ Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 // VMS-SMAGO
 for (int s=0; s<Mbases; s++){
-	varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = int3d(ThL)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-	matrix SmagoPEMT = SmagoPE(Vh3P2L,Vh3P2L);
+	varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = intN(ThL)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
+	matrix SmagoPEMT = SmagoPE(Vh3P1dcL,Vh3P1dcL);
+	matrix DXX, DYY, DZZ;
+	{
+		matrix Maux; 
+		//COMPONENTE X 
+		Maux = DX3P2L*IPh3P23P1L;
+		DXX = (Maux')*SmagoPEMT;
+		DXX = DXX*Maux;
+		
+		Maux = DY3P2L*IPh3P23P1L;
+		DYY = (Maux')*SmagoPEMT;
+		DYY = DYY*Maux;
+		
+		Maux = DZ3P2L*IPh3P23P1L;
+		DZZ = (Maux')*SmagoPEMT;
+		DZZ = DZZ*Maux;
+	}
+	matrix SmagoPEMTxyz = DXX + DYY + DZZ;	
+		
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
 	MatCreate(ThL, SmagoPEM[s], [P2, P2, P2]);
-	SmagoPEM[s] = SmagoPEMT;
+	SmagoPEM[s] = SmagoPEMTxyz;
 }
 
 

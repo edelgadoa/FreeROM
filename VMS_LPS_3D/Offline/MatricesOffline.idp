@@ -42,22 +42,22 @@ include "Allocate_matrices_local.idp"
 //     }
 // }
 
-real[int,int] DiffRBaux(DiffPEM.n, MBaseVii.m), DivPRBaux(DiffPEM.n, MBaseVii.m), ConvLRBaux(ConvLevPEM.n, MBaseVii.m), 
-			  DTRBaux(DTPEM.n, MBaseVii.m), PenRBaux(PenPEM.n, MBasePii.m), StabhkRBaux(StabhkPEM.n, MBasePii.m);
+real[int,int] DiffRBaux(DiffPEM.n, MBaseVi.m), DivPRBaux(DiffPEM.n, MBaseVi.m), ConvLRBaux(ConvLevPEM.n, MBaseVi.m), 
+			  DTRBaux(DTPEM.n, MBaseVi.m), PenRBaux(PenPEM.n, MBasePi.m), StabhkRBaux(StabhkPEM.n, MBasePi.m);
 
-MatMatMult(DiffPEM, MBaseVii, DiffRBaux);
-MatMatMult(DivPPEM, MBaseVii, DivPRBaux);
-MatMatMult(ConvLevPEM, MBaseVii, ConvLRBaux);
-MatMatMult(DTPEM, MBaseVii, DTRBaux);
-MatMatMult(PenPEM, MBasePii, PenRBaux);
-MatMatMult(StabhkPEM, MBasePii, StabhkRBaux);
+MatMatMult(DiffPEM, MBaseVi, DiffRBaux);
+MatMatMult(DivPPEM, MBaseVi, DivPRBaux);
+MatMatMult(ConvLevPEM, MBaseVi, ConvLRBaux);
+MatMatMult(DTPEM, MBaseVi, DTRBaux);
+MatMatMult(PenPEM, MBasePi, PenRBaux);
+MatMatMult(StabhkPEM, MBasePi, StabhkRBaux);
 
-real[int,int] DiffRBL = MBaseVii'*DiffRBaux;
-real[int,int] DivPRBL = MBasePii'*DivPRBaux;
-real[int,int] ConvLRBL = MBaseVii'*ConvLRBaux;
-real[int,int] DTRBL = MBaseVii'*DTRBaux;
-real[int,int] PenRBL = MBasePii'*PenRBaux;
-real[int,int] StabhkRBL = MBasePii'*StabhkRBaux;
+real[int,int] DiffRBL = MBaseVi'*DiffRBaux;
+real[int,int] DivPRBL = MBasePi'*DivPRBaux;
+real[int,int] ConvLRBL = MBaseVi'*ConvLRBaux;
+real[int,int] DTRBL = MBaseVi'*DTRBaux;
+real[int,int] PenRBL = MBasePi'*PenRBaux;
+real[int,int] StabhkRBL = MBasePi'*StabhkRBaux;
 
 mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
@@ -102,9 +102,9 @@ mpi(cout<<"Convection matrix"<<endl;)
 // }
 
 for(int s=0; s<=i;s++){
-	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVii.m), ConvRBG(i+1, i+1);
-	MatMatMult(ConvPEM[s], MBaseVii, ConvRBaux);
-	real[int,int] ConvRBL = MBaseVii'*ConvRBaux;
+	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVi.m), ConvRBG(i+1, i+1);
+	MatMatMult(ConvPEM[s], MBaseVi, ConvRBaux);
+	real[int,int] ConvRBL = MBaseVi'*ConvRBaux;
 	//cout<<ConvRBL<<endl;
 	mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
 	equal(ConvRB[s],ConvRBG(0:i,0:i))
@@ -133,9 +133,9 @@ mpi(cout<<"conv Matrix"<<endl<<ConvRB<<endl;)
 //
 
 for (int s=0; s<Mbases; s++){
-    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVii.m), SmagoRBG(i+1, i+1);
-	MatMatMult(SmagoPEM[s], MBaseVii, SmagoRBaux);
-	real[int,int] SmagoRBL = MBaseVii'*SmagoRBaux;
+    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVi.m), SmagoRBG(i+1, i+1);
+	MatMatMult(SmagoPEM[s], MBaseVi, SmagoRBaux);
+	real[int,int] SmagoRBL = MBaseVi'*SmagoRBaux;
 	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
     equal(SmagoRB[s],SmagoRBG)
 	
@@ -143,9 +143,9 @@ for (int s=0; s<Mbases; s++){
 
 
 for (int s=0; s<Taubases; s++){
-    real[int, int] LPSRBaux(StabPRB[s].n, MBaseVii.m), StabPRBG(i+1, i+1);
-	MatMatMult(StabPPEM[s], MBasePii, LPSRBaux);
-	real[int,int] StabPRBL = MBasePii'*LPSRBaux;
+    real[int, int] LPSRBaux(StabPRB[s].n, MBasePi.m), StabPRBG(i+1, i+1);
+	MatMatMult(StabPPEM[s], MBasePi, LPSRBaux);
+	real[int,int] StabPRBL = MBasePi'*LPSRBaux;
 	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
     equal(StabPRB[s],StabPRBG)
 	
@@ -199,7 +199,7 @@ for (int s=0; s<Mbases; s++){
     GradPM[s] = Dtk;
 }
 
-// cout<<GradPMLev[0]<<endl;
+
 //
 //
 {
@@ -331,8 +331,8 @@ for (int s=0; s<Mbases; s++){
     }
 }
 //
-mpi(cout<<"NUK"<<endl<<NUK<<endl;)
-mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
+// mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+// mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
 
 //mpi(cout<<"RHS"<<endl;)
 
@@ -346,8 +346,8 @@ real[int] bDiffRBaux(DiffPEM.n), bConvLRBaux(ConvLevPEM.n);
 MatMult(DiffPEM, LevVB, bDiffRBaux);
 MatMult(ConvLevPEM, LevVB, bConvLRBaux);
 // ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
-real[int] bDiffRBL = MBaseVii'*bDiffRBaux;
-real[int] bConvLRBL = MBaseVii'*bConvLRBaux; bConvLRBL /= 2;      //por la definicion de la matrix PE
+real[int] bDiffRBL = MBaseVi'*bDiffRBaux;
+real[int] bConvLRBL = MBaseVi'*bConvLRBaux; bConvLRBL /= 2;      //por la definicion de la matrix PE
 
 mpiAllReduce(bDiffRBL, bDiffRBG, mpiCommWorld, mpiSUM);
 mpiAllReduce(bConvLRBL, bConvLRBG, mpiCommWorld, mpiSUM);
@@ -355,7 +355,7 @@ mpiAllReduce(bConvLRBL, bConvLRBG, mpiCommWorld, mpiSUM);
 for (int s=0; s<Mbases; s++){
 	real[int] bSmagoRBaux(SmagoPEM[s].n);
 	MatMult(SmagoPEM[s], FLevVB, bSmagoRBaux);
-	real[int] bSmagoRBL = MBaseVii'*bSmagoRBaux;
+	real[int] bSmagoRBL = MBaseVi'*bSmagoRBaux;
 	mpiAllReduce(bSmagoRBL, bSmagoRBGs, mpiCommWorld, mpiSUM);
 	bSmagoRBG(s,:) = bSmagoRBGs;
 }

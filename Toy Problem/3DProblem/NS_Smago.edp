@@ -81,15 +81,15 @@ matrix IPhD4X4P2L, IPhD4Y4P2L, IPhD4Z4P2L; // (?) -> Go to Mat structure? (using
 	VhP1dcL faux1 = 1.;
 	matrix IdP1dcL = faux1[];
 	
-	matrix PIg = interpolate(VhP1L,VhP1dcL, inside=1); //(Id-πh) P1dc->P1->P1dc
-	matrix IPg = interpolate(VhP1dcL,VhP1L, inside=1); 
+	matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
+	matrix IPg = interpolate(VhP1dcL,VhP1L); 
 	matrix IPPIg = IPg*PIg;
 	matrix IPhP1dcP1L = IdP1dcL + (-1.)*IPPIg;
 	
 	int[int] cs2=[3];
-	matrix D4X4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1, U2Vc=cs2,op=1);
-	matrix D4Y4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1,U2Vc=cs2,op=2);
-	matrix D4Z4P2L = interpolate(VhP1dcL,Vh4P2L, inside=1,U2Vc=cs2,op=3);
+	matrix D4X4P2L = interpolate(VhP1dcL,Vh4P2L, U2Vc=cs2,op=1);
+	matrix D4Y4P2L = interpolate(VhP1dcL,Vh4P2L, U2Vc=cs2,op=2);
+	matrix D4Z4P2L = interpolate(VhP1dcL,Vh4P2L, U2Vc=cs2,op=3);
 
 	IPhD4X4P2L = IPhP1dcP1L * D4X4P2L; 
 	IPhD4Y4P2L = IPhP1dcP1L * D4Y4P2L; 
@@ -134,12 +134,13 @@ real[int] bFixed(Vh4P2L.ndof);
 									          + on(1,2, uu=0., uuY=0., uuZ=0.); 
 											 
 	// Ensambling the matrix and RHS
-	MFixed = FVFixed(Vh4P2L,Vh4P2L, tgv=1); // For having mean pressure ~ 0
-	bFixed = FVFixed(0,Vh4P2L, tgv=-1);  // For having mean pressure ~ 0
+	MFixed = FVFixed(Vh4P2L,Vh4P2L); // For having mean pressure ~ 0
+	bFixed = FVFixed(0,Vh4P2L);  // For having mean pressure ~ 0
 }
 
+real ERROR = 10;
 // Start the loop in time
-for (real ittime = 0; ittime <= T; ittime += dt){
+for (real ittime = 0; ittime <= T && (ERROR>1e-8); ittime += dt){
 	if (mpirank==0){ cout<<"Time = "<<ittime<<endl;}
 	
 	// Convective term
@@ -206,10 +207,10 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	
 	// Solve the system
 	MatAVh4P2 = MFinal;
-    Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
-    string[int] names(2);
-    names[0] = "velocity";
-    names[1] = "pressure";
+    // Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
+    // string[int] names(2);
+    // names[0] = "velocity";
+    // names[1] = "pressure";
 	
 	// (?) MAIN PROBLEM: HOW TO DECIDE THE BETTER CONFIGURATION OF PARAMETER FOR SOLVING THE LINEAR SYSTEM
 	
@@ -218,20 +219,30 @@ for (real ittime = 0; ittime <= T; ittime += dt){
 	
 	//(?) -> This configuation ->
 	set(MatAVh4P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); // -> works, but it gets slower when increasing the number of processors.
-	if (mpirank==0){ cout<<"Solve the linear system"<<endl;}  
-	// uEF[] = 0.0; 
+	
+	if (mpirank==0){ cout<<"Solve the linear system"<<endl;} 
+	 
+ 	uEF[] = 0.0; 
 	uEF[] = MatAVh4P2^-1*bFinal; 
+	
+	Vh4P2L [uErr, uErrY, uErrZ, uErrP];
+	
+	uErr[] = uEF[] - uEFp[];
+	
+	ERROR = uErr[].l2/uEF[].l2;
+	cout<<ERROR<<endl;
 
-	Vh4P2 [uG, uGY, uGZ, uGP];
-	uG[] = reduceSolution(uEF[], uG[], MatAVh4P2.D, mapVh4P2);
-	ofstream Sol("Solution_u_MPI"+mpisize+"_"+ittime+".txt");
-	// VhP2 presAux = uGP;
-	// presAux[] -= (1./volOmega)*int3d(Th)(uGP);
-	// [uG, uGY, uGZ, uGP] = [uG, uGY, uGZ, presAux];
-	Sol<<uG[];
-	real medpres = intN(Th)(uGP);
-	if (mpirank==0){cout<<"media presion="<<medpres<<endl; }   
-	savevtk("Solution_MPI"+mpisize+"_"+ittime+".vtu", Th, [uG, uGY, uGZ], uGP, dataname="vel pres", order=fforder);
 	// (?) -> Other possibilities???
 	
 }
+
+Vh4P2 [uG, uGY, uGZ, uGP];
+uG[] = reduceSolution(uEF[], uG[], MatAVh4P2.D, mapVh4P2);
+ofstream Sol("Solution_u_MPI"+mpisize+".txt");
+// VhP2 presAux = uGP;
+// presAux[] -= (1./volOmega)*int3d(Th)(uGP);
+// [uG, uGY, uGZ, uGP] = [uG, uGY, uGZ, presAux];
+Sol<<uG[];
+real medpres = intN(Th)(uGP);
+if (mpirank==0){cout<<"media presion="<<medpres<<endl; }   
+savevtk("Solution_MPI"+mpisize+".vtu", Th, [uG, uGY, uGZ], uGP, dataname="vel pres", order=fforder);

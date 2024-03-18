@@ -7,6 +7,10 @@ verbosity = 0;
 
 // Cargamos librerias
 load "lapack"
+load "PETSc"
+macro dimension()3 //EOM
+
+include "macro_ddm.idp"
 
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_3D.idp"

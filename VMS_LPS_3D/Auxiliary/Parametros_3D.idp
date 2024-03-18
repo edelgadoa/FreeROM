@@ -4,9 +4,10 @@
 // Parametros a usar durante la ejecucion del codigo
 
 // Parametros del PETSC
-
-//include "macro_ddm.idp";
-
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+macro ThLOverlap() 2 // EOM  
+buildDmesh(ThL);
 
 Mat MatAVh4P2;
 Mat MatAVh3P2;
@@ -16,30 +17,6 @@ Mat MatAVhP2;
 int[int] mapVh4P2, mapVhP1dc, mapVhP0, mapVhP2;
 
 string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
-
-
-// Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
-int[int] myN2o;
-macro ThLN2O() myN2o // EOM
-buildDmesh(ThL);
-// mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
-// mapVhP2 = restrict(VhP2L,VhP2,myN2o);
-// mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
-// mapVhP0 = restrict(VhP0L, VhP0, myN2o);
-{
-	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
-	macro init(i) [i, i, i, i] // EOM
-	MatCreate(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
-}
-
-MatCreate(ThL, MatAVhP1dc, P1dc);
-MatCreate(ThL, MatAVhP2, P2);
-	
-{
-	macro def(i) [i, i#Y, i#Z] // EOM
-	macro init(i) [i, i, i] // EOM
-	MatCreate(ThL, MatAVh3P2, [P2, P2, P2]); 
-}
 
 
 // Parametros del modelo VMS-Smago con LPS en la presion
@@ -55,8 +32,8 @@ real epspen = 1e-8;
 
 real ERROR = 10; // inicializacion del error para el bucle
 
-int niterFE = 1500; 
-real epsFE = 1e-8;
+int niterFE = 1000; 
+real epsFE = 1e-7;
 
 // Parametros para el problema ROM
 int niterRB = 2000;

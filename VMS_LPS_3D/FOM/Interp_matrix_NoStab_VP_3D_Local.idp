@@ -120,6 +120,33 @@ matrix D1Z4P2L, D2Z4P2L, D3Z4P2L, D4Z4P2L; // ∂z 4P2 -> P1dc en la componente 
 
 }
 
+matrix DX3P2L, DY3P2L, DZ3P2L; 
+{
+	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
+	int[int] c0 = [0,-1,-1];
+	int[int] c1 = [-1,1,-1];
+	int[int] c2 = [-1,-1,2];
+	
+	D1 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c0,op=1);
+	D2 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c1,op=1);
+	D3 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c2,op=1);
+	
+	DX3P2L = D1 + D2 + D3;
+	
+	D1 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c0,op=2);
+	D2 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c1,op=2);
+	D3 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c2,op=2);
+	
+	DY3P2L = D1 + D2 + D3;
+	
+	D1 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c0,op=3);
+	D2 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c1,op=3);
+	D3 = interpolate(Vh3P1dcL,Vh3P2L,U2Vc=c2,op=3);
+	
+	DZ3P2L = D1 + D2 + D3;
+	
+}
+
 // Matrices de derivada, con filtrado
 matrix IPhD4X4P2L = IPhP1dcP1L * D4X4P2L; // (I-πh) de ∂x componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Y4P2L = IPhP1dcP1L * D4Y4P2L; // (I-πh) de ∂y componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
