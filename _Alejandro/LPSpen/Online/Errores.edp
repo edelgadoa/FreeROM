@@ -32,7 +32,7 @@ int m = 0;
 TFR = TF;
 TF = TF - period;
 
-int NbasesConv = 1.;
+int NbasesConv = 3;
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);
@@ -46,7 +46,7 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
     [err,errY] = [u-uR,uY-uRY];
     VhP2 umod; umod = err^2+errY^2;
-    plot(umod,fill=1,value=1,cmm="t = "+ti);
+    // plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
     cout << "Error with Estabilization (R=" + NbasesConv + ") (L2) = " << errorl2(m) << endl;
 
@@ -61,10 +61,10 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     aux = tau*u; aux2 = tau*uY;
     [uxtau, uytau] = [aux,aux2];
     aux = uxtau^2+uytau^2; 
-    plot(aux,fill=1,value=1,cmm="t="+ti);
+    // plot(aux,fill=1,value=1,cmm="t="+ti);
     //plot(tau,fill=1,value=1,cmm="t = "+ti);
 
-    /*
+    
     readvector("Datos/VxEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEX, 0); uR[] = SEX;
     readvector("Datos/VyEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEY, 0); uRY[] = SEY;
     [err,errY] = [u-uR,uY-uRY];
@@ -72,7 +72,7 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
     cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
-    */
+    
     m+=1;
 }
 write("Errores/ErrorEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);
