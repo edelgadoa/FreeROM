@@ -51,7 +51,7 @@ macro equal(MatrixBig, MatrixSmall) for [i,j, aij : MatrixSmall]{MatrixBig(i,j) 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
 macro mpi(variable) if(mpirank==0){variable} //EOM
-
+macro mpiall(variable) for(int k=0;k<mpisize;k++){if (mpirank==k){variable}} //EOM
 // mpiComm comm(mpiCommWorld, 0, 0);
 
 //Local2Global: Hace lo mismo que reduceSolution pero con la notación uL para el EF local de u

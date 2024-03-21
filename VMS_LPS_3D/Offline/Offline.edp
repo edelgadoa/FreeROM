@@ -139,13 +139,16 @@ real[int, int] MBaseV(MatAVh3P2.n, Nbases), MBaseP(MatAVhP2.n, Nbases);
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 mpi(cout<<"EIM DATA"<<endl;)
 include "EIM_Data.idp"
-//cout<<"proc: "<<mpirank<<endl<<NumberPMTau<<endl;
-//cout<<" "<<endl;
-pause;
-//cout<<" "<<endl;
-cout<<"proc: "<<mpirank<<endl<<PuntosMTauL<<endl;
 
-pause;
+int[int] LocalMP(Taubases);
+
+// for (int s=0; s<Taubases; s++){
+//     if (NumberPMTau(s)>0){
+//         LocalMP(s)= mapVhP0(PuntosMTau(s));
+//     }
+// }
+// cout<<LocalMP<<endl;
+
 //cout<<WeightPMTau<<endl;
 
 // Cargo los datos del RBF

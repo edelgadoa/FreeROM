@@ -27,9 +27,13 @@ func int[int] MagicPointG2L(int[int] &map, int[int] &MagicPoint){
 	int[int] LocalMagicPoint(NMagic);
 	for (int i=0; i<NMagic; i++){
 		if (search(map, MagicPoint(i))!=-1){
-			LocalMagicPoint(NMagicL) = search(map, MagicPoint(i));
-			NMagicL++;	
-		}	
+			LocalMagicPoint(i) = search(map, MagicPoint(i));
+			//NMagicL++;	
+		}
+        else{
+            LocalMagicPoint(i) = -1;
+        }
+            
 		//if(mpirank==1)cout<<LocalMagicPoint(:,1)<<", mpirank:"<<mpirank<<endl;
 	}
 	return LocalMagicPoint;

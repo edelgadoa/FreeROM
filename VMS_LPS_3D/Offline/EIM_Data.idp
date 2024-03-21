@@ -58,4 +58,5 @@ int[int] PuntosMTauL = MagicPointG2L(mapVhP0, PuntosMTau); // Vector local de Pu
 real[int] NumberPMTau = NumberMagicPoint(mapVhP0, PuntosMTau); // 1: esta en proc, 0: no esta en proc
 real[int] WeightPMTau = WeightMagicPoint(NumberPMTau); //Pesos de cada Magic Point
 
+mpiall(cout<<PuntosMTauL<<endl;)
 ///////////////////////////////////////////

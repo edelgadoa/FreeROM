@@ -180,21 +180,21 @@ for (int s=0; s<Mbases; s++){
 
     Dtk = 0;
 
-    if (NumberPMSmago(s)>0){
-        DtkL(0,i) = FVdX[i][](PuntosMSmagoL(MbasesL));
-        DtkL(1,i) = FVdY[i][](PuntosMSmagoL(MbasesL));
-        DtkL(2,i) = FVdZ[i][](PuntosMSmagoL(MbasesL));
+    if (PuntosMSmagoL(s)>=0){
+        DtkL(0,i) = FVdX[i][](PuntosMSmagoL(s));
+        DtkL(1,i) = FVdY[i][](PuntosMSmagoL(s));
+        DtkL(2,i) = FVdZ[i][](PuntosMSmagoL(s));
 
-        DtkL(3,i) = FVYdX[i][](PuntosMSmagoL(MbasesL));
-        DtkL(4,i) = FVYdY[i][](PuntosMSmagoL(MbasesL));
-        DtkL(5,i) = FVYdZ[i][](PuntosMSmagoL(MbasesL));
+        DtkL(3,i) = FVYdX[i][](PuntosMSmagoL(s));
+        DtkL(4,i) = FVYdY[i][](PuntosMSmagoL(s));
+        DtkL(5,i) = FVYdZ[i][](PuntosMSmagoL(s));
 
-        DtkL(6,i) = FVZdX[i][](PuntosMSmagoL(MbasesL));
-        DtkL(7,i) = FVZdY[i][](PuntosMSmagoL(MbasesL));
-        DtkL(8,i) = FVZdZ[i][](PuntosMSmagoL(MbasesL));
+        DtkL(6,i) = FVZdX[i][](PuntosMSmagoL(s));
+        DtkL(7,i) = FVZdY[i][](PuntosMSmagoL(s));
+        DtkL(8,i) = FVZdZ[i][](PuntosMSmagoL(s));
 
         DtkL *= WeightPMSmago(s);
-        MbasesL++;
+        //MbasesL++;
     }
     mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
     GradPM[s] = Dtk;
@@ -234,8 +234,8 @@ for (int s=0; s<Mbases; s++){
 
     for (int s=0; s<Taubases; s++){
 
-        if (NumberPMTau(s)>0){
-    	    NgkL(0,1+i) = ngaux(PuntosMTauL(TauBasesL));
+        if (PuntosMTauL(s)>=0){
+    	    NgkL(0,1+i) = ngaux(PuntosMTauL(s));
 
     	    //Matriz simétrica
     	    NgkL(1+i,0) = NgkL(0,1+i);
@@ -244,13 +244,13 @@ for (int s=0; s<Mbases; s++){
 
             ////--------------///////
 
-        	NggkL(0,1+i) = ndgaux(PuntosMTauL(TauBasesL));
+        	NggkL(0,1+i) = ndgaux(PuntosMTauL(s));
         	//Matriz simétrica
         	NggkL(1+i,0) = NggkL(0,1+i);
 
-            NggkL *= WeightPMTau(s);
+            // NggkL *= WeightPMTau(s);
 
-            TauBasesL++;
+            //TauBasesL++;
         }
         mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
         mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
@@ -304,9 +304,9 @@ for (int s=0; s<Mbases; s++){
         for (int s=0; s<Taubases; s++){
 
 
-    		if (NumberPMTau(s)>0){
+    		if (PuntosMTauL(s)>=0){
 			
-                NgkL(1+i,1+j) = ngaux(PuntosMTauL(TauBasesL));
+                NgkL(1+i,1+j) = ngaux(PuntosMTauL(s));
         		if(j<i){
         			NgkL(1+j,1+i) = NgkL(1+i,1+j);
         		}
@@ -314,13 +314,13 @@ for (int s=0; s<Mbases; s++){
                 // NgkL *= WeightPMTau(s);
         		/////-----------////
 
-        		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(TauBasesL));
+        		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(s));
         		if(j<i){
         			NggkL(1+j,1+i) = NggkL(1+i,1+j);
         		}
                 // NggkL *= WeightPMTau(s);
 				// mpi(cout<<WeightPMTau(s)<<endl;)
-                TauBasesL++;
+                //TauBasesL++;
 			}
 
             mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
