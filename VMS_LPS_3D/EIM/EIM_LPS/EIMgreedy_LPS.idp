@@ -79,7 +79,7 @@ BEIM[i] = gEIM;
 for (int j=0; j<i; j++){
 	BEIM[i][] -= sigmai(j)*BEIM[j][]; // Calculo los residuos
 }
-VhP0 absBEIM = abs(BEIM[i]);
+VhP0L absBEIM = abs(BEIM[i]);
 Tmax(i) = absBEIM[].imax;
 BEIM[i][] /= BEIM[i][](Tmax(i));
 

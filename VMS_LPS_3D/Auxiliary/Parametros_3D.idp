@@ -26,6 +26,7 @@ real CS = 0.1; // Smago
 real cc1 = 16.; // tauk
 real cc2 = sqrt(cc1);
 
+
 // Parametros para el problema de EF
 real dt = 1;
 real epspen = 1e-8;
@@ -50,7 +51,7 @@ real RBFeps = 1e-5;
 // Parametros mu
 real Reynolds; 
 real Remin = 1000;
-real Remax = 2900;
+real Remax = 1500;
 
 real Refijo = 1000;
 

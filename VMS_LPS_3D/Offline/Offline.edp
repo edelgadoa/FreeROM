@@ -68,6 +68,11 @@ mapVhP2 = restrict(VhP2L,VhP2,myN2o);
 mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
 mapVhP0 = restrict(VhP0L, VhP0, myN2o);
 
+
+real[int] DP0;
+PartitionCreate(ThL, DP0, P0);
+
+
 {
 	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
 	macro init(i) [i, i, i, i] // EOM
@@ -134,7 +139,14 @@ real[int, int] MBaseV(MatAVh3P2.n, Nbases), MBaseP(MatAVhP2.n, Nbases);
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 mpi(cout<<"EIM DATA"<<endl;)
 include "EIM_Data.idp"
+//cout<<"proc: "<<mpirank<<endl<<NumberPMTau<<endl;
+//cout<<" "<<endl;
+pause;
+//cout<<" "<<endl;
+cout<<"proc: "<<mpirank<<endl<<PuntosMTauL<<endl;
 
+pause;
+//cout<<WeightPMTau<<endl;
 
 // Cargo los datos del RBF
 readvector("../RBF/BetaMuI.txt", real, BetaI, 0);

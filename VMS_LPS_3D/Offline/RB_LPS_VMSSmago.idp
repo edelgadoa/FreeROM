@@ -18,7 +18,7 @@ MRBV = MRBV + ConvLRBi;
 MRBP = PenRBi;	
 // mpi(cout<<MRBP<<endl;)
 
-MRBP = MRBP + StabhkRBs;
+// MRBP = MRBP + StabhkRBs;
 
 // bDiffRBi = bDiffRBG(0:2*I-1);
 
@@ -90,14 +90,15 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		Nguki = NGUK[s](0:I,0:I);
 		Auxi = CuN.*Nguki;
 		Nguk = (CS*hkG[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
-		
+		// mpi(cout<<"it:"<<iN<<",s:"<<s<<", Nguk:"<<Nguki<<", Nuk"<<Nuki<<endl;)
 
 		bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTau(s))^2 + cc2*Nuk/hkG[](PuntosMTau(s)))^-1;	
+		
 		//mpi(cout<<"hk^2="<<hkG[](PuntosMTau(s))^2<<endl;)
 	}
-	
+	// mpi(cout<<"btau"<<bEIMTau<<endl;)
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-	//cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;
+	// mpi(cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;)
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBN(I, I);
 		StabPRBN = StabPRB[s](0:I-1, 0:I-1);
@@ -120,7 +121,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
 	MRBFV += SmagoRBi; 
-	//MRBFP += StabPRBi;
+	MRBFP += StabPRBi;
 	
 	
 	
@@ -140,12 +141,12 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	real[int] uRBvp = uRBv;
 	matrix MRBs = [[MRBFV, DivPRBTi],[DivPRBi, MRBFP]];
 	// mpi(cout<<MRBs<<endl;)
-	//cout<<bRB<<endl;)
+	// mpi(cout<<bRB<<endl;)
 	set(MRBs, solver=UMFPACK);
 	// real[int,int] MRBinv = MRB^-1;
 	
 	uRBv = MRBs^-1*bRB;
-	//mpi(cout<<"uRB:"<<uRBv<<endl;)
+	mpi(cout<<"uRB:"<<uRBv<<endl;)
 	// Actualizo el error 
 	real[int] uRBerr(I); 
 	uRBerr = uRBv(0:I-1) - uRBvp(0:I-1);

@@ -151,6 +151,7 @@ for (int s=0; s<Taubases; s++){
 	
 }
 
+mpi(cout<<StabPRB<<endl;)
 
 //
 // // LPS
@@ -258,8 +259,7 @@ for (int s=0; s<Mbases; s++){
     	NGUK[s] += Nggk;
     }
 }
-// mpi(cout<<"NUK"<<endl<<NUK<<endl;)
-// mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
+
 //
 {
 	// Matrices para el EIM LPS (Funciones de base)
@@ -267,17 +267,17 @@ for (int s=0; s<Mbases; s++){
     real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
     Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
 
-
+ 	
 	for (int j=0; j<=i; j++){
 
 		VhP2L fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
-		varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
-		// varf NGL(un,v) = intN(ThL)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
+		// varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
+		varf NGL(un,v) = intN(ThL)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
 		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i];
 		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[j]; 
 
 		real[int] ngaux = NGL(0,VhP0L);
-
+		ngaux .*= DP0;
 
         ///////////////////////////////////////////
 
@@ -298,29 +298,30 @@ for (int s=0; s<Mbases; s++){
 		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
 
 		real[int] ndgaux = NDG(0,VhP0L);
-
-        int TauBasesL;
+		ndgaux .*= DP0;
+       	
+		int TauBasesL;
         for (int s=0; s<Taubases; s++){
 
 
     		if (NumberPMTau(s)>0){
-
+			
                 NgkL(1+i,1+j) = ngaux(PuntosMTauL(TauBasesL));
         		if(j<i){
         			NgkL(1+j,1+i) = NgkL(1+i,1+j);
         		}
 
-                NgkL *= WeightPMTau(s);
+                // NgkL *= WeightPMTau(s);
         		/////-----------////
 
         		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(TauBasesL));
         		if(j<i){
         			NggkL(1+j,1+i) = NggkL(1+i,1+j);
         		}
-                NggkL *= WeightPMTau(s);
-
+                // NggkL *= WeightPMTau(s);
+				// mpi(cout<<WeightPMTau(s)<<endl;)
                 TauBasesL++;
-            }
+			}
 
             mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
             mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
@@ -331,7 +332,7 @@ for (int s=0; s<Mbases; s++){
     }
 }
 //
-// mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+mpi(cout<<"NUK"<<endl<<NUK<<endl;)
 // mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
 
 //mpi(cout<<"RHS"<<endl;)

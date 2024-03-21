@@ -58,6 +58,12 @@ MatCreate(ThL, MatAVhP2, P2);
 	MatCreate(ThL, MatAVh3P2, [P2, P2, P2]); 
 }
 
+
+varf med(unused,v) = int3d(ThL)(1.*v);
+real[int] medk = med(0,VhP0L);
+VhP0L mk, tKcod, tKTcod, tau;
+mk[] = sqrt(medk); 
+
 // Definimos las matrices de interpolacion y derivacion
 include "Interp_matrix_NoStab_VP_3D.idp"
 include "Interp_matrix_NoStab_VP_3D_Local.idp"

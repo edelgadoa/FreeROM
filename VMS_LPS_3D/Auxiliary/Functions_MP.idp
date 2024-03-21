@@ -32,7 +32,7 @@ func int[int] MagicPointG2L(int[int] &map, int[int] &MagicPoint){
 		}	
 		//if(mpirank==1)cout<<LocalMagicPoint(:,1)<<", mpirank:"<<mpirank<<endl;
 	}
-	return LocalMagicPoint(0:NMagicL-1);
+	return LocalMagicPoint;
 }
 
 //Number of processors that have the Magic Points
