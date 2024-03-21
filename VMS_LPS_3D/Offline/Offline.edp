@@ -149,12 +149,16 @@ int[int] LocalMP(Taubases);
 // }
 // cout<<LocalMP<<endl;
 
-//cout<<WeightPMTau<<endl;
+
+
+
 
 // Cargo los datos del RBF
 readvector("../RBF/BetaMuI.txt", real, BetaI, 0);
 readvector("../RBF/vMuI.txt", real, muI, 0);
 readvector("../RBF/gammaI.txt", real, gammaI, 0);
+
+mpiall(cout<<WeightPMTau<<endl;)
 
 // Inicializo las matrices para la fase offline
 include "Allocate_matrices.idp"

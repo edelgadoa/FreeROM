@@ -217,6 +217,7 @@ for (int s=0; s<Mbases; s++){
 	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
 
     real[int] ngaux = NG(0,VhP0L);
+	ngaux .*= DP0;
 
 	///////////////////////////////////////////////
 
@@ -231,6 +232,7 @@ for (int s=0; s<Mbases; s++){
 	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i];
 
     real[int] ndgaux = NDG(0,VhP0L);
+	ndgaux .*= DP0;
 
     for (int s=0; s<Taubases; s++){
 
@@ -240,7 +242,7 @@ for (int s=0; s<Mbases; s++){
     	    //Matriz simétrica
     	    NgkL(1+i,0) = NgkL(0,1+i);
 
-            NgkL *= WeightPMTau(s);
+            NgkL *= WeightPMTau(TauBasesL);
 
             ////--------------///////
 
@@ -248,9 +250,8 @@ for (int s=0; s<Mbases; s++){
         	//Matriz simétrica
         	NggkL(1+i,0) = NggkL(0,1+i);
 
-            // NggkL *= WeightPMTau(s);
+            NggkL *= WeightPMTau(s);
 
-            //TauBasesL++;
         }
         mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
         mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
@@ -265,11 +266,11 @@ for (int s=0; s<Mbases; s++){
 	// Matrices para el EIM LPS (Funciones de base)
     real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
     real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
-    Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
+    
 
  	
 	for (int j=0; j<=i; j++){
-
+		Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
 		VhP2L fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
 		// varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
 		varf NGL(un,v) = intN(ThL)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
@@ -303,22 +304,24 @@ for (int s=0; s<Mbases; s++){
 		int TauBasesL;
         for (int s=0; s<Taubases; s++){
 
-
+			NgkL = 0;
+			NggkL = 0;
     		if (PuntosMTauL(s)>=0){
 			
                 NgkL(1+i,1+j) = ngaux(PuntosMTauL(s));
         		if(j<i){
         			NgkL(1+j,1+i) = NgkL(1+i,1+j);
         		}
+				cout<<"proc:"<<mpirank<<", ngkl:"<<ngaux(PuntosMTauL(s))<<", it:"<<s<<", Weight:"<<WeightPMTau(s)<<endl;
 
-                // NgkL *= WeightPMTau(s);
+                //NgkL *= WeightPMTau(s);
         		/////-----------////
 
         		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(s));
         		if(j<i){
         			NggkL(1+j,1+i) = NggkL(1+i,1+j);
         		}
-                // NggkL *= WeightPMTau(s);
+                //NggkL *= WeightPMTau(s);
 				// mpi(cout<<WeightPMTau(s)<<endl;)
                 //TauBasesL++;
 			}

@@ -57,5 +57,10 @@ func real[int] WeightMagicPoint(real[int] &NumberMagicPoints){
     real[int] Weights(NumberMagicPoints.n);
     mpiAllReduce(NumberMagicPoints, Weights, mpiCommWorld, mpiSUM);
     Weights = 1./Weights;
+	for(int i=0;i< Weights.n; i++){
+		if (NumberMagicPoints(i) == 0){
+			Weights(i) = 0;
+		}
+	} 
     return Weights;
 }
