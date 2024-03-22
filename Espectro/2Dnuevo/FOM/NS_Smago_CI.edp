@@ -93,7 +93,7 @@ if(T0>0){
 	uEFP[] = SolP;
 }
 
-include "FE_VMS_2D.idp"
+include "FE_Smago_2D.idp"
 
 // Dibujamos la solucion
 plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
