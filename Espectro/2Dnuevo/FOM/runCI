@@ -2,4 +2,4 @@
 echo 'Numero de procesadores:'
 read NP
 
-ff-mpirun -np $NP NS_Smago_CI.edp -wg -ns
+ff-mpirun -np $NP NS_Smago_CI.edp -wg -ns -v 0
