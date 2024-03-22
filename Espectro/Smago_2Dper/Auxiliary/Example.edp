@@ -1,0 +1,88 @@
+load "dfft"
+
+func complex[int,int] matrixDFFT(real epsi,int  n)
+{
+	// Matirz de Vandermonde
+	// - Si epsi=-1, obtenemos la transformada
+	// - Si epsi=1, obtenemos la inversa
+	// n=NN/2;
+	// Se construye desde fuera hacia dentro, por filas
+	real N=2*n+1;
+	complex[int,int] A(N,N);
+	A=0;
+	complex WN=exp(epsi*2.*pi*1i/N);
+	for(int ii=-n;ii<=0;ii++)
+	{
+		for(int jj=-n;jj<=0;jj++)
+        {
+            A(ii+n,jj+n)=WN^(ii*jj);
+            A(N-ii-n-1,N-jj-n-1)=WN^(ii*jj);
+            A(ii+n,N-jj-n-1)=WN^(-ii*jj);
+            A(N-ii-n-1,jj+n)=WN^(-ii*jj);
+        }
+	}
+	if(epsi<0)A/=N;
+	return A;
+}
+
+func complex[int,int] vector2matrix(complex[int] & u,int n)
+{
+	complex[int,int] matrixu(n,n);
+	for(int ii=0;ii<n;ii++)matrixu(n-ii-1,:)=u(ii*n:ii*n+n-1);
+	return matrixu;
+}
+func complex[int] matrix2vector(complex[int,int] & u)
+{
+	int n=u.n;
+	complex[int] vectoru(n*n);
+	for(int ii=0;ii<n;ii++)vectoru(ii*n:ii*n+n-1)=u(n-ii-1,:);
+	return vectoru;
+}
+func complex[int] DFFT2d(complex[int] & f,real epsi,int n)
+{
+	complex[int,int] matrixf=vector2matrix(f,2*n+1);
+	load "lapack";
+	complex[int,int] AN=matrixDFFT(epsi,n);
+	complex[int,int] aux=matrixf*AN;
+	complex[int,int] matrixF=AN*aux;
+	complex[int] F=matrix2vector(matrixF);
+	return F;
+}
+
+
+
+int NN = 32;
+mesh Th=square(NN,NN,flags=0);
+
+fespace VhP1(Th,P1);
+real alpha = -5./3.;
+
+VhP1 <complex> ZZ,zz;
+
+// Creamos el espectro artificialmente
+real module;
+for(int k=-NN/2;k<=NN/2;k++)
+{
+	for(int l=-NN/2;l<=NN/2;l++)
+	{
+		module=sqrt(k^2+l^2);
+		if(sqrt(module)<1-1.e-3)
+		{
+			ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)]=0.;
+		}
+		else
+		{
+			ZZ[][(k+NN/2)+(NN+1)*(l+NN/2)]=module^(-(alpha+1)/2);
+		}
+	}
+}
+
+VhP1 zr;
+// Calculamos la transformada inversa
+zz[] = dfft(ZZ[],NN+1,1);
+zr = real(zz);
+plot(zr,zr); // solution in the corners of the domain with instability
+
+zz[]=DFFT2d(ZZ[],1,NN/2);
+zr = real(zz);
+plot(zr,zr); // solution in the center of the domain with no instability

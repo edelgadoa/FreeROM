@@ -1,0 +1,104 @@
+///////////////
+// FreeROM 
+///////////////
+
+load "PETSc"
+
+// Definicion de macros generales para usar en los codigos, si se quiere usar por componentes (mas general)
+macro Grad(u) [dx(u), dy(u)] //EOM
+macro div(u1,u2) (dx(u1)+dy(u2)) //EOM
+macro gradugradv(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//EOM
+macro ugradv(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]] //EOM
+macro ugradvw(u1,u2,v1,v2,w1,w2) (ugradv(u1,u2,v1,v2)'*[w1,w2]) //EOM
+macro ugradT(u1,u2,temp) ([u1,u2]'*Grad(temp)) //EOM
+macro antisimetric(u1,u2,v1,v2,w1,w2) (0.5*(ugradvw(u1,u2,v1,v2,w1,w2)-ugradvw(u1,u2,w1,w2,v1,v2))) //EOM
+macro mod(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2)) //EOM
+
+
+// Si usamos vectores velocidad U,V,W en 2D con U=[U, UY], V=[V, VY], W=[W, WY]
+// Las derivadas de U son UdX, UdY, UYdX y UYdY, si se quiere usar en versión vectorial (notacion mas especifica)
+macro Div(U) (dx(U) + dy(U#Y)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y))//EOM
+macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
+macro UGradT(U,temp) ([U,U#Y]'*Grad(temp)) //EOM
+macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
+macro MOD(U) (sqrt(U#dX^2+U#dY^2+U#YdX^2+U#YdY^2)) //EOM
+macro UporV(U,V) ( [U,U#Y]'*[V,V#Y]) //EOM 
+
+
+//// MACROS DEL PARALELO
+macro pause() mpiBarrier(mpiCommWorld)// EOM
+macro mpi(variable) if(mpirank==0){variable} //EOM
+
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n);
+	aux=0;
+	uL[].*=D;
+	aux(map)=uL[];
+	u[]=0;
+	mpiAllReduce(aux,u[],mpiCommWorld,mpiSUM);
+}//EOM
+
+NewMacro solvesystem(A,b,u)
+{
+	Vh4P2L [u#L, u#LY, u#LP]; 
+	MatAVh4P2 = A;
+	set(MatAVh4P2, sparams=sparamsv);
+	u#L[]=MatAVh4P2^-1*b;
+	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
+}
+EndMacro
+NewMacro solvesystemsup(A,b,u)
+{	
+	Vh2P2perL [u#L,u#LY];
+	MatAVh2P2per = A;
+	set(MatAVh2P2per,sparams=sparamsv);
+	u#L[]=MatAVh2P2per^-1*b;
+	reduceSolution(u#L,u,MatAVh2P2per.D,mapVh2P2per);
+}
+EndMacro
+
+NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
+{
+	Vh4P2L [u#L, u#LY, u#LP]; 
+	u#L[] = 0;
+	MatAVh4P2 = A;
+	
+	if (mpirank==0) {
+		b.resize(b.n + 1);
+		b(b.n - 1) = 0;
+	}
+		
+	varf Lagrange([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)(vP) +on(suelo,paredd,paredi,techo, uu=0., uuY=0.);
+			   			   		   
+	real[int] Lag = Lagrange(0,Vh4P2L, tgv=-1);
+	real[int] pLag;
+	ChangeNumbering(MatAVh4P2, Lag, pLag);
+
+	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
+	
+	// Vh4P2L [uu#L, uu#LY, uu#LT, uu#LP] = [1.0, 1.0, 1.0, 2.0];
+	real[int] Fields(MatLPS.n);
+	Fields = 1.0;
+	if (mpirank==0){
+		Fields(Fields.n - 1) = 2.0;
+	}
+		
+    string[int] names(2);
+    names[0] = "NS";
+    names[1] = "Lagrange";
+	// names[2] = "Lagrange";
+	
+	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
+	 set(MatLPS, sparams=sparamsv, fields=Fields, names=names);
+	
+	real[int] solLPS = MatLPS^-1*b;
+
+	//u#L[] = 0.;
+	u#L[] = solLPS(0: Vh4P2L.ndof -1);
+	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
+
+}
+EndMacro

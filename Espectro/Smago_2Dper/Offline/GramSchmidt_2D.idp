@@ -1,0 +1,25 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para calcular las bases ortonormalizadas 
+
+/////////////////////////////////////////////
+// Ortonormalizacion de la Presion
+
+MBaseP = OrtoX(MBaseP, MPescP);
+
+for (int i=0; i<NbasesP; i++){
+	BaseP[i][] = MBaseP(:,i);
+}
+
+//////////////////////////////////////////////
+// Ortonormalizacion de la Velocidad
+
+MBaseV = OrtoX(MBaseV, MPescV);
+
+for (int i=0; i<NbasesV; i++){
+	BaseV[i][] = MBaseV(:,i);
+}
+
+

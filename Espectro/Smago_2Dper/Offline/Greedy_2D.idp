@@ -1,0 +1,137 @@
+///////////////
+// FreeROM 
+/////////////// 
+int I = NbasesV + NbasesP; // Para ajustar los indices
+
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteracion del Greedy
+real[int] DeltaG(Ntrain); 
+
+// Inicializamos las matrices para el problema reducido
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDTRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffRB;
+DivPRBi = DivPRB;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB;
+DTRBi = DTRB;
+
+// Condicion inicial
+write("Output.txt", "Calculando condicion inicial ...", 1, 1);
+
+Vh2P2perL [uCI, uCIY];
+VhP1perL uCIP;
+
+{
+	real ReInit = 8500; 
+	Vh3P2per [uCIa,uCIYa,uCIPa];
+	readvector("../Snapshots/Vx_" + ReInit + "_t_" +T0+ ".txt", real, initX, 0); uCIa[] = initX; // Esto tal y como está es ineficiente, hay que cambiarlo
+	//readvector("../Snapshots/Vy_" + ReInit + "_t_" +T0+ ".txt", real, initY, 0); uCIYa[] = initY;
+	//readvector("../Snapshots/P_" + ReInit + "_t_" +T0+ ".txt", real, initP, 0); uCIPa[] = initP;
+	
+	VhP2per CIaux, CIauxY;
+	VhP1per CIauxP;
+	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
+	
+	VhP2perL CIauxL, CIauxYL;
+
+	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
+	uCIP[] = CIauxP[](mapVhP1per);
+	
+	[uCI, uCIY] = [CIauxL, CIauxYL];
+}
+
+real[int] uCIv;
+ChangeNumbering(MPescV, uCI[], uCIv);
+real[int] uCIPv;
+ChangeNumbering(MPescP, uCIP[], uCIPv);
+
+real[int] uCIRBv(I);
+for(int ii = 0; ii<NbasesV;ii++){
+	real[int] Vi;
+	ChangeNumbering(MPescV, BaseV[ii][], Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescV);
+}
+for(int ii = NbasesV; ii<I; ii++){
+	real[int] Pi;
+	ChangeNumbering(MPescP, BaseP[ii-NbasesV][], Pi);
+	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
+}
+
+
+write("Output.txt", "Condicion inicial OK.", 1, 1);
+
+// Comenzamos el bucle del greedy 
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+	real nuRB = 1./MuTrain(iRB);
+	
+	// Resuelvo el problema 
+	real[int] uRBv(I); // Vectores donde almaceno la Solución Reducida
+	real[int] bRB(I); // Segundo miembro para resolver el sistema
+	
+	uRBv = uCIRBv; // Falta condicion INICIAL
+	mpi(cout<<"Calculando solucion reducida..."<<endl;)
+	include "RB_VMSSmago.idp"
+	// Reconstruyo la solución reducida
+	
+	Vh2P2perL [uRBL, uRBLY];
+	VhP1perL uRBPL;
+	
+	
+	uRBL[] = MBaseV*uRBv(0:NbasesV-1);
+	uRBPL[] = MBaseP*uRBv(NbasesV:I-1);
+	
+	if(MuTrain(iRB)==Reynolds){
+		
+		macro defPK2(i) [i, i#Y] // EOM		
+		plotMPI(ThL, [uRBL, uRBLY], Pk2P2, defPK2, real, cmm="Sol RB Re="+Reynolds);		
+		plotMPI(ThL, uRBPL, PkP1, def, real, cmm="Sol RB Re="+Reynolds);	
+
+	}
+	
+	// Esto en teoría no lo debería calcular. La idea es calcular el espectro en paralelo con uRBL[]
+	Vh2P2per [uRB, uRBY];
+	VhP1per uRBP;
+	
+	reduceSolution(uRBL, uRB, MatAVh2P2per.D, mapVh2P2per)
+	reduceSolution(uRBPL, uRBP, MatAVhP1per.D, mapVhP1per)
+	
+	
+	// Calculo el estimador de error 
+
+	write("Output.txt", "Calculando espectro ...", 1, 1);
+
+	// Calculamos el espectro de la funcion reducida
+	VhP1<complex> uC, uCY, aux=0.;
+	uC = uRB+aux; uCY = uRBY+aux;
+
+	real[int] energykk = espectro2DDFFT(uC[],uCY[],NN+1);
+	real[int] energyk53(energykk.n),errk(k2-k1+1);
+	for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+	real amin=1.e-11,amax=1.e-6,adt=2.e-11;
+	real an=(amax-amin)/adt+1.;
+	real[int] difere(an);
+	int cont = 0;
+	for(real a=amin;a<=amax;a+=adt)
+	{
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		errk(0:errk.n-1)-=energykk(k1:k2);
+		difere(cont)=errk.l2;
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		difere(cont)/=errk.l2;
+		cont++;
+	}
+	DeltaG(iRB)=difere.min;
+	write("Output.txt","    - estimate= "+DeltaG(iRB),1,1);
+
+	write("Output.txt", "Espectro OK.", 1, 1);
+
+}
+
+DeltaN(iGreedy) = DeltaG.max;
+MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
