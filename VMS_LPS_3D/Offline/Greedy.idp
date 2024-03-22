@@ -92,7 +92,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	// Calculo el estimador de error 
 
 	// Norma del Residuo
-	//include "Residuo_LPS_VMSSmago.idp"	
+	include "Residuo_LPS_VMSSmago.idp"	
 	mpi(cout<<"ResN = "<<ResG(iRB)<<endl;)
 	ResG(iRB) = MuTrain(iRB);
 	
