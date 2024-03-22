@@ -1,0 +1,39 @@
+// Archivo auxiliar calculo de transformadas de fourier
+
+// Cuando se calculen los coeficientes de la transformada de fourier, 
+// la función debe llamarse uFourier y ser compleja.
+
+// Si tengo varias componentes, debo llamar varias veces a FourierTransform2D, 
+// redefiniendo uFourier.
+
+func complex[int,int] FourierTransform2D(int kmax){
+
+    complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
+
+    for(int i=-kmax; i<=kmax; i++){
+        for(int j=-kmax; j<=kmax; j++){
+            func fourier = exp(-1*1i*2*pi*(x*i+y*j));
+            complex coefaux = int2d(Th)(uFourier*fourier);
+            FCoefs(i+kmax,j+kmax) = real(coefaux);
+        }
+    }
+
+    return FCoefs;
+}
+
+// Para calcular la función inversa hay que llamar una función auxiliar uFourier.
+func complex[int] FourierInverse2D(complex[int,int] & Coefs){
+
+    int kcoefs = (Coefs.n-1)/2;
+    uFourier = 0;
+
+    for(int i = -kcoefs; i<=kcoefs; i++){
+        for(int j = -kcoefs; j<=kcoefs; j++){
+            complex FCoef = Coefs(i+kcoefs,j+kcoefs);
+            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*i+y*j));
+            uFourier = uFourier+BaseFourier;
+        }
+    }
+
+    return uFourier[];
+}
