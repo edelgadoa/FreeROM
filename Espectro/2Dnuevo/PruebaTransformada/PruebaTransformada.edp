@@ -15,9 +15,9 @@ mesh Th = ThG;
 func Pk = P1;                       // finite element space
 
 // Creación de matrices distribuidas
-//Mat A;
+Mat A;
 // Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
-//MatCreate(Th, A, Pk);
+MatCreate(Th, A, Pk);
 
 // Definición de elementos finitos
 fespace Wh(Th, Pk);                 // local finite element space on the local mesh Th_i
@@ -25,7 +25,7 @@ fespace Wh(Th, Pk);                 // local finite element space on the local m
 // Cálculo de la transformada de fourier
 func uf = exp(-(x^2+y^2));
 // Th = adaptmesh(Th, uf);
-//plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
+plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
 Wh<complex> uFourier = uf;
 // plot(uFourier);
@@ -44,4 +44,4 @@ FCoefs = FourierTransform2D(k);
 
 Wh<complex> uReal; 
 uReal[] = FourierInverse2D(FCoefs);
-// plot(uReal);
+// plotMPI(uReal);
