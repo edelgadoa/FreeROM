@@ -10,11 +10,17 @@ func complex[int,int] FourierTransform2D(int kmax){
 
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
 
+    real[int] d;
+    PartitionCreate(Th,d,Pk);
+    Wh<complex> D,Daux=0;
+    Wh Dreal;
+    Dreal[] = d;
+    D = Dreal+Daux;
+
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
             func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
-            complex coefaux = int2d(Th)(uFourier*fourier);
-            FCoefs(ii+kmax,jj+kmax) = real(coefaux);
+            FCoefs(ii+kmax,jj+kmax) = int2d(Th)(D*fourier*uFourier);
         }
     }
 
@@ -36,6 +42,6 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
             uFourier[] += BFaux[]; // uFourier =  uFourier+BaseFourier;
         }
     }
-
+    
     return uFourier[];
 }

@@ -32,15 +32,18 @@ plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 Wh<complex> uFourier = uf;
 // plot(uFourier);
 
-int k = 1;
+int k = 10;
 
 include "fourier.idp"
 
 complex[int,int] FCoefs(2*k+1,2*k+1);
+complex[int,int] FCoefsL(2*k+1,2*k+1);
 
-FCoefs = FourierTransform2D(k);
+FCoefsL = FourierTransform2D(k);
 
-cout << FCoefs;
+mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
+
+// cout << FCoefs;
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
