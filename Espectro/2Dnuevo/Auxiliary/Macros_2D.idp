@@ -2,8 +2,6 @@
 // FreeROM 
 ///////////////
 
-load "PETSc"
-
 // Definicion de macros generales para usar en los codigos, si se quiere usar por componentes (mas general)
 macro Grad(u) [dx(u), dy(u)] //EOM
 macro div(u1,u2) (dx(u1)+dy(u2)) //EOM

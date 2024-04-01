@@ -4,11 +4,11 @@
 
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
-real[int] bFija(Vh3P2.ndof);
+real[int] bFija(Vh3P2per.ndof);
 
 include "Matrices_fijas_NS_2D.idp"
 
-for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
+for(real ti = T0+dt; ti<=TF; ti+=dt){
 	write("Output.txt","t = " + ti,0,1);
 	// Comenzamos el bucle iterativo para resolver el problema de EF
 	
@@ -18,14 +18,11 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	uprevY = uEFY;
 	
 	{
-		VhP2per udcAux;
-		udcAux[] = IPhP2P1*uprev[];
-		uEFdX[] = DXP2*udcAux[];
-		uEFdY[] = DYP2*udcAux[];
+		uEFdX[] = DXP2*uprev[];
+		uEFdY[] = DYP2*uprev[];
 
-		udcAux[] = IPhP2P1*uprevY[];
-		uEFYdX[] = DXP2*udcAux[];
-		uEFYdY[] = DYP2*udcAux[];
+		uEFYdX[] = DXP2*uprevY[];
+		uEFYdY[] = DYP2*uprevY[];
 	}
 	
 
@@ -38,7 +35,7 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
 	
-	include "Matriz_VMSSmago_2D.idp"
+	include "Matriz_Smago_2D.idp"
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
@@ -49,13 +46,17 @@ for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){
 	
 	bFinal = bFija;
 	bFinal += bNS;
+	
+	MatFinal = MFinal;
 
-	set(MFinal, solver=sparsesolver);
+	set(MatFinal, sparams=sparamsv);
 	
-	uEF[]=MFinal^-1*bFinal;
+	uEF[] = MatFinal^-1*bFinal;
 	
-	// Guardamos los snapshots 
-	write("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
-	write("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);	
-	write("../Snapshots/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
+	
+
+	// // Guardamos los snapshots
+	// write("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+	// write("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);
+	// write("../Snapshots/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
 }
