@@ -12,10 +12,8 @@ func complex[int,int] FourierTransform2D(int kmax){
 
     real[int] d;
     PartitionCreate(Th,d,Pk);
-    Wh<complex> D,Daux=0;
-    Wh Dreal;
-    Dreal[] = d;
-    D = Dreal+Daux;
+    Wh D;
+    D[] = d;
 
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
@@ -37,11 +35,49 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
         for(int jj = -kcoefs; jj<=kcoefs; jj++){
             complex FCoef = Coefs(ii+kcoefs,jj+kcoefs);
             func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj));
-            Wh<complex> BFaux;
-            BFaux = BaseFourier;
-            uFourier[] += BFaux[]; // uFourier =  uFourier+BaseFourier;
+            uFourier =  uFourier+BaseFourier;
         }
     }
     
     return uFourier[];
 }
+
+// Cálculo del espectro
+
+func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY)
+{
+    int kmax = (CoefsX.n-1)/2;
+    real[int,int] resultL(2*kmax+1,2*kmax+1), result(2*kmax+1,2*kmax+1);
+	resultL=0.; result=0.; 
+	int cont = 1;
+		
+	for(int ii=-kmax;ii<=kmax;ii++){
+		if(mpirank==cont%mpisize){
+            for(int jj=-kmax; jj<=kmax; jj++){
+                resultL(ii+kmax,jj+kmax)=(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2)/2.;
+            }
+        }
+	cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+
+/*
+func real[int] energycomputation(complex[int] & u,complex[int] & uY, complex[int] & uZ)
+{
+	real[int] resultL(u.n), result(u.n);
+	resultL=0.; result=0.; 
+	int cont = 1;
+	for(int ii=0;ii<result.n;ii++){
+		if(mpirank==cont%mpisize){
+			resultL[ii]=(uporu(u[ii])+uporu(uY[ii])+uporu(uZ[ii]))/2.;
+		}
+	cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+*/

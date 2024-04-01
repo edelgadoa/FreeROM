@@ -27,12 +27,12 @@ fespace Wh(Th, Pk);                 // local finite element space on the local m
 func uf = exp(-(x^2+y^2));
 // Th = adaptmesh(Th, uf);
 Wh u=uf;
-plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
+//plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
 Wh<complex> uFourier = uf;
 // plot(uFourier);
 
-int k = 10;
+int k = 1;
 
 include "fourier.idp"
 
@@ -47,9 +47,13 @@ mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
-Wh<complex> uReal; 
-uReal[] = FourierInverse2D(FCoefs);
+//Wh<complex> uReal; 
+//uReal[] = FourierInverse2D(FCoefs);
 
-Wh uRReal;
-uRReal = real(uReal);
-plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");
+//Wh uRReal;
+//uRReal = real(uReal);
+//plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");
+
+real[int,int] energyhat = energycomputation(FCoefs,FCoefs);
+
+cout << energyhat << endl;
