@@ -5,4 +5,4 @@ read NP
 
 verbosity=0
 
-ff-mpirun -np $NP PruebaTransformada.edp -ns -glut  ffglut
+ff-mpirun -np $NP PruebaTransformada.edp -ns -wg

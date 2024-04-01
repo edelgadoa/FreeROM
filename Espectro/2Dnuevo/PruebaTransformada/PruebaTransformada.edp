@@ -1,9 +1,10 @@
 // Archivo de pruebas para realizar la transformada de fourier en FreeFEM++ Paralelo
 
 // Preliminares
+include "macro_ddm.idp"
 load "PETSc"
 macro dimension() 2; \\ EOM 
-include "macro_ddm.idp"
+
 
 // Malla
 int NN = 64;
@@ -25,12 +26,13 @@ fespace Wh(Th, Pk);                 // local finite element space on the local m
 // Cálculo de la transformada de fourier
 func uf = exp(-(x^2+y^2));
 // Th = adaptmesh(Th, uf);
+Wh u=uf;
 plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
 Wh<complex> uFourier = uf;
 // plot(uFourier);
 
-int k = 15;
+int k = 1;
 
 include "fourier.idp"
 
@@ -38,10 +40,13 @@ complex[int,int] FCoefs(2*k+1,2*k+1);
 
 FCoefs = FourierTransform2D(k);
 
-//cout << FCoefs;
+cout << FCoefs;
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
 Wh<complex> uReal; 
 uReal[] = FourierInverse2D(FCoefs);
-// plotMPI(uReal);
+
+Wh uRReal;
+uRReal = real(uReal);
+plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");

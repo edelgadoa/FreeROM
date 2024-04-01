@@ -10,11 +10,11 @@ func complex[int,int] FourierTransform2D(int kmax){
 
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
 
-    for(int i=-kmax; i<=kmax; i++){
-        for(int j=-kmax; j<=kmax; j++){
-            func fourier = exp(-1*1i*2*pi*(x*i+y*j));
+    for(int ii=-kmax; ii<=kmax; ii++){
+        for(int jj=-kmax; jj<=kmax; jj++){
+            func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
             complex coefaux = int2d(Th)(uFourier*fourier);
-            FCoefs(i+kmax,j+kmax) = real(coefaux);
+            FCoefs(ii+kmax,jj+kmax) = real(coefaux);
         }
     }
 
@@ -27,11 +27,13 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
     int kcoefs = (Coefs.n-1)/2;
     uFourier = 0;
 
-    for(int i = -kcoefs; i<=kcoefs; i++){
-        for(int j = -kcoefs; j<=kcoefs; j++){
-            complex FCoef = Coefs(i+kcoefs,j+kcoefs);
-            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*i+y*j));
-            uFourier = uFourier+BaseFourier;
+    for(int ii = -kcoefs; ii<=kcoefs; ii++){
+        for(int jj = -kcoefs; jj<=kcoefs; jj++){
+            complex FCoef = Coefs(ii+kcoefs,jj+kcoefs);
+            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj));
+            Wh<complex> BFaux;
+            BFaux = BaseFourier;
+            uFourier[] += BFaux[]; // uFourier =  uFourier+BaseFourier;
         }
     }
 
