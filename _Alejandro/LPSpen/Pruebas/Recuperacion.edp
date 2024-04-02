@@ -1,0 +1,147 @@
+
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+// include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+
+include "../Auxiliary/Normas.idp"
+
+// Carga de datos importantes
+real tS0 = TF-period;
+real tSF = TF;
+int niS = (tSF-tS0)/dt+1;
+
+//Definicion de Constantes y variables varias
+real[int,int] MBaseV(Vh2P2.ndof,niS);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
+real[int,int] MBaseConv(Vh2P2.ndof,niS); 
+
+// Recuperacion de resultados en tiempo
+for(int iter=0; iter <niS; iter++){
+    real ti = tS0+iter*dt;
+    write("Output.txt","t = "+ti,1,1);
+
+    VhP2 aux, aux2;
+    // Snapshots de velocidad (2 componentes)
+    Vh3P2 [SnapX,SnapY,SnapP];
+    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SolX, 0);
+    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0);
+    SnapX[] = SolX; SnapY[] = SolY;
+
+    Vh2P2 [SX,SY];
+    [SX,SY] = [SnapX, SnapY];
+
+    MBaseV(:,iter) = SX[];
+    MediaV += 1./niS*SX[];
+
+    // Conveccion (2 componentes)
+    Vh2P2 [zx,zy];
+    VhP2 zzx,zzy;
+    aux = SX^2; 
+    aux2 = SX*SY;
+    zzx = dx(aux)+dy(aux2);
+    aux = SY^2;
+    zzy = dx(aux2)+dy(aux);
+    [zx,zy] = [zzx,zzy];
+    [zx,zy] = ugradv(SX,SY,SX,SY);
+
+    MBaseConv(:,iter) = zx[];
+}
+
+// Carga de la base POD de la velocidad y de la convección
+readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+int NbasesV = BaseV.m; // Dimension reducida velocidad
+//cout << MediaV << endl;
+Vh2P2 [uM,uMY]; uM[] = MediaV;
+// plot([uM,uMY],cmm="Media");
+
+// Recuperación de la convección a través de la velocidad
+
+// Término de la media
+Vh2P2 [ConvMM,ConvMMY];
+[ConvMM,ConvMMY] = ugradv(uM,uMY,uM,uMY);
+// plot([ConvMM,ConvMMY]);
+
+// Recuperación de la velocidad POD
+Vh2P2 [u,uY];
+u[] = MBaseV(:,0);
+Vh2P2 [uG,uGY];
+[uG,uGY] = [u-uM,uY-uMY];
+//plot([uG,uGY],cmm="Snapshot");
+
+Vh2P2 [baseV,baseVY];
+real[int] uPODv(BaseV.n);
+for(int ii=0; ii<NbasesV; ii++){
+    baseV[] = BaseV(:,ii);
+    real alphaii = int2d(Th)(uG*baseV+uGY*baseVY);
+    uPODv += alphaii*BaseV(:,ii);
+}
+Vh2P2 [uPOD,uPODY];
+uPOD[] = uPODv;
+
+Vh2P2 [ConvMG,ConvMGY];
+[ConvMG,ConvMGY] = ugradv(uM,uMY,uPOD,uPODY);
+//plot([ConvMG,ConvMGY],cmm="Media POD");
+
+Vh2P2 [ConvGM,ConvGMY];
+[ConvGM,ConvGMY] = ugradv(uPOD,uPODY,uM,uMY);
+//plot([ConvGM,ConvGMY],cmm="POD MEDIA");
+
+Vh2P2 [ConvGG,ConvGGY];
+[ConvGG,ConvGGY] = ugradv(uPOD,uPODY,uPOD,uPODY);
+//plot([ConvGG,ConvGGY],cmm="POD POD");
+
+Vh2P2 [ConvPOD,ConvPODY];
+[ConvPOD,ConvPODY] = [ConvMM+ConvMG+ConvGM+ConvGG,ConvMMY+ConvMGY+ConvGMY+ConvGGY];
+//plot([ConvPOD,ConvPODY],cmm="Total");
+
+Vh2P2 [Conv,ConvY];
+[Conv,ConvY] = ugradv(u,uY,u,uY);
+// Conv[] = MBaseConv(:,0);
+plot([Conv,ConvY],cmm="Original");
+
+Vh2P2 [err,errY];
+[err,errY] = [Conv-ConvPOD,ConvY-ConvPODY];
+plot([err,errY]);
+
+/*
+// Recuperación de la velocidad
+Vh2P2 [u,uY];
+u[] = MBaseV(:,0);
+[u,uY] = [u-uM,uY-uMY];
+plot([u,uY],cmm="Snapshot");
+
+Vh2P2 [baseV,baseVY];
+real[int] uPODv(BaseV.n);
+for(int ii=0; ii<NbasesV; ii++){
+    baseV[] = BaseV(:,ii);
+    plot([baseV,baseVY],cmm="Base"+ii);
+    real alphaii = int2d(Th)(u*baseV+uY*baseVY);
+    uPODv += alphaii*BaseV(:,ii);
+}
+Vh2P2 [uPOD,uPODY];
+uPOD[] = uPODv;
+[uPOD,uPODY] = [uPOD,uPODY];
+plot([uPOD,uPODY],cmm="POD");
+
+Vh2P2 [err,errY];
+[err,errY] = [u-uPOD,uY-uPODY];
+plot([err,errY],cmm="Error");
+real error = sqrt(int2d(Th)(err^2+errY^2));
+cout << error << endl;
+
+cout << NbasesV << endl;
+*/

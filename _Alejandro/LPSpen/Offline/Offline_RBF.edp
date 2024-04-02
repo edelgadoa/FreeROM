@@ -87,14 +87,15 @@ for(int iter=0; iter <niS; iter++){
     //MediaVTau += 1/(niS+1)*uxtau[];
 
     // Conveccion (2 componentes)
-    Vh2P2 [zx,zy];
+    Vh2P2 [zx,zy];/*
     VhP2 zzx,zzy;
     aux = SX^2; 
     aux2 = SX*SY;
     zzx = dx(aux)+dy(aux2);
     aux = SY^2;
     zzy = dx(aux2)+dy(aux);
-    [zx,zy] = [zzx,zzy];
+    [zx,zy] = [zzx,zzy];*/
+    [zx,zy] = ugradv(SX,SY,SX,SY);
 
     //aux = zx^2+zy^2;
     //plot(aux,fill=1,value=1,cmm="t="+ti);
@@ -156,7 +157,7 @@ real[int,int] BVDTau(VhP2.ndof,NbasesVDTau);
 
 for(int i=0; i<NbasesV; i++){
     BV(:,i) = BaseV[i][];
-    plot([BaseV[i],BaseVY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
+    // plot([BaseV[i],BaseVY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
 write("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BV, 0, 0);
 
