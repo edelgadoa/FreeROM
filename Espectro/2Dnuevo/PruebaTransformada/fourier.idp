@@ -43,7 +43,6 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
 }
 
 // Cálculo del espectro
-
 func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY)
 {
     int kmax = (CoefsX.n-1)/2;
