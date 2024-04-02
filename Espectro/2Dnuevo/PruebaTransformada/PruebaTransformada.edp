@@ -3,7 +3,7 @@
 // Preliminares
 include "macro_ddm.idp"
 load "PETSc"
-macro dimension() 2; \\ EOM 
+macro dimension() 3; \\ EOM 
 
 
 // Malla
@@ -13,10 +13,11 @@ real y01 = -0.5, y11 = 0.5;
 mesh ThG = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
 mesh Th = ThG;
 
-func Pk = P1;                       // finite element space
+func Pk = P2;                       // finite element space
 
 // Creación de matrices distribuidas
 Mat A;
+
 // Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
 MatCreate(Th, A, Pk);
 
@@ -27,19 +28,18 @@ fespace Wh(Th, Pk);                 // local finite element space on the local m
 func uf = exp(-(x^2+y^2));
 // Th = adaptmesh(Th, uf);
 Wh u=uf;
-//plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
+plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
 Wh<complex> uFourier = uf;
-// plot(uFourier);
 
-int k = 1;
-
+int k = 3;
+complex[int] uFourierv = uFourier[];
 include "fourier.idp"
 
 complex[int,int] FCoefs(2*k+1,2*k+1);
 complex[int,int] FCoefsL(2*k+1,2*k+1);
 
-FCoefsL = FourierTransform2D(k);
+FCoefsL = FourierTransform2D(uFourierv,k);
 
 mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
@@ -47,13 +47,18 @@ mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
-//Wh<complex> uReal; 
-//uReal[] = FourierInverse2D(FCoefs);
+/*
+Wh<complex> uReal; 
+uReal[] = FourierInverse2D(FCoefs);
 
-//Wh uRReal;
-//uRReal = real(uReal);
-//plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");
+Wh uRReal;
+uRReal = real(uReal);
+plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");
 
 real[int,int] energyhat = energycomputation(FCoefs,FCoefs);
 
-cout << energyhat << endl;
+real[int] spectrum = energyk2d(energyhat);
+cout << spectrum << endl;
+*/
+real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
+cout << spectrum << endl;

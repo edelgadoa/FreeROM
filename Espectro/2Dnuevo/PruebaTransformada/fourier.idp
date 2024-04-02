@@ -1,30 +1,59 @@
 // Archivo auxiliar calculo de transformadas de fourier
 
+func PFourier = P2;
+real[int] dFourier;
+PartitionCreate(Th,dFourier,PFourier);
+fespace Fh(Th,PFourier);
+Fh DFourier;
+DFourier[] = dFourier;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // Cuando se calculen los coeficientes de la transformada de fourier, 
 // la función debe llamarse uFourier y ser compleja.
 
 // Si tengo varias componentes, debo llamar varias veces a FourierTransform2D, 
 // redefiniendo uFourier.
 
-func complex[int,int] FourierTransform2D(int kmax){
-
+func complex[int,int] FourierTransform2D(complex[int] uFourierv,int kmax){
+    Fh<complex> uFourier;
+    uFourier[] = uFourierv;
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
-
-    real[int] d;
-    PartitionCreate(Th,d,Pk);
-    Wh D;
-    D[] = d;
 
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
             func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
-            FCoefs(ii+kmax,jj+kmax) = int2d(Th)(D*fourier*uFourier);
+            FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DFourier*fourier*uFourier);
         }
     }
 
     return FCoefs;
 }
 
+/*
+func complex[int,int][int] FourierTransform3D(int kmax){
+
+    complex[int,int][int] FCoefs(2*kmax+1);
+
+    real[int] d;
+    PartitionCreate(Th,d,Pk);
+    Wh D;
+    D[] = d;
+
+    for(int kk=-kmax; kk<=kmax; kk++){
+        complex[int,int] FCoefsAux(2*kmax+1,2*kmax+1);
+        for(int ii=-kmax; ii<=kmax; ii++){
+            for(int jj=-kmax; jj<=kmax; jj++){
+                func fourier = exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
+                FCoefsAux(ii+kmax,jj+kmax) = int3d(Th)(D*fourier*uFourier);
+            }
+        }
+        FCoefs(kk+kmax) = FCoefsAux;
+    }
+
+    return FCoefs;
+}
+*/
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // Para calcular la función inversa hay que llamar una función auxiliar uFourier.
 func complex[int] FourierInverse2D(complex[int,int] & Coefs){
 
@@ -42,6 +71,31 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
     return uFourier[];
 }
 
+/*
+func complex[int] FourierInverse3D(complex[int,int][int] Coefs){
+
+    int kcoefs = (Coefs.n-1)/2;
+    uFourier = 0;
+
+
+    for(int kk = -kcoefs; kk<=kcoefs; kk++){
+        complex[int,int] CoefsAux(2*kcoefs+1,2*kcoefs+1);
+        CoefsAux = 0; //
+        CoefsAux = Coefs;
+        for(int ii = -kcoefs; ii<=kcoefs; ii++){
+            for(int jj = -kcoefs; jj<=kcoefs; jj++){
+                complex FCoef = CoefsAux(ii+kcoefs,jj+kcoefs);
+                func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
+                uFourier =  uFourier+BaseFourier;
+            }
+        }
+    }
+    
+    return uFourier[];
+}
+*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // Cálculo del espectro
 func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY)
 {
@@ -80,3 +134,50 @@ func real[int] energycomputation(complex[int] & u,complex[int] & uY, complex[int
 	return result;
 }
 */
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Suma de la energía por coronas
+func real[int] energyk2d(real[int,int] & Energy)
+{
+    int kmax = (Energy.n-1)/2;
+    int LN=sqrt(2*kmax^2);
+	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
+	energykbycrownsL=0.; energykbycrowns=0.;
+	real module;int l;
+	int cont = 1;
+	for(int k1=-kmax;k1<kmax;k1++){
+        if(mpirank==cont%mpisize){
+		for(int k2=-kmax;k2<kmax;k2++){
+                module=sqrt(k1^2+k2^2);
+                // cout << module << ", " << l << endl;
+                l=module;
+                energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
+            }
+		}
+        cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	return energykbycrowns;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Función simplificadora
+
+func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int kmax){
+
+    complex[int,int] FCoefsX(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsXL(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
+
+    FCoefsXL = FourierTransform2D(uFourierv,kmax);
+    mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
+
+    FCoefsYL = FourierTransform2D(uFouriervY,kmax);
+    mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
+
+    real[int,int] energyhat = energycomputation(FCoefsX,FCoefsY);
+    real[int] energykk = energyk2d(energyhat);
+    return energykk;
+}
