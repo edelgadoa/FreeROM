@@ -39,13 +39,6 @@ MatCreate(Th, MatVhP1per, PkP1);
 
 MatCreate(Th, MatVhP2per, PkP2);
 
-// Matriz del sistema linal
-Mat MatFinal;
-{
-    macro def(i) [i, iY, iP] // EOM
-    macro init(i) [i, i, i] // EOM
-    MatCreate(Th, MatFinal, Pk3P2);
-}
 
 
 // Definimos los espacios de EF 

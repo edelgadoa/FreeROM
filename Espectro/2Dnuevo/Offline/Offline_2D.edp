@@ -14,6 +14,10 @@ verbosity = 0;
 load "iovtk" 
 load "lapack"
 
+// Paralelo
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
 
 // Cargamos macros, funciones i/o
 include "../Auxiliary/Macros_2D.idp"
@@ -21,9 +25,9 @@ include "../Auxiliary/search.idp"
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/fourier.idp"
 include "../Auxiliary/Functions_MP.idp"
-include "macro_ddm.idp"
 
-// Creamos la Malla
+
+// Creamos la Malla Global y Local
 include "../Auxiliary/Malla.idp"
 
 // Definimos los parametros a usar
@@ -33,25 +37,25 @@ include "../Auxiliary/Parametros_2D.idp"
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
+// include "../FOM/Interp_matrix_NoStab_VP_2D_Global.idp"
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
-include "../FOM/Interp_matrix_NoStab_VP_2D_Local.idp"
 
 // Creo las matrices de numeracion de EF y los mappings de EF local a global
-mapVh2P2per = restrict(Vh2P2perL,Vh2P2per,myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
 {
     macro def(i) [i, i#Y] //
     macro init(i) [i, i] // EOM
-    MatCreate(ThL, MatAVh2P2per, Pk2P2);
+    MatCreate(Th, MatVh2P2per, Pk2P2);
 }
 
-mapVhP1per = restrict(VhP1perL, VhP1per, myN2o);
-MatCreate(ThL, MatAVhP1per, PkP1);
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+MatCreate(Th, MatVhP1per, PkP1);
 
-mapVhP2per = restrict(VhP2perL, VhP2per, myN2o);
-MatCreate(ThL, MatAVhP2per, PkP2);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+MatCreate(Th, MatVhP2per, PkP2);
 
-mapVhP1dcper = restrict(VhP1dcperL, VhP1dcper, myN2o);
-MatCreate(ThL, MatAVhP1dcper, PkP1dc);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+MatCreate(Th, MatVhP1dcper, PkP1dc);
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
@@ -73,21 +77,21 @@ mpi(cout<<"Inicializacion espacios BR..." <<endl;)
 
 
 
-Vh2P2perL[int] [BaseV,BaseVY](2*Nbases);
-VhP1perL[int] BaseP(Nbases);
-VhP2perL[int] BaseVel(2*Nbases);
-VhP2perL[int] BaseVelY(2*Nbases);
+Vh2P2per[int] [BaseV,BaseVY](2*Nbases);
+VhP1per[int] BaseP(Nbases);
+VhP2per[int] BaseVel(2*Nbases);
+VhP2per[int] BaseVelY(2*Nbases);
 
 // Si hacemos Smagorinsky (sin VMS), esto no es necesario. 
-//Vh2P2perL[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
+//Vh2P2per[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
 
-//VhP2perL[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
+//VhP2per[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
 
-VhP1dcperL[int] BVdX(2*Nbases), BVdY(2*Nbases);
-VhP1dcperL[int] BVYdX(2*Nbases),BVYdY(2*Nbases);
+VhP1dcper[int] BVdX(2*Nbases), BVdY(2*Nbases);
+VhP1dcper[int] BVYdX(2*Nbases),BVYdY(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
-real[int, int] MBaseV(Vh2P2perL.ndof, 1), MBaseP(VhP1perL.ndof, 1);
+real[int, int] MBaseV(Vh2P2per.ndof, 1), MBaseP(VhP1per.ndof, 1);
 Reynolds = Refijo;
 MuBest(0) = Reynolds;
 readvector("../Snapshots/Vx_" + Reynolds + "_t_" + T0 + ".txt", real, SolX, 0);
@@ -95,23 +99,23 @@ readvector("../Snapshots/Vx_" + Reynolds + "_t_" + T0 + ".txt", real, SolX, 0);
 // readvector("../Snapshots/P_" + Reynolds + "_t_" + T0 + ".txt", real, SolP, 0);
 
 // Cargamos el Snapshot de la condicion inicial en local
-Vh3P2per [SnapXa, SnapYa, SnapPa];
+Vh3P2perG [SnapXa, SnapYa, SnapPa];
 SnapXa[] = SolX; // SnapYa[] = SolY; SnapPa[] = SolP; //tal y como están definidos los archivos, así es más eficiente
 
-VhP2per SnapX, SnapY; 
-VhP1per SnapP;  
-SnapX = SnapXa; SnapY = SnapYa; SnapP = SnapPa;
+VhP2perG SnapXG, SnapYG; 
+VhP1perG SnapPG;  
+SnapXG = SnapXa; SnapYG = SnapYa; SnapPG = SnapPa;
 
-VhP2perL SnapXL, SnapYL;
-VhP1perL SnapPL;
-SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
-SnapPL[] = SnapP[](mapVhP1per);
+VhP2per SnapX, SnapY;
+VhP1per SnapP;
+SnapX[] = SnapXG[](mapVhP2per); SnapY[] = SnapYG[](mapVhP2per);
+SnapP[] = SnapPG[](mapVhP1per);
 
-Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL]; 
+Vh2P2per [VelX, VelY] = [SnapX, SnapY]; 
 
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
-MBaseV(:,0) = VelXL[];
-MBaseP(:,0) = SnapPL[];
+MBaseV(:,0) = VelX[];
+MBaseP(:,0) = SnapP[];
  
 /////////////////////////////////////////
 mpi(cout<<"Inicializacion EIM..." <<endl;)
@@ -146,7 +150,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 
 		// Si no lo he calculado todavía, lo calculo
-		include "../FOM/FE_VMS_2D.idp"	
+		include "../FOM/FE_Smago_2D.idp"	
 		
 		// Actualizamos el vector de parametros calculados
 		ReSnapshots.resize(ReSnapshots.n+1);
@@ -162,35 +166,35 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	MBaseP.resize(MBaseP.n, NbasesP + niT);
 	for(int i=0; i<niT; i++){
 		real tt = T0 + (i+1)*dt;
-		Vh3P2per [SnapXa,SnapYa,SnapPa];
-		VhP2per SnapX, SnapY;
-		VhP1per SnapP;
+		Vh3P2perG [SnapXa,SnapYa,SnapPa];
+		VhP2perG SnapXG, SnapYG;
+		VhP1perG SnapPG;
 		
 		readvector("../Snapshots/Vx_" + Reynolds + "_t_" +tt+ ".txt", real, SolX, 0);
 		// readvector("../Snapshots/Vy_" + Reynolds + "_t_" +tt+ ".txt", real, SolY, 0);
 		// readvector("../Snapshots/P_" + Reynolds + "_t_" +tt+ ".txt", real, SolP, 0);
 
 		SnapXa[] = SolX; //SnapYa[] = SolY; SnapPa[] = SolP;
-		SnapX = SnapXa; SnapY = SnapYa; SnapP = SnapPa;
+		SnapXG = SnapXa; SnapYG = SnapYa; SnapPG = SnapPa;
 		
-		VhP2perL SnapXL, SnapYL; VhP1perL SnapPL;
-		SnapXL[] = SnapX[](mapVhP2per); SnapYL[] = SnapY[](mapVhP2per);
-		SnapPL[] = SnapP[](mapVhP1per);
+		VhP2per SnapX, SnapY; VhP1per SnapP;
+		SnapX[] = SnapXG[](mapVhP2per); SnapY[] = SnapYG[](mapVhP2per);
+		SnapP[] = SnapPG[](mapVhP1per);
 		
-		Vh2P2perL [VelXL, VelYL] = [SnapXL, SnapYL];
+		Vh2P2per [VelX, VelY] = [SnapX, SnapY];
 
-		MBaseV(:, NbasesV+i) = VelXL[];
-		MBaseP(:, NbasesP+i) = SnapPL[];
+		MBaseV(:, NbasesV+i) = VelX[];
+		MBaseP(:, NbasesP+i) = SnapP[];
 	}
 	 
-	// {
-	// 	Vh2P2perL [VEL, VELY];
-	// 	VEL[] = MBaseV(:,niT);
-	//
-	// 	macro defPK2(i) [i, i#Y] // EOM
-	// 	plotMPI(ThL, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
-	//
-	// }
+	{
+		Vh2P2per [VEL, VELY];
+		VEL[] = MBaseV(:,niT);
+
+		macro defPK2(i) [i, i#Y] // EOM
+		plotMPI(Th, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
+
+	}
 
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
@@ -205,7 +209,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	write("Output.txt","Supremizer construction...",1,1);
 	for(int i=0; i<NbasesP; i++){
 		
-		Vh2P2perL [supEF, supEFY];
+		Vh2P2per [supEF, supEFY];
 		
 		{include "Supremizer.idp"} //El calculo del supremizer esta en paralelo (TODO: comprobar que funciona)
 
@@ -242,17 +246,17 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	for(int s=0;s<NbasesV;s++){
 	
 		// Defino el nuevo producto escalar para la convección
-		varf ConvPE([uu,uuY], [v,vY]) = int2d(ThL)(antisimetric(BaseV[s],BaseVY[s],uu,uuY,v,vY));
+		varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[s],BaseVY[s],uu,uuY,v,vY));
 		macro def(i) [i, i#Y] // EOM
 		macro init(i) [i, i] // EOM
-		MatCreate(ThL, ConvPEM[s], Pk2P2);
-		matrix ConvPEMs = ConvPE(Vh2P2perL, Vh2P2perL);
+		MatCreate(Th, ConvPEM[s], Pk2P2);
+		matrix ConvPEMs = ConvPE(Vh2P2per, Vh2P2per);
 		ConvPEM[s] = ConvPEMs;
 		
 		BaseVel[s] = BaseV[s]; BaseVelY[s] = BaseVY[s];
 		
-		BVdX[s][] = DXP2L*BaseVel[s][]; BVdY[s][] = DYP2L*BaseVel[s][];
-		BVYdX[s][] = DXP2L*BaseVelY[s][]; BVYdY[s][] = DYP2L*BaseVelY[s][];
+		BVdX[s][] = DXP2*BaseVel[s][]; BVdY[s][] = DYP2*BaseVel[s][];
+		BVYdX[s][] = DXP2*BaseVelY[s][]; BVYdY[s][] = DYP2*BaseVelY[s][];
 		
 	}
 		

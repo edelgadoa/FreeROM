@@ -22,21 +22,21 @@ DTRBi = DTRB;
 // Condicion inicial
 write("Output.txt", "Calculando condicion inicial ...", 1, 1);
 
-Vh2P2perL [uCI, uCIY];
-VhP1perL uCIP;
+Vh2P2per [uCI, uCIY];
+VhP1per uCIP;
 
 {
 	real ReInit = 8500; 
-	Vh3P2per [uCIa,uCIYa,uCIPa];
+	Vh3P2perG [uCIa,uCIYa,uCIPa];
 	readvector("../Snapshots/Vx_" + ReInit + "_t_" +T0+ ".txt", real, initX, 0); uCIa[] = initX; // Esto tal y como está es ineficiente, hay que cambiarlo
 	//readvector("../Snapshots/Vy_" + ReInit + "_t_" +T0+ ".txt", real, initY, 0); uCIYa[] = initY;
 	//readvector("../Snapshots/P_" + ReInit + "_t_" +T0+ ".txt", real, initP, 0); uCIPa[] = initP;
 	
-	VhP2per CIaux, CIauxY;
-	VhP1per CIauxP;
+	VhP2perG CIaux, CIauxY;
+	VhP1perG CIauxP;
 	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
 	
-	VhP2perL CIauxL, CIauxYL;
+	VhP2per CIauxL, CIauxYL;
 
 	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
 	uCIP[] = CIauxP[](mapVhP1per);
@@ -79,27 +79,27 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	include "RB_VMSSmago.idp"
 	// Reconstruyo la solución reducida
 	
-	Vh2P2perL [uRBL, uRBLY];
-	VhP1perL uRBPL;
+	Vh2P2per [uRB, uRBY];
+	VhP1per uRBP;
 	
 	
-	uRBL[] = MBaseV*uRBv(0:NbasesV-1);
-	uRBPL[] = MBaseP*uRBv(NbasesV:I-1);
+	uRB[] = MBaseV*uRBv(0:NbasesV-1);
+	uRBP[] = MBaseP*uRBv(NbasesV:I-1);
 	
 	if(MuTrain(iRB)==Reynolds){
 		
 		macro defPK2(i) [i, i#Y] // EOM		
-		plotMPI(ThL, [uRBL, uRBLY], Pk2P2, defPK2, real, cmm="Sol RB Re="+Reynolds);		
-		plotMPI(ThL, uRBPL, PkP1, def, real, cmm="Sol RB Re="+Reynolds);	
+		plotMPI(Th, [uRB, uRBY], Pk2P2, defPK2, real, cmm="Sol RB Re="+Reynolds);		
+		plotMPI(Th, uRBP, PkP1, def, real, cmm="Sol RB Re="+Reynolds);	
 
 	}
 	
 	// Esto en teoría no lo debería calcular. La idea es calcular el espectro en paralelo con uRBL[]
-	Vh2P2per [uRB, uRBY];
-	VhP1per uRBP;
+	Vh2P2perG [uRBG, uRBYG];
+	VhP1perG uRBPG;
 	
-	reduceSolution(uRBL, uRB, MatAVh2P2per.D, mapVh2P2per)
-	reduceSolution(uRBPL, uRBP, MatAVhP1per.D, mapVhP1per)
+	uRBG[] = reduceSolution(uRB[], uRBG[], MatVh2P2per.D, mapVh2P2per);
+	uRBPG[] = reduceSolution(uRBP[], uRBPG[], MatVhP1per.D, mapVhP1per);
 	
 	
 	// Calculo el estimador de error 
@@ -107,7 +107,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	write("Output.txt", "Calculando espectro ...", 1, 1);
 
 	// Calculamos el espectro de la funcion reducida
-	VhP1<complex> uC, uCY, aux=0.;
+	VhP1per<complex> uC, uCY, aux=0.;
 	uC = uRB+aux; uCY = uRBY+aux;
 
 	real[int] energykk = espectro2DDFFT(uC[],uCY[],NN+1);
