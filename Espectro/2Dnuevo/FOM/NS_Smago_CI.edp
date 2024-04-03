@@ -61,8 +61,8 @@ Coefs = 0.;
 real module;
 for(int k=-kmax;k<=kmax;k++){
 	for(int l=-kmax;l<=kmax;l++){
-		module=k^2+l^2;
-		Coefs(k+kmax,l+kmax)=module^(-(alpha+1)/4);
+		module=sqrt(k^2+l^2);
+		Coefs(k+kmax,l+kmax)=module^(-(alpha+1)/2);
 	}
 }
 Coefs(kmax,kmax) = 0.; // Quito el término relativo a k=l=0. Por si acaso.
@@ -91,7 +91,7 @@ VhP2per uprev, uprevY;
 VhP1dcper Gr; // Para el termino de Smagorinsky
 
 T0 = 0;
-TF = 15;
+TF = 0;
 
 Reynolds = 8500;
 [uEF, uEFY,uEFP] = [zper, zper, 0];
@@ -99,10 +99,18 @@ Reynolds = 8500;
 include "FE_Smago_2D.idp"
 
 // Dibujamos la solucion
-VhP2per umod; umod = uEF^2+uEFY^2;
-plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
-plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal");
 
+//VhP2per umod; umod = uEF^2+uEFY^2;
+//plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
+//plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
+
+// Calculamos su espectro
+Wh<complex> uX, uY, uaux = 0.;
+uX = uEF+uaux;
+uY = uEFY+uaux;
+
+real[int] spectrumTF = espectro2D(uX[], uY[], kmax);
+write("../PruebaTransformada/Espectro_inicial"+TF+".txt", spectrumTF, 0, 0);
 
 // Guardamos los snapshots
 // write("../SnapshotsN/Re_" + Reynolds + "_t_" +TF+ ".txt", uEF[], 0, 0);

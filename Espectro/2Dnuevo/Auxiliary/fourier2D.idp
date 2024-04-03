@@ -57,7 +57,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 	for(int ii=-kmax;ii<=kmax;ii++){
 		if(mpirank==cont%mpisize){
             for(int jj=-kmax; jj<=kmax; jj++){
-                resultL(ii+kmax,jj+kmax)=(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2)/2.;
+                resultL(ii+kmax,jj+kmax)=(1./2)*(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2);
             }
         }
 	cont++;

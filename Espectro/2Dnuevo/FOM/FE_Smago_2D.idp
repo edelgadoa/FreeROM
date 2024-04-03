@@ -61,8 +61,6 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 	
 	uEF[] = MatFinal^-1*bFinal;
 	
-	
-
 	// // Guardamos los snapshots
 	// write("../SnapshotsN/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
 	// write("../SnapshotsN/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);
