@@ -8,83 +8,37 @@ Fh DFourier;
 DFourier[] = dFourier;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Cuando se calculen los coeficientes de la transformada de fourier, 
-// la función debe llamarse uFourier y ser compleja.
+// Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
+// El vector en el argumento debe ser un vector en P2.
 
-// Si tengo varias componentes, debo llamar varias veces a FourierTransform2D, 
-// redefiniendo uFourier.
-
-func complex[int,int] FourierTransform2D(complex[int] uFourierv,int kmax){
+func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax){
     Fh<complex> uFourier;
     uFourier[] = uFourierv;
-    complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
-
-    for(int ii=-kmax; ii<=kmax; ii++){
-        for(int jj=-kmax; jj<=kmax; jj++){
-            func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
-            FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DFourier*fourier*uFourier);
-        }
-    }
-
-    return FCoefs;
-}
-
-/*
-func complex[int,int][int] FourierTransform3D(int kmax){
-
-    complex[int,int][int] FCoefs(2*kmax+1);
-
-    real[int] d;
-    PartitionCreate(Th,d,Pk);
-    Wh D;
-    D[] = d;
+    complex[int,int] FCoefs((2*kmax+1)^2,2*kmax+1); 
+    // Parece que no permite complex[int,int][int] como argumento de entrada, así que la salida de este debe ser un complex[int,int]
 
     for(int kk=-kmax; kk<=kmax; kk++){
-        complex[int,int] FCoefsAux(2*kmax+1,2*kmax+1);
         for(int ii=-kmax; ii<=kmax; ii++){
             for(int jj=-kmax; jj<=kmax; jj++){
                 func fourier = exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
-                FCoefsAux(ii+kmax,jj+kmax) = int3d(Th)(D*fourier*uFourier);
+                FCoefs(ii+kmax+(2*kmax+1)*(kk+kmax),jj+kmax) = int3d(Th)(D*fourier*uFourier); // No deja hacer integral 2D
             }
         }
-        FCoefs(kk+kmax) = FCoefsAux;
     }
 
     return FCoefs;
 }
-*/
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Para calcular la función inversa hay que llamar una función auxiliar uFourier.
-func complex[int] FourierInverse2D(complex[int,int] & Coefs){
-
-    int kcoefs = (Coefs.n-1)/2;
-    uFourier = 0;
-
-    for(int ii = -kcoefs; ii<=kcoefs; ii++){
-        for(int jj = -kcoefs; jj<=kcoefs; jj++){
-            complex FCoef = Coefs(ii+kcoefs,jj+kcoefs);
-            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj));
-            uFourier =  uFourier+BaseFourier;
-        }
-    }
-    
-    return uFourier[];
-}
-
-/*
-func complex[int] FourierInverse3D(complex[int,int][int] Coefs){
-
-    int kcoefs = (Coefs.n-1)/2;
-    uFourier = 0;
-
+func complex[int] FourierInverse3D(complex[int,int] Coefs){
+    // Esta versión de FreeFEM++ (4.14) no permite complex[int,int][int] como argumento de entrada.
+    int kcoefs = (Coefs.m-1)/2;
+    Fh<complex> uFourier;
 
     for(int kk = -kcoefs; kk<=kcoefs; kk++){
-        complex[int,int] CoefsAux(2*kcoefs+1,2*kcoefs+1);
-        CoefsAux = 0; //
-        CoefsAux = Coefs;
         for(int ii = -kcoefs; ii<=kcoefs; ii++){
             for(int jj = -kcoefs; jj<=kcoefs; jj++){
-                complex FCoef = CoefsAux(ii+kcoefs,jj+kcoefs);
+                complex FCoef = CoefsAux(ii+kcoefs+(2*kcoefs+1)*(kk+kcoefs),jj+kcoefs);
                 func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
                 uFourier =  uFourier+BaseFourier;
             }
@@ -93,29 +47,9 @@ func complex[int] FourierInverse3D(complex[int,int][int] Coefs){
     
     return uFourier[];
 }
-*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Cálculo del espectro
-func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY)
-{
-    int kmax = (CoefsX.n-1)/2;
-    real[int,int] resultL(2*kmax+1,2*kmax+1), result(2*kmax+1,2*kmax+1);
-	resultL=0.; result=0.; 
-	int cont = 1;
-		
-	for(int ii=-kmax;ii<=kmax;ii++){
-		if(mpirank==cont%mpisize){
-            for(int jj=-kmax; jj<=kmax; jj++){
-                resultL(ii+kmax,jj+kmax)=(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2)/2.;
-            }
-        }
-	cont++;
-	}
-	mpiBarrier(mpiCommWorld);
-	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
-	return result;
-}
 
 /*
 func real[int] energycomputation(complex[int] & u,complex[int] & uY, complex[int] & uZ)
@@ -149,7 +83,6 @@ func real[int] energyk2d(real[int,int] & Energy)
         if(mpirank==cont%mpisize){
 		for(int k2=-kmax;k2<kmax;k2++){
                 module=sqrt(k1^2+k2^2);
-                // cout << module << ", " << l << endl;
                 l=module;
                 energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
             }
