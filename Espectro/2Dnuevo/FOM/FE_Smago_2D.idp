@@ -64,7 +64,7 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 	
 
 	// // Guardamos los snapshots
-	// write("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
-	// write("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);
-	// write("../Snapshots/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
+	// write("../SnapshotsN/Vx_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+	// write("../SnapshotsN/Vy_" + Reynolds + "_t_" +ti+ ".txt", uEFY[], 0, 0);
+	// write("../SnapshotsN/P_" + Reynolds + "_t_" +ti+ ".txt", uEFP[], 0, 0);
 }

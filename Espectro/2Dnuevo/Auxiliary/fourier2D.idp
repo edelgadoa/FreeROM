@@ -32,6 +32,7 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
 
     int kcoefs = (Coefs.n-1)/2;
     Fh<complex> uFourier;
+    uFourier = 0;
 
     for(int ii = -kcoefs; ii<=kcoefs; ii++){
         for(int jj = -kcoefs; jj<=kcoefs; jj++){

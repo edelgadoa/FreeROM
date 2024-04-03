@@ -30,11 +30,11 @@ func uf = exp(-(x^2+y^2));
 Wh u=uf;
 plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
-Wh<complex> uFourier = uf;
+Wh<complex> uF = uf;
 
 int k = 3;
-complex[int] uFourierv = uFourier[];
-include "fourier.idp"
+complex[int] uFourierv = uF[];
+include "fourier2D.idp"
 
 complex[int,int] FCoefs(2*k+1,2*k+1);
 complex[int,int] FCoefsL(2*k+1,2*k+1);
@@ -47,7 +47,7 @@ mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
-/*
+
 Wh<complex> uReal; 
 uReal[] = FourierInverse2D(FCoefs);
 
@@ -59,6 +59,6 @@ real[int,int] energyhat = energycomputation(FCoefs,FCoefs);
 
 real[int] spectrum = energyk2d(energyhat);
 cout << spectrum << endl;
-*/
-real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
-cout << spectrum << endl;
+
+//real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
+//cout << spectrum << endl;

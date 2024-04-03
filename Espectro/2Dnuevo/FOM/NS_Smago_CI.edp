@@ -11,11 +11,8 @@
 
 // Cargamos librerias
 load "iovtk" 
-
-
 macro dimension() 2 //EOM
 include "macro_ddm.idp"
-
 load "PETSc"
 
 // Cargamos macros
@@ -36,14 +33,10 @@ MatCreate(Th, MatVhP1dcper, PkP1dc);
 }
 
 MatCreate(Th, MatVhP1per, PkP1);
-
 MatCreate(Th, MatVhP2per, PkP2);
-
-
 
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
-
 
 mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
 mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
@@ -58,42 +51,35 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 ///////////////////////////////////////////////////////
 
 // Cargamos el modulo para hacer transformadas
-include "../Auxiliary/fourier.idp"
+include "../Auxiliary/fourier2D.idp"
 
-VhP1perG <complex> ZZ,zz;
-ZZ = 0.;
+int kmax = NN/2-1;
+complex[int,int] Coefs(2*kmax+1,2*kmax+1);
+Coefs = 0.;
 
 // Creamos el espectro artificialmente
 real module;
-for(int k=-NN/2;k<NN/2;k++)
-{
-	for(int l=-NN/2;l<NN/2;l++)
-	{
+for(int k=-kmax;k<=kmax;k++){
+	for(int l=-kmax;l<=kmax;l++){
 		module=k^2+l^2;
-		if(sqrt(module)<1)
-		{
-			ZZ[][(k+NN/2)+(NN)*(l+NN/2)]=0.;
-		}
-		else
-		{
-			ZZ[][(k+NN/2)+(NN)*(l+NN/2)]=module^(-(alpha+1)/4);
-		}
+		Coefs(k+kmax,l+kmax)=module^(-(alpha+1)/4);
 	}
 }
+Coefs(kmax,kmax) = 0.; // Quito el término relativo a k=l=0. Por si acaso.
 
 // Calculamos la transformada inversa
-zz[] = DFFT2d(ZZ[],1,NN/2);
-zz[] = zz[]/zz[].max;
+VhP2per zper;
+fespace Wh(Th,P2);
+Wh<complex> zz;
+zz[] = FourierInverse2D(Coefs);
 
-VhP1per <complex> zzL;
-zzL[] = zz[](mapVhP1per);
+Wh zreal;
+zreal = real(zz);
+zper = zreal;
+// plotMPI(Th,zper,P2,def,real, cmm = "Condicion inicial t=0");
 
-VhP1per uEF0,uEF0Y;
-uEF0 = real(zzL);
-uEF0Y = real(zzL);
-
-real[int] energyk = 0;//espectro2DDFFT(zz[], zz[], NN+1);
-write("../Snapshots/Espectro_inicial0.txt", energyk, 0, 0);
+real[int] spectrum = espectro2D(zz[], zz[], kmax);
+write("../PruebaTransformada/Espectro_inicial0.txt", spectrum, 0, 0);
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
@@ -108,25 +94,15 @@ T0 = 0;
 TF = 15;
 
 Reynolds = 8500;
-[uEF, uEFY,uEFP] = [uEF0, uEF0Y, 0];
-
-// if(T0>0){
-// 	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0);
-// 	uEF[] = SolX;
-// 	readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0);
-// 	uEFY[] = SolY;
-// 	readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0);
-// 	uEFP[] = SolP;
-// }
-
-
+[uEF, uEFY,uEFP] = [zper, zper, 0];
 
 include "FE_Smago_2D.idp"
 
 // Dibujamos la solucion
+VhP2per umod; umod = uEF^2+uEFY^2;
+plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
+plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal");
 
-plotMPI(Th, uEFP, PkP1, def, real, cmm="vel tfinal");
-//plot([uEF, uEFY], cmm="FE vel para Re="+Reynolds);
-//uprev = uEF^2+uEFY^2;
-//plot(uprev, cmm="Modulo presiomn para Re="+Reynolds);
-//plot(uEFP, cmm="FE pres para Re="+Reynolds);
+
+// Guardamos los snapshots
+// write("../SnapshotsN/Re_" + Reynolds + "_t_" +TF+ ".txt", uEF[], 0, 0);
