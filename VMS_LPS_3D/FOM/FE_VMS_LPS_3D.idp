@@ -7,7 +7,7 @@
 
 // Defininimos la matriz y segundo miembro fijos
 matrix MFija;
-real[int] bFija(Vh4P2L.ndof);
+real[int] bFija(Vh4P2.ndof);
 
 
 include "Matrices_fijas_NS_3D.idp"
@@ -21,40 +21,40 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
-	VhP2L uprevL = uEF + Lev;
-	VhP2L uprevLY = uEFY + LevY;
-	VhP2L uprevLZ = uEFZ + LevZ;
+	VhP2 uprev = uEF + Lev;
+	VhP2 uprevY = uEFY + LevY;
+	VhP2 uprevZ = uEFZ + LevZ;
 	
-	VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ;
+	VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ;
 	// mpi(cout<<"filtrado de solucion anterior"<<endl;)
 	{
-		VhP2L udcAux;
-		udcAux[] = IPhP2P1L*uprevL[];
-		uEFdX[] = DXP2L*udcAux[];
-		uEFdY[] = DYP2L*udcAux[];
-		uEFdZ[] = DZP2L*udcAux[];
+		VhP2 udcAux;
+		udcAux[] = IPhP2P1*uprev[];
+		uEFdX[] = DXP2*udcAux[];
+		uEFdY[] = DYP2*udcAux[];
+		uEFdZ[] = DZP2*udcAux[];
 
-		udcAux[] = IPhP2P1L*uprevLY[];
-		uEFYdX[] = DXP2L*udcAux[];
-		uEFYdY[] = DYP2L*udcAux[];
-		uEFYdZ[] = DZP2L*udcAux[];
+		udcAux[] = IPhP2P1*uprevY[];
+		uEFYdX[] = DXP2*udcAux[];
+		uEFYdY[] = DYP2*udcAux[];
+		uEFYdZ[] = DZP2*udcAux[];
 
-		udcAux[] = IPhP2P1L*uprevLZ[];
-		uEFZdX[] = DXP2L*udcAux[];
-		uEFZdY[] = DYP2L*udcAux[];
-		uEFZdZ[] = DZP2L*udcAux[];
+		udcAux[] = IPhP2P1*uprevZ[];
+		uEFZdX[] = DXP2*udcAux[];
+		uEFZdY[] = DYP2*udcAux[];
+		uEFZdZ[] = DZP2*udcAux[];
 
 	}
 	
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;
-	real[int] bNS(Vh4P2L.ndof);
+	real[int] bNS(Vh4P2.ndof);
 	// mpi(cout<<"Matriz variable"<<endl;)
 	include "Matrices_variables_NS_3D.idp"
 	
 	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
 	matrix Smago;
-	real[int] bSmago(Vh4P2L.ndof);
+	real[int] bSmago(Vh4P2.ndof);
 
 	include "Matriz_VMSSmago_3D.idp"
 	
@@ -67,7 +67,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
 	matrix MFinal;
-	real[int] bFinal(Vh4P2L.ndof);
+	real[int] bFinal(Vh4P2.ndof);
 	
 	// mpi(cout<<"ensamblaje de matrices"<<endl;)
 	MFinal = MFija;
@@ -82,7 +82,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	// mpi(cout<<"Actualizamos la solucion"<<endl;)
 	// Actualizamos la solución
-	Vh4P2L [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+	Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
 	uEFp[] = uEF[];
 	
 	// mpi(cout<<"solving sistem"<<endl;)
@@ -93,7 +93,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	{
 		macro def(i) [i, iY, iZ, iP] // EOM
 		macro init(i) [i, i, i, i] // EOM
-		createMat(ThL, AFinal, [P2,P2,P2,P2]);
+		createMat(Th, AFinal, [P2,P2,P2,P2]);
 	}
 	AFinal = MFinal;
 	set(AFinal, sparams = "-pc_type lu -ksp_type gmres -ksp_converged_reason");
@@ -107,7 +107,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	// Sol<<uG[];
 	pause;
 	// Calculamos el error cometido (en velocidad)
-	Vh4P2L [errEF, errEFY, errEFZ, errEFP];
+	Vh4P2 [errEF, errEFY, errEFZ, errEFP];
 	errEF[] = uEF[] - uEFp[];
 	
 	real ERRORabs = errEF[].l2; //sqrt(intN(ThL)(errEF^2 + errEFY^2 + errEFZ^2));

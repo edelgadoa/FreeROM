@@ -10,7 +10,7 @@
 //								   VhNPXdc  --> N Elementos Finitos PXdc			
 
 
-//EF GLOBALES
+//EF LOCALES
 fespace Vh4P2(Th, [P2, P2, P2, P2]); 
 fespace Vh4P1(Th, [P1, P1, P1, P1]);
 fespace Vh4P1dc(Th, [P1dc, P1dc, P1dc, P1dc]); 
@@ -21,14 +21,14 @@ fespace VhP2(Th, P2);
 fespace Vh3P2(Th, [P2, P2, P2]); 
 fespace Vh3P1(Th, [P1, P1, P1]);
 
-//EF LOCALES 
-fespace Vh4P2L(ThL, [P2, P2, P2, P2]); 
-fespace Vh4P1L(ThL, [P1, P1, P1, P1]);
-fespace Vh4P1dcL(ThL, [P1dc, P1dc, P1dc, P1dc]);
-fespace Vh3P1dcL(ThL, [P1dc, P1dc, P1dc]);
-fespace VhP0L(ThL, P0); 
-fespace VhP1dcL(ThL, P1dc); 
-fespace VhP1L(ThL, P1);
-fespace VhP2L(ThL, P2);
-fespace Vh3P2L(ThL, [P2, P2, P2]); 
-fespace Vh3P1L(ThL, [P1, P1, P1]);
+//EF GLOBALES 
+fespace Vh4P2G(ThG, [P2, P2, P2, P2]); 
+fespace Vh4P1G(ThG, [P1, P1, P1, P1]);
+fespace Vh4P1dcG(ThG, [P1dc, P1dc, P1dc, P1dc]);
+fespace Vh3P1dcG(ThG, [P1dc, P1dc, P1dc]);
+fespace VhP0G(ThG, P0); 
+fespace VhP1dcG(ThG, P1dc); 
+fespace VhP1G(ThG, P1);
+fespace VhP2G(ThG, P2);
+fespace Vh3P2G(ThG, [P2, P2, P2]); 
+fespace Vh3P1G(ThG, [P1, P1, P1]);

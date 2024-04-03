@@ -8,10 +8,10 @@ func g=x*(x-1.)*y*(y-1.)*16.;
 func gfunc = g*z*(z-0.75)*(z>=0.75) + 0;
 func g1=1.*(z>=1);
 
-Vh4P2L [Lev, LevY, LevZ, LevP];
-Vh3P2L [LevV, LevVY, LevVZ];
-VhP2L GP2 = g1;
-VhP2L GzeroP2 = 0.;
+Vh4P2 [Lev, LevY, LevZ, LevP];
+Vh3P2 [LevV, LevVY, LevVZ];
+VhP2 GP2 = g1;
+VhP2 GzeroP2 = 0.;
 
 
 [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
@@ -19,22 +19,22 @@ VhP2L GzeroP2 = 0.;
 
 
 // Filtro el levantamiento y lo derivo
-VhP1dcL FLevdXL, FLevdYL, FLevdZL, FLevYdXL, FLevYdYL, FLevYdZL, FLevZdXL, FLevZdYL, FLevZdZL;
+VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
 
 {
-	FLevdXL[] = DXP2IPhL * GP2[]; FLevdYL[] = DYP2IPhL * GP2[]; FLevdZL[] = DZP2IPhL * GP2[];
+	FLevdX[] = DXP2IPh * GP2[]; FLevdY[] = DYP2IPh * GP2[]; FLevdZ[] = DZP2IPh * GP2[];
 //	FLevYdXL[] = DXP2IPhL * GzeroP2[]; FLevYdYL[] = DYP2IPhL * GzeroP2[]; FLevYdZL[] = DZP2IPhL * GzeroP2[];
 //	FLevZdXL[] = DXP2IPhL * GzeroP2[]; FLevZdYL[] = DYP2IPhL * GzeroP2[]; FLevZdZL[] = DZP2IPhL * GzeroP2[];
 }
 
 
 // Esto lo uso simplemente para hacer más sencilla la matriz de nu_T(G)
-VhP1dc FLevdX, FLevdY, FLevdZ, FLevYdX, FLevYdY, FLevYdZ, FLevZdX, FLevZdY, FLevZdZ;
-FLevdX[] = reduceSolution(FLevdXL[], FLevdX[], MatAVhP1dc.D, mapVhP1dc);
-FLevdY[] = reduceSolution(FLevdYL[], FLevdY[], MatAVhP1dc.D, mapVhP1dc);
-FLevdZ[] = reduceSolution(FLevdZL[], FLevdZ[], MatAVhP1dc.D, mapVhP1dc);
+VhP1dcG FLevdXG, FLevdYG, FLevdZG, FLevYdXG, FLevYdYG, FLevYdZG, FLevZdXG, FLevZdYG, FLevZdZG;
+FLevdXG[] = reduceSolution(FLevdX[], FLevdXG[], MatVhP1dc.D, mapVhP1dc);
+FLevdYG[] = reduceSolution(FLevdY[], FLevdYG[], MatVhP1dc.D, mapVhP1dc);
+FLevdZG[] = reduceSolution(FLevdZ[], FLevdZG[], MatVhP1dc.D, mapVhP1dc);
 
 
 // Levantamiento filtrado
-Vh3P2L [FLev, FLevY, FLevZ];
-FLev[] = IPh3P23P1L * LevV[];
+Vh3P2 [FLev, FLevY, FLevZ];
+FLev[] = IPh3P23P1 * LevV[];

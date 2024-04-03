@@ -6,7 +6,7 @@
 
 include "Cube.idp" //Program of FreeFem++ documentation
 
-mesh3 Th, ThL;
+mesh3 Th, ThG;
  
 {
 
@@ -41,7 +41,11 @@ mesh3 Th, ThL;
 	func fz = 0.5*(1 + (tanh(1.5*(2*z-1)))/(tanh(1.5)));
 	Th = movemesh(Th,[fx,fy,fz]);
 	
-	ThL = Th; // For the local mesh
+	ThG = Th; // For the GLOBAL mesh
 }
 
-// plot(Th);
+// Parametros del PETSC
+int[int] myN2o;
+macro ThN2O() myN2o // EOM
+macro ThOverlap() 2 // EOM  
+buildDmesh(Th);

@@ -3,10 +3,10 @@
 ///////////////
 
 // //COEF. ESTAB. CODINA
-varf tauK(unused,v) = int3d(ThL)((uprevL^2 + uprevLY^2 + uprevLZ^2)*v);
-varf tauKT(unused,v) = int3d(ThL)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
-real[int] tK = tauK(0,VhP0L);
-real[int] tKT = tauKT(0,VhP0L);
+varf tauK(unused,v) = int3d(Th)((uprev^2 + uprevY^2 + uprevZ^2)*v);
+varf tauKT(unused,v) = int3d(Th)((MOD(uEF)^2)*v); // Comprobar, creo que está bien. MOD(U) tiene la raíz cuadrada, por eso va al cuadrado
+real[int] tK = tauK(0,VhP0);
+real[int] tKT = tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);
@@ -18,27 +18,27 @@ tau = ((cc1*(nu+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/h
 //MATRIZ ESTAB. PRES.
 /////////////////////////////
 
-varf termPres(pp,q) = int3d(ThL)(tau*pp*q);
+varf termPres(pp,q) = int3d(Th)(tau*pp*q);
 //varf termPres(pp,q) = int3d(ThL)(hTriangle^2*pp*q);
 
-matrix TermP = termPres(VhP1dcL,VhP1dcL);
+matrix TermP = termPres(VhP1dc,VhP1dc);
 
 matrix DDxx;
 {
-	DDxx = TermP * IPhD4X4P2L; 
-	DDxx = IPhD4X4P2L' * DDxx;
+	DDxx = TermP * IPhD4X4P2; 
+	DDxx = IPhD4X4P2' * DDxx;
 }
 
 matrix DDyy;
 {
-	DDyy = TermP * IPhD4Y4P2L; 
-	DDyy = IPhD4Y4P2L' * DDyy;
+	DDyy = TermP * IPhD4Y4P2; 
+	DDyy = IPhD4Y4P2' * DDyy;
 }
 
 matrix DDzz;
 {
-	DDzz = TermP * IPhD4Z4P2L; 
-	DDzz = IPhD4Z4P2L' * DDzz;
+	DDzz = TermP * IPhD4Z4P2; 
+	DDzz = IPhD4Z4P2' * DDzz;
 }
 
 LPSpres = DDxx + DDyy + DDzz;

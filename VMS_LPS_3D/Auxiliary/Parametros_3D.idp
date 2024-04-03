@@ -3,16 +3,12 @@
 ///////////////
 // Parametros a usar durante la ejecucion del codigo
 
-// Parametros del PETSC
-int[int] myN2o;
-macro ThLN2O() myN2o // EOM
-macro ThLOverlap() 2 // EOM  
-buildDmesh(ThL);
 
-Mat MatAVh4P2;
-Mat MatAVh3P2;
-Mat MatAVhP1dc;
-Mat MatAVhP2;
+
+Mat MatVh4P2;
+Mat MatVh3P2;
+Mat MatVhP1dc;
+Mat MatVhP2;
 
 int[int] mapVh4P2, mapVhP1dc, mapVhP0, mapVhP2;
 
