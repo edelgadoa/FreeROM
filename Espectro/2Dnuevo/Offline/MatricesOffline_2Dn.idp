@@ -7,8 +7,8 @@
 
 
 // Para evitar los valores de BaseV, BaseP que son cero (se alloca con el numero maximo de bases)
-Vh2P2perL[int] [BasePODV, BasePODVY](NbasesV);
-VhP1perL[int] BasePODP(NbasesP);
+Vh2P2per[int] [BasePODV, BasePODVY](NbasesV);
+VhP1per[int] BasePODP(NbasesP);
 
 for(int i=0;i<NbasesV;i++){
 	BasePODV[i][] = BaseV[i][];
@@ -17,9 +17,9 @@ for(int i=0;i<NbasesP;i++){
 	BasePODP[i][] = BaseP[i][];
 }
 
-real[int,int] MBaseVPETSc(MatAVh2P2per.n, NbasesV), MBasePPETSc(MatAVhP1per.n, NbasesP);
-ChangeNumbering(MatAVh2P2per, BasePODV, MBaseVPETSc);
-ChangeNumbering(MatAVhP1per, BasePODP, MBasePPETSc);
+real[int,int] MBaseVPETSc(MatVh2P2per.n, NbasesV), MBasePPETSc(MatVhP1per.n, NbasesP);
+ChangeNumbering(MatVh2P2per, BasePODV, MBaseVPETSc);
+ChangeNumbering(MatVhP1per, BasePODP, MBasePPETSc);
 
 real[int,int] DiffRBaux(DiffPEM.n, MBaseVPETSc.m), DivPRBaux(DiffPEM.n, MBaseVPETSc.m),
               DTRBaux(DTPEM.n, MBaseVPETSc.m), PenRBaux(PenPEM.n, MBasePPETSc.m);
@@ -70,7 +70,6 @@ write("Output.txt","Smagorinsky OK.",1,1);
 
 for (int i=0; i<NbasesV; i++){	
 	
-	int MbasesL;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
 		real[int,int] DtkL(GradPM[s].n, GradPM[s].m);
@@ -78,13 +77,12 @@ for (int i=0; i<NbasesV; i++){
 		Dtk = 0; DtkL = 0;
 
 		if (NumberPMSmago(s)>0){
-    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
-    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(MbasesL));
-    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(MbasesL));
-    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(s));  
+    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(s));
+    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(s));
+    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(s));
 			
 		    DtkL *= WeightPMSmago(s);
-		    MbasesL++;
 		}
 		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
 		GradPM[s] += Dtk;

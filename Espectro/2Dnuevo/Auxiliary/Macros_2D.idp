@@ -29,6 +29,20 @@ macro UporV(U,V) ( [U,U#Y]'*[V,V#Y]) //EOM
 macro pause() mpiBarrier(mpiCommWorld)// EOM
 macro mpi(variable) if(mpirank==0){variable} //EOM
 
+// Function to obtain the solution on the global mesh
+func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
+{
+	real[int] aux(u.n); aux = 0;
+	real[int] auxL = uL;
+	auxL .*= D;
+	aux(map) = auxL;
+	real[int] result(u.n); result = 0;
+	mpiAllReduce(aux, result, mpiCommWorld, mpiSUM);
+	return result;
+}
+
+
+/*
 macro reduceSolution(uL,u,D,map)
 {
 	real[int] aux(u[].n);
@@ -100,3 +114,4 @@ NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con mu
 
 }
 EndMacro
+*/
