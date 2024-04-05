@@ -5,7 +5,7 @@
 // Creacion de malla.
 
 // Divisiones malla
-int NN = 32;
+int NN = 64;
 real x01 = -0.5, x11 = 0.5;
 real y01 = -0.5, y11 = 0.5;
 mesh Th, ThG;

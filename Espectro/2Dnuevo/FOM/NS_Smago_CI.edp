@@ -54,6 +54,7 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 include "../Auxiliary/fourier2D.idp"
 
 int kmax = NN/2-1;
+kmax = NN/4;
 complex[int,int] Coefs(2*kmax+1,2*kmax+1);
 Coefs = 0.;
 
@@ -72,14 +73,20 @@ VhP2per zper;
 fespace Wh(Th,P2);
 Wh<complex> zz;
 zz[] = FourierInverse2D(Coefs);
+real zmaxL = real(zz[].max);
+real zmax;
+mpiAllReduce(zmaxL,zmax,mpiCommWorld,mpiMAX);
+zz[] = zz[]/zmax;
 
 Wh zreal;
 zreal = real(zz);
 zper = zreal;
-// plotMPI(Th,zper,P2,def,real, cmm = "Condicion inicial t=0");
+VhP2per zmod; zmod = sqrt(zper^2+zper^2);
+plotMPI(Th,zmod,P2,def,real, cmm = "Condicion inicial t=0");
 
-real[int] spectrum = espectro2D(zz[], zz[], kmax);
-write("../PruebaTransformada/Espectro_inicial0.txt", spectrum, 0, 0);
+kmax = NN/2-1;
+//real[int] spectrum = espectro2D(zz[], zz[], kmax);
+//write("../PruebaTransformada/Espectro_inicial0.txt", spectrum, 0, 0);
 
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
@@ -91,17 +98,17 @@ VhP2per uprev, uprevY;
 VhP1dcper Gr; // Para el termino de Smagorinsky
 
 T0 = 0;
-TF = 0;
+TF = 15;
 
 Reynolds = 8500;
-[uEF, uEFY,uEFP] = [zper, zper, 0];
+[uEF, uEFY,uEFP] = [zper, zper(y,x), 0];
 
 include "FE_Smago_2D.idp"
 
 // Dibujamos la solucion
 
-//VhP2per umod; umod = uEF^2+uEFY^2;
-//plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
+VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
+plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
 //plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
 
 // Calculamos su espectro

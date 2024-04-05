@@ -52,5 +52,4 @@ plot(defVel(usol),value=1,fill=1,wait=1);
 
 write("./txt/icNN"+NN+"alpha"+alpha+".txt",usol[],0,0);
 write("Output.txt","Done.",1,1);
-
 */

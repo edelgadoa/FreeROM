@@ -76,9 +76,9 @@ func real[int] energyk2d(real[int,int] & Energy)
 	energykbycrownsL=0.; energykbycrowns=0.;
 	real module;int l;
 	int cont = 1;
-	for(int k1=-kmax;k1<kmax;k1++){
+	for(int k1=-kmax;k1<=kmax;k1++){
         if(mpirank==cont%mpisize){
-		for(int k2=-kmax;k2<kmax;k2++){
+		for(int k2=-kmax;k2<=kmax;k2++){
                 module=sqrt(k1^2+k2^2);
                 l=module;
                 energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
@@ -98,13 +98,12 @@ func real[int] energyk2d(real[int,int] & Energy)
 func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int kmax){
 
     complex[int,int] FCoefsX(2*kmax+1,2*kmax+1);
-    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
     complex[int,int] FCoefsXL(2*kmax+1,2*kmax+1);
-    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
-
     FCoefsXL = FourierTransform2D(uFourierv,kmax);
     mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
 
+    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
     FCoefsYL = FourierTransform2D(uFouriervY,kmax);
     mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
 
