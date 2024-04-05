@@ -62,15 +62,15 @@ func real normL2Vh4P2(real[int] &u){
 }
 */
 
-func real normL2(real[int] &u){
-	real result = innerprodL2(u,u);
-	return sqrt(result);
-}
-
-func real normL2mpi(real[int] &u){
-	real result = innerprodL2mpi(u,u);
-	return sqrt(result);
-}
+// func real normL2(real[int] &u){
+// 	real result = innerprodL2(u,u);
+// 	return sqrt(result);
+// }
+//
+// func real normL2mpi(real[int] &u){
+// 	real result = innerprodL2mpi(u,u);
+// 	return sqrt(result);
+// }
 
 func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
 	real[int] Proy(u.n);
@@ -97,26 +97,26 @@ func real[int] OrtoX(real[int] &u, real[int,int] &M, Mat &X){
 	return result;
 }
 
-func real[int] OrtoL2(real[int] &u, real[int,int] &M){
-	real[int] Proy(u.n);
-	Proy = 0;
-	for (int j=0; j<M.m; j++){
-		real Pesc = innerprodL2(u, M(:,j));
-		Proy += Pesc*M(:,j);
-		}
-	u -= Proy;
-	real[int] result = u / normL2(u);
-	return result;
-}
-
-func real[int] OrtoL2mpi(real[int] &u, real[int,int] &M){
-	real[int] Proy(u.n);
-	Proy = 0;
-	for (int j=0; j<M.m; j++){
-		real Pesc = innerprodL2mpi(u, M(:,j));
-		Proy += Pesc*M(:,j);
-		}
-	u -= Proy;
-	real[int] result = u / normL2mpi(u);
-	return result;
-}
+// func real[int] OrtoL2(real[int] &u, real[int,int] &M){
+// 	real[int] Proy(u.n);
+// 	Proy = 0;
+// 	for (int j=0; j<M.m; j++){
+// 		real Pesc = innerprodL2(u, M(:,j));
+// 		Proy += Pesc*M(:,j);
+// 		}
+// 	u -= Proy;
+// 	real[int] result = u / normL2(u);
+// 	return result;
+// }
+//
+// func real[int] OrtoL2mpi(real[int] &u, real[int,int] &M){
+// 	real[int] Proy(u.n);
+// 	Proy = 0;
+// 	for (int j=0; j<M.m; j++){
+// 		real Pesc = innerprodL2mpi(u, M(:,j));
+// 		Proy += Pesc*M(:,j);
+// 		}
+// 	u -= Proy;
+// 	real[int] result = u / normL2mpi(u);
+// 	return result;
+// }

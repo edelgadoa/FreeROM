@@ -14,16 +14,16 @@ real[int][int] GradPMLev(Mbases);
 for (int i=0;i<Mbases;i++){
 	real[int,int] Aux(9,Nbases);
 	Aux=0;
-	GradPMLev[i] = [FLevdX[](PuntosMSmago(i)), FLevdY[](PuntosMSmago(i)), FLevdZ[](PuntosMSmago(i)),
-				    FLevYdX[](PuntosMSmago(i)), FLevYdY[](PuntosMSmago(i)), FLevYdZ[](PuntosMSmago(i)),
-				    FLevZdX[](PuntosMSmago(i)), FLevZdY[](PuntosMSmago(i)), FLevZdZ[](PuntosMSmago(i))];
+	GradPMLev[i] = [FLevdXG[](PuntosMSmago(i)), FLevdYG[](PuntosMSmago(i)), FLevdZG[](PuntosMSmago(i)),
+				    FLevYdXG[](PuntosMSmago(i)), FLevYdYG[](PuntosMSmago(i)), FLevYdZG[](PuntosMSmago(i)),
+				    FLevZdXG[](PuntosMSmago(i)), FLevZdYG[](PuntosMSmago(i)), FLevZdZG[](PuntosMSmago(i))];
 	
 	GradPM[i] = Aux(0:8,0:Nbases-1);
 }
 // cout<<GradPMLev<<endl;
 
 
-//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO TENGO QUE VER LA NUMERACION + HACERLO EN PARALELO!!! 
+//Definicion de los arrays para calcular el tauk en el EIM de Tau //TODO: En este caso sale cero. En otros, puede que no. 
 real[int,int][int] NUK(Taubases), NGUK(Taubases);
 for (int i=0; i<Taubases; i++){
 	real [int,int] Aux (Nbases+1,Nbases+1);

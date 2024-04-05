@@ -120,6 +120,33 @@ matrix D1Z4P2, D2Z4P2, D3Z4P2, D4Z4P2; // ∂z 4P2 -> P1dc en la componente 1, 2
 
 }
 
+matrix DX3P2, DY3P2, DZ3P2; 
+{
+	matrix D1,D2,D3; // Cada una de las componentes de EFX que derivo
+	int[int] c0 = [0,-1,-1];
+	int[int] c1 = [-1,1,-1];
+	int[int] c2 = [-1,-1,2];
+	
+	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=1);
+	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=1);
+	D3 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=1);
+	
+	DX3P2 = D1 + D2 + D3;
+	
+	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=2);
+	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=2);
+	D3 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=2);
+	
+	DY3P2 = D1 + D2 + D3;
+	
+	D1 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c0,op=3);
+	D2 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c1,op=3);
+	D3 = interpolate(Vh3P1dc,Vh3P2,U2Vc=c2,op=3);
+	
+	DZ3P2 = D1 + D2 + D3;
+	
+}
+
 // Matrices de derivada, con filtrado
 matrix IPhD4X4P2 = IPhP1dcP1 * D4X4P2; // (I-πh) de ∂x componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)
 matrix IPhD4Y4P2 = IPhP1dcP1 * D4Y4P2; // (I-πh) de ∂y componente 4 de 4P2 (4P2 (derivo componente 4) -> P1dc (filtro)-> P1 -> P1dc)

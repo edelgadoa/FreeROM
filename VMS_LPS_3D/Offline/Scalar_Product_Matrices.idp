@@ -8,23 +8,23 @@
 
 Mat MPescX;
 {
-	varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(ThL)(//(1./Refijo + MOD(uFijo))*
+	varf pescX ([uu, uuY, uuZ, uuP], [v, vY, vZ, vP]) = int3d(Th)(//(1./Refijo + MOD(uFijo))*
 	GradUGradV(uu,v) + uuP*vP);
 	macro def(i) [i, i#Y, i#Z, i#P] //EOM
 	macro init(i) [i, i, i, i] //EOM
-	MatCreate(ThL, MPescX, [P2,P2,P2,P2]);
-	matrix MPescXTemp = pescX(Vh4P2L, Vh4P2L);
+	MatCreate(Th, MPescX, [P2,P2,P2,P2]);
+	matrix MPescXTemp = pescX(Vh4P2, Vh4P2);
 	MPescX = MPescXTemp;
 }
 
 
 Mat MPescV;
 {
-	varf PescV([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(ThL)(GradUGradV(uu,vv));
+	varf PescV([uu,uuY,uuZ],[vv,vvY,vvZ]) = int3d(Th)(GradUGradV(uu,vv));
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
-	MatCreate(ThL, MPescV, [P2,P2,P2]);
-	matrix MPescVTemp = PescV(Vh3P2L, Vh3P2L);
+	MatCreate(Th, MPescV, [P2,P2,P2]);
+	matrix MPescVTemp = PescV(Vh3P2, Vh3P2);
 	MPescV = MPescVTemp;
 }
 
@@ -38,65 +38,65 @@ Mat StabhkPEM;
 
 // Diff matrix
 {
-	varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(GradUGradV(uu,v));
-	matrix DiffPEMT = DiffPE(Vh3P2L,Vh3P2L);
+	varf DiffPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(GradUGradV(uu,v));
+	matrix DiffPEMT = DiffPE(Vh3P2,Vh3P2);
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
-	MatCreate(ThL, DiffPEM, [P2,P2,P2]);
+	MatCreate(Th, DiffPEM, [P2,P2,P2]);
 	DiffPEM = DiffPEMT;
 }
 
 // Div(u)*p matrix
 {
-	varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(ThL)(Div(uu)*vP);
-	matrix DivPPEMT = DivPPE(Vh3P2L,VhP2L);
-    Mat DivPPEMTemp(MatAVhP2, MatAVh3P2, DivPPEMT);
+	varf DivPPE([uu,uuY,uuZ], [vP]) = int3d(Th)(Div(uu)*vP);
+	matrix DivPPEMT = DivPPE(Vh3P2,VhP2);
+    Mat DivPPEMTemp(MatVhP2, MatVh3P2, DivPPEMT);
 	DivPPEM = DivPPEMTemp;
 }
 
 // Penalization matrix
 
 {
-	varf PenPE(uP, vP) = int3d(ThL)(epspen*uP*vP);
-	matrix PenPEMT = PenPE(VhP2L, VhP2L);
-	MatCreate(ThL, PenPEM, P2);
+	varf PenPE(uP, vP) = int3d(Th)(epspen*uP*vP);
+	matrix PenPEMT = PenPE(VhP2, VhP2);
+	MatCreate(Th, PenPEM, P2);
 	PenPEM = PenPEMT;
 }
 
 
 {
-	varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(ThL)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
-	matrix ConvLevPEMT = ConvLevPE(Vh3P2L,Vh3P2L); 
+	varf ConvLevPE([uu,uuY, uuZ], [v,vY,vZ]) = int3d(Th)(Antisimetric(Lev, uu, v) + Antisimetric(uu, Lev, v));
+	matrix ConvLevPEMT = ConvLevPE(Vh3P2,Vh3P2); 
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
-	MatCreate(ThL, ConvLevPEM, [P2, P2, P2]);
+	MatCreate(Th, ConvLevPEM, [P2, P2, P2]);
 	ConvLevPEM = ConvLevPEMT;
 }
 
 
 {
-	varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(ThL)(UporV(uu,v));
-	matrix DTPEMT = DTPE(Vh3P2L,Vh3P2L);
+	varf DTPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(UporV(uu,v));
+	matrix DTPEMT = DTPE(Vh3P2,Vh3P2);
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
-	MatCreate(ThL, DTPEM, [P2, P2, P2]);
+	MatCreate(Th, DTPEM, [P2, P2, P2]);
 	DTPEM = DTPEMT;
 }
 
 {
-	varf StabhK(uP,vP) = int3d(ThL)(hTriangle^2*uP*vP);
+	varf StabhK(uP,vP) = int3d(Th)(hTriangle^2*uP*vP);
 	matrix FiltroX, FiltroY, FiltroZ;
-	matrix SPPEM2 = StabhK(VhP1dcL, VhP1dcL);
+	matrix SPPEM2 = StabhK(VhP1dc, VhP1dc);
 	{
-		FiltroX = SPPEM2 * IPhDXP2L;
-		FiltroX = (IPhDXP2L') * FiltroX;
-		FiltroY = SPPEM2 * IPhDYP2L;
-		FiltroY = (IPhDYP2L') * FiltroY;	
-		FiltroZ = SPPEM2 * IPhDZP2L;
-		FiltroZ = (IPhDZP2L') * FiltroZ;	
+		FiltroX = SPPEM2 * IPhDXP2;
+		FiltroX = (IPhDXP2') * FiltroX;
+		FiltroY = SPPEM2 * IPhDYP2;
+		FiltroY = (IPhDYP2') * FiltroY;	
+		FiltroZ = SPPEM2 * IPhDZP2;
+		FiltroZ = (IPhDZP2') * FiltroZ;	
 	}
 	matrix StabhkPEML = FiltroX + FiltroY + FiltroZ;
-	MatCreate(ThL, StabhkPEM, P2);
+	MatCreate(Th, StabhkPEM, P2);
 	StabhkPEM = StabhkPEML;
 }
 
@@ -105,21 +105,21 @@ Mat[int] ConvPEM(Nbases); // Simplemente inicializo, dentro del bucle del greedy
 Mat[int] SmagoPEM(Mbases), StabPPEM(Taubases);
 // VMS-SMAGO
 for (int s=0; s<Mbases; s++){
-	varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = intN(ThL)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
-	matrix SmagoPEMT = SmagoPE(Vh3P1dcL,Vh3P1dcL);
+	varf SmagoPE([uu,uuY,uuZ],[v,vY,vZ]) = intN(Th)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
+	matrix SmagoPEMT = SmagoPE(Vh3P1dc,Vh3P1dc);
 	matrix DXX, DYY, DZZ;
 	{
 		matrix Maux; 
 		//COMPONENTE X 
-		Maux = DX3P2L*IPh3P23P1L;
+		Maux = DX3P2*IPh3P23P1;
 		DXX = (Maux')*SmagoPEMT;
 		DXX = DXX*Maux;
 		
-		Maux = DY3P2L*IPh3P23P1L;
+		Maux = DY3P2*IPh3P23P1;
 		DYY = (Maux')*SmagoPEMT;
 		DYY = DYY*Maux;
 		
-		Maux = DZ3P2L*IPh3P23P1L;
+		Maux = DZ3P2*IPh3P23P1;
 		DZZ = (Maux')*SmagoPEMT;
 		DZZ = DZZ*Maux;
 	}
@@ -127,7 +127,7 @@ for (int s=0; s<Mbases; s++){
 		
 	macro def(i) [i, i#Y, i#Z] //EOM
 	macro init(i) [i, i, i] //EOM
-	MatCreate(ThL, SmagoPEM[s], [P2, P2, P2]);
+	MatCreate(Th, SmagoPEM[s], [P2, P2, P2]);
 	SmagoPEM[s] = SmagoPEMTxyz;
 }
 
@@ -135,19 +135,19 @@ for (int s=0; s<Mbases; s++){
 // LPS-pressure
 for (int s=0; s<Taubases; s++){
         
-	varf StabPPE(uP,vP) = int3d(ThL)(EIMTau[s]*uP*vP);
-	matrix SPPEM = StabPPE(VhP1dcL, VhP1dcL);
+	varf StabPPE(uP,vP) = int3d(Th)(EIMTau[s]*uP*vP);
+	matrix SPPEM = StabPPE(VhP1dc, VhP1dc);
 	matrix FiltroX, FiltroY, FiltroZ;
 	{
-		FiltroX = SPPEM * IPhDXP2L;
-		FiltroX = (IPhDXP2L') * FiltroX;
-		FiltroY = SPPEM * IPhDYP2L;
-		FiltroY = (IPhDYP2L') * FiltroY;
-		FiltroZ = SPPEM * IPhDZP2L;
-		FiltroZ = (IPhDZP2L') * FiltroZ;	
+		FiltroX = SPPEM * IPhDXP2;
+		FiltroX = (IPhDXP2') * FiltroX;
+		FiltroY = SPPEM * IPhDYP2;
+		FiltroY = (IPhDYP2') * FiltroY;
+		FiltroZ = SPPEM * IPhDZP2;
+		FiltroZ = (IPhDZP2') * FiltroZ;	
 	}
     matrix SPPEMT = FiltroX + FiltroY + FiltroZ;
-	MatCreate(ThL, StabPPEM[s], P2);
+	MatCreate(Th, StabPPEM[s], P2);
     StabPPEM[s] =  SPPEMT;
 }
 

@@ -39,7 +39,7 @@ for (int imu=0; imu<nSnapshots; imu++){
 			IgEIM[] += sigmai(j)*BEIM[j][];
 		}
 		
-		VhP1dc Linf = abs(gEIM-IgEIM); 
+		VhP1dcG Linf = abs(gEIM-IgEIM); 
 		
 		Errorit(imu) = Linf[].max/gEIM[].max;
 		//}
@@ -79,7 +79,7 @@ BEIM[i] = gEIM;
 for (int j=0; j<i; j++){
 	BEIM[i][] -= sigmai(j)*BEIM[j][]; // Calculo los residuos
 }
-VhP0L absBEIM = abs(BEIM[i]);
+VhP0G absBEIM = abs(BEIM[i]);
 Tmax(i) = absBEIM[].imax;
 BEIM[i][] /= BEIM[i][](Tmax(i));
 

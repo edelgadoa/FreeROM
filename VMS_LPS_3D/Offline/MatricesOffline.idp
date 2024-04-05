@@ -212,18 +212,18 @@ for (int s=0; s<Mbases; s++){
     int TauBasesL;
 
 	//real[int,int] Ngk = NUK[s];
-	VhP2L fvel, fvelY, fvelZ;
-	varf NG(un,v) = int3d(ThL)(UporV(fvel, Lev)*v);
+	VhP2 fvel, fvelY, fvelZ;
+	varf NG(un,v) = int3d(Th)(UporV(fvel, Lev)*v);
 	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
 
-    real[int] ngaux = NG(0,VhP0L);
+    real[int] ngaux = NG(0,VhP0);
 	ngaux .*= DP0;
 
 	///////////////////////////////////////////////
 
 	//real[int,int] Nggk = NGUK[s];
 	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
-	varf NDG(un,v) = int3d(ThL)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ
+	varf NDG(un,v) = int3d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ
 			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
 							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v);
 
@@ -231,7 +231,7 @@ for (int s=0; s<Mbases; s++){
 	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
 	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i];
 
-    real[int] ndgaux = NDG(0,VhP0L);
+    real[int] ndgaux = NDG(0,VhP0);
 	ndgaux .*= DP0;
 
     for (int s=0; s<Taubases; s++){
@@ -242,7 +242,7 @@ for (int s=0; s<Mbases; s++){
     	    //Matriz simétrica
     	    NgkL(1+i,0) = NgkL(0,1+i);
 
-            NgkL *= WeightPMTau(TauBasesL);
+            //NgkL *= WeightPMTau(TauBasesL);
 
             ////--------------///////
 
@@ -250,7 +250,7 @@ for (int s=0; s<Mbases; s++){
         	//Matriz simétrica
         	NggkL(1+i,0) = NggkL(0,1+i);
 
-            NggkL *= WeightPMTau(s);
+            //NggkL *= WeightPMTau(s);
 
         }
         mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
@@ -271,21 +271,21 @@ for (int s=0; s<Mbases; s++){
  	
 	for (int j=0; j<=i; j++){
 		Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
-		VhP2L fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
+		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
 		// varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
-		varf NGL(un,v) = intN(ThL)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
+		varf NGL(un,v) = intN(Th)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
 		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i];
 		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[j]; 
 
-		real[int] ngaux = NGL(0,VhP0L);
+		real[int] ngaux = NGL(0,VhP0);
 		ngaux .*= DP0;
 
         ///////////////////////////////////////////
 
-		VhP1dcL dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
+		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
 			    DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
 
-	    varf NDG(un,v) = intN(ThL)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1
+	    varf NDG(un,v) = intN(Th)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1
 			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
 								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
 
@@ -298,7 +298,7 @@ for (int s=0; s<Mbases; s++){
 		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
 		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
 
-		real[int] ndgaux = NDG(0,VhP0L);
+		real[int] ndgaux = NDG(0,VhP0);
 		ndgaux .*= DP0;
        	
 		int TauBasesL;
@@ -312,9 +312,9 @@ for (int s=0; s<Mbases; s++){
         		if(j<i){
         			NgkL(1+j,1+i) = NgkL(1+i,1+j);
         		}
-				cout<<"proc:"<<mpirank<<", ngkl:"<<ngaux(PuntosMTauL(s))<<", it:"<<s<<", Weight:"<<WeightPMTau(s)<<endl;
+				// cout<<"proc:"<<mpirank<<", ngkl:"<<ngaux(PuntosMTauL(s))<<", it:"<<s<<", Weight:"<<WeightPMTau(s)<<endl;
 
-                //NgkL *= WeightPMTau(s);
+                // NgkL *= WeightPMTau(s);
         		/////-----------////
 
         		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(s));
@@ -335,7 +335,7 @@ for (int s=0; s<Mbases; s++){
     }
 }
 //
-mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+// mpi(cout<<"NUK"<<endl<<NUK<<endl;)
 // mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
 
 //mpi(cout<<"RHS"<<endl;)
@@ -343,8 +343,8 @@ mpi(cout<<"NUK"<<endl<<NUK<<endl;)
 /////////////////////////
 // Segundo miembro
 real[int] LevVB, FLevVB;
-ChangeNumbering(MatAVh3P2, LevV[], LevVB);
-ChangeNumbering(MatAVh3P2, FLev[], FLevVB); //Esto solo lo debo hacer una vez. Hay que cambiarlo de sitio.
+ChangeNumbering(MatVh3P2, LevV[], LevVB);
+ChangeNumbering(MatVh3P2, FLev[], FLevVB); //Esto solo lo debo hacer una vez. Hay que cambiarlo de sitio.
 
 real[int] bDiffRBaux(DiffPEM.n), bConvLRBaux(ConvLevPEM.n);
 MatMult(DiffPEM, LevVB, bDiffRBaux);

@@ -25,11 +25,11 @@ include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 include "../../Auxiliary/Parametros_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Global.idp"
 include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
-include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
-mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
-MatCreate(ThL, MatAVhP1dc, P1dc);
+mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
+MatCreate(Th, MatVhP1dc, P1dc);
 
 // Incluimos el levantamiento
 include "../../FOM/Levantamiento_3D.idp"
@@ -38,23 +38,23 @@ include "../../FOM/Levantamiento_3D.idp"
 readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 0); 
 int nSnapshots = vReynolds.n;
 
-VhP2[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);
+VhP2G[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);
 
-VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots), 
+VhP1dcG[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots), 
 			BVYdX(nSnapshots), BVYdY(nSnapshots), BVYdZ(nSnapshots),
 			BVZdX(nSnapshots), BVZdY(nSnapshots), BVZdZ(nSnapshots); 
 
 // Definimos las cantidades que usaremos para el segundo miembro del EIM
-VhP0L tKcod,tKTcod,tau,mk;
-VhP1dcL UXdX, UXdY, UXdZ, UYdX, UYdY, UYdZ, UZdX, UZdY, UZdZ;	
-VhP2L UX, UY, UZ;
+VhP0 tKcod,tKTcod,tau,mk;
+VhP1dc UXdX, UXdY, UXdZ, UYdX, UYdY, UYdZ, UZdX, UZdY, UZdZ;	
+VhP2 UX, UY, UZ;
 
-varf med(unused,v)=intN(ThL)(1.*v);
-real[int] medk=med(0,VhP0L);
+varf med(unused,v)=intN(Th)(1.*v);
+real[int] medk=med(0,VhP0);
 mk[]=sqrt(medk);
 
-varf tauK(unused,v) = int3d(ThL)((UX^2+UY^2+UZ^2)*v);
-varf tauKT(unused,v) = int3d(ThL)((UXdX^2+UXdY^2+UXdZ^2+ UYdX^2+UYdY^2+UYdZ^2 + UZdX^2+UZdY^2+UZdZ^2)*v);
+varf tauK(unused,v) = int3d(Th)((UX^2+UY^2+UZ^2)*v);
+varf tauKT(unused,v) = int3d(Th)((UXdX^2+UXdY^2+UXdZ^2+ UYdX^2+UYdY^2+UYdZ^2 + UZdX^2+UZdY^2+UZdZ^2)*v);
 
 include "Load_Snapshots_EIM.idp"
 
@@ -66,8 +66,8 @@ real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa de
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
 
 
-VhP0L[int] BEIM(Mmax); // Donde almaceno las bases EIM
-VhP0L gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+VhP0[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP0 gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
@@ -80,8 +80,8 @@ UXdX = BVdX[0]; UXdY = BVdY[0]; UXdZ = BVdZ[0];
 UYdX = BVYdX[0]; UYdY = BVYdY[0]; UYdZ = BVYdZ[0];
 UZdX = BVZdX[0]; UZdY = BVZdY[0]; UZdZ = BVZdZ[0];
 
-real[int] tK = tauK(0,VhP0L);
-real[int] tKT = tauKT(0,VhP0L);
+real[int] tK = tauK(0,VhP0);
+real[int] tKT = tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 
