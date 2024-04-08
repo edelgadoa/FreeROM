@@ -18,7 +18,7 @@ verbosity = 0;
 load "iovtk" 
 load "lapack"
 load "PETSc";
-load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
+// load "MUMPS_mpi" // Para calcular la constante de Sovolev en paralelo
 
 macro dimension()3 //EOM
 include "macro_ddm.idp"
@@ -173,7 +173,7 @@ MuBest(0) = Reynolds;
 
 
 real CSobolev = 1;
-//include "Sobolev_3D.idp"
+include "Sobolev_3D.idp"
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 

@@ -2,7 +2,7 @@
 // FreeROM 
 /////////////// 
 
-include "../Auxiliary/powermethod.idp"
+//include "../Auxiliary/powermethod.idp"
 
 VhP2 uF,uFY, uFZ;
 VhP1dc uFdX, uFdY,uFdZ, uFYdX, uFYdY, uFYdZ, uFZdX, uFZdY, uFZdZ;
@@ -93,10 +93,11 @@ else{
 	
 }
 
-varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*GradUGradV(uu,v)) + on(1,2, uu=0,uuY=0, uuZ=0);
+varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*
+GradUGradV(uu,v)) + on(1,2, uu=0,uuY=0, uuZ=0);
 
 matrix T, Zu;
-T = prodT(Vh3P2, Vh3P2);
+T = prodT(Vh3P2, Vh3P2, tgv = -2);
 
 Mat ProdEscT;
 {
@@ -112,20 +113,20 @@ real CSerror = 10, CSeps = 1.e-3;
 
 real rhok0 = 20, rhok1;
 
-VhP2 u0, u0Y, u0Z;
+Vh3P2 [u0, u0Y, u0Z];
 VhP2 zuk;
 
-u0 = uF;
-u0Y = uFY;
-u0Z = uFZ;
+[u0, u0Y, u0Z] = [uF, uFY, uFZ];
+//u0Y = uFY;
+//u0Z = uFZ;
 
 // Fix point
 for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 {
 	zuk = UporV(u0,u0);
 	zuk[] /= sqrt(int3d(Th)(zuk^2));
-//	 {real normL2=int2d(Th)(zuk^2);
-//	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
+	 //{real normL2=int3d(Th)(zuk^2);
+	  //cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
 	varf prodzu([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh3P2, Vh3P2);
@@ -138,17 +139,26 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 		ProdZU = Zu;
 	}
 	
-	// Termino de reescribir el codigo y me pongo con el calculo en paralelo del sobolev. 
-	/*
-	real[int] autovec = powermethodmpi(ProdZU,ProdEscT);
-	broadcast(processor(0, mpiCommWorld), autovec);
-	rhok1 = autovec(0);
-	u0[] = autovec(1:autovec.n-1);
+	
+	real[int] EigenVal(0); // array to store eigenvalues
+	Vh3P2[int] [EigenVect, EigenVectY, EigenVectZ](1); // array to store eigenvenctors in Vh3P2 
+	
+	string paramsSLEPc = " -eps_nev " + 1 + " -eps_type power -st_type sinvert -st_pc_type cholesky -eps_gen_hermitian";  // The problem is symmetric
+	 
+	int kEPS = EPSSolve(ProdEscT, ProdZU, vectors = EigenVect, values = EigenVal, sparams = paramsSLEPc);
+	
+	//real[int] autovec = powermethodmpi(ProdZU,ProdEscT);
+	//broadcast(processor(0, mpiCommWorld), autovec);
+	rhok0 = rhok1;
+	rhok1 = EigenVal[0];
+	u0[] = EigenVect[0][];
+	//cout<<"eigenval: "<<EigenVect[0]<<endl;
 	// plot(defVel(u0),value=1,wait=1);
 	CSerror = abs((rhok1-rhok0)/rhok1);
- 	// mpi(cout << "PM: " << CSerror<< endl;)
-	rhok0 = rhok1;
-	*/
+ 
+	
+	
 }
 
 CSobolev = rhok1;
+// mpi(cout<<"CS = "<<CSobolev<<endl;)
