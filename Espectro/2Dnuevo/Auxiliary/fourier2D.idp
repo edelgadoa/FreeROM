@@ -3,9 +3,11 @@
 func PFourier = P2;
 real[int] dFourier;
 PartitionCreate(Th,dFourier,PFourier);
-fespace Fh(Th,PFourier);
+fespace Fh(Th,PFourier, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
 Fh DFourier;
-DFourier[] = dFourier;
+fespace VhP1(Th, P2);  
+VhP1 DF2; DF2[] = dFourier;
+DFourier = DF2;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
@@ -15,14 +17,14 @@ func complex[int,int] FourierTransform2D(complex[int] uFourierv, int kmax){
     Fh<complex> uFourier;
     uFourier[] = uFourierv;
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
-
+    real const = kmax/(2.*kmax+1.);
+    
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
-            func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
+            func fourier = exp(-1i*2*pi*(x*ii+y*jj)*const);
             FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DFourier*fourier*uFourier);
         }
     }
-
     return FCoefs;
 }
 
@@ -30,29 +32,33 @@ func complex[int,int] FourierTransform2D(complex[int] uFourierv, int kmax){
 // Transformada de fourier inversa.
 func complex[int] FourierInverse2D(complex[int,int] & Coefs){
 
-    int kcoefs = (Coefs.n-1)/2;
+    int kmax = (Coefs.n-1)/2;
     Fh<complex> uFourier;
     uFourier = 0;
 
-    for(int ii = -kcoefs; ii<=kcoefs; ii++){
-        for(int jj = -kcoefs; jj<=kcoefs; jj++){
-            complex FCoef = Coefs(ii+kcoefs,jj+kcoefs);
-            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj));
+    real const = kmax/(2.*kmax+1.);
+    for(int ii = -kmax; ii<=kmax; ii++){
+        for(int jj = -kmax; jj<=kmax; jj++){
+            complex FCoef = Coefs(ii+kmax,jj+kmax);
+            func BaseFourier = FCoef*exp(-1i*2*pi*(x*ii+y*jj)*const);
             uFourier =  uFourier+BaseFourier;
         }
     }
-    
     return uFourier[];
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Cálculo del espectro.
+
 func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY)
 {
     int kmax = (CoefsX.n-1)/2;
     real[int,int] resultL(2*kmax+1,2*kmax+1), result(2*kmax+1,2*kmax+1);
 	resultL=0.; result=0.; 
 	int cont = 1;
+    
+    //complex vX, vY, vXc, vYc;
+    //real vvX, vvY;
 		
 	for(int ii=-kmax;ii<=kmax;ii++){
 		if(mpirank==cont%mpisize){
@@ -60,7 +66,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
                 resultL(ii+kmax,jj+kmax)=(1./2)*(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2);
             }
         }
-	cont++;
+	    cont++;
 	}
 	mpiBarrier(mpiCommWorld);
 	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
@@ -77,11 +83,12 @@ func real[int] energyk2d(real[int,int] & Energy)
 	energykbycrownsL=0.; energykbycrowns=0.;
 	real module;int l;
 	int cont = 1;
-	for(int k1=-kmax;k1<kmax;k1++){
+	for(int k1=-kmax;k1<=kmax;k1++){
         if(mpirank==cont%mpisize){
-		for(int k2=-kmax;k2<kmax;k2++){
-                module=sqrt(k1^2+k2^2);
+		for(int k2=-kmax;k2<=kmax;k2++){
+                module=sqrt(k1^2+k2^2)-1.e-4;
                 l=module;
+                //cout << "Modulo" << module << ", con entero: " << l << endl;
                 energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
             }
 		}

@@ -24,7 +24,7 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 	
 	uprev = uEF;
 	uprevY = uEFY;
-	
+
 	{
 		uEFdX[] = DXP2*uprev[];
 		uEFdY[] = DYP2*uprev[];
@@ -32,7 +32,6 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 		uEFYdX[] = DXP2*uprevY[];
 		uEFYdY[] = DYP2*uprevY[];
 	}
-	
 
 	// incluimos la matriz del término de convección y segundo miembro término temporal
 	matrix MNS;

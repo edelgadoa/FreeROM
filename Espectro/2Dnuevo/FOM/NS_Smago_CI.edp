@@ -54,7 +54,7 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 include "../Auxiliary/fourier2D.idp"
 
 int kmax = NN/2-1;
-kmax = NN/4;
+
 complex[int,int] Coefs(2*kmax+1,2*kmax+1);
 Coefs = 0.;
 
@@ -70,28 +70,39 @@ Coefs(kmax,kmax) = 0.; // Quito el término relativo a k=l=0. Por si acaso.
 
 // Calculamos la transformada inversa
 VhP2per zper;
-fespace Wh(Th,P2);
-Wh<complex> zz;
+Fh<complex> zz;
 zz[] = FourierInverse2D(Coefs);
 real zmaxL = real(zz[].max);
 real zmax;
 mpiAllReduce(zmaxL,zmax,mpiCommWorld,mpiMAX);
 zz[] = zz[]/zmax;
 
-Wh zreal;
+Fh zreal;
 zreal = real(zz);
 zper = zreal;
 VhP2per zmod; zmod = sqrt(zper^2+zper^2);
-plotMPI(Th,zmod,P2,def,real, cmm = "Condicion inicial t=0");
+plotMPI(Th,zreal,PkP2,def,real, cmm = "Condicion inicial t=0");
 
-kmax = NN/2-1;
-//real[int] spectrum = espectro2D(zz[], zz[], kmax);
-//write("../PruebaTransformada/Espectro_inicial0.txt", spectrum, 0, 0);
+real[int] spectrum = espectro2D(zz[], zz[], kmax);
+write("../PruebaTransformada/Espectro_inicial0_constante.txt", spectrum, 0, 0);
 
+/*
+Vh3P2per [u,uY,uP];
+readvector("../PruebaTransformada/icNN64alpha1.66667.txt", real, Sol, 0); u[] = Sol;
+zmod = sqrt(u^2+uY^2);
+plotMPI(Th,u,PkP2,def,real, cmm = "Condicion inicial Cris");
+
+
+Fh<complex> uXc, uYc, uaux = 0.;
+uXc = u+uaux;
+uYc = uY+uaux;
+spectrum = espectro2D(uXc[], uYc[], kmax);
+write("../PruebaTransformada/Espectro_inicial0_Cris_c.txt", spectrum, 0, 0);
+*/
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
-
+/*
 Vh3P2per [uEF, uEFY,uEFP];
 VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
 VhP2per uprev, uprevY;
@@ -101,7 +112,7 @@ T0 = 0;
 TF = 15;
 
 Reynolds = 8500;
-[uEF, uEFY,uEFP] = [zper, zper(y,x), 0];
+[uEF, uEFY,uEFP] = [zper, zper, 0];
 
 include "FE_Smago_2D.idp"
 
@@ -112,7 +123,7 @@ plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
 //plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
 
 // Calculamos su espectro
-Wh<complex> uX, uY, uaux = 0.;
+Fh<complex> uX, uY, uaux = 0.;
 uX = uEF+uaux;
 uY = uEFY+uaux;
 
@@ -121,3 +132,20 @@ write("../PruebaTransformada/Espectro_inicial"+TF+".txt", spectrumTF, 0, 0);
 
 // Guardamos los snapshots
 // write("../SnapshotsN/Re_" + Reynolds + "_t_" +TF+ ".txt", uEF[], 0, 0);
+
+/*
+
+Fh umodd;
+umodd = sqrt(u^2+uY^2);
+
+plotMPI(Th,umodd,PFourier,def,real, cmm = "Condicion inicial t=0");
+
+Fh<complex> ufX, ufY, uaux = 0.;
+ufX = u+uaux;
+ufY = uY+uaux;
+
+plot([ufX,ufY]);
+
+real[int] spectrumTF = espectro2D(ufX[], ufY[], kmax);
+write("../PruebaTransformada/Espectro_inicial_Cris15.txt", spectrumTF, 0, 0);
+*/

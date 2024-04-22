@@ -3,9 +3,12 @@
 func PFourier = P2;
 real[int] dFourier;
 PartitionCreate(Th,dFourier,PFourier);
-fespace Fh(Th,PFourier);
+fespace Fh(Th,PFourier, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
 Fh DFourier;
-DFourier[] = dFourier;
+fespace VhP2(Th, P2);  
+VhP2 DF2; DF2[] = dFourier;
+DFourier = DF2;
+plotMPI(Th, DFourier, PFourier, def, real, cmm = "Global solution");
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.

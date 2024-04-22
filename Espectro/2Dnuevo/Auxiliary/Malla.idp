@@ -31,4 +31,4 @@ macro PkP1dc() P1dc, periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPer
 // este macro solo lo ponemos si usamos las matrices de interpolacion
 // macro ThOverlap() 2 // EOM  
 
-buildDmesh(Th);
+// buildDmesh(Th);

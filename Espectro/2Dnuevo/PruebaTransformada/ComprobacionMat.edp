@@ -1,0 +1,6 @@
+include "../Auxiliary/IO.idp"
+
+int NN = 64;
+int kmax = NN/2-1;
+
+complex[int,int] CoefX1(NN,NN);
