@@ -13,7 +13,7 @@ int n0 = 4;     // Mesh density base number
 real nu  = 1.e-3; // Kinematic viscosity
 
 // INFLOW CONDITION
-real Ree = 200;
+real Ree = 120;
 real Um  = 1.5*(Ree/100.); 			 // Max inlet velocity
 func Uin = 4*Um*y*(H-y)/H^2; // Inlet velocity: Uin(y=H/2)=Um 
 real Ubar= 2*Um/3; 			 // \int_{\Gamma_in} Uin / \int_{\Gamma_in} =1
@@ -27,7 +27,7 @@ real t0  = 0.;	  // Initial time
 real dt = 2.e-3;  // Time step
 real TF  = 7;     // Final time
 real TFR = 9;     // Final time of the reduced model
-real period = 0.164; // 0.332 para Re=100; 0.164 para Re=200; 0.210 para Re=150; 0.270 para Re=120
+real period = 0.332; // 0.332 para Re=100; 0.164 para Re=200; 0.210 para Re=150; 0.270 para Re=120
 real dtt = 1./dt; // Inverse of time step
 int nit = (TF-t0)/dt;   // # Iterations
 int  it = 0;      // Initial iteration
@@ -41,7 +41,7 @@ real b0,b1;    // Parameters for extrapolation
 a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
 
 // Parametros POD
-real epsPOD = 1.e-12;
+real epsPOD = 1.e-8;
 
 // Parametros EIM
 real epsEIM = 1.e-4;

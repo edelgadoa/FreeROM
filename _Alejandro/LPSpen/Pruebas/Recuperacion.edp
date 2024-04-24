@@ -49,6 +49,7 @@ for(int iter=0; iter <niS; iter++){
 
     // Conveccion (2 componentes)
     Vh2P2 [zx,zy];
+    /*
     VhP2 zzx,zzy;
     aux = SX^2; 
     aux2 = SX*SY;
@@ -56,18 +57,45 @@ for(int iter=0; iter <niS; iter++){
     aux = SY^2;
     zzy = dx(aux2)+dy(aux);
     [zx,zy] = [zzx,zzy];
+    */
     [zx,zy] = ugradv(SX,SY,SX,SY);
 
     MBaseConv(:,iter) = zx[];
 }
 
 // Carga de la base POD de la velocidad y de la convección
-readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
-int NbasesV = BaseV.m; // Dimension reducida velocidad
+//readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+//int NbasesV = BaseV.m; // Dimension reducida velocidad
+readmatrix("../Offline/Bases/BaseConv_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseConv,0);
+int NbasesConv = BaseConv.m; // Dimension reducida velocidad
 //cout << MediaV << endl;
 Vh2P2 [uM,uMY]; uM[] = MediaV;
 // plot([uM,uMY],cmm="Media");
 
+// Recuperacion de la conveccion a través de la POD
+Vh2P2 [Conv,ConvY];
+Conv[] = MBaseConv(:,NbasesConv-1);
+Vh2P2 [baseConv,baseConvY];
+real[int] ConvPODv(BaseConv.n);
+for(int ii=0; ii<NbasesConv; ii++){
+    baseConv[] = BaseConv(:,ii);
+    //plot([baseConv,baseConvY],cmm="Modo "+(ii+1));
+    real alphaii = int2d(Th)(Conv*baseConv+ConvY*baseConvY);
+    ConvPODv += alphaii*BaseConv(:,ii);
+}
+Vh2P2 [ConvPOD,ConvPODY];
+ConvPOD[] = ConvPODv;
+plot([Conv,ConvY],cmm="Conveccion Original");
+plot([ConvPOD,ConvPODY],cmm="Conveccion POD");
+
+Vh2P2 [err,errY];
+[err,errY] = [Conv-ConvPOD,ConvY-ConvPODY];
+plot([err,errY],cmm="Error");
+real error = sqrt(int2d(Th)(err^2+errY^2));
+cout << error << endl;
+
+
+/*
 // Recuperación de la convección a través de la velocidad
 
 // Término de la media
@@ -111,12 +139,14 @@ Vh2P2 [ConvPOD,ConvPODY];
 Vh2P2 [Conv,ConvY];
 [Conv,ConvY] = ugradv(u,uY,u,uY);
 // Conv[] = MBaseConv(:,0);
-plot([Conv,ConvY],cmm="Original");
+//plot([Conv,ConvY],cmm="Original");
 
 Vh2P2 [err,errY];
 [err,errY] = [Conv-ConvPOD,ConvY-ConvPODY];
-plot([err,errY]);
-
+//plot([err,errY]);
+real error = sqrt(int2d(Th)(err^2+errY^2));
+cout << error << endl;
+*/
 /*
 // Recuperación de la velocidad
 Vh2P2 [u,uY];

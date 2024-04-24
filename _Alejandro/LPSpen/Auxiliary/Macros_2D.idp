@@ -22,6 +22,8 @@ macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V
 macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
 macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
 macro UGradT(U,temp) ([U,U#Y]'*Grad(temp)) //EOM
+macro DUGradV(U,V) [dx(U)*dx(V)+U*dxx(V)+dx(U#Y)*dy(V)+U#Y*dxy(V),dy(U)*dx(V)+U*dyx(V)+dy(U#Y)*dy(V)+U#Y*dyy(V)] //EOM
+macro UGradVGradW(U,V,W) [[U,U#Y]'*DUGradV(V,W),[U,U#Y]'*DUGradV(V,W#Y)] //EOM // Esta es UGradV(U,UGradV(V,W))
 macro Antisimetric(U,V,W) (0.5*(UGradVW(U,V,W) - UGradVW(U,W,V))) //EOM
 macro MOD(U) (sqrt(U#dX^2+U#dY^2+U#YdX^2+U#YdY^2)) //EOM
 macro UporV(U,V) ( [U,U#Y]'*[V,V#Y]) //EOM 
