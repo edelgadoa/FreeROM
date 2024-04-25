@@ -39,34 +39,34 @@ include "FE_Spaces_NoStab_VP_3D.idp"
 // Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
 
 
-mapVh4P2 = restrict(Vh4P2L,Vh4P2,myN2o);
-mapVhP2 = restrict(VhP2L,VhP2,myN2o);
-mapVhP1dc = restrict(VhP1dcL,VhP1dc,myN2o);
-mapVhP0 = restrict(VhP0L, VhP0, myN2o);
+mapVh4P2 = restrict(Vh4P2,Vh4P2G,myN2o);
+mapVhP2 = restrict(VhP2,VhP2G,myN2o);
+mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
+mapVhP0 = restrict(VhP0, VhP0G, myN2o);
 {
 	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
 	macro init(i) [i, i, i, i] // EOM
-	MatCreate(ThL, MatAVh4P2, [P2, P2, P2, P2]); 
+	MatCreate(Th, MatVh4P2, [P2, P2, P2, P2]); 
 }
 
-MatCreate(ThL, MatAVhP1dc, P1dc);
-MatCreate(ThL, MatAVhP2, P2);
+MatCreate(Th, MatVhP1dc, P1dc);
+MatCreate(Th, MatVhP2, P2);
 	
 {
 	macro def(i) [i, i#Y, i#Z] // EOM
 	macro init(i) [i, i, i] // EOM
-	MatCreate(ThL, MatAVh3P2, [P2, P2, P2]); 
+	MatCreate(Th, MatVh3P2, [P2, P2, P2]); 
 }
 
 
-varf med(unused,v) = int3d(ThL)(1.*v);
-real[int] medk = med(0,VhP0L);
-VhP0L mk, tKcod, tKTcod, tau;
+varf med(unused,v) = int3d(Th)(1.*v);
+real[int] medk = med(0,VhP0);
+VhP0 mk, tKcod, tKTcod, tau;
 mk[] = sqrt(medk); 
 
 // Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_3D_Global.idp"
 include "Interp_matrix_NoStab_VP_3D.idp"
-include "Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Incluimos el levantamiento
 include "Levantamiento_3D.idp"
@@ -93,14 +93,14 @@ mpi(cout<<vReynolds<<endl;)
 // Resolvemos el problema de EF: Cavidad 3D//
 /////////////////////////////////////////////
 
-Vh4P2L [uEF, uEFY, uEFZ, uEFP];
-Vh4P2L [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
-VhP1dcL uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
-VhP2L uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
-VhP1dcL Gr; // Para el termino de VMS-Smagorinsky
+Vh4P2 [uEF, uEFY, uEFZ, uEFP];
+Vh4P2 [uEFp, uEFpY, uEFpZ, uEFpP]; // guardamos la iteración anterior para calcular el error
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
 
-VhP2 SnapX, SnapY, SnapZ;
-VhP2 SnapP;
+VhP2G SnapX, SnapY, SnapZ;
+VhP2G SnapP;
 
 readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 
@@ -116,8 +116,8 @@ for (int i=0; i<nSnapshots; i++){
 		mpi(cout<<"Tiempo FE para Re = "<<Reynolds<<": "<<TFE<<", ERROR:"<<ERROR<<endl;)
 		
 		// Calculo la solucion global para guardarla
-		Vh4P2 [uEFG, uEFGY, uEFGZ, uEFGP];
-		uEFG[] = reduceSolution(uEF[], uEFG[], MatAVh4P2.D, mapVh4P2);
+		Vh4P2G [uEFG, uEFGY, uEFGZ, uEFGP];
+		uEFG[] = reduceSolution(uEF[], uEFG[], MatVh4P2.D, mapVh4P2);
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -135,13 +135,13 @@ for (int i=0; i<nSnapshots; i++){
 		write("../Snapshots/Vz_" + Reynolds + ".txt", SnapZ[], 0, 0);		
 		write("../Snapshots/P_" + Reynolds + ".txt", SnapP[], 0, 0);
 		
-		Vh4P2 [uEFLev, uEFLevY, uEFLevZ, uEFLevP];
+		Vh4P2G [uEFLev, uEFLevY, uEFLevZ, uEFLevP];
 		uEFLev[] = uEFG[] + Lev[];
 		
 		int[int] fforder=[1,1,1,1];
 		savevtk("VTU/VMS_Smago" + Reynolds + ".vtu", Th, [uEFLev, uEFLevY, uEFLevZ], uEFLevP, dataname="Velocity Pressure", order=fforder, bin=true);
 		
-		real mediaP = intN(Th)(uEFP);
+		real mediaP = intN(ThG)(uEFP);
 		mpi(cout<<"Media Presion: "<<mediaP<<endl;)
 	}
 }

@@ -18,7 +18,7 @@ MRBV = MRBV + ConvLRBi;
 MRBP = PenRBi;	
 // mpi(cout<<MRBP<<endl;)
 
-// MRBP = MRBP + StabhkRBs;
+MRBP = MRBP + StabhkRBs;
 
 // bDiffRBi = bDiffRBG(0:2*I-1);
 
@@ -51,7 +51,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 		real[int, int] Gradint(9,I);
 		Gradint = GradPM[s](0:8, 0:I-1);
 		GraduN = Gradint * uN;
-		GraduN = GraduN + GradPMLev[s];
+		// GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
 	// mpi(cout<<bEIMS<<endl;)
@@ -121,7 +121,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
 	MRBFV += SmagoRBi; 
-	MRBFP += StabPRBi;
+	//MRBFP += StabPRBi;
 	
 	
 	
@@ -131,7 +131,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	//mpi(cout<<"-bdiff: "<<bRB<<endl;)
 	bRB -= bConvLRBG;
 	//mpi(cout<<"-bconvL: "<<bRB<<endl;)
-	bRB -= bSmagoRBi;
+	// bRB -= bSmagoRBi;
 	//mpi(cout<<"-bSmago: "<<bSmagoRBi<<endl;)
 	//mpi(cout<<"bRB="<<bRB<<endl;)
 	
@@ -146,7 +146,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	// real[int,int] MRBinv = MRB^-1;
 	
 	uRBv = MRBs^-1*bRB;
-	mpi(cout<<"uRB:"<<uRBv<<endl;)
+	//mpi(cout<<"uRB:"<<uRBv<<endl;)
 	// Actualizo el error 
 	real[int] uRBerr(I); 
 	uRBerr = uRBv(0:I-1) - uRBvp(0:I-1);

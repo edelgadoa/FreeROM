@@ -63,18 +63,22 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	Vh3P2 [uRB, uRBY, uRBZ];
 	VhP2 uRBP;
 	
-	real[int,int] MBaseVi(Vh3P2.ndof, I), MBasePi(VhP2.ndof, I); // Matrices intermedias
-	MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:I-1);
-	MBasePi = MBaseP(0:VhP2.ndof-1, 0:I-1);
+	real[int,int] MBaseVint(Vh3P2.ndof, I), MBasePint(VhP2.ndof, I); // Matrices intermedias
+	MBaseVint = MBaseV(0:Vh3P2.ndof-1, 0:I-1);
+	MBasePint = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
-	uRB[] = MBaseVi*uRBv(0:I-1);
-	uRBP[] = MBasePi*uRBv(I:2*I-1);
+	uRB[] = MBaseVint*uRBv(0:I-1);
+	uRBP[] = MBasePint*uRBv(I:2*I-1);
 	
-	uRB[] += LevV[];
 	
-	if(MuTrain(iRB)==Refijo){
+	if(MuTrain(iRB)==1000 || MuTrain(iRB)==1500){
 		// plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
 		// plot(uRBP, fill=1, cmm="RB para Re="+Reynolds);
+		Vh3P2G [uRBG, uRBGY, uRBGZ];
+		VhP2G uRBPG;
+		uRBG[] = reduceSolution(uRB[], uRBG[], MatVh3P2.D, mapVh3P2);
+		uRBPG[] = reduceSolution(uRBP[], uRBPG[], MatVhP2.D, mapVhP2);
+		savevtk("uRB"+MuTrain(iRB)+"_"+I+".vtu", ThG, [uRBG, uRBGY, uRBGZ], uRBPG, dataname = "Vel Pres", order=fforder);
 		mpi(cout<<uRBv<<endl;)
 	}
 	
@@ -89,12 +93,15 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 		uRBZdX[] = DXP2IPh * uRBvelZ[]; uRBZdY[] = DYP2IPh * uRBvelZ[];	uRBZdZ[] = DZP2IPh * uRBvelZ[];
 	}
 	
+	
+	uRB[] += LevV[]; // PONER LUEGO ARRIBA SI CONSIDERO EL LEVANTAMIENTO EN SMAGO
+	
 	// Calculo el estimador de error 
 
 	// Norma del Residuo
 	include "Residuo_LPS_VMSSmago.idp"	
 	mpi(cout<<"ResN = "<<ResG(iRB)<<endl;)
-	ResG(iRB) = MuTrain(iRB);
+	// ResG(iRB) = MuTrain(iRB);
 	
 	// Beta_h
 	real Betah = fbeta(gammaI, muI, MuTrain(iRB)); 
@@ -103,15 +110,15 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real RhoT = 2*CSobolev^2;
 	
 	// Tau_N
-	TauG(iRB) = 0.9;//(4 * RhoT * ResG(iRB))/(Betah^2);
+	TauG(iRB) = (4 * RhoT * ResG(iRB))/(Betah^2);
 	mpi(cout<<"TauN = "<< TauG(iRB)<<endl;)
 	
 	// DeltaN
 	if (TauG(iRB) < 1){
-		DeltaG(iRB) = MuTrain(iRB); //Betah/(2*RhoT)*(1-sqrt(1-TauG(iRB)));
+		DeltaG(iRB) = Betah/(2*RhoT)*(1-sqrt(1-TauG(iRB)));
 	}
 	else{
-		DeltaG(iRB) = Betah/(4*RhoT)*TauG(iRB);
+		DeltaG(iRB) = ResG(iRB);// Betah/(4*RhoT)*TauG(iRB);
 	}
 	
 }

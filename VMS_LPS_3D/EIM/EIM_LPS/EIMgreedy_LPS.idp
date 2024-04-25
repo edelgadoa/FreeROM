@@ -61,8 +61,8 @@ UXdX = BVdX[Errorit.imax]; UXdY = BVdY[Errorit.imax]; UXdZ = BVdZ[Errorit.imax];
 UYdX = BVYdX[Errorit.imax]; UYdY = BVYdY[Errorit.imax]; UYdZ = BVYdZ[Errorit.imax];
 UZdX = BVZdX[Errorit.imax]; UZdY = BVZdY[Errorit.imax]; UZdZ = BVZdZ[Errorit.imax];
 
-real[int] tK = tauK(0,VhP0);
-real[int] tKT = tauKT(0,VhP0);
+real[int] tK = tauK(0,VhP0G);
+real[int] tKT = tauKT(0,VhP0G);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);

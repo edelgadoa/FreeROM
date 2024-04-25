@@ -23,24 +23,28 @@ include "../../Auxiliary/CuboNxNyNz.idp"
 include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Global.idp"
 include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
-include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Definimos los parametros a usar
 include "../../Auxiliary/Parametros_3D.idp"
 
+
+mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
+MatCreate(Th, MatVhP1dc, P1dc);
+
+
 // Incluimos el levantamiento
 include "../../FOM/Levantamiento_3D.idp"
-
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 
 readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 0); 
 int nSnapshots = vReynolds.n;
 
-VhP2[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);
+VhP2G[int] BVX(nSnapshots), BVY(nSnapshots), BVZ(nSnapshots);
 
-VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots), 
+VhP1dcG[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots), 
 			BVYdX(nSnapshots), BVYdY(nSnapshots), BVYdZ(nSnapshots),
 			BVZdX(nSnapshots), BVZdY(nSnapshots), BVZdZ(nSnapshots); 
 
@@ -55,8 +59,8 @@ real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa de
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
 
 
-VhP1dc[int] BEIM(Mmax); // Donde almaceno las bases EIM
-VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+VhP1dcG[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP1dcG gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM

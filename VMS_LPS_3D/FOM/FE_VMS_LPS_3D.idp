@@ -21,9 +21,9 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	mpi(cout<<"Iteracion FE: "<<itFE<<endl;) 	
 	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas filtradas
 	
-	VhP2 uprev = uEF + Lev;
-	VhP2 uprevY = uEFY + LevY;
-	VhP2 uprevZ = uEFZ + LevZ;
+	VhP2 uprev = uEF;// + Lev;
+	VhP2 uprevY = uEFY;// + LevY;
+	VhP2 uprevZ = uEFZ;// + LevZ;
 	
 	VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ;
 	// mpi(cout<<"filtrado de solucion anterior"<<endl;)
@@ -77,7 +77,7 @@ for (int ii=1; ii<=niterFE && (ERROR > epsFE) ; ii++){
 	
 	bFinal = bFija;
 	bFinal = bFinal + bNS;
-	bFinal = bFinal + bSmago;
+	// bFinal = bFinal + bSmago;
 	
 	
 	// mpi(cout<<"Actualizamos la solucion"<<endl;)

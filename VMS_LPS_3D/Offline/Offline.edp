@@ -40,7 +40,6 @@ include "../Auxiliary/Parametros_3D.idp"
 include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
 
-
 VhP0 mk,tKcod,tKTcod,tau;
 
 varf med(unused,v) = intN(Th)(1.*v);
@@ -67,13 +66,15 @@ for (int gf=0; gf<Vh4P2.ndof; gf++){
 } 
 
 mapVh4P2 = restrict(Vh4P2,Vh4P2G,myN2o);
+mapVh3P2 = restrict(Vh3P2,Vh3P2G,myN2o);
 mapVhP2 = restrict(VhP2,VhP2G,myN2o);
 mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
 mapVhP0 = restrict(VhP0, VhP0G, myN2o);
 
 
-real[int] DP0;
+real[int] DP0, DP1dc;
 PartitionCreate(Th, DP0, P0);
+PartitionCreate(Th, DP1dc, P1dc);
 
 
 {
@@ -136,7 +137,8 @@ VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
 VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
-real[int, int] MBaseV(MatVh3P2.n, Nbases), MBaseP(MatVhP2.n, Nbases);
+real[int, int] MBaseV(Vh3P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+
 
 /////////////////////////////////////////
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
@@ -166,14 +168,14 @@ mpi(cout<<"matrices alocadas"<<endl;)
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 
-Reynolds = Refijo; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+Reynolds = 1000; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev
 
 
 real CSobolev = 1;
-include "Sobolev_3D.idp"
+//include "Sobolev_3D.idp"
 mpi(cout<<"sobolev embedding constant calculada"<<endl;)
 
 
@@ -224,7 +226,7 @@ include "Scalar_Product_Matrices.idp"
 
 for (int i=0; i<Nbases; i++){
 	
-	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+	if (search(ReSnapshots, Reynolds, 1.e-5)==-1){
 		// Si no lo he calculado todavía, lo calculo
 
 		include "../FOM/FE_VMS_LPS_3D.idp"	
@@ -270,6 +272,8 @@ for (int i=0; i<Nbases; i++){
 		BaseVelZ[i][] = SnapZ[](mapVhP2);
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
+		// real MedPres = 
+		SnapP[] -= int3d(ThG)(SnapP);
 		BaseP[i][] = SnapP[](mapVhP2);		
 	
 		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
@@ -283,20 +287,18 @@ for (int i=0; i<Nbases; i++){
 	VhP2[int] BasePi(i+1);
 	Vh3P2[int] [BaseVi, BaseViY, BaseViZ](i+1);
 	real[int, int] MBaseVi(MatVh3P2.n, i+1), MBasePi(MatVhP2.n, i+1);
-	
+
 	for (int k=0;k<=i;k++){
 		BasePi[k][] = BaseP[k][];
 		BaseVi[k][] = BaseV[k][];
 	}
-	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC)
-	//mpi(cout<<"n="<<MatAVh3P2.n<<", B:"<<MBaseVi.n<<"x"<<MBaseVi.m<<endl;)
 	
-	ChangeNumbering(MatVhP2, BasePi, MBasePi);
+	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC) para la construcccion de matrices
+	ChangeNumbering(MatVhP2, BasePi, MBasePi); 
 	ChangeNumbering(MatVh3P2, BaseVi, MBaseVi);
-	// mpi(cout<<"B:"<<MBaseVi.n<<"x"<<MBaseVi.m<<endl;)
 
-	//MBaseV(:,i) = BaseV[i][];
-	//MBaseP(:,i) = BaseP[i][];
+	MBaseV(:,i) = BaseV[i][];
+	MBaseP(:,i) = BaseP[i][];
 
 
 	// Actualizo las soluciones filtradas
@@ -307,6 +309,11 @@ for (int i=0; i<Nbases; i++){
 	 FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
 	 FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
 	 FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	 
+	 FVdX[i][] .*= DP1dc; FVdY[i][] .*= DP1dc; FVdZ[i][] .*= DP1dc;
+	 FVYdX[i][] .*= DP1dc; FVYdY[i][] .*= DP1dc; FVYdZ[i][] .*= DP1dc;
+	 FVZdX[i][] .*= DP1dc; FVZdY[i][] .*= DP1dc; FVZdZ[i][] .*= DP1dc;
+	 
 	//
 	//FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	//

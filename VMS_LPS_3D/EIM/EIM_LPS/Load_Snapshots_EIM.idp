@@ -15,32 +15,32 @@ for(int i=0; i<nSnapshots; i++){
 	
 	
 	BVX[i][] =  SnapshotVx;
-	BVX[i] = BVX[i] + Lev;
+	// BVX[i] = BVX[i] + LevG; //Solo tengo levantamiento en uX 
 	
 	BVY[i][] =  SnapshotVy;
-	BVY[i] = BVY[i] + LevY;
+	// BVY[i] = BVY[i] + LevY;
 	
 	
 	BVZ[i][] =  SnapshotVz;
-	BVZ[i] = BVZ[i] + LevZ;
+	// BVZ[i] = BVZ[i] + LevZ;
 	
 	// ESTO HAY QUE CAMBIARLO A LOCAL. NO PUEDE SER EN GLOBAL SI QUIERO MALLAS FINAS.
 	{
-		VhP2 udcAux;
+		VhP2G udcAux;
 		udcAux[] = IPhP2P1G*BVX[i][];
-		BVdX[i][] = DXP2*udcAux[];
-		BVdY[i][] = DYP2*udcAux[];
-		BVdZ[i][] = DZP2*udcAux[];
+		BVdX[i][] = DXP2G*udcAux[];
+		BVdY[i][] = DYP2G*udcAux[];
+		BVdZ[i][] = DZP2G*udcAux[];
 
 		udcAux[] = IPhP2P1G*BVY[i][];
-		BVYdX[i][] = DXP2*udcAux[];
-		BVYdY[i][] = DYP2*udcAux[];
-		BVYdZ[i][] = DZP2*udcAux[];
+		BVYdX[i][] = DXP2G*udcAux[];
+		BVYdY[i][] = DYP2G*udcAux[];
+		BVYdZ[i][] = DZP2G*udcAux[];
 		
 		udcAux[] = IPhP2P1G*BVZ[i][];
-		BVZdX[i][] = DXP2*udcAux[];
-		BVZdY[i][] = DYP2*udcAux[];
-		BVZdZ[i][] = DZP2*udcAux[];
+		BVZdX[i][] = DXP2G*udcAux[];
+		BVZdY[i][] = DYP2G*udcAux[];
+		BVZdZ[i][] = DZP2G*udcAux[];
 
 	}
 

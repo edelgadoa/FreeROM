@@ -13,6 +13,9 @@ Vh3P2 [LevV, LevVY, LevVZ];
 VhP2 GP2 = g1;
 VhP2 GzeroP2 = 0.;
 
+VhP2G LevG = g1;
+
+
 
 [Lev, LevY, LevZ, LevP] = [GP2, GzeroP2, GzeroP2, GzeroP2];
 [LevV, LevVY, LevVZ] = [GP2, GzeroP2, GzeroP2];

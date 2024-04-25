@@ -11,7 +11,8 @@ real[int] bNSRes(Vh4P2.ndof);
 
 
 {
-	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
+	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)(//(1./Refijo + MOD(uFijo))*
+	GradUGradV(u,v) + uP*vP)
 											// Segundo miembro
 										  + int3d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
 										  + on(1,2, u=0, uY=0, uZ=0);
@@ -23,7 +24,9 @@ real[int] bNSRes(Vh4P2.ndof);
 	MatCreate(Th, MRes, [P2,P2,P2,P2]);
 	
 	MRes = matrixRes;
-	set(MRes, sparams = "-pc_type lu -ksp_type gmres -ksp_converged_reason"); // TODO: probar con otros parametros									
+	// set(MRes, sparams = "-pc_type lu -ksp_type gmres -ksp_converged_reason"); // TODO: probar con otros parametros		
+	set(MRes, sparams = "-pc_type  hpddm -pc_hpddm_levels_1_sub_pc_type lu -pc_hpddm_levels_1_eps_nev 10 -pc_hpddm_define_subdomains -pc_hpddm_has_neumann -pc_hpddm_coarse_p 2 -ksp_type gmres -ksp_max_it 200");							
+	
 	bNSRes = NSRes(0, Vh4P2);
 }
 								
@@ -72,8 +75,8 @@ real[int] bStabPRes(Vh4P2.ndof);
 	taures = ((cc1*(nuRB+((CS*hTriangle)^2)*(tKTres/mk))/hTriangle^2) + (cc2*(tKres/mk)/hTriangle))^(-1.); 
 	
 	VhP1dc uFRBP;
-	varf StabPRes(unP,vP) = int3d(Th)(taures*uFRBP*vP);
-	
+	// varf StabPRes(unP,vP) = int3d(Th)(taures*uFRBP*vP);
+	varf StabPRes(unP,vP) = int3d(Th)(hTriangle^2*uFRBP*vP);
 	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof), bSPaux(VhP1dc.ndof);
 	// Componente X
 	uFRBP[] = IPhDXP2 * uRBP[];
@@ -101,7 +104,9 @@ bRes += bStabPRes;
 
 {
 	Vh4P2 [RES, RESY, RESZ, RESP];
-	mpi(cout<<"Resuelvo el residuo"<<endl;)
-	RES[] = MRes^-1*bRes;  
-	ResG(iRB) = normX(RES[], MPescX);
+	RES[] = 0.0;
+	RES[] = MRes^-1*bRes; 
+	real[int] ResPETSc; 
+	ChangeNumbering(MatVh4P2, RES[], ResPETSc);
+	ResG(iRB) = normX(ResPETSc, MPescX);
 }

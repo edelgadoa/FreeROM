@@ -28,6 +28,15 @@ Mat MPescV;
 	MPescV = MPescVTemp;
 }
 
+Mat MPescP;
+{
+	varf PescP(p,q) = int3d(Th)(p*q);
+	MatCreate(Th, MPescP, P2);
+	matrix MPescPTemp = PescP(VhP2, VhP2);
+	MPescP = MPescPTemp;
+}
+
+
 ///////////////////////////////////////////////////////
 Mat DiffPEM;
 Mat PenPEM;
