@@ -1,0 +1,20 @@
+// Matrices fijas
+varf  NSfija ([uEF,uEFY,uEFP],[v1,v2,q])=
+	int2d(Th)(
+		a0*dtt*(uEF*v1+uEFY*v2)
+		+ nu*(Grad(uEF)'*Grad(v1)+Grad(uEFY)'*Grad(v2))
+		- uEFP*div(v1,v2)
+		+ q*div(uEF,uEFY)
+	)
+;
+matrix MNS=NSfija(Vh3P2,Vh3P2);
+real[int] bNS=NSfija(0,Vh3P2);
+
+
+varf NScon ([uEF,uEFY,uEFP],[v1,v2,q])=
+    on(1,   uEF=0.,uEFY=0.)	    // Label 1   = Top,Bottom,Cylinder:   No-slip BCs
+	+ on(2,   uEF=Uin,uEFY=0.)  // Label 2   = Inlet:      Inflow BCs
+	// Label 3	 = Outlet:	   Outflow (do nothing) BCs ==> Fixed pressure (no mean null)
+;
+matrix Mcon = NScon(Vh3P2,Vh3P2);
+real[int] bcon = NScon(0,Vh3P2);

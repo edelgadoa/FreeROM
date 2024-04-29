@@ -1,0 +1,205 @@
+// Matrices Online de la RBF
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Normas auxiliares
+include "../Auxiliary/Normas.idp"
+
+// Carga de datos
+readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+Vh2P2 [uM,uMY]; uM[] = MediaV;
+readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseV,0);
+readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseConv,0);
+readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTau,0);
+readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTau,0);
+int NbasesV = BaseV.m;
+int NbasesConv = BaseConv.m; NbasesConv = 4;
+int NbasesVTau = BaseVTau.m;
+int NbasesVDTau = BaseVDTau.m;
+
+// Matrices 
+
+Vh2P2 [modes,modesY];
+Vh2P2 [modesConv,modesConvY];
+VhP2 modeRBF1;
+Vh2P2 [modeRBF2,modeRBF2Y];
+write("Output.txt","Building matrices...",1,1);
+
+
+real[int,int] MVDTauFaux(NbasesV,NbasesVDTau);
+real[int,int] MVTauFaux(NbasesV,NbasesVTau);
+
+real[int,int] Maux(NbasesV,NbasesV);
+Maux = 0.;
+
+real[int,int] MVDTauMMR(NbasesV,NbasesVDTau);
+real[int,int] MVTauMMR(NbasesV,NbasesVTau);
+real[int,int] MVDTauMGaux(NbasesV,NbasesV);
+real[int,int] MVTauMGaux(NbasesV,NbasesV);
+real[int,int] MVDTauGMaux(NbasesV,NbasesV);
+real[int,int] MVTauGMaux(NbasesV,NbasesV);
+real[int,int][int] MsVDTauMGR(NbasesVDTau);
+real[int,int][int] MsVDTauGMR(NbasesVDTau);
+for(int i=0; i<NbasesVDTau; i++){
+    MsVDTauMGR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+    MsVDTauGMR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+real[int,int][int] MsVTauMGR(NbasesVTau);
+real[int,int][int] MsVTauGMR(NbasesVTau);
+for(int i=0; i<NbasesVTau; i++){
+    MsVTauMGR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+    MsVTauGMR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+
+real[int,int][int] MsVDTauR(NbasesV*NbasesVDTau);
+real[int,int][int] MsVTauR(NbasesV*NbasesVTau);
+for(int i=0; i<NbasesV*NbasesVDTau; i++){
+    MsVDTauR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+for(int i=0; i<NbasesV*NbasesVTau; i++){
+    MsVTauR[i] = Maux(0:NbasesV-1,0:NbasesV-1);
+}
+
+for(int k=0; k<NbasesConv; k++){
+    write("Output.txt","Convection basis "+(k+1)+"...",1,1);
+    modesConv[] = BaseConv(:,k);
+
+    //Termino de la RBF 1
+    for(int l=0; l<NbasesVDTau; l++){ 
+        modeRBF1[] = BaseVDTau(:,l);
+        varf varVDTauF([u,uY],[v,vY]) = int2d(Th)(modeRBF1*UporV(modesConv,v));
+        real[int] MVDTauF=varVDTauF(0,Vh2P2); 
+        for(int j=0; j<NbasesV; j++){
+            real[int] Vj = BaseV(:,j);
+            MVDTauFaux(j,l) = Vj'*MVDTauF;
+        }
+    }
+
+    //Termino de la RBF 2
+    for(int l=0; l<NbasesVTau; l++){ 
+        modeRBF2[] = BaseVTau(:,l);
+        varf varVTauF([u,uY],[v,vY]) = int2d(Th)(UGradVW(modeRBF2,modesConv,v));
+        real[int] MVTauF=varVTauF(0,Vh2P2); 
+        for(int j=0; j<NbasesV; j++){
+            real[int] Vj = BaseV(:,j);
+            MVTauFaux(j,l) = Vj'*MVTauF;
+        }
+    }
+
+    //Término media-media
+    real auxFmm = int2d(Th)(UGradVW(uM,uM,modesConv));
+    cout << auxFmm << endl;
+
+    //Término POD-Media
+    varf varFmg([u,uY],[v,vY]) = int2d(Th)(UGradVW(v,uM,modesConv));
+    real[int] MFMG = varFmg(0,Vh2P2);
+    real[int] auxFMG(NbasesV); 
+
+    //Término Media-POD
+    varf varFgm([u,uY],[v,vY]) = int2d(Th)(UGradVW(uM,v,modesConv));
+    real[int] MFGM = varFgm(0,Vh2P2);
+    real[int] auxFGM(NbasesV); 
+
+    //Término POD-POD
+    varf varFgg([u,uY],[v,vY]) = int2d(Th)(UGradVW(u,v,modesConv));
+    matrix MFGG = varFgg(Vh2P2,Vh2P2);
+    real[int,int] auxFGGM(NbasesV,NbasesV);
+    real[int,int] MFGGaux(Vh2P2.ndof,NbasesV);
+
+    for(int i=0; i<NbasesV; i++){
+        real[int] Vi = BaseV(:,i);
+        auxFMG(i) = MFMG'*Vi;
+        auxFGM(i) = MFGM'*Vi;
+        MFGGaux(:,i) = MFGG*Vi;
+
+        for(int s=0; s<NbasesV;s++){
+            real[int] Vs = BaseV(:,s);
+            auxFGGM(s,i) =MFGGaux(:,i)'*Vs;
+        }
+    }
+
+    //YA tengo cada término por separado, ahora tengo que crear cada término total
+
+    // Término media-media
+    MVDTauMMR += auxFmm*MVDTauFaux;
+    MVTauMMR += auxFmm*MVTauFaux;
+
+    // Términos media-POD y POD-media
+    for(int l=0;l<NbasesVDTau;l++){
+        for(int i=0; i<NbasesV; i++){
+            for(int j=0;j<NbasesV; j++){
+                MVDTauMGaux(i,j) =  MVDTauFaux(j,l)*auxFMG(i);
+                MVDTauGMaux(i,j) =  MVDTauFaux(j,l)*auxFGM(i);
+            }
+        }
+        MsVDTauMGR[l] += MVDTauMGaux;
+        MsVDTauGMR[l] += MVDTauGMaux;
+    }
+    for(int l=0;l<NbasesVTau;l++){
+        for(int i=0; i<NbasesV; i++){
+            for(int j=0;j<NbasesV; j++){
+                MVTauMGaux(i,j) =  MVTauFaux(j,l)*auxFMG(i);
+                MVTauGMaux(i,j) =  MVTauFaux(j,l)*auxFGM(i);
+            }
+        }
+        MsVTauMGR[l] += MVTauMGaux;
+        MsVTauGMR[l] += MVTauGMaux;
+    }
+    
+
+    //Término POD-POD
+    for(int s=0; s<NbasesV; s++){
+        for(int l=0; l<NbasesVDTau; l++){
+            for(int i=0; i<NbasesV; i++){
+                for(int j=0;j<NbasesV; j++){
+                    Maux(i,j) =  MVDTauFaux(j,l)*auxFGGM(s,i);
+                }
+            }
+            MsVDTauR[s*NbasesVDTau+l] += Maux;
+        }
+        for(int l=0; l<NbasesVTau; l++){
+            for(int i=0; i<NbasesV; i++){
+                for(int j=0;j<NbasesV; j++){
+                    Maux(i,j) =  MVTauFaux(j,l)*auxFGGM(s,i);
+                }
+            }
+            MsVTauR[s*NbasesVTau+l] += Maux;
+        }
+    }
+    
+    write("Output.txt","Convection basis: "+(k+1)+" done.",1,1);
+}
+
+write("Output.txt","Done.",1,1);
+
+write("ElementosOffline/MVDTauMMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MVDTauMMR, 0, 0);
+write("ElementosOffline/MVTauMMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MVTauMMR, 0, 0);
+
+write("ElementosOffline/MsVDTauMGR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauMGR, 0, 0);
+write("ElementosOffline/MsVTauMGR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauMGR, 0, 0);
+
+write("ElementosOffline/MsVDTauGMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauGMR, 0, 0);
+write("ElementosOffline/MsVTauGMR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauGMR, 0, 0);
+
+write("ElementosOffline/MsVDTauR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauR, 0, 0);
+write("ElementosOffline/MsVTauR_FR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauR, 0, 0);
+
+write("Output.txt","RBF elements computed",1,1);

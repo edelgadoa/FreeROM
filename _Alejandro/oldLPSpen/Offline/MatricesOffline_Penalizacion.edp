@@ -92,8 +92,8 @@ for(int s=0; s<NbasesV; s++){ // Bucle por el primer termino de la conveccion
 }
 
 // Vector de matrices
-write("ElementosOffline/MsVDTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauR, 0, 0);
-write("ElementosOffline/MsVTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauR, 0, 0);
+write("ElementosOffline/MsVDTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauR, 0, 0);
+write("ElementosOffline/MsVTauR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauR, 0, 0);
 
 write("Output.txt","Done.",1,1);
 
@@ -140,9 +140,9 @@ for(int l=0; l<NbasesVDTau; l++){
     MsVDTauGMR[l] = MVDTauGMaux;
 }
 
-write("ElementosOffline/MsVDTauMGR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauMGR, 0, 0);
-write("ElementosOffline/MsVDTauGMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVDTauGMR, 0, 0);
-write("ElementosOffline/MVDTauMMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVDTauMMR, 0, 0);
+write("ElementosOffline/MsVDTauMGR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauMGR, 0, 0);
+write("ElementosOffline/MsVDTauGMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVDTauGMR, 0, 0);
+write("ElementosOffline/MVDTauMMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MVDTauMMR, 0, 0);
 
 write("Output.txt","Done.",1,1);
 
@@ -190,9 +190,9 @@ for(int l=0; l<NbasesVTau; l++){
     MsVTauGMR[l] = MVTauGMaux;
 }
 
-write("ElementosOffline/MsVTauMGR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauMGR, 0, 0);
-write("ElementosOffline/MsVTauGMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MsVTauGMR, 0, 0);
-write("ElementosOffline/MVTauMMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MVTauMMR, 0, 0);
+write("ElementosOffline/MsVTauMGR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauMGR, 0, 0);
+write("ElementosOffline/MsVTauGMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MsVTauGMR, 0, 0);
+write("ElementosOffline/MVTauMMR_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_Macro.txt", MVTauMMR, 0, 0);
 
 write("Output.txt","Done.",1,1);
 write("Output.txt","RBF elements computed",1,1);

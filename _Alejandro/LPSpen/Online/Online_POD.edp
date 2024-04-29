@@ -1,0 +1,139 @@
+// Online
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+// include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de bases
+readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+int NbasesV = BaseV.m; // Dimension reducido
+readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+Vh2P2 [uM,uMY];
+uM[] = MediaV;
+
+// Condicion inicial
+write("Output.txt","Computing initial conditions...",1,1);
+
+Vh3P2 [SnapX,SnapY,SnapP];
+readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +TF+ ".txt", real, Sol, 0);
+SnapX[] = Sol; 
+
+Vh2P2 [uEFP,uEFPY];
+[uEFP,uEFPY] = [SnapX, SnapY];
+[uEFP,uEFPY] = [uEFP-uM, uEFPY-uMY];
+
+readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +(TF-dt)+ ".txt", real, SolP, 0);
+SnapX[] = SolP;
+
+Vh2P2 [uEFP1,uEFP1Y];
+[uEFP1,uEFP1Y] = [SnapX, SnapY];
+[uEFP1,uEFP1Y] = [uEFP1-uM, uEFP1Y-uMY];
+
+real[int] uR(NbasesV), uRP(NbasesV), uRP1(NbasesV);
+for(int i=0;i<NbasesV;i++){
+    Vh2P2 [V,VY];
+    V[]=BaseV(:,i); 
+    uRP(i) = int2d(Th)(V*uEFP+VY*uEFPY);
+    uRP1(i) = int2d(Th)(V*uEFP1+VY*uEFP1Y);
+}
+write("Output.txt","Initial conditions OK",1,1);
+
+// Matrices reducidas
+write("Output.txt","Reading offline matrices...",1,1);
+
+readmatrix("../Offline/ElementosOffline/MMasaR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MMasaR,0);
+readmatrix("../Offline/ElementosOffline/MGradR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MGradR,0);
+readmatrix("../Offline/ElementosOffline/MConvMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MConvMGR,0);
+readmatrix("../Offline/ElementosOffline/MConvGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MConvGMR,0);
+
+readvector("../Offline/ElementosOffline/bMasaR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bMasaR,0);
+readvector("../Offline/ElementosOffline/bGradR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bGradR,0);
+readvector("../Offline/ElementosOffline/bConvR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bConvR,0);
+
+readtensor("../Offline/ElementosOffline/MsConvR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsConvR,0)
+
+// Elementos fijos
+real[int,int] MFijaR(NbasesV,NbasesV);
+MFijaR = a0*dtt*MMasaR;
+MFijaR += nu*MGradR;
+MFijaR += MConvMGR;
+
+real[int] bFijoR(NbasesV);
+bFijoR = nu*bGradR;
+bFijoR += bConvR;
+write("Output.txt","Reduced Matrices Ok.",1,1);
+
+// Bucle temporal 
+real[int,int] MVarR(NbasesV,NbasesV);
+real[int] bVarR(NbasesV);
+// TFR = TF+5*period;
+
+for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
+    
+	write("Output.txt","t = " + ti,0,1);
+
+    // Calculo de los elementos variables
+    real[int,int] MVarConvPR(NbasesV,NbasesV); MVarConvPR = 0.;
+    real[int,int] MVarConvP1R(NbasesV,NbasesV); MVarConvP1R = 0.;
+    for(int i=0; i<NbasesV; i++){
+        MVarConvPR += uRP(i)*MsConvR[i];
+        MVarConvP1R += uRP1(i)*MsConvR[i];
+    }
+    MVarR = b0*MVarConvPR;
+    MVarR += b1*MVarConvP1R;
+
+    real[int] aux=MMasaR*uRP;
+    bVarR = a1*dtt*aux;
+    aux=MMasaR*uRP1;
+    bVarR += a2*dtt*aux;
+    aux = MConvGMR*uRP;
+    bVarR += b0*aux;
+    aux = MConvGMR*uRP1;
+    bVarR += b1*aux;
+
+    // Sistema lineal
+    matrix MFinalR;
+    real[int] bFinalR(NbasesV);
+
+    MFinalR = MFijaR;
+    MFinalR += MVarR;
+
+    bFinalR = -bFijoR;
+    bFinalR -= bVarR;
+
+    // Resolucion
+	set(MFinalR, solver=sparsesolver);
+	uR=MFinalR^-1*bFinalR;
+
+    // Actualizacion
+    uRP1 = uRP;
+    uRP = uR;
+
+    // Representacion
+    Vh2P2 [uEF,uEFY];
+    uEF[] = BaseV*uR;
+    [uEF,uEFY] = [uEF+uM,uEFY+uMY];
+    VhP2 uEFmod;
+    uEFmod = uEF^2+uEFY^2;
+    plot(uEFmod,fill=1,value=1,cmm = "t = "+ti);
+
+    write("Resultados/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+}
+
+write("Output.txt","Done.",0,1);
