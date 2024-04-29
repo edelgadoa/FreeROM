@@ -1,0 +1,66 @@
+// func int search(int[int] & v, int  &a)
+// {
+//     int result=-1;
+//     for[i, vi : v]{
+//         if(abs(vi-a)<1.e-8){
+//             result=i;
+//         }
+//     }
+//     return result;
+// }
+
+// func int search(real[int] & v, real  &a, real &preci)
+// {
+//     int result=-1;
+//     for[i, vi : v]{
+//         if(abs(vi-a)<preci){
+//             result=i;
+//         }
+//     }
+//     return result;
+// }
+
+// Go from Global vector of magic points to Local vectors of M
+func int[int] MagicPointG2L(int[int] &map, int[int] &MagicPoint){
+	int NMagic = MagicPoint.n;
+	int NMagicL = 0;
+	int[int] LocalMagicPoint(NMagic);
+	for (int i=0; i<NMagic; i++){
+		if (search(map, MagicPoint(i))!=-1){
+			LocalMagicPoint(i) = search(map, MagicPoint(i));
+			//NMagicL++;	
+		}
+        else{
+            LocalMagicPoint(i) = -1;
+        }
+            
+		//if(mpirank==1)cout<<LocalMagicPoint(:,1)<<", mpirank:"<<mpirank<<endl;
+	}
+	return LocalMagicPoint;
+}
+
+//Number of processors that have the Magic Points
+func real[int] NumberMagicPoint(int[int] &map, int[int] &MagicPoint){ 
+	int NMagic = MagicPoint.n;
+	real[int] Mapping(NMagic);
+	Mapping = 0;
+	for (int i=0; i<NMagic; i++){
+		if (search(map, MagicPoint(i))!=-1){
+			Mapping(i) = 1;
+		}	
+	}
+	return Mapping(0:NMagic-1);
+}
+
+//Weight for each Magic Point
+func real[int] WeightMagicPoint(real[int] &NumberMagicPoints){
+    real[int] Weights(NumberMagicPoints.n);
+    mpiAllReduce(NumberMagicPoints, Weights, mpiCommWorld, mpiSUM);
+    Weights = 1./Weights;
+	for(int i=0;i< Weights.n; i++){
+		if (NumberMagicPoints(i) == 0){
+			Weights(i) = 0;
+		}
+	} 
+    return Weights;
+}
