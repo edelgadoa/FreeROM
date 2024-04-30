@@ -89,16 +89,16 @@ int NbasesVDTau = PesosVDTau.m;
 readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
 readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
 
-readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0);
-readtensor("../Offline/ElementosOffline/MsVTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0);
+readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0); 
+readtensor("../Offline/ElementosOffline/MsVTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0); 
 
-readmatrix("../Offline/ElementosOffline/MVDTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVDTauMMR,0);
-readtensor("../Offline/ElementosOffline/MsVDTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauMGR,0);
-readtensor("../Offline/ElementosOffline/MsVDTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauGMR,0);
+readmatrix("../Offline/ElementosOffline/MVDTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVDTauMMR,0);   
+readtensor("../Offline/ElementosOffline/MsVDTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauMGR,0); 
+readtensor("../Offline/ElementosOffline/MsVDTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauGMR,0); 
 
-readmatrix("../Offline/ElementosOffline/MVTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0);
-readtensor("../Offline/ElementosOffline/MsVTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0)
-readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0)
+readmatrix("../Offline/ElementosOffline/MVTauMMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0); 
+readtensor("../Offline/ElementosOffline/MsVTauMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0); 
+readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0); 
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
@@ -112,7 +112,7 @@ func real gauss(real r){
 // Vector de parametros velocidades reducidas
 readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
 nit = SnapV.m;
-
+/*
 real[int,int] Xaux(NbasesV,nit);
 for(int i=0;i<nit;i++){
     real[int] Snapi = SnapV(:,i);
@@ -125,7 +125,7 @@ for(int i=0;i<nit;i++){
     }
 }
 write("../Offline/RBF/Parametros_" + Reynolds + ".txt", Xaux, 0, 0);
-
+*/
 readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
 
 write("Output.txt","RBF Ok.",1,1);

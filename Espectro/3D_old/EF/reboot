@@ -1,4 +1,0 @@
-#!/bin/bash
-rm ../solutionsEulerExp/txt/*.txt
-rm ../EIM/results/*.txt
-cp ../auxiliary/parameters.txt  ../solutionsEulerExp/parametersNN8Smago.txt
