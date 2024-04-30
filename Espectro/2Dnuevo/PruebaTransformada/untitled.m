@@ -71,6 +71,7 @@ loglog(kk,k53);
 hold on 
 loglog(kk,sp00);
 loglog(kk,sp152);
+legend('k -5/3','Inicial','T=15 (Haciendo media entre puntos)');
 
 
 
