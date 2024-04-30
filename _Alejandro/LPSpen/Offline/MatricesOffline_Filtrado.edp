@@ -24,14 +24,14 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 include "../Auxiliary/Normas.idp"
 
 // Carga de datos
-readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+readvector("../Offline/Bases/MediaV_"+Reynolds+".txt",real,MediaV,0);
 Vh2P2 [uM,uMY]; uM[] = MediaV;
 readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseV,0);
 readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseConv,0);
 readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTau,0);
 readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTau,0);
 int NbasesV = BaseV.m;
-int NbasesConv = BaseConv.m; NbasesConv = 4;
+int NbasesConv = BaseConv.m; NbasesConv = 6;
 int NbasesVTau = BaseVTau.m;
 int NbasesVDTau = BaseVDTau.m;
 
@@ -50,8 +50,8 @@ real[int,int] MVTauFaux(NbasesV,NbasesVTau);
 real[int,int] Maux(NbasesV,NbasesV);
 Maux = 0.;
 
-real[int,int] MVDTauMMR(NbasesV,NbasesVDTau);
-real[int,int] MVTauMMR(NbasesV,NbasesVTau);
+real[int,int] MVDTauMMR(NbasesV,NbasesVDTau); MVDTauMMR = 0.;
+real[int,int] MVTauMMR(NbasesV,NbasesVTau); MVTauMMR = 0.;
 real[int,int] MVDTauMGaux(NbasesV,NbasesV);
 real[int,int] MVTauMGaux(NbasesV,NbasesV);
 real[int,int] MVDTauGMaux(NbasesV,NbasesV);
@@ -92,7 +92,7 @@ for(int k=0; k<NbasesConv; k++){
             MVDTauFaux(j,l) = Vj'*MVDTauF;
         }
     }
-
+    
     //Termino de la RBF 2
     for(int l=0; l<NbasesVTau; l++){ 
         modeRBF2[] = BaseVTau(:,l);
@@ -103,10 +103,9 @@ for(int k=0; k<NbasesConv; k++){
             MVTauFaux(j,l) = Vj'*MVTauF;
         }
     }
-
+    
     //Término media-media
     real auxFmm = int2d(Th)(UGradVW(uM,uM,modesConv));
-    cout << auxFmm << endl;
 
     //Término POD-Media
     varf varFmg([u,uY],[v,vY]) = int2d(Th)(UGradVW(v,uM,modesConv));
@@ -135,8 +134,6 @@ for(int k=0; k<NbasesConv; k++){
             auxFGGM(s,i) =MFGGaux(:,i)'*Vs;
         }
     }
-
-    //YA tengo cada término por separado, ahora tengo que crear cada término total
 
     // Término media-media
     MVDTauMMR += auxFmm*MVDTauFaux;

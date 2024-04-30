@@ -27,18 +27,18 @@ Vh3P2 [uEF0,uEF0Y,uEF0P]; // Etapa anterior
 Vh3P2 [uEF1,uEF1Y,uEF1P]; // Etapa 2anterior
 
 //t0 = dt;
-//t0 = TF;
-//TF = TFR;
+t0 = TF;
+TF = TFR;
 // Condicion inicial
 if(t0<1e-6){
     [uEF0,uEF0Y,uEF0P]=[0,0,0]; 
     [uEF1,uEF1Y,uEF1P]=[0,0,0]; 
 }else if(abs(t0-dt)<1e-6){
-    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t0+ ".txt", real, SolX, 0); uEF0[]  = SolX;
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +t0+ ".txt", real, Sol, 0); uEF0[]  = Sol;
     [uEF1,uEF1Y,uEF1P]=[0,0,0]; 
 }else{
-	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t0+ ".txt", real, SolX, 0); uEF0[]  = SolX;
-	readvector("../Snapshots/Vx_" + Reynolds + "_t_" +(t0-dt)+ ".txt", real, Sol1X, 0); uEF1[]  = Sol1X;
+	readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +t0+ ".txt", real, Sol, 0); uEF0[]  = Sol;
+	readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +(t0-dt)+ ".txt", real, Sol1, 0); uEF1[]  = Sol1;
 }
 
 // Matrices fijas

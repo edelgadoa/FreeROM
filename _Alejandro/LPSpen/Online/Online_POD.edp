@@ -23,7 +23,7 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 // Carga de bases
 readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
 int NbasesV = BaseV.m; // Dimension reducido
-readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+readvector("../Offline/Bases/MediaV_"+Reynolds+".txt",real,MediaV,0);
 Vh2P2 [uM,uMY];
 uM[] = MediaV;
 
@@ -133,7 +133,7 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     uEFmod = uEF^2+uEFY^2;
     plot(uEFmod,fill=1,value=1,cmm = "t = "+ti);
 
-    write("Resultados/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
+    write("Resultados/Snap_POD_Re_" + Reynolds + "_t_" +ti+ ".txt", uEF[], 0, 0);
 }
 
 write("Output.txt","Done.",0,1);

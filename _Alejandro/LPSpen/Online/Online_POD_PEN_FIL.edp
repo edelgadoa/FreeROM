@@ -23,7 +23,7 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 // Carga de bases
 readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
 int NbasesV = BaseV.m; // Dimension reducido
-readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+readvector("../Offline/Bases/MediaV_"+Reynolds+".txt",real,MediaV,0);
 Vh2P2 [uM,uMY];
 uM[] = MediaV;
 
@@ -87,7 +87,7 @@ readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".tx
 readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
-int NbasesConv = 4;
+int NbasesConv = 3;
 
 readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
 readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
@@ -106,6 +106,7 @@ readtensor("../Offline/ElementosOffline/MsVTauGMR_"+Reynolds+"_PODtol_"+(-log10(
 
 // Filtrado
 write("Output.txt","--Filtering...",1,1);
+
 readtensor("../Offline/ElementosOffline/MsVDTauR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauRF,0);
 readtensor("../Offline/ElementosOffline/MsVTauR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauRF,0);
 
@@ -117,18 +118,23 @@ readmatrix("../Offline/ElementosOffline/MVTauMMR_FR_" + NbasesConv + "_"+Reynold
 readtensor("../Offline/ElementosOffline/MsVTauMGR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGRF,0)
 readtensor("../Offline/ElementosOffline/MsVTauGMR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMRF,0)
 
-MVDTauMMR = MVDTauMMR - MVDTauMMRF;
+// MVDTauMMR = MVDTauMMR - MVDTauMMRF;
+
 for(int i=0; i<NbasesVDTau; i++){
     MsVDTauR[i] = MsVDTauR[i] - MsVDTauRF[i];
     MsVDTauMGR[i] = MsVDTauMGR[i] - MsVDTauMGRF[i];
     MsVDTauGMR[i] = MsVDTauGMR[i] - MsVDTauGMRF[i];
 }
+
+
 MVTauMMR = MVTauMMR - MVTauMMRF;
+
 for(int i=0; i<NbasesVTau; i++){
     MsVTauR[i] = MsVTauR[i] - MsVTauRF[i];
     MsVTauMGR[i] = MsVTauMGR[i] - MsVTauMGRF[i];
     MsVTauGMR[i] = MsVTauGMR[i] - MsVTauGMRF[i];
 }
+
 write("Output.txt","--Filtering done.",1,1);
 
 write("Output.txt","--Weights...",1,1);
@@ -144,21 +150,7 @@ func real gauss(real r){
 // Vector de parametros velocidades reducidas
 readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
 nit = SnapV.m;
-/*
-real[int,int] Xaux(NbasesV,nit);
-for(int i=0;i<nit;i++){
-    real[int] Snapi = SnapV(:,i);
-    Vh2P2 [sV,sVY]; sV[] = Snapi;
-    [sV,sVY] = [sV-uM,sVY-uMY];
-    for(int j=0;j<NbasesV;j++){
-        real[int] Basej = BaseV(:,j);
-        Vh2P2 [bV,bVY]; bV[] = Basej;
-        Xaux(j,i) = int2d(Th)(bV*sV+bVY*sVY);
-    }
-}
-write("../Offline/RBF/Parametros_" + Reynolds + "_Macro.txt", Xaux, 0, 0);
-*/
-readmatrix("../Offline/RBF/Parametros_" + Reynolds + "_Macro.txt",real,X,0);
+readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
 
 write("Output.txt","--Weights done.",1,1);
 write("Output.txt","RBF Ok.",1,1);
@@ -291,7 +283,7 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     uEFmod = uEF^2+uEFY^2;
     plot(uEFmod,fill=1,value=1,cmm = "t = "+ti);
 
-    write("Resultados/Snap_Re_" + Reynolds + "_F_" + NbasesConv + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ "_Macro.txt", uEF[], 0, 0);
+    write("Resultados/Snap_POD_PEN_FIL_Re_" + Reynolds + "_F_" + NbasesConv + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", uEF[], 0, 0);
 }
 
 write("Output.txt","Done.",0,1);

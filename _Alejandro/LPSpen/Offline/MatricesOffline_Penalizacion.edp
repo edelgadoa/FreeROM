@@ -24,7 +24,7 @@ include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 include "../Auxiliary/Normas.idp"
 
 // Carga de datos
-readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+readvector("../Offline/Bases/MediaV_"+Reynolds+".txt",real,MediaV,0);
 Vh2P2 [uM,uMY]; uM[] = MediaV;
 readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseV,0);
 readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseConv,0);

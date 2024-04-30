@@ -5,4 +5,4 @@ read NP
 
 verbosity=0
 
-ff-mpirun -np $NP MatricesOffline_Filtrado.edp -ns -glut ffglut
+ff-mpirun -np $NP Online_POD_PEN.edp -glut ffglut
