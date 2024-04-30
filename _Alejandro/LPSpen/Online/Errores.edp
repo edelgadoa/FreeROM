@@ -24,41 +24,50 @@ Vh3P2 [uEF,uEFY,uEFP];
 Vh2P2 [u,uY];
 Vh2P2 [uR,uRY];
 Vh2P2 [err,errY];
-int nn = 2*period/dt;
+int nn = (TFR-TF)/dt+1;
 real[int] errorl2(nn);
 real[int] errorEstabR0l2(nn);
+real[int] errorPODl2(nn);
 int m = 0;
 
-TFR = TF;
-TF = TF - period;
+VhP2 umod;
 
-int NbasesConv = 2.;
+int NbasesConv = 4;
+
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
 	write("Output.txt","t = " + ti,0,1);
 
-    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SolX, 0); uEF[] = SolX;
-    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0); uEFY[] = SolY;
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0); uEF[] = Sol;
     [u,uY] = [uEF,uEFY];
     
-    readvector("Datos/VxEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
-    readvector("Datos/VyEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SY, 0); uRY[] = SY;
+    // Galerkin
     
+    readvector("Resultados/Snap_POD_Re_" + Reynolds + "_t_" +ti+ ".txt", real, SPOD, 0); uR[] = SPOD;
     [err,errY] = [u-uR,uY-uRY];
-    VhP2 umod; umod = err^2+errY^2;
+    //umod = err^2+errY^2;
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
-    errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
-    cout << "Error with Estabilization (R=" + NbasesConv + ") (L2) = " << errorl2(m) << endl;
+    errorPODl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error without Estabilization (L2) = " << errorPODl2(m) << endl;
 
-    readvector("Datos/VxEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEX, 0); uR[] = SEX;
-    readvector("Datos/VyEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SEY, 0); uRY[] = SEY;
+    // Penalizacion sin Filtrado
+    readvector("Resultados/Snap_POD_PEN_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SPEN, 0); uR[] = SPEN;
     [err,errY] = [u-uR,uY-uRY];
-    umod = err^2+errY^2;
+    //umod = err^2+errY^2;
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
     cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
-
+    /*
+    // Penalizacion con Filtrado
+    readvector("Resultados/Snap_POD_PEN_FIL_Re_" + Reynolds + "_F_" + NbasesConv + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
+    [err,errY] = [u-uR,uY-uRY];
+    //umod = err^2+errY^2;
+    // plot(umod,fill=1,value=1,cmm="t = "+ti);
+    errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error with Estabilization (R=" + NbasesConv + ") (L2) = " << errorl2(m) << endl;
+    */
     m+=1;
 }
-write("Errores/ErrorEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);
-write("Errores/ErrorEstabR0_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorEstabR0l2, 0, 0);
+write("Errores/ErrorPOD_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorPODl2, 0, 0);
+write("Errores/ErrorPEN_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorEstabR0l2, 0, 0);
+//write("Errores/ErrorFIL_" + NbasesConv + "_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);

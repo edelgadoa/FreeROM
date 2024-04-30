@@ -24,7 +24,8 @@ for(int n=1; n<=nit; n++){
 	write("Output.txt","t = " + ti,0,1);
     real t = t0+n*dt;
 
-    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +t+ ".txt", real, Sol, 0); uEF[]  = Sol;
+    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +t+ ".txt", real, SolX, 0); uEF[]  = SolX;
+    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +t+ ".txt", real, SolY, 0); uEFY[] = SolY;
 
     VhP2 uEFmod;
     uEFmod = uEF^2+uEFY^2;
@@ -32,4 +33,4 @@ for(int n=1; n<=nit; n++){
     Ekin(n-1) = 0.5*int2d(Th)(uEFmod);
 
 }
-write("../Snapshots/Energy_Re_" + Reynolds + ".txt", Ekin, 0, 0);
+write("../Snapshots/Energy" + Reynolds + ".txt", Ekin, 0, 0);

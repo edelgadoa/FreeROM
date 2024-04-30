@@ -39,13 +39,13 @@ include "../Auxiliary/Normas.idp"
 // Carga de datos importantes
 real tS0 = TF-period;
 real tSF = TF;
-real niS = (tSF-tS0)/dt+1;
+int niS = period/dt+1;
 
 //Definicion de Constantes y variables varias
-real[int,int] MBaseV(Vh2P2.ndof,niS+1);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
-real[int,int] MBaseVTau(Vh2P2.ndof,niS+1); real[int] MediaVTau(Vh2P2.ndof);  MediaVTau = 0.;
-real[int,int] MBaseVDTau(VhP2.ndof,niS+1); real[int] MediaVDTau(Vh2P2.ndof); MediaVDTau = 0.;
-real[int,int] MBaseConv(Vh2P2.ndof,niS+1); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
+real[int,int] MBaseV(Vh2P2.ndof,niS);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
+real[int,int] MBaseVTau(Vh2P2.ndof,niS); real[int] MediaVTau(Vh2P2.ndof);  MediaVTau = 0.;
+real[int,int] MBaseVDTau(VhP2.ndof,niS); real[int] MediaVDTau(Vh2P2.ndof); MediaVDTau = 0.;
+real[int,int] MBaseConv(Vh2P2.ndof,niS); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
 
 // Recuperacion de resultados en tiempo
 for(int iter=0; iter <niS; iter++){
@@ -66,7 +66,7 @@ for(int iter=0; iter <niS; iter++){
     //plot(aux,fill=1,value=1,cmm="t="+ti);
 
     MBaseV(:,iter) = SX[];
-    MediaV += 1/(niS+1)*SX[];
+    MediaV += 1./niS*SX[];
 
     // Estabilizador
     VhP1 tau;
@@ -84,17 +84,17 @@ for(int iter=0; iter <niS; iter++){
     //plot(aux,fill=1,value=1,cmm="t="+ti);
     
     MBaseVTau(:,iter) = uxtau[];
-    MediaVTau += 1/(niS+1)*uxtau[];
 
     // Conveccion (2 componentes)
-    Vh2P2 [zx,zy];
+    Vh2P2 [zx,zy];/*
     VhP2 zzx,zzy;
     aux = SX^2; 
     aux2 = SX*SY;
     zzx = dx(aux)+dy(aux2);
     aux = SY^2;
     zzy = dx(aux2)+dy(aux);
-    [zx,zy] = [zzx,zzy];
+    [zx,zy] = [zzx,zzy];*/
+    [zx,zy] = ugradv(SX,SY,SX,SY);
 
     //aux = zx^2+zy^2;
     //plot(aux,fill=1,value=1,cmm="t="+ti);
@@ -107,12 +107,11 @@ for(int iter=0; iter <niS; iter++){
     udtau = SX*dx(tau)+SY*dy(tau);
 
     MBaseVDTau(:,iter) = udtau[];
-    MediaVDTau += 1/(niS+1)*udtau[];
 
     // plot(udtau,fill=1,value=1,cmm="t="+ti);
 }
-
 // Hay que quitar la media
+
 write("Output.txt","Substracting and saving mean value ...",1,1);
 for(int i=0; i <niS; i++){
     MBaseV(:,i) -= MediaV; 

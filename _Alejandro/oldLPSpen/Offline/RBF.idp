@@ -4,7 +4,7 @@
 readmatrix("RBF/DataVTau_" + Reynolds + ".txt",real,SnapVTau,0);
 readmatrix("RBF/DataVDTau_" + Reynolds + ".txt",real,SnapVDTau,0);
 readmatrix("RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
-readvector("Bases/MediaV_" + Reynolds + ".txt",real, mSnapV,0);
+readvector("Bases/MediaV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real, mSnapV,0);
 readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVRBF,0);
 int nSnap = SnapVTau.m;
 int nBasesV = BaseVRBF.m;

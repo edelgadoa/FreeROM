@@ -111,7 +111,7 @@ MediaV /= MBaseV.m;
 for(int i=0; i <niS; i++){
     MBaseV(:,i) -= MediaV; 
 }
-write("Bases/MediaV_" + Reynolds + ".txt", MediaV, 0, 0);
+write("Bases/MediaV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaV, 0, 0);
 
 write("Output.txt","Mean values OK.",1,1);
 

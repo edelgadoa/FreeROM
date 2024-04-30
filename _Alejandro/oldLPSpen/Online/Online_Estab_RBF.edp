@@ -1,0 +1,319 @@
+// Online
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+// include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de bases
+readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+int NbasesV = BaseV.m; // Dimension reducido
+readvector("../Offline/Bases/MediaV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MediaV,0);
+Vh2P2 [uM,uMY];
+uM[] = MediaV;
+
+// Condición inicial
+write("Output.txt","Computing initial conditions...",1,1);
+
+TFR = TF;
+TF = TFR-period;
+
+Vh3P2 [SnapX,SnapY,SnapP];
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +TF+ ".txt", real, SolX, 0);
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +TF+ ".txt", real, SolY, 0);
+SnapX[] = SolX; SnapY[] = SolY;
+
+Vh2P2 [uEFP,uEFPY];
+[uEFP,uEFPY] = [SnapX, SnapY];
+[uEFP,uEFPY] = [uEFP-uM, uEFPY-uMY];
+
+readvector("../Snapshots/Vx_" + Reynolds + "_t_" +(TF-dt)+ ".txt", real, SolPX, 0);
+readvector("../Snapshots/Vy_" + Reynolds + "_t_" +(TF-dt)+ ".txt", real, SolPY, 0);
+SnapX[] = SolPX; SnapY[] = SolPY;
+
+Vh2P2 [uEFP1,uEFP1Y];
+[uEFP1,uEFP1Y] = [SnapX, SnapY];
+[uEFP1,uEFP1Y] = [uEFP1-uM, uEFP1Y-uMY];
+
+real[int] uR(NbasesV), uRP(NbasesV), uRP1(NbasesV);
+for(int i=0;i<NbasesV;i++){
+    Vh2P2 [V,VY];
+    V[]=BaseV(:,i); 
+    uRP(i) = int2d(Th)(V*uEFP+VY*uEFPY);
+    uRP1(i) = int2d(Th)(V*uEFP1+VY*uEFP1Y);
+}
+write("Output.txt","Initial conditions OK",1,1);
+
+// Matrices reducidas
+write("Output.txt","Reading offline matrices...",1,1);
+
+readmatrix("../Offline/ElementosOffline/MMasaR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MMasaR,0);
+readmatrix("../Offline/ElementosOffline/MGradR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MGradR,0);
+readmatrix("../Offline/ElementosOffline/MConvMGR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MConvMGR,0);
+readmatrix("../Offline/ElementosOffline/MConvGMR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MConvGMR,0);
+
+readvector("../Offline/ElementosOffline/bMasaR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bMasaR,0);
+readvector("../Offline/ElementosOffline/bGradR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bGradR,0);
+readvector("../Offline/ElementosOffline/bConvR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,bConvR,0);
+
+readtensor("../Offline/ElementosOffline/MsConvR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsConvR,0)
+
+// Elementos fijos
+real[int,int] MFijaR(NbasesV,NbasesV);
+MFijaR = a0*dtt*MMasaR;
+MFijaR += nu*MGradR;
+MFijaR += MConvMGR;
+
+real[int] bFijoR(NbasesV);
+bFijoR = nu*bGradR;
+bFijoR += bConvR;
+write("Output.txt","Reduced Matrices Ok.",1,1);
+
+// RBF
+write("Output.txt","Reading RBF elements...",1,1);
+readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVTau,0);
+readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
+int NbasesVTau = PesosVTau.m;
+int NbasesVDTau = PesosVDTau.m;
+int NbasesConv = 2;
+
+readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
+readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
+readtensor("../Offline/ElementosOffline/MsVDTauR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0);
+readtensor("../Offline/ElementosOffline/MsVTauR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0);
+
+readmatrix("../Offline/ElementosOffline/MVDTauMMR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVDTauMMR,0);
+readtensor("../Offline/ElementosOffline/MsVDTauMGR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauMGR,0);
+readtensor("../Offline/ElementosOffline/MsVDTauGMR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauGMR,0);
+
+readmatrix("../Offline/ElementosOffline/MVTauMMR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MVTauMMR,0);
+readtensor("../Offline/ElementosOffline/MsVTauMGR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauMGR,0)
+readtensor("../Offline/ElementosOffline/MsVTauGMR_FR_" + NbasesConv + "_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauGMR,0)
+
+// Definicion de la funcion Gaussiana
+func real gauss(real r){
+ 	if((1-r)>=0){
+	    return (1-r);
+    }else{
+	    return 	 0;
+    }
+}
+
+// Vector de parametros velocidades reducidas
+readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
+nit = SnapV.m;
+/*
+real[int,int] X(NbasesV,nit);
+for(int i=0;i<nit;i++){
+    real[int] Snapi = SnapV(:,i);
+    Vh2P2 [sV,sVY]; sV[] = Snapi;
+    [sV,sVY] = [sV-uM,sVY-uMY];
+    for(int j=0;j<NbasesV;j++){
+        real[int] Basej = BaseV(:,j);
+        Vh2P2 [bV,bVY]; bV[] = Basej;
+        X(j,i) = int2d(Th)(bV*sV+bVY*sVY);
+    }
+}
+write("../Offline/RBF/Parametros_" + Reynolds + ".txt", X, 0, 0);
+*/
+readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
+// cout << X << endl;
+/*
+nit = (TFR-TF)/dt+1;
+real[int] X(nit); // Vector de espacio de parametros
+for(int i=0; i<nit; i++){
+    X(i)=TF+i*dt;
+}
+
+real[int,int] gaussRBF(nit,nit);
+real dist;
+for(int i=0; i<nit; i++){
+    for(int j=i; j<nit; j++){
+        dist = abs(X(i)-X(j));
+        gaussRBF(i,j)=gauss(dist);
+        gaussRBF(j,i)=gaussRBF(i,j);
+    }
+}
+*/
+/*
+real[int] VTau(BaseVTau.n);
+VTau=0.;
+int nS = 0;
+real[int] d(nit);
+for(int j=0; j<nit; j++){
+    real[int] dist = X(:,j)-X(:,nS);
+    d(j)=gauss(dist.l2);
+}
+cout << d << endl;
+// real[int] uRBF = PesosVDTau'*d;
+real uRBF;
+for(int i=0; i<NbasesVTau; i++){
+    uRBF = d'*PesosVTau(:,i);
+    VTau += uRBF*BaseVTau(:,i);
+    Vh2P2 [ff,ffY];
+    ff[] = VTau; 
+    plot([ff,ffY],fill=1,wait=1,value=1,cmm="Mode"+(i+1));
+}
+//VhP2 uu;
+Vh2P2 [uu,uuY]; VhP2 modu;
+uu[] = VTau;
+modu = uu^2+uuY^2;
+plot(modu);
+readmatrix("../Offline/RBF/DataVTau_" + Reynolds + ".txt",real,SnapVTau,0);
+uu[] = SnapVTau(:,nS);
+modu = uu^2+uuY^2;
+plot(modu);
+*/
+write("Output.txt","RBF Ok.",1,1);
+
+// Bucle temporal 
+real[int,int] MVarR(NbasesV,NbasesV);
+real[int] bVarR(NbasesV);
+real[int,int] Maux(NbasesV,NbasesV);
+for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
+    
+	write("Output.txt","t = " + ti,0,1);
+
+    // Calculamos los coeficientes de las RBF
+    
+    /*int nn = (ti-TF)/dt-1;
+    real[int] d = gaussRBF(nn,:); // Distancia parametrica
+    */
+    real[int] d(nit);
+    for(int j=0; j<nit; j++){
+        real[int] dist = X(:,j)-uRP;
+        d(j)=gauss(dist.l2);
+    }
+    cout << d << endl;
+
+    real[int] aux=MMasaR*uRP;
+    bVarR = a1*dtt*aux;
+    aux=MMasaR*uRP1;
+    bVarR += a2*dtt*aux;
+    aux = MConvGMR*uRP;
+    bVarR += b0*aux;
+    aux = MConvGMR*uRP1;
+    bVarR += b1*aux;
+
+    // Calculo de los elementos variables
+    real[int,int] MVarConvPR(NbasesV,NbasesV); MVarConvPR = 0.;
+    real[int,int] MVarConvP1R(NbasesV,NbasesV); MVarConvP1R = 0.;
+
+    for(int i=0; i<NbasesV; i++){
+        MVarConvPR += uRP(i)*MsConvR[i];
+        MVarConvP1R += uRP1(i)*MsConvR[i];
+    }
+    MVarR = b0*MVarConvPR;
+    MVarR += b1*MVarConvP1R;
+
+    // Elementos de la estabilizacion (u grad tau)
+    real[int] uVDTauRBF(NbasesVDTau);
+    real[int,int] MVarVDTauPR(NbasesV,NbasesV); MVarVDTauPR = 0.;
+    real[int,int] MVarVDTauP1R(NbasesV,NbasesV); MVarVDTauP1R = 0.;
+    real[int] bVarVDTauMMR(NbasesV); bVarVDTauMMR = 0.;
+    real[int,int] MVarVDTauMGR(NbasesV,NbasesV); MVarVDTauMGR = 0.;
+    real[int,int] MVDTauGMRaux(NbasesV,NbasesV); MVDTauGMRaux = 0.;
+    real[int] bVarVDTauGMPR(NbasesV); bVarVDTauGMPR = 0.;
+    real[int] bVarVDTauGMP1R(NbasesV); bVarVDTauGMP1R = 0.;
+
+    for(int k=0; k<NbasesVDTau; k++){
+        uVDTauRBF(k) = d'*PesosVDTau(:,k);
+        bVarVDTauMMR += uVDTauRBF(k)*MVDTauMMR(:,k);
+        Maux = uVDTauRBF(k)*MsVDTauMGR[k];
+        MVarVDTauMGR += Maux;
+        MVDTauGMRaux = uVDTauRBF(k)*MsVDTauGMR[k];
+        for(int j=0; j<NbasesV; j++){
+            Maux = uVDTauRBF(k)*MsVDTauR[j*NbasesVDTau+k];
+            MVarVDTauPR += uRP(j)*Maux;
+            MVarVDTauP1R += uRP1(j)*Maux;
+            bVarVDTauGMPR += uRP(j)*MVDTauGMRaux(:,j);
+            bVarVDTauGMP1R += uRP1(j)*MVDTauGMRaux(:,j);
+        }
+    }
+
+    MVarR -= MVarVDTauMGR;
+    MVarR -= b0*MVarVDTauPR;
+    MVarR -= b1*MVarVDTauP1R;
+    bVarR -= bVarVDTauMMR;
+    bVarR -= b0*bVarVDTauGMPR;
+    bVarR -= b1*bVarVDTauGMP1R;
+
+    // Elementos de la estabilizacion (u tau)
+    real[int] uVTauRBF(NbasesVTau);
+    real[int,int] MVarVTauPR(NbasesV,NbasesV); MVarVTauPR = 0.;
+    real[int,int] MVarVTauP1R(NbasesV,NbasesV); MVarVTauP1R = 0.;
+    real[int] bVarVTauMMR(NbasesV); bVarVTauMMR = 0.;
+    real[int,int] MVarVTauMGR(NbasesV,NbasesV); MVarVTauMGR = 0.;
+    real[int,int] MVTauGMRaux(NbasesV,NbasesV); MVTauGMRaux = 0.;
+    real[int] bVarVTauGMPR(NbasesV); bVarVTauGMPR = 0.;
+    real[int] bVarVTauGMP1R(NbasesV); bVarVTauGMP1R = 0.;
+
+
+    for(int k=0; k<NbasesVTau; k++){
+        uVTauRBF(k) = d'*PesosVTau(:,k);
+        bVarVTauMMR += uVTauRBF(k)*MVTauMMR(:,k);
+        Maux = uVTauRBF(k)*MsVTauMGR[k];
+        MVarVTauMGR += Maux;
+        MVTauGMRaux = uVTauRBF(k)*MsVTauGMR[k];
+        for(int j=0; j<NbasesV; j++){
+            Maux = uVTauRBF(k)*MsVTauR[j*NbasesVTau+k];
+            MVarVTauPR += uRP(j)*Maux;
+            MVarVTauP1R += uRP1(j)*Maux;
+            bVarVTauGMPR += uRP(j)*MVTauGMRaux(:,j);
+            bVarVTauGMP1R += uRP1(j)*MVTauGMRaux(:,j);
+        }
+    }
+
+    MVarR -= MVarVTauMGR;
+    MVarR -= b0*MVarVTauPR;
+    MVarR -= b1*MVarVTauP1R;
+    bVarR -= bVarVTauMMR;
+    bVarR -= b0*bVarVTauGMPR;
+    bVarR -= b1*bVarVTauGMP1R;
+
+    // Sistema lineal
+    matrix MFinalR;
+    real[int] bFinalR(NbasesV);
+
+    MFinalR = MFijaR;
+    MFinalR += MVarR;
+
+    bFinalR = -bFijoR;
+    bFinalR -= bVarR;
+
+    // Resolucion
+	set(MFinalR, solver=sparsesolver);
+	uR=MFinalR^-1*bFinalR;
+
+    // Actualizacion
+    uRP1 = uRP;
+    uRP = uR;
+
+    // Representacion
+    Vh2P2 [uEF,uEFY];
+    uEF[] = BaseV*uR;
+    [uEF,uEFY] = [uEF+uM,uEFY+uMY];
+    VhP2 uEFmod;
+    uEFmod = uEF^2+uEFY^2;
+    plot(uEFmod,fill=1,value=1,cmm = "t = "+ti);
+
+    write("Datos/VxEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", uEF[], 0, 0);
+    write("Datos/VyEstabR_" + NbasesConv + "_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", uEFY[], 0, 0);
+}
+
+write("Output.txt","Done.",0,1);
