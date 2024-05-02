@@ -33,7 +33,7 @@ int niterFE = 1000;
 real epsFE = 1e-7;
 
 // Parametros para el problema ROM
-int niterRB = 2000;
+int niterRB = 5000;
 real epsRB = 1e-6; //parada de problema reducido
 
 real epsGreedy = 5e-5;

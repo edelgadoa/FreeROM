@@ -120,24 +120,24 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 
 VhP2[int] BaseP(Nbases);
-Vh3P2[int] [BaseV, BaseVY, BaseVZ](Nbases);
+Vh3P2[int] [BaseV, BaseVY, BaseVZ](2*Nbases);
 
-VhP2[int] BaseVel(Nbases);
-VhP2[int] BaseVelY(Nbases);
-VhP2[int] BaseVelZ(Nbases);
+VhP2[int] BaseVel(2*Nbases);
+VhP2[int] BaseVelY(2*Nbases);
+VhP2[int] BaseVelZ(2*Nbases);
 
-Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](Nbases);
+Vh3P2[int] [FBaseV, FBaseVY, FBaseVZ](2*Nbases);
 
-VhP2[int] FBaseVel(Nbases), FBaseVelY(Nbases), FBaseVelZ(Nbases);
+VhP2[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases), FBaseVelZ(2*Nbases);
 
 // VhP1dc[int] FPdX(Nbases), FPdY(Nbases), FPdZ(Nbases);
 
-VhP1dc[int] FVdX(Nbases), FVdY(Nbases), FVdZ(Nbases);
-VhP1dc[int] FVYdX(Nbases),FVYdY(Nbases), FVYdZ(Nbases);
-VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
+VhP1dc[int] FVdX(2*Nbases), FVdY(2*Nbases), FVdZ(2*Nbases);
+VhP1dc[int] FVYdX(2*Nbases),FVYdY(2*Nbases), FVYdZ(2*Nbases);
+VhP1dc[int] FVZdX(2*Nbases),FVZdY(2*Nbases), FVZdZ(2*Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
-real[int, int] MBaseV(Vh3P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+real[int, int] MBaseV(Vh3P2.ndof, 2*Nbases), MBaseP(VhP2.ndof, Nbases);
 
 
 /////////////////////////////////////////
@@ -231,10 +231,10 @@ for (int i=0; i<Nbases; i++){
 
 		include "../FOM/FE_VMS_LPS_3D.idp"	
 		
-		[BaseV[i], BaseVY[i], BaseVZ[i]] = [uEF, uEFY, uEFZ];
+		[BaseV[2*i], BaseVY[2*i], BaseVZ[2*i]] = [uEF, uEFY, uEFZ];
 		BaseP[i] = uEFP;
 		
-		BaseVel[i] = uEF; BaseVelY[i] = uEFY; BaseVelZ[i] = uEFZ;// Para construir las funciones filtradas después
+		BaseVel[2*i] = uEF; BaseVelY[2*i] = uEFY; BaseVelZ[2*i] = uEFZ;// Para construir las funciones filtradas después
 		
 		real[int] ReSnapshotsNEW(ReSnapshots.n + 1); //Voy a redefinir el vector con los Snapshots calculados
 		ReSnapshotsNEW(0:ReSnapshots.n - 1) = ReSnapshots;
@@ -246,9 +246,9 @@ for (int i=0; i<Nbases; i++){
         // ESTO LO TENGO QUE CAMBIAR PARA GUARDARLO EN GOLBAL
 		VhP2G SnapX, SnapY, SnapZ, SnapP;
 		
-		SnapX[] = reduceSolution(BaseVel[i][], SnapX[], MatVhP2.D, mapVhP2);
-		SnapY[] = reduceSolution(BaseVelY[i][], SnapY[], MatVhP2.D, mapVhP2);
-		SnapZ[] = reduceSolution(BaseVelZ[i][], SnapZ[], MatVhP2.D, mapVhP2);
+		SnapX[] = reduceSolution(BaseVel[2*i][], SnapX[], MatVhP2.D, mapVhP2);
+		SnapY[] = reduceSolution(BaseVelY[2*i][], SnapY[], MatVhP2.D, mapVhP2);
+		SnapZ[] = reduceSolution(BaseVelZ[2*i][], SnapZ[], MatVhP2.D, mapVhP2);
 		SnapP[] = reduceSolution(BaseP[i][], SnapP[], MatVhP2.D, mapVhP2);
 		
 		// Guardamos los snapshots 
@@ -263,64 +263,83 @@ for (int i=0; i<Nbases; i++){
 		
 		readvector("../Snapshots/Vx_" + Reynolds + ".txt", real, SolX, 0);
 		SnapX[] = SolX;
-		BaseVel[i][] = SnapX[](mapVhP2); //Cargo las bases en local
+		BaseVel[2*i][] = SnapX[](mapVhP2); //Cargo las bases en local
 		readvector("../Snapshots/Vy_" + Reynolds + ".txt", real, SolY, 0);
 		SnapY[] = SolY;
-		BaseVelY[i][] = SnapY[](mapVhP2);
+		BaseVelY[2*i][] = SnapY[](mapVhP2);
 		readvector("../Snapshots/Vz_" + Reynolds + ".txt", real, SolZ, 0);
 		SnapZ[] = SolZ;
-		BaseVelZ[i][] = SnapZ[](mapVhP2);
+		BaseVelZ[2*i][] = SnapZ[](mapVhP2);
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
 		// real MedPres = 
 		// SnapP[] -= int3d(ThG)(SnapP);
 		BaseP[i][] = SnapP[](mapVhP2);		
 	
-		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
+		[BaseV[2*i], BaseVY[2*i], BaseVZ[2*i]] = [BaseVel[2*i], BaseVelY[2*i], BaseVelZ[2*i]];
 			
 	}
+	mpi(cout<<"Calculo Supremizer"<<endl;)
+	include "supremizer.idp"
+	
 	//savevtk("BaseEIM.vtu", Th, [BaseV[i], BaseVY[i], BaseVZ[i]],BaseP[i], dataname = "Vel Pres", order=fforder);//, communicator = mpiCommSelf);
 	
 	mpi(cout<<"GramSchmidt"<<endl;)
-	include "GramSchmidt.idp"
+	// include "GramSchmidt.idp"
 	
 	VhP2[int] BasePi(i+1);
-	Vh3P2[int] [BaseVi, BaseViY, BaseViZ](i+1);
-	real[int, int] MBaseVi(MatVh3P2.n, i+1), MBasePi(MatVhP2.n, i+1);
+	Vh3P2[int] [BaseVi, BaseViY, BaseViZ](2*(i+1));
+	real[int, int] MBaseVi(MatVh3P2.n, 2*(i+1)), MBasePi(MatVhP2.n, i+1);
 
 	for (int k=0;k<=i;k++){
 		BasePi[k][] = BaseP[k][];
-		BaseVi[k][] = BaseV[k][];
+		BaseVi[2*k][] = BaseV[2*k][];
+		BaseVi[2*k+1][] = BaseV[2*k+1][]; //para el supremizer
 	}
 	
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC) para la construcccion de matrices
 	ChangeNumbering(MatVhP2, BasePi, MBasePi); 
 	ChangeNumbering(MatVh3P2, BaseVi, MBaseVi);
 
-	MBaseV(:,i) = BaseV[i][];
+	MBaseV(:,2*i) = BaseV[2*i][];
+	MBaseV(:,2*i+1) = BaseV[2*i+1][];
 	MBaseP(:,i) = BaseP[i][];
 
 
 	// Actualizo las soluciones filtradas
-	 FBaseV[i][] = IPh3P23P1 * BaseV[i][];
+	 FBaseV[2*i][] = IPh3P23P1 * BaseV[2*i][];
 	//
-	 FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][]; FBaseVelZ[i][] = IPhP2P1*BaseVelZ[i][];
+	 FBaseVel[2*i][] = IPhP2P1*BaseVel[2*i][]; FBaseVelY[2*i][] = IPhP2P1*BaseVelY[2*i][]; FBaseVelZ[2*i][] = IPhP2P1*BaseVelZ[2*i][];
 	//
-	 FVdX[i][] = DXP2*FBaseVel[i][]; FVdY[i][] = DYP2*FBaseVel[i][]; FVdZ[i][] = DZP2*FBaseVel[i][];
-	 FVYdX[i][] = DXP2*FBaseVelY[i][]; FVYdY[i][] = DYP2*FBaseVelY[i][]; FVYdZ[i][] = DZP2*FBaseVelY[i][];
-	 FVZdX[i][] = DXP2*FBaseVelZ[i][]; FVZdY[i][] = DYP2*FBaseVelZ[i][]; FVZdZ[i][] = DZP2*FBaseVelZ[i][];
+	 FVdX[2*i][] = DXP2*FBaseVel[2*i][]; FVdY[2*i][] = DYP2*FBaseVel[2*i][]; FVdZ[2*i][] = DZP2*FBaseVel[2*i][];
+	 FVYdX[2*i][] = DXP2*FBaseVelY[2*i][]; FVYdY[2*i][] = DYP2*FBaseVelY[2*i][]; FVYdZ[2*i][] = DZP2*FBaseVelY[2*i][];
+	 FVZdX[2*i][] = DXP2*FBaseVelZ[2*i][]; FVZdY[2*i][] = DYP2*FBaseVelZ[2*i][]; FVZdZ[2*i][] = DZP2*FBaseVelZ[2*i][];
 	 
-	 FVdX[i][] .*= DP1dc; FVdY[i][] .*= DP1dc; FVdZ[i][] .*= DP1dc;
-	 FVYdX[i][] .*= DP1dc; FVYdY[i][] .*= DP1dc; FVYdZ[i][] .*= DP1dc;
-	 FVZdX[i][] .*= DP1dc; FVZdY[i][] .*= DP1dc; FVZdZ[i][] .*= DP1dc;
+	 FVdX[2*i][] .*= DP1dc; FVdY[2*i][] .*= DP1dc; FVdZ[2*i][] .*= DP1dc;
+	 FVYdX[2*i][] .*= DP1dc; FVYdY[2*i][] .*= DP1dc; FVYdZ[2*i][] .*= DP1dc;
+	 FVZdX[2*i][] .*= DP1dc; FVZdY[2*i][] .*= DP1dc; FVZdZ[2*i][] .*= DP1dc;
 	 
+	 
+	 
+ 	// Actualizo las soluciones filtradas (SUPREMIZER)
+ 	 FBaseV[2*i+1][] = IPh3P23P1 * BaseV[2*i+1][];
+ 	//
+ 	 FBaseVel[2*i+1][] = IPhP2P1*BaseVel[2*i+1][]; FBaseVelY[2*i+1][] = IPhP2P1*BaseVelY[2*i+1][]; FBaseVelZ[2*i+1][] = IPhP2P1*BaseVelZ[2*i+1][];
+ 	//
+ 	 FVdX[2*i+1][] = DXP2*FBaseVel[2*i+1][]; FVdY[2*i+1][] = DYP2*FBaseVel[2*i+1][]; FVdZ[2*i+1][] = DZP2*FBaseVel[2*i+1][];
+ 	 FVYdX[2*i+1][] = DXP2*FBaseVelY[2*i+1][]; FVYdY[2*i+1][] = DYP2*FBaseVelY[2*i+1][]; FVYdZ[2*i+1][] = DZP2*FBaseVelY[2*i+1][];
+ 	 FVZdX[2*i+1][] = DXP2*FBaseVelZ[2*i+1][]; FVZdY[2*i+1][] = DYP2*FBaseVelZ[2*i+1][]; FVZdZ[2*i+1][] = DZP2*FBaseVelZ[2*i+1][];
+	 
+ 	 FVdX[2*i+1][] .*= DP1dc; FVdY[2*i+1][] .*= DP1dc; FVdZ[2*i+1][] .*= DP1dc;
+ 	 FVYdX[2*i+1][] .*= DP1dc; FVYdY[2*i+1][] .*= DP1dc; FVYdZ[2*i+1][] .*= DP1dc;
+ 	 FVZdX[2*i+1][] .*= DP1dc; FVZdY[2*i+1][] .*= DP1dc; FVZdZ[2*i+1][] .*= DP1dc;
 	//
 	//FPdX[i][] = IPhDXP2*BaseP[i][]; FPdY[i][] = IPhDYP2*BaseP[i][];
 	//
 	
 	// Defino el nuevo producto escalar para la convección
     Vh3P2 [BV, BVY, BVZ];
-    BV[] = BaseV[i][];
+    BV[] = BaseV[2*i][];
 	varf ConvPE([uu,uuY,uuZ], [v,vY,vZ]) = int3d(Th)(Antisimetric(BV,uu,v));
 	{
 		matrix TMP = ConvPE(Vh3P2,Vh3P2);
@@ -328,7 +347,19 @@ for (int i=0; i<Nbases; i++){
 		macro init(i) [i, i, i] // EOM
 		MatCreate(Th, ConvPEM[i], [P2,P2,P2]);// = MatAVh3P2;
         //ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
-		ConvPEM[i] = TMP; 
+		ConvPEM[2*i] = TMP; 
+	}
+	
+	//SUPREMIZER
+    BV[] = BaseV[2*i+1][];
+
+	{
+		matrix TMP = ConvPE(Vh3P2,Vh3P2);
+		macro def(i) [i, iY, iZ] // EOM
+		macro init(i) [i, i, i] // EOM
+		MatCreate(Th, ConvPEM[2*i+1], [P2,P2,P2]);// = MatAVh3P2;
+        //ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
+		ConvPEM[2*i+1] = TMP; 
 	}
 	
 	// real antisim=int3d(ThL)(antisimetric(BV,BVY,BVZ,BaseV[i], BaseVY[i],BaseVZ[i],BaseV[i], BaseVY[i],BaseVZ[i]));

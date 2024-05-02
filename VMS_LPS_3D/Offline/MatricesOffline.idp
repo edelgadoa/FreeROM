@@ -140,6 +140,7 @@ for (int s=0; s<Mbases; s++){
     equal(SmagoRB[s],SmagoRBG(0:i,0:i))
 	
 }
+mpi(cout<<"Smago"<<SmagoRB<<endl;)
 
 
 for (int s=0; s<Taubases; s++){
@@ -151,7 +152,7 @@ for (int s=0; s<Taubases; s++){
 	
 }
 
-mpi(cout<<"StabP"<<StabPRB<<endl;)
+//mpi(cout<<"StabP"<<StabPRB<<endl;)
 
 //
 // // LPS
@@ -359,7 +360,7 @@ mpiAllReduce(bConvLRBL, bConvLRBG, mpiCommWorld, mpiSUM);
 
 for (int s=0; s<Mbases; s++){
 	real[int] bSmagoRBaux(SmagoPEM[s].n);
-	MatMult(SmagoPEM[s], LevVB, bSmagoRBaux);
+	MatMult(SmagoPEM[s], FLevVB, bSmagoRBaux);
 	real[int] bSmagoRBL = MBaseVi'*bSmagoRBaux;
 	mpiAllReduce(bSmagoRBL, bSmagoRBGs, mpiCommWorld, mpiSUM);
 	bSmagoRBG(s,:) = bSmagoRBGs;

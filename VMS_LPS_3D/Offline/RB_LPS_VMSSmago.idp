@@ -18,7 +18,7 @@ MRBV = MRBV + ConvLRBi;
 MRBP = PenRBi;	
 // mpi(cout<<MRBP<<endl;)
 
-MRBP = MRBP + StabhkRBs;
+// MRBP = MRBP + StabhkRBs;
 
 // bDiffRBi = bDiffRBG(0:2*I-1);
 
@@ -55,7 +55,7 @@ for (int iN=0; iN<=niterRB; iN++){
 		real[int, int] Gradint(9,I);
 		Gradint = GradPM[s](0:8, 0:I-1);
 		GraduN = Gradint * uN;
-		// GraduN = GraduN + GradPMLev[s];
+		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
 	// mpi(cout<<bEIMS<<endl;)
@@ -63,8 +63,9 @@ for (int iN=0; iN<=niterRB; iN++){
 	
 	//cout<<"it: "<<iN<<",Proc: "<<mpirank<<endl<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBN(I, I);
-		SmagoRBN = SmagoRB[s];
+		real[int,int] SmagoRBint(2*Nbases, 2*Nbases), SmagoRBN(I, I);
+		SmagoRBint = SmagoRB[s];
+		SmagoRBN = SmagoRBint(0:I-1, 0:I-1);
 		SmagoRBN = sigmaEIMS(s)*SmagoRBN;
 		SmagoRBi += SmagoRBN; 
 	}
@@ -104,8 +105,9 @@ for (int iN=0; iN<=niterRB; iN++){
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
 	// mpi(cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;)
 	for (int s=0; s<Taubases; s++){
-		real[int,int] StabPRBN(I, I);
-		StabPRBN = StabPRB[s](0:I-1, 0:I-1);
+		real[int,int] StabPRBint(Nbases, Nbases), StabPRBN(I, I);
+		StabPRBint = StabPRB[s];
+		StabPRBN = StabPRBint(0:I-1, 0:I-1);
 		StabPRBN = sigmaEIMTau(s)*StabPRBN;
 		StabPRBi += StabPRBN; 
 	}
@@ -125,7 +127,7 @@ for (int iN=0; iN<=niterRB; iN++){
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
 	MRBFV += SmagoRBi; 
-	//MRBFP += StabPRBi;
+	MRBFP += StabPRBi;
 	
 	
 	
@@ -135,7 +137,7 @@ for (int iN=0; iN<=niterRB; iN++){
 	//mpi(cout<<"-bdiff: "<<bRB<<endl;)
 	bRB -= bConvLRBG;
 	//mpi(cout<<"-bconvL: "<<bRB<<endl;)
-	// bRB -= bSmagoRBi;
+	bRB -= bSmagoRBi;
 	//mpi(cout<<"-bSmago: "<<bSmagoRBi<<endl;)
 	//mpi(cout<<"bRB="<<bRB<<endl;)
 	

@@ -107,7 +107,7 @@ include "../Auxiliary/betas.idp"
 
 
 //Definicion de Constantes y variables varias
-int Nbases = 3; 
+int Nbases = 5; 
 
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
@@ -168,7 +168,7 @@ mpi(cout<<"matrices alocadas"<<endl;)
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 
-Reynolds = 1500; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+Reynolds = 1000; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
 MuBest(0) = Reynolds;
 
 // Calculo la constante de Sobolev

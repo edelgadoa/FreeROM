@@ -42,7 +42,7 @@ include "Allocate_matrices_local.idp"
 //     }
 // }
 
-real[int,int] DiffRBaux(DiffPEM.n, MBaseVi.m), DivPRBaux(DiffPEM.n, MBaseVi.m), ConvLRBaux(ConvLevPEM.n, MBaseVi.m), 
+real[int,int] DiffRBaux(DiffPEM.n, MBaseVi.m), DivPRBaux(DivPPEM.n, MBaseVi.m), ConvLRBaux(ConvLevPEM.n, MBaseVi.m), 
 			  DTRBaux(DTPEM.n, MBaseVi.m), PenRBaux(PenPEM.n, MBasePi.m), StabhkRBaux(StabhkPEM.n, MBasePi.m);
 
 MatMatMult(DiffPEM, MBaseVi, DiffRBaux);
@@ -101,13 +101,13 @@ mpi(cout<<"Convection matrix"<<endl;)
 // 	ConvRB[s] = Cint;
 // }
 
-for(int s=0; s<=i;s++){
-	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVi.m), ConvRBG(i+1, i+1);
+for(int s=0; s<=2*i;s++){
+	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVi.m), ConvRBG(2*(i+1), 2*(i+1));
 	MatMatMult(ConvPEM[s], MBaseVi, ConvRBaux);
 	real[int,int] ConvRBL = MBaseVi'*ConvRBaux;
 	//cout<<ConvRBL<<endl;
 	mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
-	equal(ConvRB[s],ConvRBG(0:i,0:i))
+	equal(ConvRB[s],ConvRBG(0:2*i+1,0:2*i+1))
 	//mpi(cout<<"conv MatrixG i=0"<<ConvRB[]<<endl;)
 }
 //cout<<" "<<endl<<endl<<endl;
@@ -133,11 +133,11 @@ mpi(cout<<"conv Matrix"<<endl<<ConvRB<<endl;)
 //
 
 for (int s=0; s<Mbases; s++){
-    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVi.m), SmagoRBG(i+1, i+1);
+    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVi.m), SmagoRBG(2*(i+1), 2*(i+1));
 	MatMatMult(SmagoPEM[s], MBaseVi, SmagoRBaux);
 	real[int,int] SmagoRBL = MBaseVi'*SmagoRBaux;
 	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
-    equal(SmagoRB[s],SmagoRBG(0:i,0:i))
+    equal(SmagoRB[s],SmagoRBG(0:2*i+1,0:2*i+1))
 	
 }
 
@@ -181,17 +181,30 @@ for (int s=0; s<Mbases; s++){
     Dtk = 0; DtkL = 0;
 
     if (PuntosMSmagoL(s)>=0){
-        DtkL(0,i) = FVdX[i][](PuntosMSmagoL(s));
-        DtkL(1,i) = FVdY[i][](PuntosMSmagoL(s));
-        DtkL(2,i) = FVdZ[i][](PuntosMSmagoL(s));
+        DtkL(0,2*i) = FVdX[2*i][](PuntosMSmagoL(s));
+        DtkL(1,2*i) = FVdY[2*i][](PuntosMSmagoL(s));
+        DtkL(2,2*i) = FVdZ[2*i][](PuntosMSmagoL(s));
 
-        DtkL(3,i) = FVYdX[i][](PuntosMSmagoL(s));
-        DtkL(4,i) = FVYdY[i][](PuntosMSmagoL(s));
-        DtkL(5,i) = FVYdZ[i][](PuntosMSmagoL(s));
+        DtkL(3,2*i) = FVYdX[2*i][](PuntosMSmagoL(s));
+        DtkL(4,2*i) = FVYdY[2*i][](PuntosMSmagoL(s));
+        DtkL(5,2*i) = FVYdZ[2*i][](PuntosMSmagoL(s));
 
-        DtkL(6,i) = FVZdX[i][](PuntosMSmagoL(s));
-        DtkL(7,i) = FVZdY[i][](PuntosMSmagoL(s));
-        DtkL(8,i) = FVZdZ[i][](PuntosMSmagoL(s));
+        DtkL(6,2*i) = FVZdX[2*i][](PuntosMSmagoL(s));
+        DtkL(7,2*i) = FVZdY[2*i][](PuntosMSmagoL(s));
+        DtkL(8,2*i) = FVZdZ[2*i][](PuntosMSmagoL(s));
+		
+		// SUPREMIZER
+        DtkL(0,2*i+1) = FVdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(1,2*i+1) = FVdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(2,2*i+1) = FVdZ[2*i+1][](PuntosMSmagoL(s));
+
+        DtkL(3,2*i+1) = FVYdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(4,2*i+1) = FVYdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(5,2*i+1) = FVYdZ[2*i+1][](PuntosMSmagoL(s));
+
+        DtkL(6,2*i+1) = FVZdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(7,2*i+1) = FVZdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(8,2*i+1) = FVZdZ[2*i+1][](PuntosMSmagoL(s));
 
         // DtkL *= WeightPMSmago(s);
         //MbasesL++;

@@ -3,8 +3,8 @@
 /////////////// 
 
 // Definicion de las Matrices Reducidas fijas Globales para el cálculo en paralelo
-real[int,int] DiffRBG(i+1, i+1), DivPRBG(i+1, i+1), PenRBG(i+1, i+1), 
-			  ConvLRBG(i+1, i+1), DTRBG(i+1, i+1), StabhkRBG(i+1, i+1);
+real[int,int] DiffRBG(2*(i+1), 2*(i+1)), DivPRBG(i+1, 2*(i+1)), PenRBG(i+1, i+1), 
+			  ConvLRBG(2*(i+1), 2*(i+1)), DTRBG(2*(i+1), 2*(i+1)), StabhkRBG(i+1, i+1);
 			  
 DiffRBG = 0;
 DivPRBG = 0;
@@ -14,8 +14,8 @@ DTRBG = 0;
 StabhkRBG = 0;
 
 // Definicion de los segundos miembros Globales
-real[int] bDiffRBG(i+1), bConvLRBG(i+1), bDTRBG(i+1), bSmagoRBGs(i+1);			   
-real[int,int] bSmagoRBG(Mbases, i+1);
+real[int] bDiffRBG(2*(i+1)), bConvLRBG(2*(i+1)), bDTRBG(2*(i+1)), bSmagoRBGs(2*(i+1));			   
+real[int,int] bSmagoRBG(Mbases, 2*(i+1));
 
 bDiffRBG = 0;
 bConvLRBG = 0;

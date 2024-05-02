@@ -53,9 +53,9 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	real nuRB = 1./MuTrain(iRB);
 	
 	// Resuelvo el problema 
-	real[int] uRBv(2*I); // Vectores donde almaceno la Solución Reducida
-	real[int,int] MRB(2*I,2*I); // Matriz para resolver el sistema
-	real[int] bRB(2*I); // Segundo miembro para resolver el sistema
+	real[int] uRBv(3*I); // Vectores donde almaceno la Solución Reducida
+	real[int,int] MRB(3*I,3*I); // Matriz para resolver el sistema
+	real[int] bRB(3*I); // Segundo miembro para resolver el sistema
 	
 	include "RB_LPS_VMSSmago.idp"
 	// mpi(cout<<uRBv<<endl;)
@@ -63,12 +63,12 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	Vh3P2 [uRB, uRBY, uRBZ];
 	VhP2 uRBP;
 	
-	real[int,int] MBaseVint(Vh3P2.ndof, I), MBasePint(VhP2.ndof, I); // Matrices intermedias
-	MBaseVint = MBaseV(0:Vh3P2.ndof-1, 0:I-1);
+	real[int,int] MBaseVint(Vh3P2.ndof, 2*I), MBasePint(VhP2.ndof, I); // Matrices intermedias
+	MBaseVint = MBaseV(0:Vh3P2.ndof-1, 0:2*I-1);
 	MBasePint = MBaseP(0:VhP2.ndof-1, 0:I-1);
 	
-	uRB[] = MBaseVint*uRBv(0:I-1);
-	uRBP[] = MBasePint*uRBv(I:2*I-1);
+	uRB[] = MBaseVint*uRBv(0:2*I-1);
+	uRBP[] = MBasePint*uRBv(2*I:3*I-1);
 	
 	
 	if(MuTrain(iRB)==1000 || MuTrain(iRB)==1500){

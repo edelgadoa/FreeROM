@@ -26,7 +26,7 @@
 ////////////////////////////////////////////
 
 
-
+// Pensar
 
 {
 	
@@ -48,6 +48,30 @@
 
 }
 // Para el filtrado
+BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i]; BaseVelZ[i] = BaseVZ[i];
+
+// SUPREMIZER 
+{
+	
+	real[int,int] MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:2*i-1), MBasePETSc(MatVh3P2.n, i);
+	ChangeNumbering(MatVh3P2, MBaseVi, MBasePETSc);
+	
+	real[int] BaseVi;
+	ChangeNumbering(MatVh3P2, BaseV[i][], BaseVi);
+	
+	BaseVi =  OrtoX(BaseVi, MBasePETSc, MPescV);
+    BaseVi =  OrtoX(BaseVi, MBasePETSc, MPescV);
+	ChangeNumbering(MatVh3P2, BaseV[i][], BaseVi, inverse=true, exchange = true);
+	// mpi(cout<<"he cambiado el numbering"<<endl;)
+	// BaseVi =  OrtoX(BaseVi, MBaseVi, MNormaVel);
+	// BaseV[i][] = OrtoX(BaseVi, MBaseVi, MNormaVel);
+
+	// Doble Ortonormalización
+	// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MNormaVel);
+
+}
+
+Para el filtrado
 BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i]; BaseVelZ[i] = BaseVZ[i];
 
 {

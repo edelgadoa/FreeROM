@@ -11,7 +11,8 @@
 
 {
 	
-	real[int, int] MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1), MBasePETSc(MatVhP2.n, i);
+	real[int, int] MBasePi(VhP2.ndof, i), MBasePETSc(MatVhP2.n, i);
+	MBasePi = MBaseP(0:VhP2.ndof-1, 0:i-1);
 	ChangeNumbering(MatVhP2, MBasePi, MBasePETSc);
     real[int] BasePi;
     ChangeNumbering(MatVhP2, BaseP[i][], BasePi);
@@ -30,7 +31,8 @@
 
 {
 	
-	real[int,int] MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:i-1), MBasePETSc(MatVh3P2.n, i);
+	real[int,int] MBaseVi(Vh3P2.ndof, i), MBasePETSc(MatVh3P2.n, i);
+	MBaseVi = MBaseV(0:Vh3P2.ndof-1, 0:i-1); 
 	ChangeNumbering(MatVh3P2, MBaseVi, MBasePETSc);
 	
 	real[int] BaseVi;

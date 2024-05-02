@@ -79,7 +79,7 @@ for (int k=0;k<Mbases;k++){
 	SmagoRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
 }
 for (int k=0;k<Taubases;k++){
-	real[int,int] aux(2*Nbases,2*Nbases);
+	real[int,int] aux(Nbases,Nbases);
 	aux = 0;
-	StabPRB[k] = aux(0:2*Nbases-1,0:2*Nbases-1);
+	StabPRB[k] = aux(0:Nbases-1,0:Nbases-1);
 }

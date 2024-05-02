@@ -13,13 +13,13 @@ for(int i=0; i<nSnapshots; i++){
 
 	
 	BVX[i][] =  SnapshotVx;
-	// BVX[i] = BVX[i] + LevG;
+	BVX[i] = BVX[i] + LevG;
 	
 	BVY[i][] =  SnapshotVy;
-	// BVY[i] = BVY[i] + LevY;
+	BVY[i] = BVY[i] + LevY;
 	
 	BVZ[i][] =  SnapshotVz;
-	// BVZ[i] = BVZ[i] + LevZ;
+	BVZ[i] = BVZ[i] + LevZ;
 
 	{
 		VhP2G udcAux;

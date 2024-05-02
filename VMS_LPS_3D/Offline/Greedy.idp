@@ -85,6 +85,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	}
 	
 	VhP1dc uRBdX, uRBdY, uRBdZ, uRBYdX, uRBYdY, uRBYdZ, uRBZdX, uRBZdY, uRBZdZ;
+	uRB[] += LevV[]; 
 	
 	{ 
 		VhP2 uRBvel, uRBvelY, uRBvelZ;
@@ -96,7 +97,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	}
 	
 	
-	uRB[] += LevV[]; // PONER LUEGO ARRIBA SI CONSIDERO EL LEVANTAMIENTO EN SMAGO
+
 	
 	// Calculo el estimador de error 
 
