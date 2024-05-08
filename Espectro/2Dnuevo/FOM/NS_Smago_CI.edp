@@ -53,7 +53,7 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 // Cargamos el modulo para hacer transformadas
 include "../Auxiliary/fourier2D.idp"
 
-int kmax = NN/2-1;
+int kmax = NN;
 
 complex[int,int] Coefs(2*kmax+1,2*kmax+1);
 Coefs = 0.;
@@ -85,7 +85,7 @@ VhP2per zmod; zmod = sqrt(zper^2+zper^2);
 
 
 real[int] spectrum = espectro2D(zz[], zz[], kmax);
-write("../PruebaTransformada/Espectro_inicial_Medio4.txt", spectrum, 0, 0);
+write("../PruebaTransformada/Espectro_inicial_Noconst.txt", spectrum, 0, 0);
 
 /*
 Vh3P2per [u,uY,uP];
@@ -120,7 +120,7 @@ include "FE_Smago_2D.idp"
 // Dibujamos la solucion
 
 VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
-//plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
+plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
 //plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
 
 // Calculamos su espectro
@@ -129,7 +129,7 @@ uX = uEF+uaux;
 uY = uEFY+uaux;
 
 real[int] spectrumTF = espectro2D(uX[], uY[], kmax);
-write("../PruebaTransformada/Espectro_inicial"+TF+"_Medio4.txt", spectrumTF, 0, 0);
+write("../PruebaTransformada/Espectro_inicial"+TF+"_Noconst.txt", spectrumTF, 0, 0);
 
 // Guardamos los snapshots
 // write("../SnapshotsN/Re_" + Reynolds + "_t_" +TF+ ".txt", uEF[], 0, 0);

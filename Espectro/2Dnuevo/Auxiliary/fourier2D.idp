@@ -17,11 +17,10 @@ func complex[int,int] FourierTransform2D(complex[int] uFourierv, int kmax){
     Fh<complex> uFourier;
     uFourier[] = uFourierv;
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
-    real const = kmax/(2.*kmax+1.);
     
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
-            func fourier = exp(-1i*2*pi*(x*ii+y*jj)*const);
+            func fourier = exp(-1i*pi*(x*ii+y*jj));
             FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DFourier*fourier*uFourier);
         }
     }
@@ -36,11 +35,10 @@ func complex[int] FourierInverse2D(complex[int,int] & Coefs){
     Fh<complex> uFourier;
     uFourier = 0;
 
-    real const = kmax/(2.*kmax+1.);
     for(int ii = -kmax; ii<=kmax; ii++){
         for(int jj = -kmax; jj<=kmax; jj++){
             complex FCoef = Coefs(ii+kmax,jj+kmax);
-            func BaseFourier = FCoef*exp(-1i*2*pi*(x*ii+y*jj)*const);
+            func BaseFourier = FCoef*exp(-1i*pi*(x*ii+y*jj));
             uFourier =  uFourier+BaseFourier;
         }
     }
@@ -78,7 +76,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 func real[int] energyk2d(real[int,int] & Energy)
 {
     int kmax = (Energy.n-1)/2;
-    int LN=sqrt(2*kmax^2);
+    int LN=sqrt(2*kmax^2)/2;
 	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
 	energykbycrownsL=0.; energykbycrowns=0.;
 	real module;int l;
@@ -86,7 +84,7 @@ func real[int] energyk2d(real[int,int] & Energy)
 	for(int k1=-kmax;k1<=kmax;k1++){
         if(mpirank==cont%mpisize){
 		for(int k2=-kmax;k2<=kmax;k2++){
-                module=sqrt(k1^2+k2^2)-1.e-4;
+                module=sqrt(k1^2+k2^2)/2;
                 l=module;
                 //cout << "Modulo" << module << ", con entero: " << l << endl;
                 energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
