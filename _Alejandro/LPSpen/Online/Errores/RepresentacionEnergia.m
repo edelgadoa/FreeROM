@@ -15,12 +15,14 @@ errorPEN = errorPEN(1:end-1);
 for i=1:4
     errorFIL(i,:) = openfile(['ErrorFIL_',num2str(i),'_Re_',num2str(Re),'_PODtol_',num2str(tol),'.txt']);
 end
+%errorFIL(4,:) = openfile(['ErrorFIL_',num2str(10),'_Re_',num2str(Re),'_PODtol_',num2str(tol),'.txt']);
+
 errorFIL = errorFIL(:,1:end-1);
 
 % Datos temporales
-t0 = 7;
+t0 = 6.5;
 dt = 2.e-3;
-tF = 8;
+tF = 7;
 
 t = (t0+dt):dt:tF;
 nt = length(t);

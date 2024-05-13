@@ -20,6 +20,9 @@ include "../Auxiliary/Malla.idp"
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
+TFR = TF;
+TF = TF-period;
+
 // Carga de bases
 readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
 int NbasesV = BaseV.m; // Dimension reducido
@@ -87,7 +90,7 @@ readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".tx
 readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
-int NbasesConv = 1;
+int NbasesConv = 4;
 
 readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
 readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
