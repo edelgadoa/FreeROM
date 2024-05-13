@@ -51,9 +51,9 @@ include "Interp_matrix_NoStab_VP_2D.idp"
 ///////////////////////////////////////////////////////
 
 // Cargamos el modulo para hacer transformadas
-include "../Auxiliary/fourier2D.idp"
+include "../PruebaTransformada/fourier2D.idp"
 
-int kmax = NN/2-1;
+int kmax = NN/2;
 
 complex[int,int] Coefs(2*kmax+1,2*kmax+1);
 Coefs = 0.;
@@ -66,18 +66,21 @@ for(int k=-kmax;k<=kmax;k++){
 		Coefs(k+kmax,l+kmax)=module^(-(alpha+1)/2);
 	}
 }
+write("../PruebaTransformada/Coefs.txt", Coefs, 0,0);
 Coefs(kmax,kmax) = 0.; // Quito el término relativo a k=l=0. Por si acaso.
 
 // Calculamos la transformada inversa
 VhP2per zper;
-Fh<complex> zz;
+VhP2per<complex> zz;
 zz[] = FourierInverse2D(Coefs);
+
+
 real zmaxL = real(zz[].max);
 real zmax;
 mpiAllReduce(zmaxL,zmax,mpiCommWorld,mpiMAX);
 zz[] = zz[]/zmax;
 
-Fh zreal;
+VhP2per zreal;
 zreal = real(zz);
 zper = zreal;
 VhP2per zmod; zmod = sqrt(zper^2+zper^2);
@@ -113,7 +116,7 @@ T0 = 0;
 TF = 15;
 
 Reynolds = 8500;
-[uEF, uEFY,uEFP] = [zper, zper, 0];
+[uEF, uEFY, uEFP] = [zper, zper, 0];
 
 include "FE_Smago_2D.idp"
 
@@ -124,8 +127,8 @@ plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
 //plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
 
 // Calculamos su espectro
-Fh<complex> uX, uY, uaux = 0.;
-uX = uEF+uaux;
+VhP2per<complex> uX, uY, uaux = 0.;
+uX = uEF+uaux; //Para que uEF se convierta en complex
 uY = uEFY+uaux;
 
 real[int] spectrumTF = espectro2D(uX[], uY[], kmax);

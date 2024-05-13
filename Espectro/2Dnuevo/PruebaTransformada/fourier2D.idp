@@ -1,49 +1,99 @@
 // Archivo auxiliar calculo de transformadas de fourier
 
-func PFourier = P2;
+
 real[int] dFourier;
-PartitionCreate(Th,dFourier,PFourier);
-fespace Fh(Th,PFourier, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
-Fh DFourier;
-fespace VhP2(Th, P2);  
-VhP2 DF2; DF2[] = dFourier;
-DFourier = DF2;
-plotMPI(Th, DFourier, PFourier, def, real, cmm = "Global solution");
+PartitionCreate(Th, dFourier, PkP2); 
+VhP2per DP2per; DP2per[] = dFourier;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
 // El vector en el argumento debe ser un vector en P2.
 
 func complex[int,int] FourierTransform2D(complex[int] uFourierv, int kmax){
-    Fh<complex> uFourier;
+    VhP2per<complex> uFourier;
     uFourier[] = uFourierv;
     complex[int,int] FCoefs(2*kmax+1,2*kmax+1);
-
+	real h = 1./(2.*kmax+1);
+	
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
-            func fourier = exp(-1*1i*2*pi*(x*ii+y*jj));
-            FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DFourier*fourier*uFourier);
+	    	func fourier =exp(-1i*pi*(x*ii+y*jj));
+			VhP2per<complex> EFufourier = fourier;
+	        FCoefs(ii+kmax,jj+kmax) = int2d(Th)(DP2per*EFufourier*uFourier);
+
         }
     }
-
     return FCoefs;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Transformada de fourier inversa.
-func complex[int] FourierInverse2D(complex[int,int] & Coefs){
-
+func complex[int] FourierInverse2D(complex[int,int] Coefs){
     int kcoefs = (Coefs.n-1)/2;
-    Fh<complex> uFourier;
-
-    for(int ii = -kcoefs; ii<=kcoefs; ii++){
-        for(int jj = -kcoefs; jj<=kcoefs; jj++){
+    VhP2per<complex> uFourier;
+	real h = 1./(2.*kcoefs);
+	
+	uFourier = 0;
+    for(int ii = -kcoefs; ii<kcoefs; ii++){
+        for(int jj = -kcoefs; jj<kcoefs; jj++){
             complex FCoef = Coefs(ii+kcoefs,jj+kcoefs);
-            func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj));
-            uFourier =  uFourier+BaseFourier;
+            	func BaseFourier = FCoef*exp(-1i*pi*(x*ii+y*jj));
+				VhP2per<complex> EFBaseFourier = BaseFourier;
+				uFourier =  uFourier + EFBaseFourier;
+
         }
-    }
-    
+	}
+	return uFourier[];
+}
+
+func complex[int] FourierInverse2D(complex[int,int] &Coefs, int &kmax){
+	int Nk = Coefs.n -1 ;
+    mesh ThKG = square(Nk, Nk, [-kmax+(2*kmax)*x, -kmax+(2*kmax)*y], flags=1);
+	
+	mesh ThK = ThKG;
+	int[int] mykN2o;
+	macro ThKN2O() mykN2o // EOM
+	buildDmesh(ThK);
+	fespace VhKP1G(ThKG, P1);
+	
+	fespace VhKP1(ThK, P1);
+	int[int] mapVhKP1;
+
+	real[int] DP1K;
+	VhKP1 DP1KEF;
+	
+	VhKP1G xxk, yyk;
+	xxk = x; yyk = y;
+	
+	mapVhKP1 = restrict(VhKP1, VhKP1G, mykN2o);
+	
+	PartitionCreate(ThK, DP1K, P1);
+	DP1KEF[] = DP1K;
+	VhKP1G<complex> TFourieruG;
+	TFourieruG = 0;
+	for(int kk=-kmax; kk<=kmax; kk++){
+		for(int jj=-kmax; jj<=kmax; jj++){
+			TFourieruG[][kk+kmax + (2*kmax+1)*(jj+kmax)] = Coefs(kk+kmax, jj+kmax); //paso la matriz a EF P1<complex>
+		}
+	}
+	
+	VhKP1<complex> TFourieru;
+	TFourieru[] = TFourieruG[](mapVhKP1);
+	VhKP1 Transu = real(TFourieru);
+	
+	VhP2perG<complex> uFourierG, uFourierGL;
+	VhP2per<complex> uFourier;
+	uFourierG = 0;
+	
+	VhP2perG xx, yy;
+	xx = x; yy = y; // Para tener la informacion de las coordenadas espaciales
+	for (int ii=0; ii<VhP2perG.ndof; ii++){
+		func BaseFourier = exp(1i*pi*(xx[][ii]*x+yy[][ii]*y));
+		VhKP1<complex> BaseFourierEF = BaseFourier;
+		uFourierGL[][ii] = int2d(ThK)(DP1KEF*TFourieru*BaseFourierEF);
+	}
+	mpiAllReduce(uFourierGL[], uFourierG[], mpiCommWorld, mpiSUM);
+	uFourier[] = uFourierG[](mapVhP2per);
     return uFourier[];
 }
 
@@ -59,10 +109,10 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 	for(int ii=-kmax;ii<=kmax;ii++){
 		if(mpirank==cont%mpisize){
             for(int jj=-kmax; jj<=kmax; jj++){
-                resultL(ii+kmax,jj+kmax)=(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2)/2.;
+                resultL(ii+kmax,jj+kmax)=(1./2)*(abs(CoefsX(ii+kmax,jj+kmax))^2+abs(CoefsY(ii+kmax,jj+kmax))^2);
             }
-        }
-	cont++;
+		}
+		cont++;
 	}
 	mpiBarrier(mpiCommWorld);
 	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
@@ -74,17 +124,18 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 func real[int] energyk2d(real[int,int] & Energy)
 {
     int kmax = (Energy.n-1)/2;
-    int LN=sqrt(2*kmax^2);
+    int LN = sqrt(2*kmax^2)/2;
 	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
-	energykbycrownsL=0.; energykbycrowns=0.;
-	real module;int l;
+	energykbycrownsL = 0.; energykbycrowns = 0.;
+	real module; int l;
 	int cont = 1;
-	for(int k1=-kmax;k1<=kmax;k1++){
+	for(int k1=-kmax; k1<=kmax; k1++){
         if(mpirank==cont%mpisize){
-		for(int k2=-kmax;k2<=kmax;k2++){
-                module=sqrt(k1^2+k2^2);
-                l=module;
-                energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
+		for(int k2=-kmax; k2<=kmax; k2++){
+                module = sqrt(k1^2+k2^2)/2;
+                l = module;
+                //cout << "Modulo" << module << ", con entero: " << l << endl;
+                energykbycrownsL[l] += Energy(k1+kmax,k2+kmax);
             }
 		}
         cont++;
@@ -101,12 +152,13 @@ func real[int] energyk2d(real[int,int] & Energy)
 func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int kmax){
 
     complex[int,int] FCoefsX(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
     complex[int,int] FCoefsXL(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
+
     FCoefsXL = FourierTransform2D(uFourierv,kmax);
     mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
 
-    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
-    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
     FCoefsYL = FourierTransform2D(uFouriervY,kmax);
     mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
 
