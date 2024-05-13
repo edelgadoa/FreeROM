@@ -41,7 +41,7 @@ real b0,b1;    // Parameters for extrapolation
 a0=1.5; a1=-2.; a2=0.5; b0=2.; b1=-1.; // Semi-implicit BDF2
 
 // Parametros POD
-real epsPOD = 1.e-4;
+real epsPOD = 1.e-8;
 
 // Parametros EIM
 real epsEIM = 1.e-4;

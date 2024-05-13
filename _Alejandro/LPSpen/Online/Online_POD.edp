@@ -20,6 +20,9 @@ include "../Auxiliary/Malla.idp"
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
+TFR = TF;
+TF = TF-period;
+
 // Carga de bases
 readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
 int NbasesV = BaseV.m; // Dimension reducido

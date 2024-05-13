@@ -1,0 +1,82 @@
+// Calculo de Errores
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+TFR = TF;
+TF = TF-period;
+
+Vh3P2 [uEF,uEFY,uEFP];
+Vh2P2 [u,uY];
+Vh2P2 [uR,uRY];
+Vh2P2 [err,errY];
+int nn = (TFR-TF)/dt+1;
+real[int] errorl2(nn);
+int m = 0;
+
+
+readmatrix("../Offline/Bases/BaseV_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseV,0);
+int NbasesV = BaseV.m; // Dimension reducido
+readvector("../Offline/Bases/MediaV_"+Reynolds+".txt",real,MediaV,0);
+Vh2P2 [uM,uMY];
+uM[] = MediaV;
+real[int] uRv(NbasesV);
+
+
+// for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
+    
+// 	write("Output.txt","t = " + ti,0,1);
+
+//     readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0); uEF[] = Sol;
+//     [u,uY] = [uEF-uM,uEFY-uMY];
+    
+//     for(int i = 0; i<NbasesV; i++){
+//         Vh2P2 [uBase,uBaseY]; uBase[] = BaseV(:,i);
+//         uRv(i) = int2d(Th)(u*uBase+uY*uBaseY);
+//     }
+
+//     Vh2P2 [uRec,uRecY];
+//     uRec[] = BaseV*uRv;
+//     Vh2P2 [err,errY]; 
+//     [err,errY] = [u-uRec,uY-uRecY];
+//     plot([err,errY]);
+//     errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+//     m++;
+// }
+// write("Errores/ErrorProyeccion_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);
+
+readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +TFR+ ".txt", real, Sol, 0); uEF[] = Sol;
+[u,uY] = [uEF-uM,uEFY-uMY];
+
+Vh2P2 [uRec,uRecY];
+real[int] errorProy(NbasesV);
+for(int i = 0; i<NbasesV; i++){
+    Vh2P2 [uBase,uBaseY]; uBase[] = BaseV(:,i);
+    uRv(i) = int2d(Th)(u*uBase+uY*uBaseY);
+    real[int] aux(BaseV.n); aux=0;
+    for(int j=0; j<=i; j++){    
+        aux += BaseV(:,j)*uRv(j);
+    }
+    uRec[] = aux;
+    [err,errY] = [u-uRec,uY-uRecY];
+    plot([err,errY]);
+    errorProy(i) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+}
+
+write("Errores/ErrorFinal_Re_" + Reynolds + ".txt", errorProy, 0, 0);
