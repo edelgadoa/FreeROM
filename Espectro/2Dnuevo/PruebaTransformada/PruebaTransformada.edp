@@ -1,14 +1,9 @@
 // Archivo de pruebas para realizar la transformada de fourier en FreeFEM++ Paralelo
-load "iovtk"
-
-int[int] fforder = [1,1,1,1];
 
 // Preliminares
 include "macro_ddm.idp"
 load "PETSc"
-macro dimension() 2 //EOM 
-
-//include "../Auxiliary/Macros2D.idp"
+macro dimension() 2; \\ EOM 
 
 
 int[int] myN2o;
@@ -24,32 +19,27 @@ mesh ThG = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
 mesh Th = ThG;
 
 func Pk = P2;                       // finite element space
-macro PkP2() P2, periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] // EOM
 
 // Creación de matrices distribuidas
 Mat A;
 
 // Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
-MatCreate(Th, A, PkP2);
+MatCreate(Th, A, Pk);
 
 // Definición de elementos finitos
 fespace Wh(Th, Pk, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);                 // local finite element space on the local mesh Th_i
 
 // Cálculo de la transformada de fourier
-func uf = exp(-(x^2+y^2));//exp(-1*1i*2*pi*(x+y));//cos(2*pi*(x*y));
+func uf = exp(-(x^2+y^2));
 // Th = adaptmesh(Th, uf);
-//Wh u=uf;
-//plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
+Wh u=uf;
+plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
 
 Wh<complex> uF = uf;
-Wh uFReal;
-uFReal = real(uF);
-plotMPI(Th, uFReal, Pk, def, real, cmm = "Global solution");
 
-int k = 2*NN;
+int k = NN/2.-1;
 
 complex[int] uFourierv = uF[];
-//include "../Auxiliary/fourier2D.idp"
 include "fourier2D.idp"
 
 complex[int,int] FCoefs(2*k+1,2*k+1);
@@ -59,7 +49,7 @@ FCoefsL = FourierTransform2D(uFourierv,k);
 
 mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
-if(mpirank==0)cout << FCoefs;
+// cout << FCoefs;
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
@@ -69,14 +59,8 @@ uReal[] = FourierInverse2D(FCoefs);
 
 Wh uRReal;
 uRReal = real(uReal);
-
-fespace WhG(ThG, Pk, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
-WhG uRealG;
-//uRealG[] = reduceSolution(uRReal[], uRealG[], A.D, dFourier);
-
 plotMPI(Th,uRReal,Pk,def,real, cmm = "Retransformada");
 
-//savevtk("Transformada_"+k+".vtu", ThG, uRealG, dataname = "Sol", order=fforder);
 real[int,int] energyhat = energycomputation(FCoefs,FCoefs);
 
 real[int] spectrum = energyk2d(energyhat);
@@ -84,5 +68,6 @@ cout << spectrum << endl;
 
 //real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
 //cout << spectrum << endl;
+
 
 
