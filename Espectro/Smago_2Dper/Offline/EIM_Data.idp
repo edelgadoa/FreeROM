@@ -6,11 +6,11 @@ readvector("../EIM/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
 
 int Mbases = muEIM.n;
 
-VhP1dcperL[int] EIMSmago(Mbases);
+VhP1dcper[int] EIMSmago(Mbases);
 
 // Cargo los elementos del EIM SMAGO
 for (int i=0; i<Mbases; i++){
-	VhP1dcper EIMSmagoG;
+	VhP1dcperG EIMSmagoG;
 	readvector("../EIM/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
 	EIMSmagoG[] = BaseEIM;
 	EIMSmago[i][] = EIMSmagoG[](mapVhP1dcper); //Cargo la bases EN LOCAL

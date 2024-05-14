@@ -2,7 +2,7 @@
 // FreeROM 
 ///////////////
 
-real nu=1./Reynolds;
+real nu = 1./Reynolds;
 
 // Construimos las matrices fijas de EF
 

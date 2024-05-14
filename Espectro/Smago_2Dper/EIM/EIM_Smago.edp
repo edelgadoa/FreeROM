@@ -5,28 +5,53 @@
 // Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
 
 // Cargamos librerias
-load "lapack"
+load "iovtk" 
+load "lapack" 
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
 
-// Cargamos macros y funciones i/o
+// Cargamos macros
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/macro_ddm.idp"
-include "../Auxiliary/search.idp"
-
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
 
 // Creamos la malla
 include "../Auxiliary/Malla.idp"
 
-// Definimos los espacios de EF
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+
+// Definimos los espacios de EF 
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-readvector("Snapshots.txt", real, vReynolds, 0); 
+readvector("parametersEIM.txt", real, vReynolds, 0); 
 int nSnapshots = vReynolds.n;
 
 VhP2per[int] BVX(nSnapshots), BVY(nSnapshots);
