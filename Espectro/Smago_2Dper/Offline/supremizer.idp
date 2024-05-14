@@ -2,16 +2,16 @@ Mat Asup;
 {
 	macro def(i) [i, i#Y] // EOM
 	macro init(i) [i, i] // EOM
-	MatCreate(ThL, Asup, Pk2P2);
+	MatCreate(Th, Asup, Pk2P2);
 }
-real[int] bsup(Vh2P2perL.ndof);
+real[int] bsup(Vh2P2per.ndof);
 
-varf Supremizer([u,uY],[v,vY])= int2d(ThL)(//(1./Refijo+MOD(uFijo))*
-gradugradv(u,uY,v,vY)) + int2d(ThL)(1e-6*(u*v + uY*vY)) - int2d(ThL)(BaseP[i]*div(v,vY));
+varf Supremizer([u,uY],[v,vY])= int2d(Th)(//(1./Refijo+MOD(uFijo))*
+gradugradv(u,uY,v,vY)) + int2d(Th)(1e-6*(u*v + uY*vY)) - int2d(Th)(BaseP[i]*div(v,vY));
 
-matrix Asuptemp = Supremizer(Vh2P2perL,Vh2P2perL);
+matrix Asuptemp = Supremizer(Vh2P2per,Vh2P2per);
 Asup = Asuptemp;
-bsup = Supremizer(0,Vh2P2perL);
+bsup = Supremizer(0,Vh2P2per);
 
 set(Asup, sparams = "-pc_type lu"); //TODO comprobar con otros parametros 
 

@@ -6,15 +6,13 @@
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 	Vh3P2per [SauxX,SauxY,SauxP];
-
-	ifstream SnapshotVXFILE("../Snapshots/Vx_" + vReynolds(i) + "_t_" +TF+ ".txt");
-	ifstream SnapshotVYFILE("../Snapshots/Vy_" + vReynolds(i) + "_t_" +TF+ ".txt");
-
+	
+	Vh3P2perG [uG,uGY,uGP];
+	readvector("../Snapshots/Re_" + vReynolds(i) + "_t_" +TF+ ".txt", real, Sol, 0); uG[] = Sol;
+	SauxX[] = uG[](mapVh3P2per);
+	
 	// Cargamos los Snapshots 
-	SnapshotVXFILE>>SauxX[];
 	BVX[i] = SauxX;
-
-	SnapshotVYFILE>>SauxY[];
 	BVY[i] = SauxY;
 
 	{

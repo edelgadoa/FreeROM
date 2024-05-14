@@ -9,6 +9,7 @@ MVRB = nuRB * DiffRBi;
 MVRB = MVRB + (1./dt) * DTRBi;
 
 for(real ti=T0+dt;ti<=TF+epsEF;ti+=dt){ 
+	mpi(cout<<"-t= "<<ti<<"..."<<endl;)
 	matrix MVRBT = MVRB;
 	matrix ConvRBi;
 	matrix SmagoRBi;

@@ -9,20 +9,8 @@
 //                                 VhNPXMPY	--> N Elementos Finitos PX y M Py. Ej: Vh2P2P1 -> [P2, P2, P1]	
 //								   VhNPXdc  --> N Elementos Finitos PXdc			
 
-// GLOBALES
-fespace Vh3P2(Th, [P2, P2, P1]);
-fespace Vh3P1(Th, [P1, P1, P1]);
-fespace Vh3P1dc(Th, [P1dc, P1dc, P1dc]); 
-fespace VhP0(Th, P0); 
-fespace VhP1dc(Th, P1dc);
-fespace VhP1(Th, P1);
-fespace VhP2(Th, P2);
-fespace Vh2P2(Th, [P2, P2]);
-fespace Vh2P1(Th, [P1, P1]);
-fespace Vh2P1dc(Th, [P1dc, P1dc]);
 
-// GLOBALES PERIODICAS
-
+// LOCALES PERIODICAS
 fespace Vh3P2per(Th,[P2,P2,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
 fespace Vh3P1per(Th,[P1,P1,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
 fespace VhP0per(Th, P0, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
@@ -34,26 +22,15 @@ fespace Vh2P2per(Th,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [
 fespace Vh2P1per(Th, [P1, P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
 fespace Vh2P1dcper(Th, [P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
 
-// LOCALES
-fespace Vh3P2L(ThL, [P2, P2, P1]);
-fespace Vh3P1L(ThL, [P1, P1, P1]);
-fespace Vh3P1dcL(ThL, [P1dc, P1dc, P1dc]); 
-fespace VhP0L(ThL, P0); 
-fespace VhP1dcL(ThL, P1dc);
-fespace VhP1L(ThL, P1);
-fespace VhP2L(ThL, P2);
-fespace Vh2P2L(ThL, [P2, P2]);
-fespace Vh2P1L(ThL, [P1, P1]);
-fespace Vh2P1dcL(ThL, [P1dc, P1dc]);
 
-// LOCALES PERIODICAS
-fespace Vh3P2perL(ThL,[P2,P2,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
-fespace Vh3P1perL(ThL,[P1,P1,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
-fespace VhP0perL(ThL, P0, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
-fespace Vh3P1dcperL(ThL, [P1dc, P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
-fespace VhP1dcperL(ThL, P1dc, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
-fespace VhP1perL(ThL, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
-fespace VhP2perL(ThL, P2, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
-fespace Vh2P2perL(ThL,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
-fespace Vh2P1perL(ThL, [P1, P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
-fespace Vh2P1dcperL(ThL, [P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+// GLOBLAES PERIODICAS
+fespace Vh3P2perG(ThG,[P2,P2,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1perG(ThG,[P1,P1,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace VhP0perG(ThG, P0, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1dcperG(ThG, [P1dc, P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1dcperG(ThG, P1dc, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1perG(ThG, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP2perG(ThG, P2, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace Vh2P2perG(ThG,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh2P1perG(ThG, [P1, P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+fespace Vh2P1dcperG(ThG, [P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);

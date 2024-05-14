@@ -2,9 +2,4 @@
 echo 'Numero de procesadores:'
 read NP
 
-nameedp="Offline_2D.edp"
-
-verbosity=0
-
-rm freefem++.pref
-ff-mpirun -np $NP ./$nameedp -wg -ns
+ff-mpirun -np $NP Offline_2D.edp -wg -ns -v 0

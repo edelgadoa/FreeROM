@@ -10,11 +10,11 @@
 
 for (int i=0; i<NbasesV; i++){
     real[int] BaseVi;
-    ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+    ChangeNumbering(MatVh2P2per, BaseV[i][], BaseVi);
 
     for (int j=0; j<=i; j++){
         real[int] BaseVj;
-        ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+        ChangeNumbering(MatVh2P2per, BaseV[j][], BaseVj);
         // Matrices
         DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
         DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
@@ -25,7 +25,7 @@ for (int i=0; i<NbasesV; i++){
     }
     for (int j=0; j<NbasesP; j++){
         real[int] BasePj;
-        ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+        ChangeNumbering(MatVhP1per, BaseP[j][], BasePj);
         DivPRB(j, i) = innerprodX(BasePj, BaseVi, DivPPEM); //Esta tiene que ir asi por construccion.
 
     }
@@ -110,7 +110,6 @@ write("Output.txt","Smagorinsky OK.",1,1);
 
 for (int i=0; i<NbasesV; i++){	
 	
-	int MbasesL;
 	for (int s=0; s<Mbases; s++){
 		real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
 		real[int,int] DtkL(GradPM[s].n, GradPM[s].m);
@@ -118,13 +117,12 @@ for (int i=0; i<NbasesV; i++){
 		Dtk = 0; DtkL = 0;
 
 		if (NumberPMSmago(s)>0){
-    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(MbasesL));  
-    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(MbasesL));
-    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(MbasesL));
-    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(MbasesL));
+    		DtkL(0,i) = BVdX[i][](PuntosMSmagoL(s));  
+    		DtkL(1,i) = BVdY[i][](PuntosMSmagoL(s));
+    		DtkL(2,i) = BVYdX[i][](PuntosMSmagoL(s));
+    		DtkL(3,i) = BVYdY[i][](PuntosMSmagoL(s));
 			
 		    DtkL *= WeightPMSmago(s);
-		    MbasesL++;
 		}
 		mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
 		GradPM[s] += Dtk;

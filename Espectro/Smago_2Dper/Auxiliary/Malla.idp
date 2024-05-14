@@ -5,12 +5,30 @@
 // Creacion de malla.
 
 // Divisiones malla
-int NN = 32;
+int NN = 64;
 real x01 = -0.5, x11 = 0.5;
 real y01 = -0.5, y11 = 0.5;
-mesh Th, ThL;
+mesh Th, ThG;
 {
-	Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1);
+	ThG = square(NN,NN, [x01+(x11-x01)*x,y01+(y11-y01)*y], flags=1);
 
-	ThL = Th; // For the local mesh
+	Th = ThG; // For the local mesh
 }
+
+
+
+int[int] myN2o;
+macro ThN2O() myN2o // EOM
+int[int] labPeriodic = [2, 4, 1, 3];
+macro ThPeriodicity() labPeriodic // EOM
+
+macro Pk2P2() [P2,P2], periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] // EOM
+macro Pk3P2() [P2,P2,P1], periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] // EOM
+macro PkP1() P1, periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] // EOM
+macro PkP2() P2, periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] // EOM
+macro PkP1dc() P1dc, periodic = [[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]] //EOM
+
+// este macro solo lo ponemos si usamos las matrices de interpolacion
+// macro ThOverlap() 2 // EOM  
+
+// buildDmesh(Th);

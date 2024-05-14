@@ -57,9 +57,9 @@ write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
 
 // Guardo los Snapshots calculados
 
-real[int, int] MBaseVN(Vh3P2.ndof, NRB), MBasePN(VhP2.ndof, NRB);
-MBaseVN = MBaseV(0:Vh3P2.ndof-1, 0:NRB-1);
-MBasePN = MBaseP(0:VhP2.ndof-1, 0:NRB-1);
+real[int, int] MBaseVN(Vh3P2perG.ndof, NRB), MBasePN(VhP2perG.ndof, NRB);
+MBaseVN = MBaseV(0:Vh3P2perG.ndof-1, 0:NRB-1);
+MBasePN = MBaseP(0:VhP2perG.ndof-1, 0:NRB-1);
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
 write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
