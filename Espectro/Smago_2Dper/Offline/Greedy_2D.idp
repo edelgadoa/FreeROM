@@ -62,7 +62,8 @@ for(int ii = NbasesV; ii<I; ii++){
 write("Output.txt", "Condicion inicial OK.", 1, 1);
 
 // Comenzamos el bucle del greedy 
-for (int iRB=0; iRB<Ntrain; iRB++){
+// for (int iRB=0; iRB<Ntrain; iRB++){
+for (int iRB=0; iRB<Ntrain; iRB+=8){
 	
 	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
 	real nuRB = 1./MuTrain(iRB);
@@ -86,29 +87,11 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	
 	uRB[] = MBaseVint*uRBv(0:NbasesV-1);
 	uRBP[] = MBasePint*uRBv(NbasesV:I-1);
-	
-	/*
-	if(MuTrain(iRB)==Reynolds){
-		
+	{
 		macro defPK2(i) [i, i#Y] // EOM		
-		plotMPI(Th, [uRB, uRBY], Pk2P2, defPK2, real, cmm="Sol RB Vel Re="+Reynolds);		
-		plotMPI(Th, uRBP, PkP1, def, real, cmm="Sol RB P Re="+Reynolds);	
-
-	}
-	*/
-
-	// Esto en teoría no lo debería calcular. La idea es calcular el espectro en paralelo con uRBL[]
-	
-	// Vh2P2perG [uRBG, uRBYG];
-	// VhP1perG uRBPG;
-	
-	// uRBG[] = reduceSolution(uRB[], uRBG[], MatVh2P2per.D, mapVh2P2per);
-	// uRBPG[] = reduceSolution(uRBP[], uRBPG[], MatVhP1per.D, mapVhP1per);
-
-	macro defPK2(i) [i, i#Y] // EOM		
-	plotMPI(Th, [uRB, uRBY], Pk2P2, defPK2, real, cmm="Sol RB Vel Re="+MuTrain(iRB));		
-	plotMPI(Th, uRBP, PkP1, def, real, cmm="Sol RB P Re="+MuTrain(iRB));	
-
+		plotMPI(Th, [uRB, uRBY], Pk2P2, defPK2, real, cmm="Sol RB Vel Re="+MuTrain(iRB));		
+		plotMPI(Th, uRBP, PkP1, def, real, cmm="Sol RB P Re="+MuTrain(iRB));	
+	}	
 	mpi(cout<<"Hecho."<<endl;)
 	
 	// Calculo el estimador de error 
@@ -144,7 +127,6 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 	}
 	mpiBarrier(mpiCommWorld);
 	mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
-	write("Output.txt",difere,1,1);
 	DeltaG(iRB)=difere.min;
 	write("Output.txt","    - estimate= "+DeltaG(iRB),1,1);
 
@@ -152,5 +134,25 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 
 }
 
-DeltaN(iGreedy) = DeltaG.max;
-MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
+// Modificacion del criterio del Greedy
+if (search(MuBest,MuTrain(DeltaG.imax))>=0){
+
+	// Se haya la diferencia de los espectros
+	real[int] pdelta(Ntrain); pdelta = 0.;
+	pdelta = DeltaG-Delta0;
+	pdelta = abs(pdelta);
+	while(search(MuBest,MuTrain(pdelta.imax))>=0){
+		// Eliminamos los ya elegidos
+		pdelta(pdelta.imax) = 0.;
+	}
+	// Escogemos el valor para la mayor diferencia
+	DeltaN(iGreedy) = pdelta.max;
+	MuBest(iGreedy+1)= MuTrain(pdelta.imax);
+}
+else{
+	DeltaN(iGreedy) = DeltaG.max;
+	MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
+}
+
+// Actualizo el valor del espectro anterior
+Delta0 = DeltaG;

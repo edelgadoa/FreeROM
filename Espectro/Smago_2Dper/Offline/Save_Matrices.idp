@@ -2,38 +2,60 @@
 // FreeROM 
 /////////////// 
 
+mpi(cout<<" - Method data...";)
 write("DeltaNmax.txt", DeltaG, 0, 0);
-write("DeltaN.txt", DeltaN(0:NRB), 0, 0);
-write("TauN.txt", TauN(0:NRB), 0, 0);
-write("MuBest.txt", MuBest(0:NRB), 0, 0);
+write("DeltaN.txt", DeltaN(0:iGreedy), 0, 0);
+//write("TauN.txt", TauN(0:NRB), 0, 0);
+write("MuBest.txt", MuBest(0:iGreedy+1), 0, 0);
+mpi(cout<<" Done."<<endl;)
 
+/*
+mpi(cout<<" - Reduced fixed matrices...";)
+// Definicion de las Matrices Reducidas fijas
+real[int,int] DiffN(NbasesV, NbasesV), DivPN(NbasesP, NbasesV), PenN(NbasesP, NbasesP), 
+			  DTN(NbasesV, NbasesV);
+			  
+DiffN = DiffRB;
+DivPN = DivPRB;
+DTN = DTRB;
+PenN = PenRB;
+mpi(cout<<" Done."<<endl;)
 
-real[int,int] DiffN(2*NRB,2*NRB), DivPN(2*NRB,2*NRB), DTN(2*NRB,2*NRB), PenN(2*NRB,2*NRB), bSmagoN(Mbases,2*NRB);
-real[int] bDiffN(2*NRB), bConvN(2*NRB);
-real[int,int][int] ConvN(NRB), SmagoN(Mbases);
+mpi(cout<<" - Reduced right hand side...";)
+// Definicion de los segundos miembros
+real[int] bDiffN(3*Nbases), bConvN(3*Nbases), bDTN(3*Nbases);// bSmagoRBi(3*Nbases);			   
+real[int,int] bSmagoN(Mbases, 3*Nbases);
 
+bDiffN = bDiffRB;
+bConvN = bConvRB;
+bDTN = bDTRB;
+bSmagoN = bSmagoRB;
+mpi(cout<<" Done."<<endl;)
 
-DiffN = DiffRB(0:2*NRB-1, 0:2*NRB-1);
-DivPN = DivPRB(Nbases-NRB:Nbases+NRB-1, 0:2*NRB-1);
-DTN = DTRB(0:2*NRB-1, 0:2*NRB-1);
-PenN = PenRB(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
-bSmagoN = bSmagoRB(0:Mbases-1, 0:2*NRB-1);
+mpi(cout<<" - Reduced variable matrices...";)
+// Definicion de Matrices y Tensores variables
+real[int,int][int] ConvN(NbasesV), SmagoN(Mbases);
 
-bDiffN = bDiffRB(0:2*NRB-1);
-bConvN = bConvRB(0:2*NRB-1);
-
-for (int s=0; s<NRB; s++){
-	real [int,int] cint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
-	aux = ConvRB[s];
-	cint = aux(0:2*NRB-1, 0:2*NRB-1);
-	ConvN[s] = cint(0:2*NRB-1, 0:2*NRB-1);
+for (int k=0; k<NbasesV; k++){
+	ConvN[k] = ConvRB[k];
 }
-for (int s=0; s<Mbases; s++){
-	real [int,int] sint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
-	aux=SmagoRB[s];
-	sint=aux(0:2*NRB-1, 0:2*NRB-1);
-	SmagoN[s]=sint(0:2*NRB-1, 0:2*NRB-1);
+
+for (int k=0;k<Mbases;k++){
+	SmagoN[k]=SmagoRB[k];
 }
+mpi(cout<<" Done."<<endl;)
+
+mpi(cout<<" - Magic Points...";)
+// Definicion del array de matrices del gradiente en los Puntos mágicos
+real[int,int][int] GradPM(Mbases);
+
+for (int i=0;i<Mbases;i++){
+	real[int,int] Aux(4,2*Nbases);
+	Aux=0;
+	GradPM[i]=Aux(0:3,0:2*Nbases-1);
+}
+mpi(cout<<" Done."<<endl;)
+
 
 for (int s=0;s<Mbases;s++){
 	real [int,int] GradPMint(9,NRB), aux(9,Nbases); 
@@ -41,8 +63,22 @@ for (int s=0;s<Mbases;s++){
 	GradPMint = aux(0:8,0:NRB-1);
 	GradPM[s] = GradPMint(0:8,0:NRB-1);
 }
+*/
 
+// Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
+write("MatricesRB/Diff.txt", DiffRB, 0 , 0, 0, 20);
+write("MatricesRB/DivP.txt", DivPRB, 0, 0, 0, 20);
+write("MatricesRB/DT.txt", DTRB, 0, 0, 0, 20);
+write("MatricesRB/Pen.txt", PenRB, 0, 0, 0, 20);
+write("MatricesRB/bSmago.txt", bSmagoRB, 0, 0, 0, 20);
+write("MatricesRB/bDiff.txt", bDiffRB, 0, 0, 0, 20);
+write("MatricesRB/bDTRB.txt", bDTRB, 0, 0, 0, 20);
+write("MatricesRB/bConv.txt", bConvRB, 0, 0, 0, 20);
+write("MatricesRB/Conv.txt", ConvRB, 0, 0, 0, 20);
+write("MatricesRB/Smago.txt", SmagoRB, 0, 0, 0, 20);
+write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
 
+/*
 // Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
 write("MatricesRB/Diff.txt", DiffN, 0 , 0, 0, 20);
 write("MatricesRB/DivP.txt", DivPN, 0, 0, 0, 20);
@@ -58,9 +94,12 @@ write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
 // Guardo los Snapshots calculados
 
 real[int, int] MBaseVN(Vh3P2perG.ndof, NRB), MBasePN(VhP2perG.ndof, NRB);
-MBaseVN = MBaseV(0:Vh3P2perG.ndof-1, 0:NRB-1);
-MBasePN = MBaseP(0:VhP2perG.ndof-1, 0:NRB-1);
+MBaseVN = MBaseV(0:Vh3P2perG.ndof-1, 0:NbasesV-1);
+MBasePN = MBaseP(0:VhP2perG.ndof-1, 0:NbasesP-1);
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
 write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
+*/
 
+write("MatricesRB/BaseV.txt", MBaseV, 0, 0, 0, 20);
+write("MatricesRB/BaseP.txt", MBaseP, 0, 0, 0, 20);

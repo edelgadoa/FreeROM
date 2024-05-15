@@ -142,6 +142,7 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
 include "Scalar_Product_Matrices_2D.idp"
+real[int] Delta0(Ntrain); Delta0 = 0.; // Valor auxiliar para el criterio de seleccion modificado
 
 for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
@@ -275,7 +276,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
 	
 	if (DeltaN(iGreedy)<epsGreedy){
-		int NRB = NbasesV+NbasesP + 1;
+		mpi(cout<<"Saving matrices..."<<endl;)
+		int NRB = NbasesV+NbasesP; // Aqui habia un +1
 		include "Save_Matrices.idp"
 		break;
 	}

@@ -56,8 +56,8 @@ real epsPOD = 1.e-6;
 real epsEIM = 5.e-5;
 
 // Parametros para el Greedy
-int NiterGreddy = 2;
-real epsGreedy = 5.e-5;
+int NiterGreddy = 4;
+real epsGreedy = 1.e-1;
 int Ntrain = niRe;
 real[int] MuTrain(Ntrain);
 for (int ig=0; ig<Ntrain; ig++){
