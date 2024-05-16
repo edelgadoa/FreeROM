@@ -14,45 +14,43 @@ real [int] bEIM(i), sigmai(i);
 
 //pause; //Hacemos el siguiente for en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
-	//if (mpirank==imu%mpisize){
-		UX = BVX[imu]; UY = BVY[imu]; UZ = BVZ[imu];
-		UXdX = BVdX[imu]; UXdY = BVdY[imu]; UXdZ = BVdZ[imu]; 
-		UYdX = BVYdX[imu]; UYdY = BVYdY[imu]; UYdZ = BVYdZ[imu];
-		UZdX = BVZdX[imu]; UZdY = BVZdY[imu]; UZdZ = BVZdZ[imu];
-		
-		real[int] tK=tauK(0,VhP0);
-		real[int] tKT=tauKT(0,VhP0);
 
-		tKcod[] = sqrt(tK);
-		tKTcod[] = sqrt(tKT);
-	
-		gEIM = ((cc1*(1./vReynolds(imu)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+	UX = BVX[imu]; UY = BVY[imu]; UZ = BVZ[imu];
+	UXdX = BVdX[imu]; UXdY = BVdY[imu]; UXdZ = BVdZ[imu]; 
+	UYdX = BVYdX[imu]; UYdY = BVYdY[imu]; UYdZ = BVYdZ[imu];
+	UZdX = BVZdX[imu]; UZdY = BVZdY[imu]; UZdZ = BVZdZ[imu];
+		
+	real[int] tK=tauK(0,VhP0);
+	real[int] tKT=tauKT(0,VhP0);
 
-		for (int j=0; j<i; j++){
-			bEIM(j) = gEIM[](Tmax(j));
-		}
+	tKcod[] = sqrt(tK);
+	tKTcod[] = sqrt(tKT);
+
+	gEIML = ((cc1*(1./vReynolds(imu)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+	gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP0.D, mapVhP0);
+
+	for (int j=0; j<i; j++){
+		bEIM(j) = gEIM[](Tmax(j));
+	}
 	
-		sigmai = BMs^-1*bEIM;
+	sigmai = BMs^-1*bEIM;
 		
-		IgEIM = 0;
-		for (int j=0;j<i;j++){
-			IgEIM[] += sigmai(j)*BEIM[j][];
-		}
+	IgEIM = 0;
+	for (int j=0;j<i;j++){
+		IgEIM[] += sigmai(j)*BEIM[j][];
+	}
 		
-		VhP1dcG Linf = abs(gEIM-IgEIM); 
+	VhP1dcG Linf = abs(gEIM-IgEIM); 
 		
-		Errorit(imu) = Linf[].max/gEIM[].max;
-		//}
-	//mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
-	//pause;
+	Errorit(imu) = Linf[].max/gEIM[].max;
 	
 	ErrorMaxEIM(i-1) = Errorit.max;
 	muEIM(i) = vReynolds(Errorit.imax);
-
 	
 }
 
-	mpi(cout<<muEIM<<endl;)
+mpi(cout<<muEIM<<endl;)
+mpi(cout<<Errorit<<endl;)	
 // Calculamos la base escogida
 int iReynolds = Errorit.imax;
 
@@ -61,14 +59,15 @@ UXdX = BVdX[Errorit.imax]; UXdY = BVdY[Errorit.imax]; UXdZ = BVdZ[Errorit.imax];
 UYdX = BVYdX[Errorit.imax]; UYdY = BVYdY[Errorit.imax]; UYdZ = BVYdZ[Errorit.imax];
 UZdX = BVZdX[Errorit.imax]; UZdY = BVZdY[Errorit.imax]; UZdZ = BVZdZ[Errorit.imax];
 
-real[int] tK = tauK(0,VhP0G);
-real[int] tKT = tauKT(0,VhP0G);
+real[int] tK = tauK(0,VhP0);
+real[int] tKT = tauKT(0,VhP0);
 
 tKcod[] = sqrt(tK);
 tKTcod[] = sqrt(tKT);
 
 
-gEIM = ((cc1*(1./vReynolds(Errorit.imax)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+gEIML = ((cc1*(1./vReynolds(Errorit.imax)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP0.D, mapVhP0);
 
 for (int j=0; j<i; j++){
 	bEIM(j) = gEIM[](Tmax(j));

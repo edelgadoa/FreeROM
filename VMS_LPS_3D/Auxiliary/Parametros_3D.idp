@@ -9,6 +9,7 @@ Mat MatVh4P2;
 Mat MatVh3P2;
 Mat MatVhP1dc;
 Mat MatVhP2;
+Mat MatVhP0;
 
 int[int] mapVh4P2, mapVhP1dc, mapVhP0, mapVhP2, mapVh3P2;
 
