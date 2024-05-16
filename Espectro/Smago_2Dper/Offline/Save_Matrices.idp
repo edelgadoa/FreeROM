@@ -90,16 +90,17 @@ write("MatricesRB/bConv.txt", bConvN, 0, 0, 0, 20);
 write("MatricesRB/Conv.txt", ConvN, 0, 0, 0, 20);
 write("MatricesRB/Smago.txt", SmagoN, 0, 0, 0, 20);
 write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
-
+*/
 // Guardo los Snapshots calculados
 
-real[int, int] MBaseVN(Vh3P2perG.ndof, NRB), MBasePN(VhP2perG.ndof, NRB);
-MBaseVN = MBaseV(0:Vh3P2perG.ndof-1, 0:NbasesV-1);
-MBasePN = MBaseP(0:VhP2perG.ndof-1, 0:NbasesP-1);
+// ** Estoy hay que modificarlo para que guarde la base completa, así no funciona
+real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
+mpiAllReduce(MBaseV,MBaseVN,mpiCommWorld,mpiSUM);
+mpiAllReduce(MBaseP,MBasePN,mpiCommWorld,mpiSUM);
 
-write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
-write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
-*/
-
-write("MatricesRB/BaseV.txt", MBaseV, 0, 0, 0, 20);
-write("MatricesRB/BaseP.txt", MBaseP, 0, 0, 0, 20);
+// real[int, int] MBaseVG(Vh2P2per.ndof, NbasesV), MBasePG(VhP1per.ndof, NbasesP);
+// mpiBarrier(mpiCommWorld);
+// mpiAllReduce(MBaseV,MBaseVG,mpiCommWorld,mpiSUM);
+// mpiAllReduce(MBaseP,MBasePG,mpiCommWorld,mpiSUM);
+// write("MatricesRB/BaseV.txt", MBaseVG, 0, 0, 0, 20);
+// write("MatricesRB/BaseP.txt", MBasePG, 0, 0, 0, 20);

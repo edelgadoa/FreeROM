@@ -6,23 +6,52 @@
 
 // Cargamos librerias
 load "iovtk" 
+load "lapack"
 
-// Cargamos macros y funciones i/o
+// Paralelo
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/IO.idp" //falla el mpirank -> posiblemente necesite ejecutarlo con freefemmpi
 include "../Auxiliary/search.idp"
 
 // Creamos la malla
 include "../Auxiliary/Malla.idp"
+include "../Auxiliary/Functions_MP.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
 
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
+
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
-
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
@@ -33,12 +62,10 @@ matrix MNormaVel = NormaVel(Vh2P2per, Vh2P2per);
 */
 
 // Cargamos Bases y Matrices
-// include "Load_Basis_Data.idp"
-int Nbases = 1;
+include "Load_Basis_Data.idp"
+// int Nbases = 1;
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "../Offline/EIM_Data.idp"
-
-Reynolds = 4892;
 
 //////////////////////////
 // Cargamos la condicion inicial
@@ -46,19 +73,19 @@ Vh3P2per [uEF0,uEF0Y,uEF0P];
 
 Reynolds = Refijo;
 
-readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0); uEF0[] = SolX;
-readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
-readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uEF0[] = Sol;
 
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
 real timeFE = clock();
 
 Vh3P2per [uEF, uEFY, uEFP]; 
 VhP2per uprev, uprevY;
-VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
 VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
-include "../FOM/FE_VMS_2D.idp"
+Reynolds = 4892;
+
+// include "../FOM/FE_Smago_2D.idp"
 
 VhP2per UEF, UEFY, UEFP;
 UEF = uEF; UEFY = uEFY; UEFP = uEFP;
@@ -79,29 +106,107 @@ real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
 
 real timeRB = clock();
 
-// include "../Offline/RB_VMSSmago.idp"
+real nuRB = 1./Reynolds;
+
+// Inicializamos las matrices para el problema reducido
+int I = Nbases;   			 			  
+
+// Inicializamos las matrices para el problema reducido
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDTRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffN;
+DivPRBi = DivPN;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenN;
+DTRBi = DTN;
+real[int,int] DTRB = DTN;
+
+real[int,int][int] ConvRB(NbasesV), SmagoRB(Mbases);
+
+for (int k=0; k<NbasesV; k++){
+	ConvRB[k] = ConvN[k](0:NbasesV-1,0:NbasesV-1);
+}
+
+for (int k=0; k<Mbases; k++){
+	SmagoRB[k] = SmagoN[k](0:NbasesV-1,0:NbasesV-1);
+}
+
+
+Vh2P2per [uCI, uCIY];
+VhP1per uCIP;
+
+{
+	real ReInit = 8500; 
+	Vh3P2perG [uCIa,uCIYa,uCIPa];
+	readvector("../Snapshots/Re_" + ReInit + "_t_" +T0+ ".txt", real, Sol, 0); uCIa[] = Sol; 
+	
+	VhP2perG CIaux, CIauxY;
+	VhP1perG CIauxP;
+	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
+	
+	VhP2per CIauxL, CIauxYL;
+
+	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
+	uCIP[] = CIauxP[](mapVhP1per);
+	
+	[uCI, uCIY] = [CIauxL, CIauxYL];
+}
+
+include "../Offline/Scalar_Product_Matrices_2D.idp"
+
+real[int] uCIv;
+ChangeNumbering(MPescV, uCI[], uCIv);
+real[int] uCIPv;
+ChangeNumbering(MPescP, uCIP[], uCIPv);
+real[int] uCIRBv(I);
+mpi(cout << uCIPv.n << endl;)
+mpi(cout << MBaseP.n << endl;)
+for(int ii = 0; ii<NbasesV;ii++){
+	real[int] Vi;
+	ChangeNumbering(MPescV, MBaseV(:,ii), Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescV);
+}
+for(int ii = NbasesV; ii<I; ii++){
+	real[int] Pi;
+	ChangeNumbering(MPescP, MBaseP(:,ii-NbasesV), Pi);
+	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
+}
+
+uRBv = uCIRBv; // Falta condicion INICIAL
+
+include "../Offline/RB_VMSSmago.idp"
 
 Vh2P2per [uN, uNY];
-VhP2per uNP;
+VhP1per uNP;
 
 VhP2per UN, UNY;
+mpi(cout << "aaa" << endl;)
 
-/*
-uN[] = MBaseV*uRB(0:NbasesV-1);
-uNP[] = MBaseP*uRB(NbasesV:Nbases-1);
-*/
+real[int,int] MBaseVint(Vh2P2per.ndof, NbasesV), MBasePint(VhP1per.ndof, NbasesP); // Matrices intermedias
+MBaseVint = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
+MBasePint = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
 
-//plot([uN, uNY], cmm = "RB solution for Re = " + Reynolds);
-plot(uNP, cmm = "RB solution for Re = " + Reynolds);
+uN[] = MBaseVint*uRBv(0:NbasesV-1);
+mpi(cout << "aaa" << endl;)
+uNP[] = MBasePint*uRBv(NbasesV:I-1);
+mpi(cout << "aaa" << endl;)
+
+mpi(cout << "aaa" << endl;)
+plot([uN, uNY], cmm = "RB solution (vel) for Re = " + Reynolds);
+plot(uNP, cmm = "RB solution (pres) for Re = " + Reynolds);
 UN = uN; UNY = uNY;
 
 timeRB = clock() - timeRB;
 ////////////////////////
 
 // Calculo errores y speedups
-Vh2P2 [uERR, uERRY];
-VhP2 uERRP;
-VhP2 UERR, UERRY;
+Vh2P2per [uERR, uERRY];
+VhP2per uERRP;
+VhP2per UERR, UERRY;
 
 UERR = abs(UEF - UN);
 UERRY = abs(UEFY - UNY);
@@ -109,7 +214,7 @@ uERRP = abs(UEFP - uNP);
 
 
 [uERR, uERRY] = [UERR, UERRY];
-
+/*
 VhP2per uFijo, uFijoY; //Para la normaT
 VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
 Mat prodV = MatAVh2P2per; 
@@ -118,12 +223,15 @@ Mat prodV = MatAVh2P2per;
 	// matrix prodVtemp = a(Vh2P2perL, Vh2P2perL);
 	// Mat prodVT = prodVtemp;
 	// prodV = prodVT;
-	prodV = a(Vh2P2perL, Vh2P2perL);
+	prodV = a(Vh2P2per, Vh2P2per);
 }
 
 real normErrorV = normX(uERR[], prodV);
 real normErrorP = normL2(uERRP[]);
+*/
 
+real normErrorV = sqrt(int2d(Th)(uERR^2+uERRY^2));
+real normErrorP = sqrt(int2d(Th)(uERRP));
 
 real speedup = timeFE/timeRB;
 
