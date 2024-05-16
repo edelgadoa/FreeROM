@@ -23,25 +23,6 @@ bDTRBG = 0;
 bSmagoRBG = 0;
 bSmagoRBGs = 0;
 
-// // Definicion de las Matrices Reducidas fijas locales para el cálculo en paralelo
-// real[int,int] DiffRBL(Nbases, Nbases), DivPRBL(Nbases, Nbases), PenRBL(Nbases, Nbases),
-// 			  ConvLevRBL(Nbases, Nbases), DTRBL(Nbases, Nbases), StabhkRBL(Nbases, Nbases);
-//
-// DiffRBL = 0;
-// DivPRBL = 0;
-// PenRBL = 0;
-// ConvLevRBL = 0;
-// DTRBL = 0;
-// StabhkRBL = 0;
-//
-// // Definicion de los segundos miembros
-// real[int] bDiffRBL(Nbases), bConvRBL(Nbases), bDTRBL(Nbases);
-// real[int,int] bSmagoRBL(Mbases, Nbases);
-//
-// bDiffRBL = 0;
-// bConvRBL = 0;
-// bDTRBL = 0;
-// bSmagoRBL = 0;
 
 // Definicion de Matrices y Tensores variables globales y locales
 real[int,int][int] SmagoRBL(Mbases), StabPRBL(Taubases);

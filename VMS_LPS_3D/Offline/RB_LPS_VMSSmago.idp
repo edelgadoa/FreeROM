@@ -8,46 +8,31 @@ real errRB = 1.;
 matrix MRBV, MRBP; // Matrix para las interacciones Velocidad-Velocidad	 y Presion-Presion
 	
 MRBV = nuRB * DiffRBi;
-//mpi(cout<<MRBV<<endl;)
-//MRBVP += DivPRBi;
-//MRBVP += DivPRBTi;
 MRBV = MRBV +(1./dt) * DTRBi;
-//mpi(cout<<MRBV<<endl;)
 MRBV = MRBV + ConvLRBi;
-// mpi(cout<<MRBV<<endl;)
+
 MRBP = PenRBi;	
-// mpi(cout<<MRBP<<endl;)
-
-// MRBP = MRBP + StabhkRBs;
-
-// bDiffRBi = bDiffRBG(0:2*I-1);
-
-
 	
-for (int iN=0; iN<=niterRB; iN++){
-	if  (errRB<epsRB){
-		mpi(cout<<"Iter RB:"<<iN<<endl;)
-		break;
-	}
+for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
+
 	matrix MRBFV = MRBV;
 	matrix MRBFP = MRBP;
 	ConvRBi = 0;
 	SmagoRBi = 0;
 	StabPRBi = 0;
 	bDTRBi = 0;
-	bSmagoRBi = 0;
+//	bSmagoRBi = 0;
 	bRB = 0;
 	
 	// Matriz de conveccion
 	for (int s=0; s<I; s++){
-		real[int,int] ConvRBint(2*Nbases, 2*Nbases), ConvRBN(I, I);
+		real[int,int] ConvRBint(Nbases, Nbases), ConvRBN(I, I);
 		ConvRBint = ConvRB[s];
 		ConvRBN = ConvRBint(0:I-1, 0:I-1);
 		ConvRBN = uRBv(s)*ConvRBN;
 		ConvRBi += ConvRBN;
 	}
-	// mpi(cout<<"CONV:"<<endl<<ConvRBi<<endl;)
-
+	
 	// Matiz de Smagorinsky
 	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(9), uN(I);
 	uN = uRBv(0:I-1); //solo las componentes de la velocidad
@@ -58,23 +43,20 @@ for (int iN=0; iN<=niterRB; iN++){
 		GraduN = GraduN + GradPMLev[s];
 		bEIMS(s) = sqrt(GraduN'*GraduN);
 	}
-	// mpi(cout<<bEIMS<<endl;)
+
 	sigmaEIMS = MEIMS^-1 * bEIMS;
 	
-	//cout<<"it: "<<iN<<",Proc: "<<mpirank<<endl<<sigmaEIMS<<endl;
 	for (int s=0; s<Mbases; s++){
-		real[int,int] SmagoRBint(2*Nbases, 2*Nbases), SmagoRBN(I, I);
+		real[int,int] SmagoRBint(Nbases, Nbases), SmagoRBN(I, I);
 		SmagoRBint = SmagoRB[s];
 		SmagoRBN = SmagoRBint(0:I-1, 0:I-1);
 		SmagoRBN = sigmaEIMS(s)*SmagoRBN;
 		SmagoRBi += SmagoRBN; 
 	}
 
-	//mpi(cout<<"SMAGO:"<<endl<<SmagoRBi<<endl;)
-	//mpi(cout<<"--------------------------------"<<endl;)	
 	// Segundo miembro Smago
 	for (int s=0; s<I; s++){
-		bSmagoRBi(s) = sigmaEIMS'*bSmagoRBG(0:Mbases-1,s);
+		bSmagoRBGs(s) = sigmaEIMS'*bSmagoRBG(0:Mbases-1,s);
 	}
 	
 	// Matriz LPS
@@ -95,15 +77,12 @@ for (int iN=0; iN<=niterRB; iN++){
 		Nguki = NGUK[s](0:I,0:I);
 		Auxi = CuN.*Nguki;
 		Nguk = (CS*hkG[](PuntosMTau(s)))^2*sqrt(Auxi.sum)/mkG[](PuntosMTau(s));
-		// mpi(cout<<"it:"<<iN<<",s:"<<s<<", Nguk:"<<Nguki<<", Nuk"<<Nuki<<endl;)
 
-		bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTau(s))^2 + cc2*Nuk/hkG[](PuntosMTau(s)))^-1;	
-		
-		//mpi(cout<<"hk^2="<<hkG[](PuntosMTau(s))^2<<endl;)
+		bEIMTau(s) = (cc1*(nuRB+Nguk)/hkG[](PuntosMTau(s))^2 + cc2*Nuk/hkG[](PuntosMTau(s)))^-1;			
 	}
-	// mpi(cout<<"btau"<<bEIMTau<<endl;)
+
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-	// mpi(cout<<"it:"<<iN<<", Proc: "<<mpirank<<endl<<sigmaEIMTau<<endl;)
+
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBint(Nbases, Nbases), StabPRBN(I, I);
 		StabPRBint = StabPRB[s];
@@ -111,8 +90,6 @@ for (int iN=0; iN<=niterRB; iN++){
 		StabPRBN = sigmaEIMTau(s)*StabPRBN;
 		StabPRBi += StabPRBN; 
 	}
-	// mpi(cout<<"LPS:"<<endl<<StabPRBi<<endl;)
-	// mpi(cout<<"--------------------------------"<<endl;)	
 	
 	// Segundos miembro dt
 	for (int s=0; s<I; s++){
@@ -121,9 +98,7 @@ for (int iN=0; iN<=niterRB; iN++){
 		bDTRBint = uRBv(s)*bDTRBint;
 		bDTRBi += bDTRBint;
 	}
-	
-	// mpi(cout<<"bdt "<< bDTRBi<<endl;)
-	
+		
 	// Construyo la matriz y Segundo miembros para el problema reducido
 	MRBFV += ConvRBi;
 	MRBFV += SmagoRBi; 
@@ -131,28 +106,22 @@ for (int iN=0; iN<=niterRB; iN++){
 	
 	
 	
-	bRB = (1./dt) * bDTRBi;
-	//mpi(cout<<"bdt: "<<bRB<<endl;)
+	bRB += (1./dt) * bDTRBi;
 	bRB -= nuRB * bDiffRBG;
-	//mpi(cout<<"-bdiff: "<<bRB<<endl;)
 	bRB -= bConvLRBG;
-	//mpi(cout<<"-bconvL: "<<bRB<<endl;)
-	bRB -= bSmagoRBi;
-	//mpi(cout<<"-bSmago: "<<bSmagoRBi<<endl;)
-	//mpi(cout<<"bRB="<<bRB<<endl;)
-	
-	//MRBF = [[MRBV, DivPRBTi],[DivPRBi, MRBP]]; //matriz por bloques
+	bRB -= bSmagoRBGs;
+
+	bRB(I:2*I-1) = 0; //Aseguro que los últimos términos son ceros
 	
 	// Resuelvo el problema reducido
 	real[int] uRBvp = uRBv;
 	matrix MRBs = [[MRBFV, DivPRBTi],[DivPRBi, MRBFP]];
-	// mpi(cout<<MRBs<<endl;)
-	// mpi(cout<<bRB<<endl;)
-	set(MRBs, solver=UMFPACK);
-	// real[int,int] MRBinv = MRB^-1;
+
+	set(MRBs, solver=sparsesolver);
+
+	mpi(uRBv = MRBs^-1*bRB;) // RESUELVO EL PROBLEMA REDUCIDO EN UN UNICO PROCESADOR
+	broadcast(processor(0, mpiCommWorld), uRBv);
 	
-	uRBv = MRBs^-1*bRB;
-	//mpi(cout<<"uRB:"<<uRBv<<endl;)
 	// Actualizo el error 
 	real[int] uRBerr(I); 
 	uRBerr = uRBv(0:I-1) - uRBvp(0:I-1);

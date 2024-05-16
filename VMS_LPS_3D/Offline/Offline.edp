@@ -107,8 +107,6 @@ include "../Auxiliary/betas.idp"
 
 
 //Definicion de Constantes y variables varias
-int Nbases = 5; 
-
 real[int] MuBest(Nbases + 1), DeltaN(Nbases), TauN(Nbases), ErrorVN(Nbases), ErrorPN(Nbases);
 
 
@@ -138,21 +136,13 @@ VhP1dc[int] FVZdX(Nbases),FVZdY(Nbases), FVZdZ(Nbases);
 
 // Defino las matrices donde almaceno los snapshots por columnas, para la reconstrucción de la solución reducida
 real[int, int] MBaseV(Vh3P2.ndof, Nbases), MBaseP(VhP2.ndof, Nbases);
+MBaseV = 0;
+MBaseP = 0;
 
-
+	
 /////////////////////////////////////////
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
-mpi(cout<<"EIM DATA"<<endl;)
 include "EIM_Data.idp"
-
-int[int] LocalMP(Taubases);
-// for (int s=0; s<Taubases; s++){
-//     if (NumberPMTau(s)>0){
-//         LocalMP(s)= mapVhP0(PuntosMTau(s));
-//     }
-// }
-// cout<<LocalMP<<endl;
-
 
 
 // Cargo los datos del RBF
@@ -162,7 +152,6 @@ readvector("../RBF/gammaI.txt", real, gammaI, 0);
 
 // Inicializo las matrices para la fase offline
 include "Allocate_matrices.idp"
-mpi(cout<<"matrices alocadas"<<endl;)
 
 
 /////////////////////////////////////////
@@ -174,11 +163,8 @@ MuBest(0) = Reynolds;
 // Calculo la constante de Sobolev
 
 
-real CSobolev = 1;
-//include "Sobolev_3D.idp"
-mpi(cout<<"sobolev embedding constant calculada"<<endl;)
-
-
+real CSobolev;
+include "Sobolev_3D.idp"
 
 
 VhP2 uFijo, uFijoY, uFijoZ; //Para la normaT
@@ -220,9 +206,7 @@ else{
 }
 
 // Defino los diferentes productos escalares para construir las matrices reducidas
-mpi(cout<<"Scalar products"<<endl;)
 include "Scalar_Product_Matrices.idp"
-
 
 for (int i=0; i<Nbases; i++){
 	
@@ -243,7 +227,6 @@ for (int i=0; i<Nbases; i++){
 		
 		write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); 
 		
-        // ESTO LO TENGO QUE CAMBIAR PARA GUARDARLO EN GOLBAL
 		VhP2G SnapX, SnapY, SnapZ, SnapP;
 		
 		SnapX[] = reduceSolution(BaseVel[i][], SnapX[], MatVhP2.D, mapVhP2);
@@ -272,16 +255,13 @@ for (int i=0; i<Nbases; i++){
 		BaseVelZ[i][] = SnapZ[](mapVhP2);
 		readvector("../Snapshots/P_" + Reynolds + ".txt", real, SolP, 0);
 		SnapP[] = SolP;
-		// real MedPres = 
-		// SnapP[] -= int3d(ThG)(SnapP);
+
 		BaseP[i][] = SnapP[](mapVhP2);		
 	
 		[BaseV[i], BaseVY[i], BaseVZ[i]] = [BaseVel[i], BaseVelY[i], BaseVelZ[i]];
 			
 	}
-	//savevtk("BaseEIM.vtu", Th, [BaseV[i], BaseVY[i], BaseVZ[i]],BaseP[i], dataname = "Vel Pres", order=fforder);//, communicator = mpiCommSelf);
 	
-	mpi(cout<<"GramSchmidt"<<endl;)
 	include "GramSchmidt.idp"
 	
 	VhP2[int] BasePi(i+1);
@@ -293,12 +273,13 @@ for (int i=0; i<Nbases; i++){
 		BaseVi[k][] = BaseV[k][];
 	}
 	
+	MBaseV(:,i) = BaseV[i][];
+	MBaseP(:,i) = BaseP[i][];
+
+
 	// Almaceno en las matrices las Bases ortonormalizadas por columnas (en numeracion PETSC) para la construcccion de matrices
 	ChangeNumbering(MatVhP2, BasePi, MBasePi); 
 	ChangeNumbering(MatVh3P2, BaseVi, MBaseVi);
-
-	MBaseV(:,i) = BaseV[i][];
-	MBaseP(:,i) = BaseP[i][];
 
 
 	// Actualizo las soluciones filtradas
@@ -326,19 +307,14 @@ for (int i=0; i<Nbases; i++){
 		matrix TMP = ConvPE(Vh3P2,Vh3P2);
 		macro def(i) [i, iY, iZ] // EOM
 		macro init(i) [i, i, i] // EOM
-		MatCreate(Th, ConvPEM[i], [P2,P2,P2]);// = MatAVh3P2;
-        //ConvTemp = ConvPE(Vh3P2L,Vh3P2L);
+		MatCreate(Th, ConvPEM[i], [P2,P2,P2]);
 		ConvPEM[i] = TMP; 
 	}
 	
-	// real antisim=int3d(ThL)(antisimetric(BV,BVY,BVZ,BaseV[i], BaseVY[i],BaseVZ[i],BaseV[i], BaseVY[i],BaseVZ[i]));
-    // mpi(cout<<"Antisimetric:"<<antisim<<endl;)
 	
-	mpi(cout<<"Matrices Offline"<<endl;)
 	include "MatricesOffline.idp"
 		
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
-	mpi(cout<<"Start Greedy Algorithm"<<endl;)
 	include "Greedy.idp"
 	
 	// Actualizo el nuevo Reynolds
@@ -353,3 +329,4 @@ for (int i=0; i<Nbases; i++){
 		break;
 	}
 }
+mpi(cout<<"================================"<<endl<< "--------FIN DEL METODO RB-------"<<endl<<"================================"<<endl;)

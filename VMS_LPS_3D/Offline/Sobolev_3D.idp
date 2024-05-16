@@ -117,16 +117,12 @@ Vh3P2 [u0, u0Y, u0Z];
 VhP2 zuk;
 
 [u0, u0Y, u0Z] = [uF, uFY, uFZ];
-//u0Y = uFY;
-//u0Z = uFZ;
 
 // Fix point
 for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 {
 	zuk = UporV(u0,u0);
 	zuk[] /= sqrt(int3d(Th)(zuk^2));
-	 //{real normL2=int3d(Th)(zuk^2);
-	  //cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
 	varf prodzu([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh3P2, Vh3P2);
@@ -147,18 +143,12 @@ for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 	 
 	int kEPS = EPSSolve(ProdEscT, ProdZU, vectors = EigenVect, values = EigenVal, sparams = paramsSLEPc);
 	
-	//real[int] autovec = powermethodmpi(ProdZU,ProdEscT);
-	//broadcast(processor(0, mpiCommWorld), autovec);
+
 	rhok0 = rhok1;
 	rhok1 = EigenVal[0];
 	u0[] = EigenVect[0][];
-	//cout<<"eigenval: "<<EigenVect[0]<<endl;
-	// plot(defVel(u0),value=1,wait=1);
+
 	CSerror = abs((rhok1-rhok0)/rhok1);
  
-	
-	
 }
-
 CSobolev = rhok1;
-// mpi(cout<<"CS = "<<CSobolev<<endl;)
