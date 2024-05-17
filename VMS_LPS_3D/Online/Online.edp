@@ -1,0 +1,154 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Programa principal que resuelve la fase ONLINE LPS 2D (P2-P2)
+
+verbosity = 0;
+
+// Cargamos librerias
+load "iovtk" 
+load "PETSc"
+
+
+macro dimension()3 //EOM
+include "macro_ddm.idp"
+
+// Creamos la Malla
+include "../Auxiliary/CuboNxNyNz.idp"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/Macros_3D.idp"
+include "../Auxiliary/search.idp"
+include "../Auxiliary/IO.idp" 
+include "../Auxiliary/Functions_MP.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_3D.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_3D.idp"
+
+VhP0 mk,tKcod,tKTcod,tau;
+
+varf med(unused,v) = intN(Th)(1.*v);
+real[int] medk = med(0,VhP0);
+mk[] = sqrt(medk);
+
+VhP0 hk = hTriangle;
+real hT, hTL = hk[].max;
+mpiAllReduce(hTL, hT, mpiCommWorld, mpiMAX); //El máximo de los diámetros de la malla
+
+VhP0G mkG, hkG;
+hkG = hTriangle;
+varf medG(unused,v) = intN(ThG)(1.*v);
+real[int] medkG = medG(0,VhP0G);
+mkG[] = sqrt(medkG);
+
+MatCreate(Th, MatVhP1dc, P1dc);
+
+{
+	macro def(i) [i, i#Y, i#Z, i#P] // EOM 
+	macro init(i) [i, i, i, i] // EOM
+	MatCreate(Th, MatVh4P2, [P2, P2, P2, P2]); 
+}
+
+mapVhP1dc = restrict(VhP1dc, VhP1dcG, myN2o);
+mapVhP0 = restrict(VhP0, VhP0G, myN2o);
+mapVh4P2 = restrict(Vh4P2, Vh4P2G, myN2o);
+
+
+// Definimos las matrices de interpolacion y derivacion
+include "../FOM/Interp_matrix_NoStab_VP_3D.idp"
+// include "../FOM/Interp_matrix_NoStab_VP_3D_Global.idp" //Es necesario?
+
+// Incluimos el levantamiento
+
+include "../FOM/Levantamiento_3D.idp"
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../Auxiliary/Normas_3D.idp"
+
+// Cargamos Bases y Matrices de la fase offline
+include "Load_Basis_Data.idp"
+
+// Cargo los elementos del EIM (tanto para Smago como para LPS)
+include "../Offline/EIM_Data.idp"
+
+Reynolds = 1000;
+
+
+// Resolvemos el problema de FE, y calculamos el tiempo en resolver
+real timeFE = clock();
+
+Vh4P2 [uEF, uEFY, uEFZ, uEFP]; // Serán las soluciones para el problema EF
+VhP1dc uEFdX, uEFdY, uEFdZ, uEFYdX, uEFYdY, uEFYdZ, uEFZdX, uEFZdY, uEFZdZ; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP2 uprevL, uprevLY, uprevLZ; // La sol del paso anterior con Levantamiento
+VhP1dc Gr; // Para el termino de VMS-Smagorinsky
+
+include "../FOM/FE_VMS_LPS_3D.idp"
+
+// VhP2 UEF, UEFY, UEFP;
+// UEF = uEF; UEFY = uEFY; UEFP = uEFP;
+
+Vh4P2G [uEFG, uEFGY, uEFGZ, uEFGP];
+uEFG[] = reduceSolution(uEF[], uEFG[], MatVh4P2.D, mapVh4P2);
+
+Vh3P2G [UEF, UEFY, UEFZ] = [uEFG, uEFGY, uEFGZ];
+VhP2G UEFP = uEFGP;
+
+timeFE = clock() - timeFE; 
+
+
+/////////////////////////
+
+/////////////////////////
+//	Resolvemos el problema de RB, y calculamos el tiempo en resolver
+real timeRB = clock();
+
+real[int] uRBv(2*Nbases); // Vectores donde almaceno la Solución Reducida
+real[int,int] MRB(2*Nbases,2*Nbases); // Matriz para resolver el sistema
+real[int] bRB(2*Nbases); // Segundo miembro para resolver el sistema
+
+real nuRB = 1./Reynolds;
+
+include "../Offline/RB_LPS_VMSSmago.idp"
+
+Vh3P2G [uRB, uRBY, uRBZ]; //MBaseV está en el espacio global
+VhP2G uRBP;
+
+mpi(cout<<uRBv<<endl;)
+uRB[] = MBaseV*uRBv(0:Nbases-1);
+uRBP[] = MBaseP*uRBv(Nbases:2*Nbases-1);
+
+timeRB = clock() - timeRB;
+////////////////////////
+
+
+// Calculo errores y speedups
+Vh3P2G [uERR, uERRY, uERRZ];
+VhP2G uERRP;
+
+uERR[] = UEF[] - uRB[];
+uERRP[] = UEFP[] - uRBP[];
+
+
+
+//mpiAllReduce(maxerrorL, maxerror, mpiCommWorld, mpiMAX);
+
+
+real speedup = timeFE/timeRB;
+
+mpi(cout<<"-------------------------------"<<endl;
+cout<<" "<<endl;
+cout<<" "<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Error L2 Vel: "<<uERR[].l2<<endl;
+// cout<<"Error T para velocidades= "<<normErrorV<<endl;
+cout<<"Error L2 Pres: =  "<<uERRP[].l2<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Tiempo en resolver por F.E.:  "<<timeFE<<"s"<<endl;
+cout<<"Tiempo en resolver por B.R.:  "<<timeRB<<"s"<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Speedup de la resolucion :    "<<speedup<<endl;
+cout<<"-------------------------------"<<endl;)

@@ -82,7 +82,7 @@ for (int iN=0; iN<=niterRB && (errRB>epsRB); iN++){
 	}
 
 	sigmaEIMTau = MEIMTau^-1*bEIMTau;
-
+	
 	for (int s=0; s<Taubases; s++){
 		real[int,int] StabPRBint(Nbases, Nbases), StabPRBN(I, I);
 		StabPRBint = StabPRB[s];
