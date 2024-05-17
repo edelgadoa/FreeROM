@@ -75,7 +75,7 @@ include "Load_Basis_Data.idp"
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "../Offline/EIM_Data.idp"
 
-Reynolds = 1000;
+Reynolds = 1362;
 
 
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
