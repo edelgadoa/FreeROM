@@ -1,0 +1,73 @@
+// Calculo de Errores
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+// include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+Vh3P2 [uEF,uEFY,uEFP];
+Vh2P2 [u,uY];
+Vh2P2 [uR,uRY];
+Vh2P2 [err,errY];
+int nn = (TFR-TF)/dt+1;
+real[int] errorl2(nn);
+real[int] errorEstabR0l2(nn);
+real[int] errorPODl2(nn);
+int m = 0;
+
+VhP2 umod;
+
+int NbasesConv = 4;
+
+for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
+    
+	write("Output.txt","t = " + ti,0,1);
+
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0); uEF[] = Sol;
+    [u,uY] = [uEF,uEFY];
+    
+    // Galerkin
+    
+    readvector("Resultados/Snap_POD_Re_" + Reynolds + "_t_" +ti+ ".txt", real, SPOD, 0); uR[] = SPOD;
+    [err,errY] = [u-uR,uY-uRY];
+    //umod = err^2+errY^2;
+    //plot(umod,fill=1,value=1,cmm="t = "+ti);
+    errorPODl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error without Estabilization (L2) = " << errorPODl2(m) << endl;
+
+    // Penalizacion sin Filtrado
+    readvector("Resultados/Snap_POD_PEN_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SPEN, 0); uR[] = SPEN;
+    [err,errY] = [u-uR,uY-uRY];
+    //umod = err^2+errY^2;
+    //plot(umod,fill=1,value=1,cmm="t = "+ti);
+    errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
+    /*
+    // Penalizacion con Filtrado
+    readvector("Resultados/Snap_POD_PEN_FIL_Re_" + Reynolds + "_F_" + NbasesConv + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
+    [err,errY] = [u-uR,uY-uRY];
+    //umod = err^2+errY^2;
+    // plot(umod,fill=1,value=1,cmm="t = "+ti);
+    errorl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
+    cout << "Error with Estabilization (R=" + NbasesConv + ") (L2) = " << errorl2(m) << endl;
+    */
+    m+=1;
+}
+write("Errores/ErrorPOD_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorPODl2, 0, 0);
+write("Errores/ErrorPEN_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorEstabR0l2, 0, 0);
+//write("Errores/ErrorFIL_" + NbasesConv + "_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", errorl2, 0, 0);

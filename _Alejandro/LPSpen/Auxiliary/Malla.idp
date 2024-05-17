@@ -1,0 +1,14 @@
+// MALLA
+
+// MESH PARTITIONING (Intermediate grid)
+int n1 = 25*n0; // Points density on cylinder
+int n2 = 25*n0; // Points density on inlet
+int n3 = 15*n0; // Points density on top, outlet and bottom
+
+// BUILDING MESH
+border cylinder(t=2*pi,0)   {x=xCyl+D/2*cos(t); y=yCyl+D/2*sin(t); label=1;} ;
+border inlet   (t=H,0)      {x=xin;             y=t;               label=2;} ;
+border top     (t=xout,xin) {x=t;               y=H;               label=1;} ;
+border outlet  (t=0,H)      {x=xout;            y=t;               label=3;} ;
+border bottom  (t=xin,xout) {x=t;               y=0;               label=1;} ;
+mesh Th = buildmesh(cylinder(n1*pi*D)+inlet(n2*H)+top(n3*(xout-xin))+outlet(n3*H)+bottom(n3*(xout-xin))) ;

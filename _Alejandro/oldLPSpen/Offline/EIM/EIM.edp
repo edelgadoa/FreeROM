@@ -1,0 +1,158 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
+
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+load "PETSc"
+
+// Cargamos macros, funciones i/o
+include "../../Auxiliary/IO.idp"
+include "../../Auxiliary/Macros_2D.idp"
+include "../../Auxiliary/macro_ddm.idp"
+include "../../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de datos importantes
+real tS0 = TF-period;
+real tSF = TF;
+real niS = (tSF-tS0)/dt+1;
+real[int] tvec(niS+1);
+for(int i=0; i<niS; i++){
+	tvec(i) = tS0+i*dt;
+}
+
+write("Output.txt","Reading data ...",1,1);
+include "Load_Snapshots_EIM.idp"
+write("Output.txt","Data read.",1,1);
+		
+// Defino las variables para el EIM
+write("Output.txt","Defining auxiliar elements ...",1,1);
+int Mmax = sqrt(Vh2P2.ndof); //numero maximo de bases del EIM
+int M; //numero de bases que voy a considerar finalmente
+real[int] Tmax(Mmax), muEIM(Mmax); //Donde almaceno los puntos magicos y los valores de parámetros que voy escogiendo
+real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa del EIM
+real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
+
+VhP2[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP2 gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+write("Output.txt","OK.",1,1);
+
+///////////////////////////////////////////////////////////////////////////////
+// COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM (utau)
+///////////////////////////////////////////////////////////////////////////////
+
+write("Output.txt","Computing EIM for utau ...",1,1);
+
+// Primera iteración //Tomamos el primer valor del parametro aleatorio
+muEIM(0) = tvec(0); //Almacenamos el valor de tiempo escogido
+
+BEIM[0] = uTau[0]^2+uTauY[0]^2;
+
+Tmax(0) = BEIM[0][].imax;
+BEIM[0][] /= BEIM[0][].max;
+
+BM(0,0) = BEIM[0][](Tmax(0));
+
+write("Bases_EIM/Base_EIM_utau_" + tvec(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
+
+// Hacemos el greedy para calcular todas las bases del EIM
+for (int i=1; i<Mmax; i++){
+	real[int] ErroritL(niS+1), Errorit(niS+1);
+	
+	include "EIMgreedy_utau.idp";
+
+	write("Output.txt", "Error EIM _utau_ "+ErrorMaxEIM(i-1), 1,1);
+
+	if(ErrorMaxEIM(i-1)<epsEIM){
+		M = i;
+		break;
+	}
+}
+write("Output.txt","EIM for utau OK.",1,1);
+
+// Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
+
+write("Output.txt","Saving ...",1,1);
+real[int] muEIMF(M);
+muEIMF = muEIM(0:M-1);
+write("Bases_EIM/muEIM_utau.txt", muEIMF, 0, 0);
+
+real[int, int] BFinal(M,M);
+BFinal = BM(0:M-1,0:M-1);
+write("Bases_EIM/MatrizEIM_utau.txt", BFinal, 0, 0, 0, 20);
+
+real[int] TM(M);
+TM = Tmax(0:M-1);
+write("Bases_EIM/TintEIM_utau.txt", TM, 0, 0);
+
+real[int] ErrorEIM(M);
+ErrorEIM = ErrorMaxEIM(0:M-1);
+write("Bases_EIM/ErrorEIM_utau.txt", ErrorEIM, 0, 0);
+write("Output.txt","Saved.",1,1);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM (udtau)
+///////////////////////////////////////////////////////////////////////////////
+
+write("Output.txt","Computing EIM for udtau ...",1,1);
+
+// Primera iteración //Tomamos el primer valor del parametro aleatorio
+muEIM(0) = tvec(0); //Almacenamos el valor de tiempo escogido
+
+BEIM[0] = uDTau[0]^2;
+
+Tmax(0) = BEIM[0][].imax;
+BEIM[0][] /= BEIM[0][].max;
+
+BM(0,0) = BEIM[0][](Tmax(0));
+
+write("Bases_EIM/Base_EIM_udtau_" + tvec(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
+
+// Hacemos el greedy para calcular todas las bases del EIM
+for (int i=1; i<Mmax; i++){
+	real[int] ErroritL(niS+1), Errorit(niS+1);
+	
+	include "EIMgreedy_udtau.idp";
+
+	write("Output.txt", "Error EIM_udtau "+ErrorMaxEIM(i-1), 1,1);
+
+	if(ErrorMaxEIM(i-1)<epsEIM){
+		M = i;
+		break;
+	}
+}
+write("Output.txt","EIM for udtau OK.",1,1);
+
+// Guardamos la matriz B, y los puntos mágicos, así como los errores obtenidos y los Reynolds de cada snapshot
+
+write("Output.txt","Saving ...",1,1);
+real[int] muEIMF2(M);
+muEIMF2 = muEIM(0:M-1);
+write("Bases_EIM/muEIM_udtau.txt", muEIMF2, 0, 0);
+
+real[int, int] BFinal2(M,M);
+BFinal2 = BM(0:M-1,0:M-1);
+write("Bases_EIM/MatrizEIM_udtau.txt", BFinal2, 0, 0, 0, 20);
+
+real[int] TM2(M);
+TM2 = Tmax(0:M-1);
+write("Bases_EIM/TintEIM_udtau.txt", TM2, 0, 0);
+
+real[int] ErrorEIM2(M);
+ErrorEIM2 = ErrorMaxEIM(0:M-1);
+write("Bases_EIM/ErrorEIM_udtau.txt", ErrorEIM2, 0, 0);
+write("Output.txt","Saved.",1,1);

@@ -1,0 +1,75 @@
+    //real alpha=0.12018;
+    int Nxfine = 100;
+    int Nxmed = 50;
+    int Nxgross = 30;
+    
+    //////////////////////
+    //Marco total 
+    //////////////
+    //Parte de abajo
+    border fr11(t=0,2.144){x=t; y=0; label=5;}
+    border fr12(t=2.144,2.944+0.045){x=t; y=0; label=5;}
+    border fr13(t=2.944+0.045,5){x=t; y=0; label=5;}
+    border fr14(t=5,9.2){x=t; y=0; label=5;}
+    
+    // Parte derecha
+    border fr2(t=0,1.393){x=9.2; y=t; label=2;}
+    
+    // Parte de arriba
+    border fr3(t=9.2,0){x=t; y=1.393; label=3;}
+    
+    // Parte izquierda
+    border fr4(t=1.393,0){x=0; y=t; label=4;}
+    
+    
+    
+    ////////////////////////////////////////
+    // Obstáculo 
+
+    // Definir la curva de Bézier a la izquierda
+
+    real px1 = 2.144; real px2 = 2; real px3=2; real px4=2.144;
+    real py1 = 0.045; real py2=0.045; real py3=0.333; real py4=0.333;
+    
+
+    border bezier(t=0,1){x=(1-t)^3*px1+3*(1-t)^2*t*px2+3*(1-t)*t^2*px3+t^3*px4;
+                         y=(1-t)^3*py1+3*(1-t)^2*t*py1+3*(1-t)*t^2*py3+t^3*py4; label=1;}
+                         
+    border fro1(t=2.144,2.144+0.8){x=t; y=0.045; label=1;}
+    border fro3(t=0,1){x=2.944-t*(0.2); y=0.045+alpha+t*(0.288-alpha); label=1;}
+    border fro2(t=0.045,alpha+0.045){x=2.944; y=t; label=1;}
+    border fro4(t=2.744,2.144){x=t;y=0.333; label=1;}
+    
+    ////////////////////////////////////////////////////
+    // Contorno obstaculo
+    real pxx1 = 2.144; real pxx2 = 2-0.05; real pxx3 = 2-0.05; real pxx4 = 2.144;
+    real pyy1 = 0; real pyy2 = 0; real pyy3 = 0.333+0.045; real pyy4 = 0.333+0.045;
+    
+    border bezier2(t=0,1){x=(1-t)^3*pxx1+3*(1-t)^2*t*pxx2+3*(1-t)*t^2*pxx3+t^3*pxx4;
+                    y=(1-t)^3*pyy1+3*(1-t)^2*t*pyy1+3*(1-t)*t^2*pyy3+t^3*pyy4; label=0;}
+       
+    // derecha    
+    border frb2(t=0,alpha+0.045){x=2.944+0.045; y=t; label=0;}
+    
+    // arriba
+    border frb3(t=2.744,2.144){x=t; y=0.333+0.045; label=0;}
+    
+    // inclinacion angulo
+    border frb4(t=0,1){x=2.944+0.045-t*(0.2+0.045); y=0.045+alpha+t*(0.288-alpha+0.045); label=0;}
+
+    //plot(bezier2(10)+frb2(2)+frb3(2)+frb4(2)+bezier(10)+fro1(2)+fro2(2)+fro3(2)+fro4(2)+fr12(2), dim=2);
+
+
+    
+                         
+    mesh Th1 = buildmesh(fr11(1.5*Nxmed) + bezier2(0.8*Nxfine) + frb3(-Nxfine) + frb4(-Nxgross) + frb2(-Nxmed) 
+                         + fr13(0.7*Nxfine) + fr14(0.7*Nxfine) + fr2(0.5*Nxgross) + fr3(0.7*Nxfine) + fr4(0.5*Nxgross));
+                         
+    mesh Th2 = buildmesh(fr12(Nxfine) + frb2(Nxmed) + frb4(Nxfine) + frb3(Nxfine) + bezier2(-0.8*Nxfine) 
+                        + fro1(-Nxfine) + fro2(-Nxmed) + fro3(-Nxfine) + fro4(-Nxfine) + bezier(Nxfine) );
+    
+    mesh Th = Th1 + Th2;
+    
+    //plot(Th);
+
+

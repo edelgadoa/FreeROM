@@ -1,0 +1,51 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// VDTau
+readvector("../Offline/EIM/Bases_EIM/muEIM_udtau.txt", real, muEIMVDTau, 0);
+
+int MbasesVDTau = muEIMVDTau.n;
+
+VhP2[int] EIMVDTau(MbasesVDTau);
+
+//////////////////////////////////////////
+// Cargo los elementos del EIM SMAGO
+for (int i=0; i<MbasesVDTau; i++){
+	readvector("../Offline/EIM/Bases_EIM/Base_EIM_udtau_" + muEIMVDTau(i) + ".txt", real, BaseEIM, 0);
+	EIMVDTau[i][] = BaseEIM;
+}
+
+// Cargo la Matriz de EIMSmago
+readmatrix("../Offline/EIM/Bases_EIM/MatrizEIM_udtau.txt", real, MatrixEIMVDTau, 0);
+matrix MEIMVDTau = MatrixEIMVDTau;
+set(MEIMVDTau, solver= UMFPACK);
+
+//Cargo los Puntos Magicos Smago y los paso a local para trabajar con ellos
+readvector("../Offline/EIM/Bases_EIM/TintEIM_udtau.txt", int, PuntosMVDTau, 0);
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VTau
+readvector("../Offline/EIM/Bases_EIM/muEIM_utau.txt", real, muEIMVTau, 0);
+
+int MbasesVTau = muEIMVTau.n;
+
+Vh2P2[int] [EIMVTau,EIMVTauY](MbasesVTau);
+
+//////////////////////////////////////////
+// Cargo los elementos del EIM SMAGO
+for (int i=0; i<MbasesVTau; i++){
+	readvector("../Offline/EIM/Bases_EIM/Base_EIM_utau_" + muEIMVTau(i) + ".txt", real, BaseEIM, 0);
+	EIMVTau[i][] = BaseEIM;
+}
+
+// Cargo la Matriz de EIMSmago
+readmatrix("../Offline/EIM/Bases_EIM/MatrizEIM_utau.txt", real, MatrixEIMVTau, 0);
+matrix MEIMVTau = MatrixEIMVTau;
+set(MEIMVTau, solver= UMFPACK);
+
+//Cargo los Puntos Magicos Smago y los paso a local para trabajar con ellos
+readvector("../Offline/EIM/Bases_EIM/TintEIM_utau.txt", int, PuntosMVTau, 0);

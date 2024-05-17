@@ -1,0 +1,130 @@
+///////////////
+// FreeROM 
+/////////////// 
+int I = NbasesV + NbasesP; // Para ajustar los indices
+
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteracion del Greedy
+real[int] DeltaG(Ntrain); 
+
+// Inicializamos las matrices para el problema reducido
+real[int, int] DiffRBi(I, I), DivPRBi(I, I), DivPRBTi(I, I), PenRBi(I, I),
+			   DTRBi(I, I), ConvRBi(I, I), SmagoRBi(I, I);
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDTRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffRB(0:I-1, 0:I-1);
+DivPRBi = DivPRB(2*Nbases-NbasesV:2*Nbases-NbasesP-1, 0:I-1);;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB(2*Nbases-NbasesV:2*Nbases-NbasesP-1,2*Nbases-NbasesV:2*Nbases-NbasesP-1);
+DTRBi = DTRB(0:I-1, 0:I-1);
+
+// Condicion inicial
+write("Output.txt", "Calculando condicion inicial ...", 1, 1);
+real ReInit = 8500; 
+Vh3P2per [uCIa,uCIYa,uCIPa];
+readvector("../Snapshots/Vx_" + ReInit + "_t_" +T0+ ".txt", real, initX, 0); uCIa[] = initX;
+readvector("../Snapshots/Vy_" + ReInit + "_t_" +T0+ ".txt", real, initY, 0); uCIYa[] = initY;
+readvector("../Snapshots/P_" + ReInit + "_t_" +T0+ ".txt", real, initP, 0); uCIPa[] = initP;
+
+Vh2P2perL [uCI, uCIY];
+[uCI,uCIY] = [uCIa,uCIYa];
+VhP1perL uCIP; uCIP = uCIPa;
+real[int] uCIv;
+ChangeNumbering(MPescT, uCI[], uCIv);
+real[int] uCIPv;
+ChangeNumbering(MPescP, uCIP[], uCIPv);
+
+real[int] uCIRBv(I);
+for(int ii = 0; ii<NbasesV;ii++){
+	real[int] Vi;
+	ChangeNumbering(MPescT, BaseV[ii][], Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescT);
+}
+for(int ii = NbasesV; ii<I; ii++){
+	real[int] Pi;
+	ChangeNumbering(MPescP, BaseP[ii-NbasesV][], Pi);
+	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
+}
+mpi(cout << uCIRBv << endl;)
+
+write("Output.txt", "Condicion inicial OK.", 1, 1);
+
+// Comenzamos el bucle del greedy 
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+	real nuRB = 1./MuTrain(iRB);
+	
+	// Resuelvo el problema 
+	real[int] uRBv(I); // Vectores donde almaceno la Solución Reducida
+	real[int,int] MRB(I,I); // Matriz para resolver el sistema
+	real[int] bRB(I); // Segundo miembro para resolver el sistema
+	
+	uRBv = uCIRBv; // Falta condicion INICIAL
+	mpi(cout<<"Calculando solucion reducida..."<<endl;)
+	include "RB_VMSSmago.idp"
+	// mpi(cout<<uRBv<<endl;)
+	// Reconstruyo la solución reducida
+	mpi(cout<<"OK."<<endl;)
+	
+
+	Vh2P2perL [uRBL, uRBLY];
+	VhP1perL uRBPL;
+	
+	real[int,int] MBaseVi(Vh2P2perL.ndof, NbasesV), MBasePi(VhP1perL.ndof, NbasesP); // Matrices intermedias
+	MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:NbasesV-1);
+	MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:NbasesP-1);
+	
+	uRBL[] = MBaseVi*uRBv(0:NbasesV-1);
+	uRBPL[] = MBasePi*uRBv(NbasesV:I-1);
+	
+	Vh2P2per [uRB, uRBY];
+	VhP1per uRBP;
+	
+	reduceSolution(uRBL, uRB, MatAVh2P2per.D, mapVh2P2per)
+	reduceSolution(uRBPL, uRBP, MatAVhP1per.D, mapVhP1per)
+	
+	// write("Sol_vel" + mpisize + ".txt", uRBP[], 0, 0);
+	
+	if(MuTrain(iRB)==Reynolds){
+		// plot([uRB, uRBY], cmm="RB para Re="+Reynolds);
+		plot(uRBP, fill=1, value=1, cmm="RB para Re="+Reynolds);
+		// mpi(cout<<uRBv<<endl;)
+	}
+	
+	// Calculo el estimador de error 
+
+	write("Output.txt", "Calculando espectro ...", 1, 1);
+
+	// Calculamos el espectro de la funcion reducida
+	VhP1<complex> uC, uCY, aux=0.;
+	uC = uRB+aux; uCY = uRBY+aux;
+
+	real[int] energykk = espectro2DDFFT(uC[],uCY[],NN+1);
+	real[int] energyk53(energykk.n),errk(k2-k1+1);
+	for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+	real amin=1.e-11,amax=1.e-6,adt=2.e-11;
+	real an=(amax-amin)/adt+1.;
+	real[int] difere(an);
+	int cont = 0;
+	for(real a=amin;a<=amax;a+=adt)
+	{
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		errk(0:errk.n-1)-=energykk(k1:k2);
+		difere(cont)=errk.l2;
+		errk(0:errk.n-1)=a*energyk53(k1:k2);
+		difere(cont)/=errk.l2;
+		cont++;
+	}
+	DeltaG(iRB)=difere.min;
+	write("Output.txt","    - estimate= "+DeltaG(iRB),1,1);
+
+	write("Output.txt", "Espectro OK.", 1, 1);
+
+}
+
+// mpi(cout<<"Delta"<<DeltaG<<endl;)
+DeltaN(iGreedy) = DeltaG.max;
+MuBest(iGreedy+1) = MuTrain(DeltaG.imax);

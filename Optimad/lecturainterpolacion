@@ -1,0 +1,18 @@
+mesh Th=readmesh("mallapm.am_fmt");
+
+mesh Th0=readmesh("malla12018.am_fmt");
+
+fespace Vh(Th,P1); 
+fespace Wh(Th,P2);
+
+fespace Vh0(Th0,P1);
+fespace Wh0(Th0,P2); 
+
+
+int nn;
+Wh0 u1; 
+ifstream velox("vx-1-012018.txt")
+{velox >>nn;
+velox >> u1[];
+}
+plot(u1, wait=1);

@@ -1,0 +1,31 @@
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Functions_MP.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+VhP1per uRB3;
+VhP1per uRB6;
+
+readvector("Sol_vel3.txt",real, sol3, 0);
+readvector("Sol_vel6.txt",real, sol6, 0);
+
+
+uRB3[] = sol3;
+uRB6[] = sol6;
+
+VhP1per uRB;
+
+uRB[] = uRB3[] - uRB6[];
+
+plot(uRB, value=1);

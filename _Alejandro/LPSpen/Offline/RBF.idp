@@ -1,0 +1,90 @@
+// RBF 
+
+// Carga de datos
+readmatrix("RBF/DataVTau_" + Reynolds + ".txt",real,SnapVTau,0);
+readmatrix("RBF/DataVDTau_" + Reynolds + ".txt",real,SnapVDTau,0);
+readmatrix("RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
+readvector("Bases/MediaV_" + Reynolds + ".txt",real, mSnapV,0);
+readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVRBF,0);
+int nSnap = SnapVTau.m;
+int nBasesV = BaseVRBF.m;
+
+// Vector de parametros velocidades reducidas
+real[int,int] X(nBasesV,nSnap);
+for(int i=0;i<nSnap;i++){
+    real[int] Snapi = SnapV(:,i);
+    Vh2P2 [sV,sVY]; sV[] = Snapi-mSnapV;
+    for(int j=0;j<nBasesV;j++){
+        real[int] Basej = BaseVRBF(:,j);
+        Vh2P2 [bV,bVY]; bV[] = Basej;
+        X(j,i) = int2d(Th)(bV*sV+bVY*sVY);
+    }
+}
+
+// Carga de bases POD
+readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTauRBF,0);
+readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTauRBF,0);
+int nPODVTau = BaseVTauRBF.m;
+int nPODVDTau = BaseVDTauRBF.m;
+
+///////////////////////////////////////////////////////////////////////////////
+// Metodo RBF
+
+// Definicion de la funcion Gaussiana
+func real gauss(real r){
+ 	if(1-r>=0){
+	    return (1-r);
+    }else{
+	    return 0;
+    }
+}
+
+// Calculo de coeficientes
+real[int,int] YVTau(nSnap,nPODVTau);
+real[int,int] YVDTau(nSnap,nPODVDTau);
+
+Vh2P2 [mode,modeY],[aux,auxY],[aux2,aux2Y];
+VhP2 modesc, auxsc, auxsc2;
+
+varf varmasa2([u,uY],[v,vY])=int2d(Th)(u*v+uY*vY);
+matrix MMasa2 = varmasa2(Vh2P2,Vh2P2);
+varf varmasa(u,v)=int2d(Th)(u*v);
+matrix MMasa = varmasa(VhP2,VhP2);
+for(int i=0; i<nSnap; i++){
+    aux2[] = SnapVTau(:,i);
+    aux[] = MMasa2*aux2[];
+    auxsc2[] = SnapVDTau(:,i);
+    auxsc[] = MMasa*auxsc2[];
+    for(int j=0; j<nPODVTau; j++){
+        mode[] = BaseVTauRBF(:,j);
+        YVTau(i,j) = mode[]'*aux[];
+    }
+    for(int j=0; j<nPODVDTau; j++){
+        modesc[] = BaseVDTauRBF(:,j);
+        YVDTau(i,j) = modesc[]'*auxsc[];
+    }
+}
+
+// Definicion de la matriz de pesos
+real[int,int] gaussRBF(nSnap,nSnap);
+real[int] dist(nBasesV);
+for(int i=0; i<nSnap; i++){
+    for(int j=i; j<nSnap; j++){
+        dist = X(:,i)-X(:,j);
+        gaussRBF(i,j)=gauss(dist.l2);
+        gaussRBF(j,i)=gaussRBF(i,j);
+    }
+}
+matrix MgaussRBF = gaussRBF;
+set(MgaussRBF,solver=UMFPACK);
+cout << gaussRBF << endl;
+
+// Solve the linear system
+
+real[int,int] pesosRBFVTau(nSnap,nPODVTau);
+pesosRBFVTau = MgaussRBF^(-1)*YVTau;
+real[int,int] pesosRBFVDTau(nSnap,nPODVDTau);
+pesosRBFVDTau = MgaussRBF^(-1)*YVDTau;
+
+write("RBF/PesosVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",pesosRBFVTau, 0, 0);
+write("RBF/PesosVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",pesosRBFVDTau, 0, 0);

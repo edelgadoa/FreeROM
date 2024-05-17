@@ -1,0 +1,27 @@
+
+
+mesh Th=readmesh("malla160758.am_fmt");
+
+fespace Vh(Th,P1); 
+fespace Wh(Th,P2);
+ 
+
+Wh u1,u2; 
+Vh pr;
+ifstream pres("p-1-0.160758.txt");
+{
+pres>> pr[];
+}
+plot(pr, wait=1);
+ifstream velox("vx-1-0.160758.txt");
+{
+velox>> u1[];
+}
+plot(u1,wait=1);
+
+ifstream veloy("vy-1-0.160758.txt");
+{
+veloy>> u2[];
+}
+plot(u2,wait=1);
+

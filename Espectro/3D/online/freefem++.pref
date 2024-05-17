@@ -1,4 +1,0 @@
-loadpath = "/Users/cristinacaravacagarcia/FreeFem-sources/plugin/mpi/"
-loadpath += "/Users/cristinacaravacagarcia/FreeFem-sources/plugin/hpddm/"
-loadpath += "/Users/cristinacaravacagarcia/FreeFem-sources/plugin/seq/"
-includepath = "/Users/cristinacaravacagarcia/FreeFem-sources/idp/"

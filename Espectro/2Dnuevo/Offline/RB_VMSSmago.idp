@@ -1,0 +1,78 @@
+///////////////
+// FreeROM 
+/////////////// 	
+
+// Comenzamos a resolver el problema reducido	
+MRB = nuRB * DiffRBi;
+MRB += DivPRBi;
+MRB += DivPRBTi;
+MRB += (1./dt) * DTRBi;
+MRB += PenRBi;	
+
+// mpi(cout<<MRB<<endl;)
+
+for(real ti=T0+dt;ti<=TF;ti+=dt){
+	real[int, int] MRBF = MRB;
+	ConvRBi = 0;
+	SmagoRBi = 0;
+	bDTRBi = 0;
+	bRB = 0;
+	
+	// Matriz de conveccion
+	for (int s=0; s<NbasesV; s++){
+		real[int,int] ConvRBint(I,I), ConvRBN(3*Nbases, 3*Nbases);
+		ConvRBN = ConvRB[s];
+		ConvRBint = ConvRBN(0:I-1, 0:I-1);
+		ConvRBint = uRBv(s)*ConvRBint;
+		ConvRBi += ConvRBint;
+	}
+
+	// Matiz de Smagorinsky
+	real[int] bEIMS(Mbases), sigmaEIMS(Mbases), GraduN(4), uN(NbasesV);
+	uN = uRBv(0:NbasesV-1); //solo las componentes de la velocidad
+	for(int s=0; s<Mbases; s++){
+		real[int, int] Gradint(4,NbasesV);
+		Gradint = GradPM[s](0:3, 0:NbasesV-1);
+		GraduN = Gradint * uN;
+		// mpi(cout<<GraduN<<endl;)
+		bEIMS(s) = sqrt(GraduN'*GraduN);
+	}
+	//mpi(cout<<bEIMS<<endl;)
+	sigmaEIMS = MEIMS^-1 * bEIMS;
+	// cout<<sigmaEIMS<<endl;
+	for (int s=0; s<Mbases; s++){
+		real[int,int] SmagoRBint(I, I), SmagoRBN(3*Nbases, 3*Nbases);
+		SmagoRBN = SmagoRB[s];
+		SmagoRBint = SmagoRBN(0:I-1, 0:I-1);
+		SmagoRBint = sigmaEIMS(s)*SmagoRBint;
+		SmagoRBi += SmagoRBint; 
+	}
+	//mpi(cout<<SmagoRBi<<endl;)
+
+	
+	// Segundos miembro dt
+	for (int s=0; s<NbasesV; s++){
+		real[int] bDTRBint(I);
+		bDTRBint = DTRB(s,:);
+		bDTRBint = uRBv(s)*bDTRBint;
+		bDTRBi += bDTRBint;
+	}
+	
+	// Construyo la matriz y Segundo miembros para el problema reducido
+	MRBF += ConvRBi;
+	MRBF += SmagoRBi; 
+	
+	//mpi(cout<<MRBF<<endl;)
+	bRB = (1./dt) * bDTRBi(0:I-1);
+
+	// mpi(cout<<bRB<<endl;)
+	// Resuelvo el problema reducido
+	real[int] uRBvp = uRBv;
+	matrix MRBs = MRBF;
+	set(MRBs, solver=UMFPACK);
+
+	//mpi(cout<<"Aqui"<<endl;)
+	// real[int,int] MRBinv = MRB^-1;
+	uRBv = MRBs^-1*bRB;
+	//mpi(cout<<uRBv<<endl;)
+}

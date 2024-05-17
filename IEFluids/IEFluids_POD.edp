@@ -76,8 +76,8 @@ mapVhP1 = restrict(VhP1L,VhP1,myN2o);
 }
 
 
-int ReSnap = 20; // numero de Snapshots de Reynolds
-int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int ReSnap = 5; // numero de Snapshots de Reynolds
+int TimeSnap = 3; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
 // Variables donde guardo los snapshots que cargo
@@ -113,18 +113,24 @@ ChangeNumbering(MatNormH1, VhL, Vhi);
 ChangeNumbering(MatNormL2, PhL, Phi);
 
 // Calculo de matrices de Correlacion
-real[int, int] AuxC(MatNormH1.n,VhL.m), AuxP(MatNormL2.n, PhL.m); 
-MatMatMult(MatNormH1, VhL, AuxC);
-MatMatMult(MatNormL2, PhL, AuxP);		
+real[int, int] AuxV(MatNormH1.n, Vhi.m), AuxP(MatNormL2.n, Phi.m); 
+MatMatMult(MatNormH1, Vhi, AuxV);
+MatMatMult(MatNormL2, Phi, AuxP);		
 
-real [int,int] CV(Nsnap, Nsnap) = VhL'*AuxC;
-real [int,int] CP(Nsnap, Nsnap) = PhL'*AuxP;
 
-CV *= (1./Nsnap);
-CP *= (1./Nsnap);
+real [int,int] CVL= Vhi'*AuxV; // El producto se hace de manera local, luego hay que reunir la info de todos los procesadores.
+real [int,int] CPL= Phi'*AuxP;
+
+real [int,int] CV(CVL.n,CVL.m), CP(CPL.n, CPL.m);
+
+mpiAllReduce(CVL, CV, mpiCommWorld, mpiSUM);
+mpiAllReduce(CPL, CP, mpiCommWorld, mpiSUM);
+
+
+// CV *= (1./Nsnap);
+// CP *= (1./Nsnap);
 		
 
-// Write the correlation matrix
 write("Correl_U_"+mpisize+".txt", CV, 0, 0);
 write("Correl_P_"+mpisize+".txt", CP, 0, 0);
 

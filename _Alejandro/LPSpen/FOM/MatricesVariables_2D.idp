@@ -1,0 +1,11 @@
+// Matrices Variables
+varf NSvar ([uEF,uEFY,uEFP],[v1,v2,q])=
+    int2d(Th)(
+          b0*(([uEF0,uEF0Y]'*Grad(uEF))*v1+([uEF0,uEF0Y]'*Grad(uEFY))*v2)
+		+ b1*(([uEF1,uEF1Y]'*Grad(uEF))*v1+([uEF1,uEF1Y]'*Grad(uEFY))*v2)
+    )
+    -int2d(Th)(a1*dtt*(uEF0*v1+uEF0Y*v2) + a2*dtt*(uEF1*v1+uEF1Y*v2))
+;
+matrix Mvar = NSvar(Vh3P2,Vh3P2);
+real[int] bvar = NSvar(0,Vh3P2);
+
