@@ -1,0 +1,86 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para calcular las bases ortonormalizadas 
+
+//Redimensionamos con el numero de bases obtenidas en la POD
+// MBaseV.resize(Vh2P2perL.ndof, NbasesV);
+MBaseV.resize(MBaseV.n, NbasesV);
+MBaseP.resize(MBaseP.n, NbasesP);
+
+/////////////////////////////////////////////
+// Ortonormalizacion de la Presion
+
+for (int i=0; i<NbasesP; i++){
+	real[int, int] MBasePi = MBaseP(0:VhP1perL.ndof-1, 0:i-1);
+	real[int] BasePi;
+	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi);
+	real[int,int] MBasePiL(BasePi.n,i);
+	for(int j=0; j<i;j++){
+		real[int] MBasei;
+		ChangeNumbering(MatAVhP1per, MBaseP(:,j),MBasei);
+		MBasePiL(:,j) = MBasei;
+	}
+	
+	BasePi = OrtoX(BasePi, MBasePiL, MPescP);
+	ChangeNumbering(MatAVhP1per, BaseP[i][], BasePi, inverse=true); 
+	// Doble Ortonormalización (de momento hacemos una unica ortonormalizacion)
+	// BasePi = OrtoX(BasePi, MBasePi, prodP); 
+}
+
+mpi(cout<<"Presion ortonormalizada..." <<endl;)
+
+/// ///////////////////////////////////////////
+//
+pause;
+
+mpi(cout<<"Ortonormalizacion velocidad..." <<endl;)
+for (int i=0; i<NbasesV; i++){
+	real[int,int] MBaseVi = MBaseV(0:Vh2P2perL.ndof-1, 0:i-1);
+	real[int] BaseVi;
+	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+	real[int,int] MBaseViL(BaseVi.n,i);
+	for(int j=0; j<i;j++){
+		real[int] MBasei;
+		ChangeNumbering(MatAVh2P2per, MBaseV(:,j),MBasei);
+		MBaseViL(:,j) = MBasei;
+	}
+	// ChangeNumbering(MatAVh2P2per, MBaseV, MBaseVi);
+	// cout << "u = " << BaseVi.n << ", Mj = " << MBaseViL.n << ", prodV = " << prodV.n <<endl;
+	BaseVi = OrtoX(BaseVi, MBaseViL, MPescV);
+
+	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi, inverse=true); // He añadido esto para que se actualice
+	// Doble Ortonormalización
+	// BaseV[i][] = OrtoX(BaseV[i][], MBaseVi, MPescV);
+}
+mpi(cout<<"Velocidad ortonormalizada..." <<endl;)
+
+
+// Para el filtrado (Smago -> no necesario)
+// BaseVel[i] = BaseV[i]; BaseVelY[i] = BaseVY[i];
+
+///////////////////////////////////////////////////////////////////////////////
+// func real[int] proy(real[int] & u,real[int] & v, matrix & X)
+// {
+// 	real[int] aux=X*u;
+// 	real vu=v'*aux;
+// 	real uu=u'*aux;
+// 	real[int] result=u;
+// 	result*=vu/uu;
+// 	return result;
+// }
+//
+//
+// func real innerprod(real[int] & u,real[int] & v,matrix & A){real[int] aux=A*v;real result=u'*aux;return result;}
+// func real normL2(real[int] & u, matrix & A){real result=innerprod(u,u,A);return sqrt(result);}
+//
+// macro ortho(base,NN,prod)
+// {real[int] proyection(base[0][].n);
+// proyection=0;
+// for(int ii=0;ii<NN-1;ii++)proyection+=proy(base[ii][],base[NN-1][],prod);
+// base[NN-1][]-=proyection;}
+// //EOM
+//
+// macro normalization(base,nbasis,X)
+// {for(int ii=0; ii<nbasis;ii++)base[ii][]/=normL2(base[ii][],X);}//EOM

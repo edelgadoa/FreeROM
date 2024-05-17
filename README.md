@@ -74,3 +74,5 @@ Códigos FreeFem++ para resolver problemas de orden reducido
 
 `git hist` -- muestra el historial de commits
 
+`git diff FILENAME` -- muestra las diferencias de los archivos
+

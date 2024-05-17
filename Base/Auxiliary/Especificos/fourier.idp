@@ -97,6 +97,16 @@ func real[int] energyk3d(real[int] & Energy, int nx, int ny, int nz)
 ///////////////////////////////////////////////////////////////////////////////
 // Función simplificadora 
 
+func real[int] espectro2D(complex[int] & uxc, complex[int] & uyc, int Ndiv){
+
+    int length = uxc.n;
+    complex[int] uxhat(length), uyhat(length);
+    uxhat = dfft(uxc,Ndiv,-1); uyhat = dfft(uyc,Ndiv,-1);;
+    real[int] energyhat = energycomputation(uxhat,uyhat);
+    real[int] energykk=energyk2d(energyhat,Ndiv,Ndiv);
+    return energykk;
+}
+
 func real[int] espectro3D(complex[int] & uxc, complex[int] & uyc, complex[int] & uzc, int Ndiv){
 
     int length = uxc.n;
