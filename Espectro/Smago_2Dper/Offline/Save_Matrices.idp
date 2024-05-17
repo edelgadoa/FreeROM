@@ -93,10 +93,36 @@ write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
 */
 // Guardo los Snapshots calculados
 
-// ** Estoy hay que modificarlo para que guarde la base completa, así no funciona
 real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
-mpiAllReduce(MBaseV,MBaseVN,mpiCommWorld,mpiSUM);
-mpiAllReduce(MBaseP,MBasePN,mpiCommWorld,mpiSUM);
+Vh2P2per [uL,uLY]; 
+VhP1per uLP;
+
+Vh2P2perG [uG, uGY];
+VhP1perG uGP;
+
+for(int i=0; i<NbasesV; i++){
+	uL[] = MBaseV(:,i);
+	VhP2per umod; umod = sqrt(uL^2+uLY^2);
+	plotMPI(Th, umod, PkP2, def, real, cmm="modulo  base velocidad i="+i);
+	uG[] = reduceSolution(uL[],uG[],MatVh2P2per.D,mapVh2P2per);
+	plot([uG,uGY]);
+	MBaseVN(:,i) = uG[];
+}
+
+for(int i=0; i<NbasesP; i++){
+	uLP[] = MBaseP(:,i);
+	uGP[] = reduceSolution(uLP[],uGP[],MatVhP1per.D,mapVhP1per);
+	plot(uGP);
+	MBasePN(:,i) = uGP[];
+}
+
+write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
+write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
+
+// // ** Estoy hay que modificarlo para que guarde la base completa, así no funciona
+// real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
+// mpiAllReduce(MBaseV,MBaseVN,mpiCommWorld,mpiSUM);
+// mpiAllReduce(MBaseP,MBasePN,mpiCommWorld,mpiSUM);
 
 // real[int, int] MBaseVG(Vh2P2per.ndof, NbasesV), MBasePG(VhP1per.ndof, NbasesP);
 // mpiBarrier(mpiCommWorld);

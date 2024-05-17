@@ -7,7 +7,6 @@
 readmatrix("../Offline/MatricesRB/BaseV.txt", real, MBaseV, 0);
 readmatrix("../Offline/MatricesRB/BaseP.txt", real, MBaseP, 0);
 
-
 readmatrix("../Offline/MatricesRB/Diff.txt", real, DiffN, 0);
 readmatrix("../Offline/MatricesRB/DivP.txt", real, DivPN, 0);
 // readmatrix("../Offline/MatricesRB/ConvLev.txt", real, ConvLevN, 0);

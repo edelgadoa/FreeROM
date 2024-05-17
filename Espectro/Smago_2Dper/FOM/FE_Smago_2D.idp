@@ -63,7 +63,7 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 	/*
 	{
 		Vh3P2perG [uG,uGY,uGP];
-		reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
+		uG[] = reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
 		VhP2perG umodG;
 		umodG = sqrt(uG^2+uGY^2);
 		plot(umodG);

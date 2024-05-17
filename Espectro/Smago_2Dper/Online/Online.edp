@@ -72,7 +72,6 @@ include "../Offline/EIM_Data.idp"
 Vh3P2per [uEF0,uEF0Y,uEF0P];
 
 Reynolds = Refijo;
-
 readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uEF0[] = Sol;
 
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
@@ -85,7 +84,7 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
 Reynolds = 4892;
 
-// include "../FOM/FE_Smago_2D.idp"
+include "../FOM/FE_Smago_2D.idp"
 
 VhP2per UEF, UEFY, UEFP;
 UEF = uEF; UEFY = uEFY; UEFP = uEFP;
@@ -99,14 +98,6 @@ timeFE = clock() - timeFE;
 
 /////////////////////////
 //	Resolvemos el problema de RB, y calculamos el tiempo en resolver
-
-real[int] uRBv(Nbases); // Vectores donde almaceno la Solución Reducida
-real[int,int] MRB(Nbases,Nbases); // Matriz para resolver el sistema
-real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
-
-real timeRB = clock();
-
-real nuRB = 1./Reynolds;
 
 // Inicializamos las matrices para el problema reducido
 int I = Nbases;   			 			  
@@ -176,7 +167,16 @@ for(int ii = NbasesV; ii<I; ii++){
 	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
 }
 
+//////////////////
+
+real[int] uRBv(Nbases); // Vectores donde almaceno la Solución Reducida
+real[int,int] MRB(Nbases,Nbases); // Matriz para resolver el sistema
+real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
+
+real nuRB = 1./Reynolds;
 uRBv = uCIRBv; // Falta condicion INICIAL
+
+real timeRB = clock();
 
 include "../Offline/RB_VMSSmago.idp"
 
@@ -184,23 +184,22 @@ Vh2P2per [uN, uNY];
 VhP1per uNP;
 
 VhP2per UN, UNY;
-mpi(cout << "aaa" << endl;)
 
-real[int,int] MBaseVint(Vh2P2per.ndof, NbasesV), MBasePint(VhP1per.ndof, NbasesP); // Matrices intermedias
-MBaseVint = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
-MBasePint = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
+// real[int,int] MBaseVint(Vh2P2per.ndof, NbasesV), MBasePint(VhP1per.ndof, NbasesP); // Matrices intermedias
+// MBaseVint = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
+// MBasePint = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
 
-uN[] = MBaseVint*uRBv(0:NbasesV-1);
-mpi(cout << "aaa" << endl;)
-uNP[] = MBasePint*uRBv(NbasesV:I-1);
-mpi(cout << "aaa" << endl;)
+uN[] = MBaseV*uRBv(0:NbasesV-1);
+uNP[] = MBaseP*uRBv(NbasesV:I-1);
 
-mpi(cout << "aaa" << endl;)
-plot([uN, uNY], cmm = "RB solution (vel) for Re = " + Reynolds);
-plot(uNP, cmm = "RB solution (pres) for Re = " + Reynolds);
-UN = uN; UNY = uNY;
+// mpi(cout << "aaa" << endl;)
+// plot([uN, uNY], cmm = "RB solution (vel) for Re = " + Reynolds);
+// plot(uNP, cmm = "RB solution (pres) for Re = " + Reynolds);
 
 timeRB = clock() - timeRB;
+
+UN = uN; UNY = uNY;
+
 ////////////////////////
 
 // Calculo errores y speedups
