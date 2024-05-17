@@ -1,13 +1,17 @@
 ///////////////
 // FreeROM 
 ///////////////
+real timeEIM = clock();
 
 verbosity = 0;
 // Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
 
 // Cargamos librerias
 load "lapack"
+load "PETSc"
+macro dimension()3 //EOM
 
+include "macro_ddm.idp"
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_3D.idp"
 include "../../Auxiliary/IO.idp" 
@@ -18,15 +22,22 @@ include "../../Auxiliary/CuboNxNyNz.idp"
 // Definimos los espacios de EF
 include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
-// Definimos las matrices de interpolacion y derivacion
-include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
-
 // Definimos los parametros a usar
 include "../../Auxiliary/Parametros_3D.idp"
 
+// Definimos las matrices de interpolacion y derivacion
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Global.idp"
+include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
+
+mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
+mapVhP2 = restrict(VhP2,VhP2G,myN2o); // Lo necesito para pasar los snapshots a local
+mapVhP0 = restrict(VhP0,VhP0G,myN2o);
+
+MatCreate(Th, MatVhP1dc, P1dc); // Lo necesito para el levantamiento P1dc
+MatCreate(Th, MatVhP0, P0);
+
 // Incluimos el levantamiento
 include "../../FOM/Levantamiento_3D.idp"
-
 
 
 readvector("../../Snapshots/Snapshots.txt", real, vReynolds, 0); 
@@ -39,13 +50,13 @@ VhP1dc[int] BVdX(nSnapshots), BVdY(nSnapshots), BVdZ(nSnapshots),
 			BVZdX(nSnapshots), BVZdY(nSnapshots), BVZdZ(nSnapshots); 
 
 // Definimos las cantidades que usaremos para el segundo miembro del EIM
-//VhP0 tKcod,tKTcod,tau,mk;
+VhP0 tKcod,tKTcod,tau,mk;
 VhP1dc UXdX, UXdY, UXdZ, UYdX, UYdY, UYdZ, UZdX, UZdY, UZdZ;	
 VhP2 UX, UY, UZ;
 
-// varf med(unused,v)=int2d(Th)(1.*v);
-// real[int] medk=med(0,VhP0);
-// mk[]=sqrt(medk);
+varf med(unused,v) = intN(Th)(1.*v);
+real[int] medk = med(0,VhP0);
+mk[] = sqrt(medk);
 
 varf tauK(unused,v) = int3d(Th)((UX^2+UY^2+UZ^2)*v);
 varf tauKT(unused,v) = int3d(Th)((UXdX^2+UXdY^2+UXdZ^2+ UYdX^2+UYdY^2+UYdZ^2 + UZdX^2+UZdY^2+UZdZ^2)*v);
@@ -60,8 +71,10 @@ real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa de
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
 
 
-VhP0[int] BEIM(Mmax); // Donde almaceno las bases EIM
-VhP0 gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+VhP0G[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP0G gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+
+VhP0 gEIML; // Donde calculo los segundos miembros antes de pasarlos a global
 
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
@@ -81,8 +94,8 @@ tKcod[] = sqrt(tK);
 
 tKTcod[] = sqrt(tKT);
 
-
-BEIM[0] = ((cc1*(1./vReynolds(0)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+VhP0 BEIML = ((cc1*(1./vReynolds(0)+((CS*hTriangle)^2)*(tKTcod/mk))/hTriangle^2) + (cc2*(tKcod/mk)/hTriangle))^(-1.);
+BEIM[0][] = reduceSolution(BEIML[], BEIM[0][], MatVhP0.D, mapVhP0);
 
 
 Tmax(0) = BEIM[0][].imax;
@@ -95,7 +108,7 @@ write("Bases_EIM/Base_" + vReynolds(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
-	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);
+	real[int] Errorit(nSnapshots);
 	
 	include "EIMgreedy_LPS.idp";
 
@@ -125,4 +138,5 @@ real[int] ErrorEIM(M);
 ErrorEIM=ErrorMaxEIM(0:M-1);
 write("Bases_EIM/ErrorEIM_LPS.txt", ErrorEIM, 0, 0);
 
-
+timeEIM = clock() - timeEIM;
+mpi(cout<<"Tiempo EIM "<<mpisize<< " procesador(es): "<<timeEIM<<endl;)

@@ -2,8 +2,6 @@
 // FreeROM 
 ///////////////
 
-
-
 for(int i=0; i<nSnapshots; i++){
 	// vReynolds(i) = Remin + i*(Remax-Remin)/(nSnapshots-1);
 
@@ -11,17 +9,19 @@ for(int i=0; i<nSnapshots; i++){
 	readvector("../../Snapshots/Vx_" + vReynolds(i) + ".txt", real, SnapshotVx, 0);
 	readvector("../../Snapshots/Vy_" + vReynolds(i) + ".txt", real, SnapshotVy, 0);
 	readvector("../../Snapshots/Vz_" + vReynolds(i) + ".txt", real, SnapshotVz, 0);
-
-
 	
-	BVX[i][] =  SnapshotVx;
+	VhP2G BVXG, BVYG, BVZG;
+	
+	BVXG[] =  SnapshotVx;
+	BVX[i][] = BVXG[](mapVhP2);
 	BVX[i] = BVX[i] + Lev;
 	
-	BVY[i][] =  SnapshotVy;
+	BVYG[] =  SnapshotVy;
+	BVY[i][] = BVYG[](mapVhP2);
 	BVY[i] = BVY[i] + LevY;
 	
-	
-	BVZ[i][] =  SnapshotVz;
+	BVZG[] =  SnapshotVz;
+	BVZ[i][] = BVZG[](mapVhP2);
 	BVZ[i] = BVZ[i] + LevZ;
 
 	{

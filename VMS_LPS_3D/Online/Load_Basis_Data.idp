@@ -1,0 +1,50 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Programa que carga las matrices y las bases para la fase ONLINE
+
+readmatrix("../Offline/MatricesRB/BaseV.txt", real, MBaseV, 0);
+readmatrix("../Offline/MatricesRB/BaseP.txt", real, MBaseP, 0);
+
+readmatrix("../Offline/MatricesRB/Diff.txt", real, DiffRBG, 0);
+readmatrix("../Offline/MatricesRB/DivP.txt", real, DivPRBG, 0);
+readmatrix("../Offline/MatricesRB/ConvLev.txt", real, ConvLRBG, 0);
+readmatrix("../Offline/MatricesRB/DT.txt", real, DTRBG, 0);
+readmatrix("../Offline/MatricesRB/Pen.txt", real, PenRBG, 0);
+readmatrix("../Offline/MatricesRB/bSmago.txt", real, bSmagoRBG, 0);
+
+readvector("../Offline/MatricesRB/bDiff.txt", real, bDiffRBG, 0);
+readvector("../Offline/MatricesRB/bConv.txt", real, bConvLRBG, 0);
+
+readtensor("../Offline/MatricesRB/Conv.txt", real, ConvRB, 0);
+readtensor("../Offline/MatricesRB/Smago.txt", real, SmagoRB, 0);
+readtensor("../Offline/MatricesRB/StabP.txt", real, StabPRB, 0);
+
+readvectorarray("../Offline/MatricesRB/GradPMLev.txt", real, GradPMLev,0);
+readtensor("../Offline/MatricesRB/GradPM.txt", real, GradPM,0);
+readtensor("../Offline/MatricesRB/NUK.txt", real, NUK, 0);
+readtensor("../Offline/MatricesRB/NGUK.txt", real, NGUK, 0);
+
+
+int NbasesV = MBaseV.m;
+int NbasesP = MBaseP.m; 
+Nbases = NbasesV;// + NbasesP;
+int I = NbasesV; //para no tener que cambiar el archivo RB_LPS_VMSSmago.ido de Offline
+
+real[int] bDTRBi(NbasesV), bSmagoRBGs(NbasesV); // Estos son los segundos miembros que calculo en el bucle 
+
+// Inicializamos las matrices para el problema reducido
+matrix DiffRBi, DivPRBi, DivPRBTi, ConvLRBi, PenRBi, DTRBi;
+real[int,int] ConvRBi(Nbases, Nbases), SmagoRBi(Nbases, Nbases), StabPRBi(Nbases, Nbases);
+			   			   			 			  
+// Inicializamos los segundos miembros
+
+
+// Matrices fijas 
+DiffRBi = DiffRBG;
+DivPRBi = DivPRBG;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+ConvLRBi = ConvLRBG;
+PenRBi = PenRBG;
+DTRBi = DTRBG;
