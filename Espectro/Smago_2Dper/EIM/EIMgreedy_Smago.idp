@@ -13,10 +13,9 @@ set(BMs, solver=sparsesolver);
 real[int,int] Binv = BMi^-1; 
 real [int] bEIM(i),sigmai(i);
 
-pause; //Hacemos el siguiente for en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
-	if (mpirank==imu%mpisize){
-		gEIM = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
+		gEIML = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
+		gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dcper.D, mapVhP1dcper);
 		
 		for (int j=0; j<i; j++){
 			bEIM(j) = gEIM[](Tmax(j));
@@ -29,21 +28,25 @@ for (int imu=0; imu<nSnapshots; imu++){
 			IgEIM[] += sigmai(j)*BEIM[j][];
 		}
 		
-		VhP1dcper Linf = abs(gEIM-IgEIM); 
+		VhP1dcperG Linf = abs(gEIM-IgEIM); 
 		
-		ErroritL(imu)=Linf[].max/gEIM[].max;
-		//Errorit(imu) = Linf[].max/gEIM[].max;
-	}
-	mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
-	pause;
+		Errorit(imu) = Linf[].max/gEIM[].max;
+
 	
-	ErrorMaxEIM(i-1) = Errorit.max;
-	muEIM(i) = vReynolds(Errorit.imax);	
 }
 
 // Calculamos la base escogida
 int iReynolds = Errorit.imax;
-gEIM = mod(BVdX[iReynolds], BVdY[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
+
+ErrorMaxEIM(i-1) = Errorit.max;
+int iRemax = Errorit.imax%niT;
+int iTmax = Errorit.imax - (Errorit.imax%nIt)*niT;
+
+muEIM(i,0) = vReynolds(Errorit.imax);
+muEIM(i,1) = T0 + dt*iTmax;	
+
+gEIML = mod(BVdX[iReynolds], BVdY[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dcper.D, mapVhP1dcper);
 
 //bEIM = 0;
 for (int j=0; j<i; j++){
@@ -57,7 +60,7 @@ for (int j=0; j<i; j++){
 	BEIM[i][] -= sigmai(j)*BEIM[j][]; // Calculo los residuos
 }
 
-VhP1dcper absBEIM = abs(BEIM[i]);
+VhP1dcperG absBEIM = abs(BEIM[i]);
 Tmax(i) = absBEIM[].imax;
 BEIM[i][] /= BEIM[i][](Tmax(i));
 
@@ -66,5 +69,5 @@ for (int j=0; j<=i; j++){
 }
 
 // Almacenamos la base escogida 
-write("Bases_EIM/Base_EIM_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
+write("Bases_EIM/Base_EIM_" + muEIM(i,0) + "t_" + muEIM(i,1) + ".txt", BEIM[i][], 0, 0, 0, 20);
 muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido	
