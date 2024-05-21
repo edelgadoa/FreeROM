@@ -1162,4 +1162,3 @@ func int write(string filename,complex[int][int]towrite,int ind,bool show,int pr
 	if(show==1) cout << towrite << endl;}
 	return 1;
 }
-

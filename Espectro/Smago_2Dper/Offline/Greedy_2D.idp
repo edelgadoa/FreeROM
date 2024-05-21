@@ -63,7 +63,7 @@ write("Output.txt", "Condicion inicial OK.", 1, 1);
 
 // Comenzamos el bucle del greedy 
 // for (int iRB=0; iRB<Ntrain; iRB++){
-for (int iRB=0; iRB<Ntrain; iRB+=8){
+for (int iRB=0; iRB<Ntrain; iRB++){
 	
 	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
 	real nuRB = 1./MuTrain(iRB);
@@ -120,7 +120,7 @@ for (int iRB=0; iRB<Ntrain; iRB+=8){
 			errk(0:errk.n-1)=a*energyk53(k1:k2);
 			errk(0:errk.n-1)-=energykk(k1:k2);
 			difereL(cont)=errk.l2;
-			errk(0:errk.n-1)=a*energyk53(k1:k2);
+			errk(0:errk.n-1)=energykk(k1:k2);
 			difereL(cont)/=errk.l2;
 		}
 		cont++;
@@ -133,6 +133,10 @@ for (int iRB=0; iRB<Ntrain; iRB+=8){
 	write("Output.txt", "Espectro OK.", 1, 1);
 
 }
+
+
+mpi(cout<<" - Method data...";)
+write("DeltaN_"+I+".txt", DeltaG, 0, 0);
 
 // Modificacion del criterio del Greedy
 if (search(MuBest,MuTrain(DeltaG.imax))>=0){

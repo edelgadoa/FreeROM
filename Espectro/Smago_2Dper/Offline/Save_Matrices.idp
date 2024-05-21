@@ -3,95 +3,10 @@
 /////////////// 
 
 mpi(cout<<" - Method data...";)
-write("DeltaNmax.txt", DeltaG, 0, 0);
-write("DeltaN.txt", DeltaN(0:iGreedy), 0, 0);
-//write("TauN.txt", TauN(0:NRB), 0, 0);
-write("MuBest.txt", MuBest(0:iGreedy+1), 0, 0);
+write("DeltaNmax_FIN.txt", DeltaG, 0, 0);
+write("DeltaN_FIN.txt", DeltaN(0:iGreedy), 0, 0);
+write("MuBest_FIN.txt", MuBest(0:iGreedy+1), 0, 0);
 mpi(cout<<" Done."<<endl;)
-
-/*
-mpi(cout<<" - Reduced fixed matrices...";)
-// Definicion de las Matrices Reducidas fijas
-real[int,int] DiffN(NbasesV, NbasesV), DivPN(NbasesP, NbasesV), PenN(NbasesP, NbasesP), 
-			  DTN(NbasesV, NbasesV);
-			  
-DiffN = DiffRB;
-DivPN = DivPRB;
-DTN = DTRB;
-PenN = PenRB;
-mpi(cout<<" Done."<<endl;)
-
-mpi(cout<<" - Reduced right hand side...";)
-// Definicion de los segundos miembros
-real[int] bDiffN(3*Nbases), bConvN(3*Nbases), bDTN(3*Nbases);// bSmagoRBi(3*Nbases);			   
-real[int,int] bSmagoN(Mbases, 3*Nbases);
-
-bDiffN = bDiffRB;
-bConvN = bConvRB;
-bDTN = bDTRB;
-bSmagoN = bSmagoRB;
-mpi(cout<<" Done."<<endl;)
-
-mpi(cout<<" - Reduced variable matrices...";)
-// Definicion de Matrices y Tensores variables
-real[int,int][int] ConvN(NbasesV), SmagoN(Mbases);
-
-for (int k=0; k<NbasesV; k++){
-	ConvN[k] = ConvRB[k];
-}
-
-for (int k=0;k<Mbases;k++){
-	SmagoN[k]=SmagoRB[k];
-}
-mpi(cout<<" Done."<<endl;)
-
-mpi(cout<<" - Magic Points...";)
-// Definicion del array de matrices del gradiente en los Puntos mágicos
-real[int,int][int] GradPM(Mbases);
-
-for (int i=0;i<Mbases;i++){
-	real[int,int] Aux(4,2*Nbases);
-	Aux=0;
-	GradPM[i]=Aux(0:3,0:2*Nbases-1);
-}
-mpi(cout<<" Done."<<endl;)
-
-
-for (int s=0;s<Mbases;s++){
-	real [int,int] GradPMint(9,NRB), aux(9,Nbases); 
-	aux = GradPM[s];
-	GradPMint = aux(0:8,0:NRB-1);
-	GradPM[s] = GradPMint(0:8,0:NRB-1);
-}
-*/
-
-// Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
-write("MatricesRB/Diff.txt", DiffRB, 0 , 0, 0, 20);
-write("MatricesRB/DivP.txt", DivPRB, 0, 0, 0, 20);
-write("MatricesRB/DT.txt", DTRB, 0, 0, 0, 20);
-write("MatricesRB/Pen.txt", PenRB, 0, 0, 0, 20);
-write("MatricesRB/bSmago.txt", bSmagoRB, 0, 0, 0, 20);
-write("MatricesRB/bDiff.txt", bDiffRB, 0, 0, 0, 20);
-write("MatricesRB/bDTRB.txt", bDTRB, 0, 0, 0, 20);
-write("MatricesRB/bConv.txt", bConvRB, 0, 0, 0, 20);
-write("MatricesRB/Conv.txt", ConvRB, 0, 0, 0, 20);
-write("MatricesRB/Smago.txt", SmagoRB, 0, 0, 0, 20);
-write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
-
-/*
-// Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
-write("MatricesRB/Diff.txt", DiffN, 0 , 0, 0, 20);
-write("MatricesRB/DivP.txt", DivPN, 0, 0, 0, 20);
-write("MatricesRB/DT.txt", DTN, 0, 0, 0, 20);
-write("MatricesRB/Pen.txt", PenN, 0, 0, 0, 20);
-write("MatricesRB/bSmago.txt", bSmagoN, 0, 0, 0, 20);
-write("MatricesRB/bDiff.txt", bDiffN, 0, 0, 0, 20);
-write("MatricesRB/bConv.txt", bConvN, 0, 0, 0, 20);
-write("MatricesRB/Conv.txt", ConvN, 0, 0, 0, 20);
-write("MatricesRB/Smago.txt", SmagoN, 0, 0, 0, 20);
-write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
-*/
-// Guardo los Snapshots calculados
 
 real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
 Vh2P2per [uL,uLY]; 
@@ -102,31 +17,15 @@ VhP1perG uGP;
 
 for(int i=0; i<NbasesV; i++){
 	uL[] = MBaseV(:,i);
-	VhP2per umod; umod = sqrt(uL^2+uLY^2);
-	plotMPI(Th, umod, PkP2, def, real, cmm="modulo  base velocidad i="+i);
 	uG[] = reduceSolution(uL[],uG[],MatVh2P2per.D,mapVh2P2per);
-	plot([uG,uGY]);
 	MBaseVN(:,i) = uG[];
 }
 
 for(int i=0; i<NbasesP; i++){
 	uLP[] = MBaseP(:,i);
 	uGP[] = reduceSolution(uLP[],uGP[],MatVhP1per.D,mapVhP1per);
-	plot(uGP);
 	MBasePN(:,i) = uGP[];
 }
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
 write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
-
-// // ** Estoy hay que modificarlo para que guarde la base completa, así no funciona
-// real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
-// mpiAllReduce(MBaseV,MBaseVN,mpiCommWorld,mpiSUM);
-// mpiAllReduce(MBaseP,MBasePN,mpiCommWorld,mpiSUM);
-
-// real[int, int] MBaseVG(Vh2P2per.ndof, NbasesV), MBasePG(VhP1per.ndof, NbasesP);
-// mpiBarrier(mpiCommWorld);
-// mpiAllReduce(MBaseV,MBaseVG,mpiCommWorld,mpiSUM);
-// mpiAllReduce(MBaseP,MBasePG,mpiCommWorld,mpiSUM);
-// write("MatricesRB/BaseV.txt", MBaseVG, 0, 0, 0, 20);
-// write("MatricesRB/BaseP.txt", MBasePG, 0, 0, 0, 20);

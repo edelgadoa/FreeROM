@@ -2,7 +2,7 @@
 // FreeROM 
 /////////////// 
 
-readvector("../EIM/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
+readmatrix("../EIM/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
 
 int Mbases = muEIM.n;
 
@@ -11,7 +11,8 @@ VhP1dcper[int] EIMSmago(Mbases);
 // Cargo los elementos del EIM SMAGO
 for (int i=0; i<Mbases; i++){
 	VhP1dcperG EIMSmagoG;
-	readvector("../EIM/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
+	readvector("../EIM/Bases_EIM/Base_EIM_" + muEIM(i,0) + "_t_" + muEIM(i,1) + ".txt", real, BaseEIM, 0);
+	//readvector("../EIM/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
 	EIMSmagoG[] = BaseEIM;
 	EIMSmago[i][] = EIMSmagoG[](mapVhP1dcper); //Cargo la bases EN LOCAL
 }

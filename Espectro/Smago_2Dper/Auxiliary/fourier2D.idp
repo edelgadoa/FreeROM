@@ -151,6 +151,7 @@ func real[int] energyk2d(real[int,int] & Energy)
 
 func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int kmax){
 
+	write("Output.txt", " - Calculando Coeficientes...", 1, 1);
     complex[int,int] FCoefsX(2*kmax+1,2*kmax+1);
     complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
     complex[int,int] FCoefsXL(2*kmax+1,2*kmax+1);
@@ -162,7 +163,9 @@ func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int k
     FCoefsYL = FourierTransform2D(uFouriervY,kmax);
     mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
 
+	write("Output.txt", " - Calculando energia...", 1, 1);
     real[int,int] energyhat = energycomputation(FCoefsX,FCoefsY);
+	write("Output.txt", " - Sumando por coronas...", 1, 1);
     real[int] energykk = energyk2d(energyhat);
     return energykk;
 }

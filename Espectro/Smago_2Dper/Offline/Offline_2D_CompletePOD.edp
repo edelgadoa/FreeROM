@@ -77,7 +77,7 @@ readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
 //////////////////////////////////////////
 ////DEFINICION DE LOS ESPACIOS DE BR//////
 //////////////////////////////////////////
-mpi(cout<<"Inicializacion espacios BR..." <<endl;)
+mpi(cout<<"Inicializacion espacios BR... ";)
 
 Vh2P2per[int] [BaseV,BaseVY](2*Nbases);
 VhP1per[int] BaseP(Nbases);
@@ -115,12 +115,16 @@ Vh2P2per [VelX, VelY] = [SnapX, SnapY];
 // Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
 MBaseCompleteV(:,0) = VelX[];
 MBaseCompleteP(:,0) = SnapP[];
+
+mpi(cout<<"Done." << endl;)
  
 /////////////////////////////////////////
-mpi(cout<<"Inicializacion EIM..." <<endl;)
+mpi(cout<<"Inicializacion EIM... ";)
 // Cargo los elementos del EIM
 include "EIM_Data.idp"
 
+mpi(cout<<"Done." << endl;)
+ 
 /////////////////////////////////////////
 // Comenzamos con el Algoritmo Greedy
 mpi(cout<<"Inicializacion Greedy..." <<endl;)
