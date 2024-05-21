@@ -1,0 +1,163 @@
+// Transitory NS + Smagorinsky with LPS pressure stabilization
+
+load "iovtk"
+
+int[int] fforder=[1,1,1,1];
+verbosity = 0;
+macro dimension()2 //EOM
+include "macro_ddm.idp";
+load "PETSc"
+
+// Mesh Creation
+mesh Th = square(32,32);
+mesh ThL = Th; //local mesh (with DDM overlapping)
+
+int[int] myN2o;
+macro ThLN2O() myN2o // EOM
+buildDmesh(ThL);
+
+// Macros definition:
+macro Div(U) (dx(U) + dy(U#Y)) //EOM
+macro GradUGradV(U,V) (dx(U)*dx(V) +dy(U)*dy(V) + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y))//EOM
+macro UGradV(U,V) [[U,U#Y]'*[dx(V),dy(V)], [U,U#Y]'*[dx(V#Y),dy(V#Y)]] //EOM
+macro UGradVW(U,V,W) (UGradV(U,V)'*[W, W#Y]) //EOM
+macro Antisimetric(U,V,W) ( 0.5*(UGradVW(U,V,W) - UGradVW(U,W,V)) ) //EOM
+macro MOD(U) (sqrt(dx(U)^2 + dy(U)^2 + dx(U#Y)^2 + dy(U#Y)^2) ) //EOM
+macro UporV(U,V) (U*V + U#Y*V#Y) //EOM
+
+// Function to obtain the solution on the global mesh
+func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
+{
+	real[int] aux(u.n); aux = 0;
+	real[int] auxL = uL;
+	auxL .*= D;
+	aux(map) = auxL;
+	real[int] result(u.n); result = 0;
+	mpiAllReduce(aux, result, mpiCommWorld, mpiSUM);
+}
+
+///////////////////
+
+// FE spaces
+// Global Mesh
+fespace Vh3P2(Th, [P2, P2, P2]); 
+fespace VhP2(Th, P2); 
+fespace VhP1dc(Th, P1dc); 
+
+// Local Mesh
+fespace Vh3P2L(ThL, [P2, P2, P2]); 
+fespace VhP2L(ThL, P2); 
+fespace VhP1dcL(ThL, P1dc);
+fespace VhP1L(ThL, P1);
+
+
+int[int] mapVh3P2 = restrict(Vh3P2L,Vh3P2,myN2o);  
+
+Mat MatVh3P2;
+{
+	macro def(i) [i, i#Y, iP] // EOM
+	macro init(i) [i, i, i] // EOM
+	createMat(ThL, MatVh3P2, [P2, P2, P2]); 
+}
+
+Mat MatVhP1dc;
+createMat(ThL, MatVhP1dc, P1dc);
+int[int] mapVhP1dc = restrict(VhP1dcL, VhP1dc, myN2o);
+
+
+// Interpolation matrices for LPS (IS THIS CORRECT????)
+matrix IPhD3X3P2L, IPhD3Y3P2L, IPhD3Z3P2L; // (?) -> Go to Mat structure? (using MatMatMult if necessary)
+{
+	VhP1dcL faux1 = 1.;
+	matrix IdP1dcL = faux1[];
+	
+	matrix PIg = interpolate(VhP1L,VhP1dcL); //(Id-πh) P1dc->P1->P1dc
+	matrix IPg = interpolate(VhP1dcL,VhP1L); 
+	matrix IPPIg = IPg*PIg;
+	matrix IPhP1dcP1L = IdP1dcL + (-1.)*IPPIg;
+	
+	int[int] cs2=[2];
+	matrix D3X3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=1);
+	matrix D3Y3P2L = interpolate(VhP1dcL,Vh3P2L,U2Vc=cs2,op=2);
+
+
+	IPhD3X3P2L = IPhP1dcP1L * D3X3P2L; 
+	IPhD3Y3P2L = IPhP1dcP1L * D3Y3P2L; 
+}
+
+real Reynolds = 1000;
+
+//////////////////////////////
+// Start solving the FE Problem
+Vh3P2L [uEF, uEFY, uEFP];
+
+real nu = 1./Reynolds;
+
+// Build the fixed matrix 
+
+varf FVFixed([uu,uuY,uuP],[v,vY,vP]) = intN(ThL)(Div(uu)*vP - Div(v)*uuP + nu*GradUGradV(uu, v) + 1e-8*uuP*vP )
+										// + hTriangle^2*(dx(uuP)*dx(vP) + dy(uuP)*dy(vP))) //This is an alternative stabilization term that 
+										// RHS
+									    + on(1,2,4, uu=0., uuY=0.) + on(3, uu=1., uuY=0.); 
+											 
+// Ensambling the matrix and RHS
+matrix MFixed = FVFixed(Vh3P2L,Vh3P2L);
+real[int] b = FVFixed(0,Vh3P2L);
+
+
+// LPS Stabilization term (WHERE I THINK I'M NOT DOING WELL)
+matrix LPSpres;
+{
+	varf termPres(pp,q) = intN(ThL)(hTriangle^2*pp*q);
+	matrix TermP = termPres(VhP1dcL,VhP1dcL);
+
+	matrix DDxx, DDyy;
+
+	DDxx = TermP * IPhD3X3P2L; 
+	DDxx = IPhD3X3P2L' * DDxx;
+	
+	DDyy = TermP * IPhD3Y3P2L; 
+	DDyy = IPhD3Y3P2L' * DDyy;
+	
+	LPSpres = DDxx + DDyy;
+}
+
+// Matrix of the system
+matrix MFinal = MFixed + LPSpres;
+
+		
+// Solve the system
+MatVh3P2 = MFinal;
+set(MatVh3P2, sparams = "-pc_type lu -pc_factor_mat_solver_type mumps"); 
+
+uEF[] = MatVh3P2^-1*b; 
+
+VhP1dcL dxuP;
+dxuP[] = IPhD3X3P2L * uEF[];
+ofstream Soldx("dxP_MPI"+mpisize+".txt");
+
+VhP1dc dxPG;
+dxPG[] = reduceSolution(dxuP[], dxPG[], MatVhP1dc.D, mapVhP1dc);
+Soldx<<dxPG[];
+plotMPI(ThL, dxuP, P1dc, def, real, cmm="dx presion");
+
+
+
+// Obtain the solution on the global mesh
+Vh3P2 [uG, uGY, uGP];
+uG[] = reduceSolution(uEF[], uG[], MatVh3P2.D, mapVh3P2);
+
+// Not really important, just to assure mean pressure = 0.
+VhP2 presAux = uGP;
+presAux[] -= int2d(Th)(uGP)/int2d(Th)(1);
+[uG, uGY, uGP] = [uG, uGY, presAux];
+
+
+real medpres = intN(Th)(uGP);
+if (mpirank==0){cout<<"Mean pressure = "<<medpres<<endl; }  
+
+ofstream Sol("Solution_u_MPI"+mpisize+".txt");
+Sol<<uG[];
+
+savevtk("Solution_MPI"+mpisize+".vtu", Th, [uG, uGY, 0], uGP, dataname="vel pres", order=fforder);
+plotMPI(ThL, uEFP, P2, def, real, cmm="presion");

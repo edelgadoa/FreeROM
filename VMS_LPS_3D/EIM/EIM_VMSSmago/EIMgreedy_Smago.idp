@@ -10,32 +10,29 @@ BMi = BM(0:i-1,0:i-1);
 matrix BMs = BMi;
 set(BMs, solver=sparsesolver);
 
-real[int,int] Binv = BMi^-1; 
 real [int] bEIM(i),sigmai(i);
 
-pause; //Hacemos el siguiente bucle en paralelo
+//pause; //Hacemos el siguiente bucle en paralelo
 for (int imu=0; imu<nSnapshots; imu++){
-	if (mpirank==imu%mpisize){
-		gEIM = mod(BVdX[imu], BVdY[imu], BVdZ[imu], BVYdX[imu], BVYdY[imu], BVYdZ[imu], BVZdX[imu], BVZdY[imu], BVZdZ[imu]);
+
+	gEIML = mod(BVdX[imu], BVdY[imu], BVdZ[imu], BVYdX[imu], BVYdY[imu], BVYdZ[imu], BVZdX[imu], BVZdY[imu], BVZdZ[imu]);
+	gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dc.D, mapVhP1dc);
 		
-		for (int j=0; j<i; j++){
-			bEIM(j) = gEIM[](Tmax(j));
-		}
-		
-		sigmai = BMs^-1*bEIM;
-		
-		IgEIM = 0;
-		for (int j=0;j<i;j++){
-			IgEIM[] += sigmai(j)*BEIM[j][];
-		}
-		
-		VhP1dc Linf = abs(gEIM-IgEIM); 
-		
-		ErroritL(imu) = Linf[].max/gEIM[].max;
-		//Errorit(imu) = Linf[].max/gEIM[].max;
+	for (int j=0; j<i; j++){
+		bEIM(j) = gEIM[](Tmax(j));
 	}
-	mpiAllReduce(ErroritL, Errorit, mpiCommWorld, mpiSUM);
-	pause;
+		
+	sigmai = BMs^-1*bEIM;
+
+	IgEIM = 0;
+	for (int j=0; j<i; j++){
+		IgEIM[] += sigmai(j)*BEIM[j][];
+	}
+		
+	VhP1dcG Linf = abs(gEIM-IgEIM); 
+		
+	Errorit(imu) = Linf[].max/gEIM[].max;
+
 	
 	ErrorMaxEIM(i-1) = Errorit.max;
 	muEIM(i) = vReynolds(Errorit.imax);	
@@ -44,21 +41,22 @@ for (int imu=0; imu<nSnapshots; imu++){
 
 // Calculamos la base escogida
 int iReynolds = Errorit.imax;
-gEIM = mod(BVdX[iReynolds], BVdY[iReynolds], BVdZ[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds], BVYdZ[iReynolds], BVZdX[iReynolds], BVZdY[iReynolds], BVZdZ[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIML = mod(BVdX[iReynolds], BVdY[iReynolds], BVdZ[iReynolds], BVYdX[iReynolds], BVYdY[iReynolds], BVYdZ[iReynolds], BVZdX[iReynolds], BVZdY[iReynolds], BVZdZ[iReynolds]); // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dc.D, mapVhP1dc);
 
-//bEIM = 0;
+
 for (int j=0; j<i; j++){
 	bEIM(j) = gEIM[](Tmax(j));
 }
 
-sigmai = Binv*bEIM;
+sigmai = BMs^-1*bEIM;
 
 BEIM[i] = gEIM;
 for (int j=0; j<i; j++){
 	BEIM[i][] -= sigmai(j)*BEIM[j][]; // Calculo los residuos
 }
 
-VhP1dc absBEIM = abs(BEIM[i]);
+VhP1dcG absBEIM = abs(BEIM[i]);
 Tmax(i) = absBEIM[].imax;
 BEIM[i][] /= BEIM[i][](Tmax(i));
 
@@ -70,4 +68,5 @@ for (int j=0; j<=i; j++){
 write("Bases_EIM/Base_EIM_" + vReynolds(Errorit.imax) + ".txt", BEIM[i][], 0, 0, 0, 20);
 
 muEIM(i) = vReynolds(Errorit.imax); //Almacenamos el valor de Reynolds escogido
-mpi(cout<<muEIM<<endl;)	
+mpi(cout<<muEIM<<endl;)
+mpi(cout<<Errorit<<endl;)	

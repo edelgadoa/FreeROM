@@ -1,0 +1,395 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Código para construir EN PARALELO las matrices de base reducida
+
+
+// Inicializo las matrices locales para el paralelo
+include "Allocate_matrices_local.idp"
+
+
+//real[int] BaseViii;//, BasePi, FBaseVi;
+// ChangeNumbering(MatAVh3P2, BaseV[i][], BaseViii);
+// ChangeNumbering(MatAVhP2, BaseP[i][], BasePi);
+// ChangeNumbering(MatAVh3P2, FBaseV[i][], FBaseVi);
+
+
+// Comienzo el bucle de construccion de las matrices reducidas fijas
+
+
+
+// for (int i=0; i<NbasesV; i++){
+// 	real[int] BaseVi;
+// 	ChangeNumbering(MatAVh2P2per, BaseV[i][], BaseVi);
+//
+// 	for (int j=0; j<=i; j++){
+// 		real[int] BaseVj;
+// 		ChangeNumbering(MatAVh2P2per, BaseV[j][], BaseVj);
+//         // Matrices
+//         DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
+//         DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
+//         if (j<i){
+//             DiffRB(j,i) = DiffRB(i,j);
+//             DTRB(j,i) = DTRB(i,j);
+//         }
+//     }
+//     for (int j=0; j<NbasesP; j++){
+// 		real[int] BasePj;
+// 		ChangeNumbering(MatAVhP1per, BaseP[j][], BasePj);
+//     	DivPRB(j+2*Nbases, i) = innerprodX(BasePj, BaseVi, DivPPEM);
+//
+//     }
+// }
+
+real[int,int] DiffRBaux(DiffPEM.n, MBaseVi.m), DivPRBaux(DivPPEM.n, MBaseVi.m), ConvLRBaux(ConvLevPEM.n, MBaseVi.m), 
+			  DTRBaux(DTPEM.n, MBaseVi.m), PenRBaux(PenPEM.n, MBasePi.m), StabhkRBaux(StabhkPEM.n, MBasePi.m);
+
+MatMatMult(DiffPEM, MBaseVi, DiffRBaux);
+MatMatMult(DivPPEM, MBaseVi, DivPRBaux);
+MatMatMult(ConvLevPEM, MBaseVi, ConvLRBaux);
+MatMatMult(DTPEM, MBaseVi, DTRBaux);
+MatMatMult(PenPEM, MBasePi, PenRBaux);
+MatMatMult(StabhkPEM, MBasePi, StabhkRBaux);
+
+real[int,int] DiffRBL = MBaseVi'*DiffRBaux;
+real[int,int] DivPRBL = MBasePi'*DivPRBaux;
+real[int,int] ConvLRBL = MBaseVi'*ConvLRBaux;
+real[int,int] DTRBL = MBaseVi'*DTRBaux;
+real[int,int] PenRBL = MBasePi'*PenRBaux;
+real[int,int] StabhkRBL = MBasePi'*StabhkRBaux;
+
+mpiAllReduce(DiffRBL, DiffRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(ConvLRBL, ConvLRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(StabhkRBL, StabhkRBG, mpiCommWorld, mpiSUM);
+
+
+// DiffRB(0:i,0:i) = DiffRBG(0:i,0:i);
+// DivPRB += DivPRBG;
+// PenRB += PenRBG;
+// ConvLevRB += ConvLevRBG;
+// DTRB += DTRBG;
+// StabhkRB += StabhkRBG;
+
+// Comienzo el bucle para la construcción de los tensores
+
+// Conveccion
+mpi(cout<<"Convection matrix"<<endl;)
+// for (int s=0; s<=i; s++){
+// 	real[int, int] Cint(2*Nbases, 2*Nbases);
+// 	Cint = ConvRB[s];
+// 	for (int j=0; j<=i; j++){
+//         real[int] BaseVj;
+//         ChangeNumbering(MatAVh3P2, BaseV[j][], BaseVj);
+// 		Cint(i,j) = innerprodX(BaseViii, BaseVj, ConvPEM[s]);
+// 		if(j<i){
+// 			Cint(j,i) = innerprodX(BaseVj, BaseViii, ConvPEM[s]);
+// 		}
+// 		if (s==i && (j!=i)){
+// 			for (int k=0; k<s; k++){
+//                 real[int] BaseVk;
+//                 ChangeNumbering(MatAVh3P2, BaseV[k][], BaseVk);
+// 				Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
+// 			}
+// 		}
+//
+// 	}
+//
+// 	ConvRB[s] = Cint;
+// }
+
+for(int s=0; s<=2*i;s++){
+	real[int,int] ConvRBaux(ConvRB[s].n, MBaseVi.m), ConvRBG(2*(i+1), 2*(i+1));
+	MatMatMult(ConvPEM[s], MBaseVi, ConvRBaux);
+	real[int,int] ConvRBL = MBaseVi'*ConvRBaux;
+	//cout<<ConvRBL<<endl;
+	mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
+	equal(ConvRB[s],ConvRBG(0:2*i+1,0:2*i+1))
+	//mpi(cout<<"conv MatrixG i=0"<<ConvRB[]<<endl;)
+}
+//cout<<" "<<endl<<endl<<endl;
+mpi(cout<<"conv Matrix"<<endl<<ConvRB<<endl;)
+//
+// // Smagorinsky
+// mpi(cout<<"Smago matrix"<<endl;)
+// for (int s=0; s<Mbases; s++){
+// 	real[int, int] Sint(2*Nbases, 2*Nbases);
+//     Sint = SmagoRB[s];
+// 	for (int j=0; j<=i; j++){
+//         real[int] FBaseVj;
+//         ChangeNumbering(MatAVh3P2, FBaseV[j][], FBaseVj);
+// 		Sint(i,j) = innerprodX(FBaseVi, FBaseVj, SmagoPEM[s]);
+// 		if(j<i){
+// 			Sint(j,i) = Sint(i,j);
+// 		}
+//
+// 	}
+// 	SmagoRB[s] = Sint;
+// }
+// mpi(cout<<"Smago Matrix"<<SmagoRB[0]<<endl;)
+//
+
+for (int s=0; s<Mbases; s++){
+    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVi.m), SmagoRBG(2*(i+1), 2*(i+1));
+	MatMatMult(SmagoPEM[s], MBaseVi, SmagoRBaux);
+	real[int,int] SmagoRBL = MBaseVi'*SmagoRBaux;
+	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
+    equal(SmagoRB[s],SmagoRBG(0:2*i+1,0:2*i+1))
+	
+}
+
+
+for (int s=0; s<Taubases; s++){
+    real[int, int] LPSRBaux(StabPRB[s].n, MBasePi.m), StabPRBG(i+1, i+1);
+	MatMatMult(StabPPEM[s], MBasePi, LPSRBaux);
+	real[int,int] StabPRBL = MBasePi'*LPSRBaux;
+	mpiAllReduce(StabPRBL, StabPRBG, mpiCommWorld, mpiSUM);
+    equal(StabPRB[s],StabPRBG(0:i,0:i))
+	
+}
+
+mpi(cout<<"StabP"<<StabPRB<<endl;)
+
+//
+// // LPS
+// mpi(cout<<"Stab matrix"<<endl;)
+// for (int s=0; s<Taubases; s++){
+// 	real[int, int] LPSint(2*Nbases, 2*Nbases);
+// 	LPSint = StabPRB[s];
+// 	for (int j=0; j<=i; j++){
+//         real[int] BasePj;
+//         ChangeNumbering(MatAVhP2, BaseP[j][], BasePj);
+// 		LPSint(i + Nbases,j + Nbases) = innerprodX(BasePi, BasePj, StabPPEM[s]);
+// 		if(j<i){
+// 			LPSint(j + Nbases,i + Nbases) = LPSint(i + Nbases,j + Nbases);
+// 		}
+// 	}
+// 	StabPRB[s] = LPSint;
+// }
+// mpi(cout<<"LPS Matrix"<<StabPRB[0]<<endl;)
+//
+// Matrices para el EIM de Smago
+
+int MbasesL;
+for (int s=0; s<Mbases; s++){
+    real[int,int] Dtk(GradPM[s].n, GradPM[s].m);
+    real[int,int] DtkL(GradPM[s].n, GradPM[s].m);
+
+    Dtk = 0; DtkL = 0;
+
+    if (PuntosMSmagoL(s)>=0){
+        DtkL(0,2*i) = FVdX[2*i][](PuntosMSmagoL(s));
+        DtkL(1,2*i) = FVdY[2*i][](PuntosMSmagoL(s));
+        DtkL(2,2*i) = FVdZ[2*i][](PuntosMSmagoL(s));
+
+        DtkL(3,2*i) = FVYdX[2*i][](PuntosMSmagoL(s));
+        DtkL(4,2*i) = FVYdY[2*i][](PuntosMSmagoL(s));
+        DtkL(5,2*i) = FVYdZ[2*i][](PuntosMSmagoL(s));
+
+        DtkL(6,2*i) = FVZdX[2*i][](PuntosMSmagoL(s));
+        DtkL(7,2*i) = FVZdY[2*i][](PuntosMSmagoL(s));
+        DtkL(8,2*i) = FVZdZ[2*i][](PuntosMSmagoL(s));
+		
+		// SUPREMIZER
+        DtkL(0,2*i+1) = FVdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(1,2*i+1) = FVdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(2,2*i+1) = FVdZ[2*i+1][](PuntosMSmagoL(s));
+
+        DtkL(3,2*i+1) = FVYdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(4,2*i+1) = FVYdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(5,2*i+1) = FVYdZ[2*i+1][](PuntosMSmagoL(s));
+
+        DtkL(6,2*i+1) = FVZdX[2*i+1][](PuntosMSmagoL(s));
+        DtkL(7,2*i+1) = FVZdY[2*i+1][](PuntosMSmagoL(s));
+        DtkL(8,2*i+1) = FVZdZ[2*i+1][](PuntosMSmagoL(s));
+
+        // DtkL *= WeightPMSmago(s);
+        //MbasesL++;
+    }
+    mpiAllReduce(DtkL, Dtk, mpiCommWorld, mpiSUM);
+    GradPM[s] += Dtk;
+}
+
+mpi(cout<<"GradPM"<<GradPM<<endl;)
+//
+//
+{
+    // Matrices para el EIM LPS (parte del levantamiento)
+    real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
+    real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+    Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
+
+    int TauBasesL;
+
+	//real[int,int] Ngk = NUK[s];
+	VhP2 fvel, fvelY, fvelZ;
+	varf NG(un,v) = int3d(Th)(UporV(fvel, Lev)*v);
+	fvel = BaseVel[i]; fvelY = BaseVelY[i]; fvelZ = BaseVelZ[i];
+
+    real[int] ngaux = NG(0,VhP0);
+	ngaux .*= DP0;
+
+	///////////////////////////////////////////////
+
+	//real[int,int] Nggk = NGUK[s];
+	VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3;
+	varf NDG(un,v) = int3d(Th)((dxfv1*FLevdX + dyfv1*FLevdY + dzfv1*FLevdZ
+			 				  + dxfv2*FLevYdX + dyfv2*FLevYdY + dzfv2*FLevYdZ
+							  + dxfv3*FLevZdX + dyfv3*FLevZdY + dzfv3*FLevZdZ  )*v);
+
+	dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i];
+	dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+	dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i];
+
+    real[int] ndgaux = NDG(0,VhP0);
+	ndgaux .*= DP0;
+
+    for (int s=0; s<Taubases; s++){
+		NgkL = 0;
+		NggkL = 0;
+        if (PuntosMTauL(s)>=0){
+    	    NgkL(0,1+i) = ngaux(PuntosMTauL(s));
+
+    	    //Matriz simétrica
+    	    NgkL(1+i,0) = NgkL(0,1+i);
+
+            //NgkL *= WeightPMTau(TauBasesL);
+
+            ////--------------///////
+
+        	NggkL(0,1+i) = ndgaux(PuntosMTauL(s));
+        	//Matriz simétrica
+        	NggkL(1+i,0) = NggkL(0,1+i);
+
+            //NggkL *= WeightPMTau(s);
+
+        }
+        mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+        mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+
+        NUK[s] += Ngk;
+    	NGUK[s] += Nggk;
+    }
+}
+
+//
+{
+	// Matrices para el EIM LPS (Funciones de base)
+    real[int, int] Ngk(Nbases+1, Nbases+1), Nggk(Nbases+1, Nbases+1);
+    real[int, int] NgkL(Nbases+1, Nbases+1), NggkL(Nbases+1, Nbases+1);
+    
+
+ 	
+	for (int j=0; j<=i; j++){
+		Ngk = 0; Nggk = 0; NgkL = 0; NggkL = 0;
+		VhP2 fvel, fvelY, fvelZ, ffvel, ffvelY, ffvelZ;
+		// varf NGL(un,v) = intN(ThL)(UporV(fvel,ffvel)*v);
+		varf NGL(un,v) = intN(Th)((BaseV[i]*BaseV[j] + BaseVY[i]*BaseVY[j] + BaseVZ[i]*BaseVZ[j])*v);
+		fvel = BaseV[i]; fvelY = BaseVY[i]; fvelZ = BaseVZ[i];
+		ffvel = BaseV[j]; ffvelY = BaseVY[j]; ffvelZ = BaseVZ[j]; 
+
+		real[int] ngaux = NGL(0,VhP0);
+		ngaux .*= DP0;
+
+        ///////////////////////////////////////////
+
+		VhP1dc dxfv1, dyfv1, dzfv1, dxfv2, dyfv2, dzfv2, dxfv3, dyfv3, dzfv3,
+			    DXFV1, DYFV1, DZFV1, DXFV2, DYFV2, DZFV2, DXFV3, DYFV3, DZFV3;
+
+	    varf NDG(un,v) = intN(Th)((dxfv1*DXFV1 + dyfv1*DYFV1 + dzfv1*DZFV1
+			                      + dxfv2*DXFV2 + dyfv2*DYFV2 + dzfv2*DZFV2
+								  + dxfv3*DXFV3 + dyfv3*DYFV3 + dzfv3*DZFV3 )*v);
+
+
+		dxfv1 = FVdX[i]; dyfv1 = FVdY[i]; dzfv1 = FVdZ[i];
+		dxfv2 = FVYdX[i]; dyfv2 = FVYdY[i]; dzfv2 = FVYdZ[i];
+		dxfv3 = FVZdX[i]; dyfv3 = FVZdY[i]; dzfv3 = FVZdZ[i];
+
+		DXFV1 = FVdX[j]; DYFV1 = FVdY[j]; DZFV1 = FVdZ[j];
+		DXFV2 = FVYdX[j]; DYFV2 = FVYdY[j]; DZFV2 = FVYdZ[j];
+		DXFV3 = FVZdX[j]; DYFV3 = FVZdY[j]; DZFV3 = FVZdZ[j];
+
+		real[int] ndgaux = NDG(0,VhP0);
+		ndgaux .*= DP0;
+       	
+		int TauBasesL;
+        for (int s=0; s<Taubases; s++){
+
+			NgkL = 0;
+			NggkL = 0;
+    		if (PuntosMTauL(s)>=0){
+			
+                NgkL(1+i,1+j) = ngaux(PuntosMTauL(s));
+        		if(j<i){
+        			NgkL(1+j,1+i) = NgkL(1+i,1+j);
+        		}
+				// cout<<"proc:"<<mpirank<<", ngkl:"<<ngaux(PuntosMTauL(s))<<", it:"<<s<<", Weight:"<<WeightPMTau(s)<<endl;
+
+                // NgkL *= WeightPMTau(s);
+        		/////-----------////
+
+        		NggkL(1+i,1+j) = ndgaux(PuntosMTauL(s));
+        		if(j<i){
+        			NggkL(1+j,1+i) = NggkL(1+i,1+j);
+        		}
+                //NggkL *= WeightPMTau(s);
+				// mpi(cout<<WeightPMTau(s)<<endl;)
+                //TauBasesL++;
+			}
+
+            mpiAllReduce(NgkL, Ngk, mpiCommWorld, mpiSUM);
+            mpiAllReduce(NggkL, Nggk, mpiCommWorld, mpiSUM);
+
+    	    NUK[s] += Ngk;
+    	    NGUK[s] += Nggk;
+        }
+    }
+}
+//
+mpi(cout<<"NUK"<<endl<<NUK<<endl;)
+mpi(cout<<"NGUK"<<endl<<NGUK<<endl;)
+
+//mpi(cout<<"RHS"<<endl;)
+
+/////////////////////////
+// Segundo miembro
+real[int] LevVB, FLevVB;
+ChangeNumbering(MatVh3P2, LevV[], LevVB);
+ChangeNumbering(MatVh3P2, FLev[], FLevVB); //Esto solo lo debo hacer una vez. Hay que cambiarlo de sitio.
+
+real[int] bDiffRBaux(DiffPEM.n), bConvLRBaux(ConvLevPEM.n);
+MatMult(DiffPEM, LevVB, bDiffRBaux);
+MatMult(ConvLevPEM, LevVB, bConvLRBaux);
+// ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
+real[int] bDiffRBL = MBaseVi'*bDiffRBaux;
+real[int] bConvLRBL = MBaseVi'*bConvLRBaux; bConvLRBL /= 2;      //por la definicion de la matrix PE
+
+mpiAllReduce(bDiffRBL, bDiffRBG, mpiCommWorld, mpiSUM);
+mpiAllReduce(bConvLRBL, bConvLRBG, mpiCommWorld, mpiSUM);
+
+for (int s=0; s<Mbases; s++){
+	real[int] bSmagoRBaux(SmagoPEM[s].n);
+	MatMult(SmagoPEM[s], LevVB, bSmagoRBaux);
+	real[int] bSmagoRBL = MBaseVi'*bSmagoRBaux;
+	mpiAllReduce(bSmagoRBL, bSmagoRBGs, mpiCommWorld, mpiSUM);
+	bSmagoRBG(s,:) = bSmagoRBGs;
+}
+
+mpi(cout<<"bSmago"<<bSmagoRBG<<endl;)
+
+// Definicion de segundos miembros
+// real[int] LevVB, FLevVB;
+// ChangeNumbering(MatAVh3P2, LevV[], LevVB);
+// ChangeNumbering(MatAVh3P2, FLev[], FLevVB);
+// bDiffRB(i) = innerprodX(BaseVi, LevVB, DiffPEM);
+// bConvRB(i) = innerprodX(BaseVi, LevVB, ConvLevPEM)/2; // Lo divido entre 2 por la definicion de esa matriz
+// mpi(cout<<"bDiff"<<endl<<bDiffRB<<endl;)
+// mpi(cout<<"bConv"<<endl<<bConvRB<<endl;)
+// for (int s=0; s<Mbases; s++){
+// 		bSmagoRB(s,i) = innerprodX(FBaseVi, FLevVB, SmagoPEM[s]);
+// }
+
+//cout<<"bsmago"<<endl<<bSmagoRBG<<endl;

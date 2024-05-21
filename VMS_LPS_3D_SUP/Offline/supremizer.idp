@@ -1,0 +1,24 @@
+Vh3P2 [supEF, supEFY, supEFZ];
+
+
+Mat Asup;
+{
+	macro def(i) [i, i#Y, i#Z] // EOM
+	macro init(i) [i, i, i] // EOM
+	MatCreate(Th, Asup, [P2, P2, P2]);
+}
+real[int] bsup(Vh3P2.ndof);
+
+varf Supremizer([u, uY, uZ],[v, vY, vZ])= int3d(Th)(//(1./Refijo+MOD(uFijo))*
+GradUGradV(u,v)) - int3d(Th)(BaseP[i]*Div(v)) + on(1,2, u=0, uY=0, uZ=0);
+
+matrix Asuptemp = Supremizer(Vh3P2,Vh3P2);
+Asup = Asuptemp;
+bsup = Supremizer(0,Vh3P2);
+
+set(Asup, sparams = "-pc_type lu"); //TODO comprobar con otros parametros 
+
+supEF[] = Asup^-1*bsup; 
+
+[BaseV[2*i+1], BaseVY[2*i+1], BaseVZ[2*i+1]] = [supEF, supEFY, supEFZ];
+BaseVel[2*i+1] = supEF; BaseVelY[2*i+1] = supEFY; BaseVelZ[2*i+1] = supEFZ;

@@ -1,0 +1,61 @@
+///////////////
+// FreeROM 
+///////////////
+// Parametros a usar durante la ejecucion del codigo
+
+
+
+Mat MatVh4P2;
+Mat MatVh3P2;
+Mat MatVhP1dc;
+Mat MatVhP2;
+
+int[int] mapVh4P2, mapVhP1dc, mapVhP0, mapVhP2, mapVh3P2;
+
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+
+// Parametros del modelo VMS-Smago con LPS en la presion
+real CS = 0.1; // Smago
+
+
+real cc1 = 16.; // tauk
+real cc2 = sqrt(cc1);
+
+
+// Parametros para el problema de EF
+real dt = 1;
+real epspen = 1e-8;
+
+real ERROR = 10; // inicializacion del error para el bucle
+
+int niterFE = 1000; 
+real epsFE = 1e-7;
+
+// Parametros para el problema ROM
+int niterRB = 2000;
+real epsRB = 1e-6; //parada de problema reducido
+
+real epsGreedy = 5e-5;
+real epsEIM = 1e-5;
+
+int NRB = 0;
+
+// Parametros para el RBF
+real RBFeps = 1e-5;
+
+// Parametros mu
+real Reynolds; 
+real Remin = 1000;
+real Remax = 1500;
+
+real Refijo = 1000;
+
+int Ntrain = 77;
+
+real[int] MuTrain(Ntrain);
+for (int ig=0; ig<Ntrain; ig++){
+	MuTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
+}
+
+int[int] fforder=[1,1,1,1,1];

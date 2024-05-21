@@ -2,11 +2,11 @@
 // FreeROM 
 /////////////// 
 
-include "../Auxiliary/powermethod.idp"
+//include "../Auxiliary/powermethod.idp"
 
 VhP2 uF,uFY, uFZ;
 VhP1dc uFdX, uFdY,uFdZ, uFYdX, uFYdY, uFYdZ, uFZdX, uFZdY, uFZdZ;
-VhP2 SnapX, SnapY, SnapZ, SnapP;
+VhP2G SnapX, SnapY, SnapZ, SnapP;
 
 // Cargo o calculo el snapshot para el Reynolds fijo de la norma T
 if (search(ReSnapshots, Refijo, 1.e-9)==-1){
@@ -24,10 +24,14 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	
 	write("../Snapshots/Snapshots.txt", ReSnapshotsNEW, 0, 0); //0,0 -> No append + No mostrar por pantalla 
 	
-	SnapX = uEF;
-	SnapY = uEFY;
-	SnapZ = uEFZ;
-	SnapP = uEFP;
+	Vh4P2G [uEFG, uEFGY, uEFGZ, uEFGP];
+	
+	uEFG[] = reduceSolution(uEF[], uEFG[], MatVh4P2.D, mapVh4P2);
+	
+	SnapX = uEFG;
+	SnapY = uEFGY;
+	SnapZ = uEFGZ;
+	SnapP = uEFGP;
 		
 	// Guardamos los snapshots 
 	write("../Snapshots/Vx_" + Refijo + ".txt", SnapX[], 0, 0);
@@ -35,18 +39,24 @@ if (search(ReSnapshots, Refijo, 1.e-9)==-1){
 	write("../Snapshots/Vz_" + Refijo + ".txt", SnapZ[], 0, 0);		
 	write("../Snapshots/P_" + Refijo + ".txt", SnapP[], 0, 0);
 
-	SnapX = SnapX + Lev;
-	SnapY = SnapY + LevY;
-	SnapZ = SnapZ + LevZ;
+	uF = uEF + Lev;
+	uFY = uEFY + LevY;
+	uFZ = uEFZ + LevZ;
 	
-	uF[] = IPhP2P1*SnapX[];
+	VhP2 uAux;
+	
+	uAux[] = uF[];
+	uF[] = IPhP2P1*uAux[];
 	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
 	
-	uFY[] = IPhP2P1*SnapY[];
+	uAux[] = uFY[];
+	uFY[] = IPhP2P1*uAux[];
 	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
 	
-	uFZ[] = IPhP2P1*SnapZ[];
+	uAux[] = uFZ[];
+	uFZ[] = IPhP2P1*uAux[];
 	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
+	
 }
 else{
 
@@ -59,25 +69,43 @@ else{
 	readvector("../Snapshots/P_" + Refijo + ".txt", real, SolP, 0);
 	SnapP[] = SolP;
 	
-	SnapX = SnapX + Lev;
-	SnapY = SnapY + LevY;
-	SnapZ = SnapZ + LevZ;
+	uF[] = SnapX[](mapVhP2);  //Paso de Global a Local
+	uFY[] = SnapY[](mapVhP2);
+	uFZ[] = SnapZ[](mapVhP2);
 	
-	uF[] = IPhP2P1*SnapX[];
+	uF = uF + Lev;
+	uFY = uFY + LevY;
+	uFZ = uFZ + LevZ;
+	
+	VhP2 uAux;
+	
+	uAux[] = uF[];
+	uF[] = IPhP2P1*uAux[];
 	uFdX[] = DXP2*uF[]; uFdY[] = DYP2*uF[]; uFdZ[] = DZP2*uF[];
 	
-	uFY[] = IPhP2P1*SnapY[];
+	uAux[] = uFY[];
+	uFY[] = IPhP2P1*uAux[];
 	uFYdX[] = DXP2*uFY[]; uFYdY[] = DYP2*uFY[]; uFYdZ[] = DZP2*uFY[];
 	
-	uFZ[] = IPhP2P1*SnapZ[];
+	uAux[] = uFZ[];
+	uFZ[] = IPhP2P1*uAux[];
 	uFZdX[] = DXP2*uFZ[]; uFZdY[] = DYP2*uFZ[]; uFZdZ[] = DZP2*uFZ[];
 	
 }
 
-varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*GradUGradV(uu,v)) + on(1,2,3,4, uu=0,uuY=0, uuZ=0);
+varf prodT([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(((1./Refijo)+((CS*hTriangle)^2)*MOD(uF))*
+GradUGradV(uu,v)) + on(1,2, uu=0,uuY=0, uuZ=0);
 
 matrix T, Zu;
-T = prodT(Vh3P2, Vh3P2);
+T = prodT(Vh3P2, Vh3P2, tgv = -2);
+
+Mat ProdEscT;
+{
+	macro def(i) [i, i#Y, i#Z] //EOM
+	macro init(i) [i, i, i] //EOM
+	MatCreate(Th, ProdEscT, [P2,P2,P2]);
+	ProdEscT = T;
+}
 
 //macro normsup(vh) int2d(Th)(vh^2)//EOM
 
@@ -85,32 +113,42 @@ real CSerror = 10, CSeps = 1.e-3;
 
 real rhok0 = 20, rhok1;
 
-VhP2 u0, u0Y, u0Z;
+Vh3P2 [u0, u0Y, u0Z];
 VhP2 zuk;
 
-u0 = uF;
-u0Y = uFY;
-u0Z = uFZ;
+[u0, u0Y, u0Z] = [uF, uFY, uFZ];
 
 // Fix point
 for(int ir=0;ir<1000 && CSerror>CSeps;ir++)
 {
 	zuk = UporV(u0,u0);
 	zuk[] /= sqrt(int3d(Th)(zuk^2));
-//	 {real normL2=int2d(Th)(zuk^2);
-//	  cout<<"norm u: "<<normL2<<endl;} // Debe ser parecido a 1
 
 	varf prodzu([uu,uuY,uuZ],[v,vY,vZ]) = int3d(Th)(zuk*UporV(uu,v));
 	Zu = prodzu(Vh3P2, Vh3P2);
 	
-	real[int] autovec = powermethodmpi(Zu,T);
-	broadcast(processor(0, mpiCommWorld), autovec);
-	rhok1 = autovec(0);
-	u0[] = autovec(1:autovec.n-1);
-	// plot(defVel(u0),value=1,wait=1);
-	CSerror = abs((rhok1-rhok0)/rhok1);
- 	// mpi(cout << "PM: " << CSerror<< endl;)
-	rhok0 = rhok1;
-}
+	Mat ProdZU;
+	{
+		macro def(i) [i, i#Y, i#Z] //EOM
+		macro init(i) [i, i, i] //EOM
+		MatCreate(Th, ProdZU, [P2,P2,P2]);
+		ProdZU = Zu;
+	}
+	
+	
+	real[int] EigenVal(0); // array to store eigenvalues
+	Vh3P2[int] [EigenVect, EigenVectY, EigenVectZ](1); // array to store eigenvenctors in Vh3P2 
+	
+	string paramsSLEPc = " -eps_nev " + 1 + " -eps_type power -st_type sinvert -st_pc_type cholesky -eps_gen_hermitian";  // The problem is symmetric
+	 
+	int kEPS = EPSSolve(ProdEscT, ProdZU, vectors = EigenVect, values = EigenVal, sparams = paramsSLEPc);
+	
 
+	rhok0 = rhok1;
+	rhok1 = EigenVal[0];
+	u0[] = EigenVect[0][];
+
+	CSerror = abs((rhok1-rhok0)/rhok1);
+ 
+}
 CSobolev = rhok1;

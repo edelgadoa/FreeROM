@@ -1,12 +1,16 @@
 ///////////////
 // FreeROM 
 ///////////////
-
+real timeEIM = clock();
 // Programa para caluclar el EIM del término de Smagorinsky g(x;\mu)=|\nabla u(x)|
 verbosity = 0;
 
 // Cargamos librerias
 load "lapack"
+load "PETSc"
+macro dimension()3 //EOM
+
+include "macro_ddm.idp"
 
 // Cargamos macros y funciones i/o
 include "../../Auxiliary/Macros_3D.idp"
@@ -19,15 +23,18 @@ include "../../Auxiliary/CuboNxNyNz.idp"
 include "../../FOM/FE_Spaces_NoStab_VP_3D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
+include "../../FOM/Interp_matrix_NoStab_VP_3D_Global.idp"
 include "../../FOM/Interp_matrix_NoStab_VP_3D.idp"
-include "../../FOM/Interp_matrix_NoStab_VP_3D_Local.idp"
 
 // Definimos los parametros a usar
 include "../../Auxiliary/Parametros_3D.idp"
 
+
+mapVhP1dc = restrict(VhP1dc,VhP1dcG,myN2o);
+MatCreate(Th, MatVhP1dc, P1dc);
+
 // Incluimos el levantamiento
 include "../../FOM/Levantamiento_3D.idp"
-
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
 
@@ -51,16 +58,18 @@ real[int] ErrorMaxEIM(Mmax); // Para almacenar el error máximo en cada etapa de
 real[int,int] BM(Mmax, Mmax); BM=0; // Matriz del sistema del EIM, inicializada a cero
 
 
-VhP1dc[int] BEIM(Mmax); // Donde almaceno las bases EIM
-VhP1dc gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
+VhP1dcG[int] BEIM(Mmax); // Donde almaceno las bases EIM
+VhP1dcG gEIM, IgEIM; // Donde guardo la funcion a linealizar y la funcion de base
 
+VhP1dc gEIML; //Aquí voy a calcular los segundos miembros en local para pasarlos a global
 
 // COMENZAMOS EL BUCLE DONDE CALCULAMOS LAS BASES EIM
 
 // Primera iteración //Tomamos el primer valor del parametro aleatorio
 muEIM(0) = vReynolds(0); //Almacenamos el valor de Reynolds escogido
 
-BEIM[0] = mod(BVdX[0], BVdY[0], BVdZ[0], BVYdX[0], BVYdY[0], BVYdZ[0], BVZdX[0], BVZdY[0], BVZdZ[0]);
+VhP1dc BEIML = mod(BVdX[0], BVdY[0], BVdZ[0], BVYdX[0], BVYdY[0], BVYdZ[0], BVZdX[0], BVZdY[0], BVZdZ[0]);;
+BEIM[0][] = reduceSolution(BEIML[], BEIM[0][], MatVhP1dc.D, mapVhP1dc);
 
 Tmax(0) = BEIM[0][].imax;
 BEIM[0][] /= BEIM[0][].max;
@@ -73,7 +82,7 @@ write("Bases_EIM/Base_EIM_" + vReynolds(0) + ".txt", BEIM[0][], 0, 0, 0, 20);
 
 // Hacemos el greedy para calcular todas las bases del EIM
 for (int i=1; i<Mmax; i++){
-	real[int] ErroritL(nSnapshots), Errorit(nSnapshots);
+	real[int] Errorit(nSnapshots);
 	
 	include "EIMgreedy_Smago.idp";
 
@@ -103,4 +112,6 @@ real[int] ErrorEIM(M);
 ErrorEIM = ErrorMaxEIM(0:M-1);
 write("Bases_EIM/ErrorEIM_Smago.txt", ErrorEIM, 0, 0);
 
+timeEIM = clock() - timeEIM;
+mpi(cout<<"Tiempo EIM "<<mpisize<< " procesador(es): "<<timeEIM<<endl;)
 

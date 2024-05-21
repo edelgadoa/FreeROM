@@ -3,7 +3,7 @@
 /////////////// 
 
 // Programa que calcula el residuo de la solución de RBM
-matrix MRes;
+Mat MRes;
 real[int] bRes(Vh4P2.ndof);
 
 // Termino de Navier-Stokes
@@ -11,12 +11,22 @@ real[int] bNSRes(Vh4P2.ndof);
 
 
 {
-	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)((1./Refijo + MOD(uFijo))*GradUGradV(u,v) + uP*vP)
+	varf NSRes([u,uY,uZ,uP],[v,vY,vZ,vP]) = int3d(Th)(//(1./Refijo + MOD(uFijo))*
+											GradUGradV(u,v) + uP*vP)
 											// Segundo miembro
 										  + int3d(Th)(nuRB*GradUGradV(uRB,v) + Antisimetric(uRB,uRB,v) - Div(v)*uRBP + Div(uRB)*vP)
 										  + on(1,2, u=0, uY=0, uZ=0);
-    MRes = NSRes(Vh4P2, Vh4P2);
-	set(MRes, solver = sparsesolver);									
+										  
+    matrix matrixRes = NSRes(Vh4P2, Vh4P2);
+	
+	macro def(i) [i, i#Y, i#Z, i#P] //EOM
+	macro init(i) [i, i, i, i] //EOM
+	MatCreate(Th, MRes, [P2,P2,P2,P2]);
+	
+	MRes = matrixRes;
+	set(MRes, sparams = "-pc_type lu -ksp_type gmres"); // TODO: probar con otros parametros		
+	// set(MRes, sparams = "-pc_type  hpddm -pc_hpddm_levels_1_sub_pc_type lu -pc_hpddm_levels_1_eps_nev 10 -pc_hpddm_define_subdomains -pc_hpddm_has_neumann -pc_hpddm_coarse_p 2 -ksp_type gmres -ksp_max_it 200");							
+	
 	bNSRes = NSRes(0, Vh4P2);
 }
 								
@@ -50,7 +60,6 @@ real[int] bSmagoRes(Vh4P2.ndof);
 
 }
 
-//mpi(cout<<bSmagoRes<<endl;)
 // Termino LPS
 real[int] bStabPRes(Vh4P2.ndof);
 
@@ -66,7 +75,7 @@ real[int] bStabPRes(Vh4P2.ndof);
 	
 	VhP1dc uFRBP;
 	varf StabPRes(unP,vP) = int3d(Th)(taures*uFRBP*vP);
-	
+	// varf StabPRes(unP,vP) = int3d(Th)(hTriangle^2*uFRBP*vP);
 	real[int] bSPx(Vh4P2.ndof), bSPy(Vh4P2.ndof), bSPz(Vh4P2.ndof), bSPaux(VhP1dc.ndof);
 	// Componente X
 	uFRBP[] = IPhDXP2 * uRBP[];
@@ -86,7 +95,6 @@ real[int] bStabPRes(Vh4P2.ndof);
 	bStabPRes = bSPx + bSPy; 
 	bStabPRes += bSPz;
 }
-//mpi(cout<<bStabPRes<<endl;)
 
 bRes = bNSRes;
 bRes += bSmagoRes;
@@ -94,7 +102,9 @@ bRes += bStabPRes;
 
 {
 	Vh4P2 [RES, RESY, RESZ, RESP];
-	mpi(cout<<"Resuelvo el residuo"<<endl;)
-	RES[] = MRes^-1*bRes;  // ESTO PUEDE QUE NO LO RESUELVA POR MEMORIA
-	ResG(iRB) = normX(RES[], MPescX);
+	RES[] = 0.0;
+	RES[] = MRes^-1*bRes; 
+	real[int] ResPETSc; 
+	ChangeNumbering(MatVh4P2, RES[], ResPETSc);
+	ResG(iRB) = normX(ResPETSc, MPescX);
 }

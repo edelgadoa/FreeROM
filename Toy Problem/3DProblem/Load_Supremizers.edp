@@ -1,0 +1,41 @@
+//////////////////////////////////////////
+// Mesh creation 
+
+// Mesh paramaters
+int NN = 32;
+real x01 = -0.5, x11 = 0.5;
+real y01 = -0.5, y11 = 0.5;
+mesh Th, ThL;
+{
+	Th = square(NN,NN,[x01+(x11-x01)*x,y01+(y11-y01)*y],flags=1); //global mesh
+}
+
+int[int] labPeriodic = [2, 4, 1, 3];
+fespace Vh2P2per(Th,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+
+Vh2P2per [Sup1, Sup1Y], [Sup2, Sup2Y];
+
+ifstream LoadSup("Supremizer_4.txt"); // Solution for 4 processors
+LoadSup>>Sup1[];
+
+ifstream LoadSup2("Supremizer_8.txt"); // Solution for 8 processors
+LoadSup2>>Sup2[];
+
+Vh2P2per [Error, ErrorY];
+
+Error[] = (Sup1[] - Sup2[]);
+
+Error[] = abs(Error[]);
+plot(Error, value=1, cmm="Error componente X");
+plot(ErrorY, value=1, cmm="Error componente Y");
+plot([Error, ErrorY], value=1);
+
+real norml2 = Error[].l2/Sup1[].l2;
+
+real normL2 = sqrt(int2d(Th)(Error'*Error + ErrorY'*ErrorY))/sqrt(int2d(Th)(Sup1'*Sup1 + Sup1Y'*Sup1Y));
+
+real normlinf = Error[].max/Sup1[].max;
+
+cout<<"Norma l2 error relativo= "<<norml2<<endl;
+cout<<"Norma L2 error relativo= "<<normL2<<endl;
+cout<<"Norma linf error relativo= "<<normlinf<<endl;
