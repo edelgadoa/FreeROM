@@ -120,7 +120,7 @@ for (int iRB=0; iRB<Ntrain; iRB++){
 			errk(0:errk.n-1)=a*energyk53(k1:k2);
 			errk(0:errk.n-1)-=energykk(k1:k2);
 			difereL(cont)=errk.l2;
-			errk(0:errk.n-1)=energykk(k1:k2);
+			errk(0:errk.n-1)=energykk(k1:k2); // En el articulo Cristina divide por a*energyk53;
 			difereL(cont)/=errk.l2;
 		}
 		cont++;

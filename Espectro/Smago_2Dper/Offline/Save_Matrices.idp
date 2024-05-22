@@ -8,6 +8,25 @@ write("DeltaN_FIN.txt", DeltaN(0:iGreedy), 0, 0);
 write("MuBest_FIN.txt", MuBest(0:iGreedy+1), 0, 0);
 mpi(cout<<" Done."<<endl;)
 
+
+mpi(cout<<" - Reduced Matrices and vectors...";)
+// Guardamos las matrices en archivos txt para leerlos después al hacer la fase online
+write("MatricesRB/Diff.txt", DiffRB, 0 , 0, 0, 20);
+write("MatricesRB/DivP.txt", DivPRB, 0, 0, 0, 20);
+write("MatricesRB/DT.txt", DTRB, 0, 0, 0, 20);
+write("MatricesRB/Pen.txt", PenRB, 0, 0, 0, 20);
+write("MatricesRB/bSmago.txt", bSmagoRB, 0, 0, 0, 20);
+write("MatricesRB/bDiff.txt", bDiffRB, 0, 0, 0, 20);
+write("MatricesRB/bDTRB.txt", bDTRB, 0, 0, 0, 20);
+write("MatricesRB/bConv.txt", bConvRB, 0, 0, 0, 20);
+write("MatricesRB/Conv.txt", ConvRB, 0, 0, 0, 20);
+write("MatricesRB/Smago.txt", SmagoRB, 0, 0, 0, 20);
+write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
+mpi(cout<<" Done."<<endl;)
+
+// Guardo las bases de la presion y de la velocidad
+mpi(cout<<" - Velocity and pressure basis...";)
+
 real[int, int] MBaseVN(Vh2P2perG.ndof, NbasesV), MBasePN(VhP1perG.ndof, NbasesP);
 Vh2P2per [uL,uLY]; 
 VhP1per uLP;
@@ -29,3 +48,5 @@ for(int i=0; i<NbasesP; i++){
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
 write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);
+
+mpi(cout<<" Done."<<endl;)

@@ -61,7 +61,6 @@ include "../Auxiliary/fourier2D.idp"
 /// Establecemos la CI para EF: Cavidad 2D periodica///
 ///////////////////////////////////////////////////////
 
-
 int kmax = NN/2;
 
 complex[int,int] Coefs(2*kmax+1,2*kmax+1);
@@ -88,16 +87,17 @@ real zmax;
 mpiAllReduce(zmaxL,zmax,mpiCommWorld,mpiMAX);
 zz[] = zz[]/zmax;
 
+// Calculamos el espectro
+real[int] spectrum = espectro2D(zz[], zz[], kmax);
+write("EspectroInicial/Espectro_inicial_t_0.txt", spectrum, 0, 0);
+
+// Transformamos para poder calcular y representamos (opcional)
 VhP2per zreal;
 zreal = real(zz);
 zper = zreal;
 VhP2per zmod; zmod = sqrt(zper^2+zper^2);
 plotMPI(Th,zmod,PkP2,def,real, cmm = "Condicion inicial t=0");
 
-/*
-real[int] spectrum = espectro2D(zz[], zz[], kmax);
-write("../PruebaTransformada/Espectro_inicial_t_0.txt", spectrum, 0, 0);
-*/
 /////////////////////////////////////////////
 // Resolvemos el problema de EF: Cavidad 2D//
 /////////////////////////////////////////////
@@ -107,15 +107,15 @@ VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
 VhP2per uprev, uprevY;
 VhP1dcper Gr; // Para el termino de Smagorinsky
 
-T0 = 0;
-TF = 15;
+T0 = 0; // Cambiamos el instante inicial a 0
+TF = 15;   // Cambiamos el tiempo incial a 15
 
 Reynolds = 8500;
 [uEF, uEFY, uEFP] = [zper, zper, 0];
 
 include "FE_Smago_2D.idp"
 
-// Dibujamos la solucion
+// Dibujamos la solucion (opcional)
 
 VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
 plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
@@ -125,11 +125,11 @@ plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
 VhP2per<complex> uX, uY, uaux = 0.;
 uX = uEF+uaux; //Para que uEF se convierta en complex
 uY = uEFY+uaux;
-/*
-real[int] spectrumTF = espectro2D(uX[], uY[], kmax);
-write("../PruebaTransformada/Espectro_inicial_t_"+TF+".txt", spectrumTF, 0, 0);
-*/
 
+real[int] spectrumTF = espectro2D(uX[], uY[], kmax);
+write("EspectroInicial/Espectro_inicial_t_"+TF+".txt", spectrumTF, 0, 0);
+
+// Guardamos la condición inicial para el resto de simulaciones
 Vh3P2perG [uG,uGY,uGP];
-reduceSolution(uEF,uG,MatVh3P2per.D,mapVh3P2per);
+uG[] = reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
 write("../Snapshots/Re_" + Reynolds + "_t_" +ti+ ".txt", uG[], 0, 0);

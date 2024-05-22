@@ -17,10 +17,11 @@ real[int] bFija(Vh3P2per.ndof);
 include "Matrices_fijas_NS_2D.idp"
 
 for(real ti = T0+dt; ti<=TF; ti+=dt){
-	write("Output.txt","t = " + ti,0,1);
 	// Comenzamos el bucle iterativo para resolver el problema de EF
 	
-	// Definimos la solución del paso anterior con levantamiento, y  calculamos sus derivadas
+	write("Output.txt","t = " + ti,0,1);
+	
+	// Definimos la solución del paso anterior, y  calculamos sus derivadas
 	
 	uprev = uEF;
 	uprevY = uEFY;
@@ -60,17 +61,14 @@ for(real ti = T0+dt; ti<=TF; ti+=dt){
 	
 	uEF[] = MatFinal^-1*bFinal;
 	
+	// Guardamos la solución y representamos (opcional)
 	/*
 	{
 		Vh3P2perG [uG,uGY,uGP];
 		uG[] = reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
-		VhP2perG umodG;
-		umodG = sqrt(uG^2+uGY^2);
-		plot(umodG);
 	
 		// Guardamos los snapshots
 		write("../Snapshots/Re_" + Reynolds + "_t_" +ti+ ".txt", uG[], 0, 0);
-		
 	}
 	
 	VhP2per umod; umod = sqrt(uEF^2+uEFY^2);

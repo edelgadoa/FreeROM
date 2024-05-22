@@ -32,27 +32,3 @@ for(int i=0; i<niRe; i++){
 		sEIM++; 
 	}
 }
-
-// for(int i=0; i<nSnapshots; i++){
-// 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
-// 	Vh3P2per [SauxX,SauxY,SauxP];
-	
-// 	Vh3P2perG [uG,uGY,uGP];
-// 	readvector("../Snapshots/Re_" + vReynolds(i) + "_t_" +TF+ ".txt", real, Sol, 0); uG[] = Sol;
-// 	SauxX[] = uG[](mapVh3P2per);
-	
-// 	// Cargamos los Snapshots 
-// 	BVX[i] = SauxX;
-// 	BVY[i] = SauxY;
-
-// 	{
-// 		VhP2per udcAux;
-// 		udcAux[] = IPhP2P1*BVX[i][];
-// 		BVdX[i][] = DXP2*udcAux[];
-// 		BVdY[i][] = DYP2*udcAux[];
-
-// 		udcAux[] = IPhP2P1*BVY[i][];
-// 		BVYdX[i][] = DXP2*udcAux[];
-// 		BVYdY[i][] = DYP2*udcAux[];
-// 	}
-// }

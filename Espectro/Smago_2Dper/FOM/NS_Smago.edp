@@ -66,7 +66,7 @@ Vh3P2perG [uG,uGY,uGP];
 Reynolds = Refijo;
 
 readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uG[] = Sol;
-uEF0[] = uG[](mapVh3P2per);
+uEF0[] = uG[](mapVh3P2per); // Pasamos la informacion a cada procesador
 
 /////////////////////////////////////////////
 // Cargamos los valores de parametros calculados
@@ -91,15 +91,19 @@ for(int iRe=0;iRe<niRe;iRe++)
 	// Comprobamos si la solucion no esta calculada
 	if(search(ReSolved,Reynolds)==-1){
 		[uEF, uEFY,uEFP] = [uEF0,uEF0Y,uEF0P];
+
+		// Resolvemos
 		include "FE_Smago_2D.idp"
+
 		// Actualizamos parametros
 		ReSolved.resize(ReSolved.n+1);
 		ReSolved(ReSolved.n-1) = Reynolds;
 		write("../Snapshots/Snapshots.txt", ReSolved, 0, 0);
+
+		// Representamos (opcional)
 		VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
 		plotMPI(Th, umod, PkP2, def, real, cmm="Modulo velocidad tfinal");
 	}
-	
 	write("Output.txt","Done",1,1);
 }
 

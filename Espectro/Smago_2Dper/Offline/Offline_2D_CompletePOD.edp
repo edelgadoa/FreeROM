@@ -151,12 +151,9 @@ real[int] Delta0(Ntrain); Delta0 = 0.; // Valor auxiliar para el criterio de sel
 for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
-
-	// Cargamos todos los snapshots en tiempo
-
-	// Si no lo he calculado todavía, lo calculo
 	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
 
+		// Si no lo he calculado todavía, lo calculo
 		include "../FOM/FE_Smago_2D.idp"	
 		
 		// Actualizamos el vector de parametros calculados
@@ -164,6 +161,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		ReSnapshots(ReSnapshots.n-1) = Reynolds;
 		write("../Snapshots/Snapshots.txt", ReSnapshots, 0, 0);
 	}
+
+	// Cargamos todos los snapshots en tiempo
 
 	NbasesV = (iGreedy == 0) ? 1 : NbasesV-NbasesP;
 	
@@ -269,7 +268,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
-	include "MatricesOffline_2Dn.idp"
+	include "MatricesOffline_2D.idp"
 	write("Output.txt","Ok.",1,1);
 
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
@@ -283,9 +282,8 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
 	
 	if (DeltaN(iGreedy)<epsGreedy){
-		int NRB = NbasesV+NbasesP + 1;
 		include "Save_Matrices.idp"
 		break;
-	}
-	
+	}	
 }
+mpi(cout<<"Fin del Greedy."<<endl;)

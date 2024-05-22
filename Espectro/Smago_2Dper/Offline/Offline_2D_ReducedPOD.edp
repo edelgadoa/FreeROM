@@ -185,14 +185,14 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		MBaseP(:, NbasesP+i) = SnapP[];
 	}
 	 
-	{
-		Vh2P2per [VEL, VELY];
-		VEL[] = MBaseV(:,niT);
+	// {
+	// 	Vh2P2per [VEL, VELY];
+	// 	VEL[] = MBaseV(:,niT);
 
-		macro defPK2(i) [i, i#Y] // EOM
-		plotMPI(Th, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
+	// 	macro defPK2(i) [i, i#Y] // EOM
+	// 	plotMPI(Th, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
 
-	}
+	// }
 
 	// Calculamos la POD
 	write("Output.txt","Computing the complete basis...",1,1);
@@ -262,7 +262,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	
 	// Construyo las matrices
 	write("Output.txt","Building offline matrices...",1,1);
-	include "MatricesOffline_2Dn.idp"
+	include "MatricesOffline_2D.idp"
 	write("Output.txt","Ok.",1,1);
 
 	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
@@ -281,5 +281,5 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 		include "Save_Matrices.idp"
 		break;
 	}
-	
 }
+mpi(cout<<"Fin del Greedy."<<endl;)

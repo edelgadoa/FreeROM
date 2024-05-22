@@ -3,106 +3,66 @@
 /////////////// 
 
 // Código para construir EN PARALELO las matrices de base reducida
+// El cálculo se hace multiplicando matrices de snapshots por matriz EF A_N = V'*A_h*V.
 
 
-// Comienzo el bucle de construccion de las matrices reducidas fijas
-// Calculamos las matrices con bucle para cada (i,j) de la matriz.
+// Para evitar los valores de BaseV, BaseP que son cero (se alloca con el numero maximo de bases)
+Vh2P2per[int] [BasePODV, BasePODVY](NbasesV);
+VhP1per[int] BasePODP(NbasesP);
 
-for (int i=0; i<NbasesV; i++){
-    real[int] BaseVi;
-    ChangeNumbering(MatVh2P2per, BaseV[i][], BaseVi);
-
-    for (int j=0; j<=i; j++){
-        real[int] BaseVj;
-        ChangeNumbering(MatVh2P2per, BaseV[j][], BaseVj);
-        // Matrices
-        DiffRB(i,j) = innerprodX(BaseVi, BaseVj, DiffPEM);
-        DTRB(i,j) = innerprodX(BaseVi, BaseVj, DTPEM);
-        if (j<i){
-            DiffRB(j,i) = DiffRB(i,j);
-            DTRB(j,i) = DTRB(i,j);
-        }
-    }
-    for (int j=0; j<NbasesP; j++){
-        real[int] BasePj;
-        ChangeNumbering(MatVhP1per, BaseP[j][], BasePj);
-        DivPRB(j, i) = innerprodX(BasePj, BaseVi, DivPPEM); //Esta tiene que ir asi por construccion.
-
-    }
+for(int i=0;i<NbasesV;i++){
+	BasePODV[i][] = BaseV[i][];
+}
+for(int i=0;i<NbasesP;i++){
+	BasePODP[i][] = BaseP[i][];
 }
 
-for (int i=0; i<NbasesP; i++){
-    real[int] BasePi;
-    ChangeNumbering(PenPEM, BaseP[i][], BasePi);
+real[int,int] MBaseVPETSc(MatVh2P2per.n, NbasesV), MBasePPETSc(MatVhP1per.n, NbasesP);
+ChangeNumbering(MatVh2P2per, BasePODV, MBaseVPETSc);
+ChangeNumbering(MatVhP1per, BasePODP, MBasePPETSc);
 
-    for (int j=0; j<=i; j++){
-        real[int] BasePj;
-        ChangeNumbering(PenPEM, BaseP[j][], BasePj);
-        // Matrices
-        PenRB(i, j) = innerprodX(BasePi, BasePj, PenPEM);
-        if (j<i){
-            PenRB(j, i) = PenRB(i, j);
-        }
-    }
-}
+real[int,int] DiffRBaux(DiffPEM.n, MBaseVPETSc.m), DivPRBaux(DiffPEM.n, MBaseVPETSc.m),
+              DTRBaux(DTPEM.n, MBaseVPETSc.m), PenRBaux(PenPEM.n, MBasePPETSc.m);
+
+MatMatMult(DiffPEM, MBaseVPETSc, DiffRBaux);
+MatMatMult(DivPPEM, MBaseVPETSc, DivPRBaux);
+MatMatMult(DTPEM, MBaseVPETSc, DTRBaux);
+MatMatMult(PenPEM, MBasePPETSc, PenRBaux);
+
+real[int,int] DiffRBL = MBaseVPETSc'*DiffRBaux;
+real[int,int] DivPRBL = MBasePPETSc'*DivPRBaux;
+real[int,int] DTRBL = MBaseVPETSc'*DTRBaux;
+real[int,int] PenRBL = MBasePPETSc'*PenRBaux;
+
+mpiAllReduce(DiffRBL, DiffRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(DivPRBL, DivPRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(DTRBL, DTRB, mpiCommWorld, mpiSUM);
+mpiAllReduce(PenRBL, PenRB, mpiCommWorld, mpiSUM);
+
 
 write("Output.txt","Matrices varias OK.",1,1);
 
-// Conveccion
-for (int s=0; s<NbasesV; s++){
-    real[int, int] Cint(NbasesV, NbasesV);
-    Cint = 0;
-    for (int i=0; i<NbasesV; i++){
-        real[int] BaseVi;
-        ChangeNumbering(ConvPEM[s], BaseV[i][], BaseVi);
-        for (int j=0; j<=i; j++){
-            real[int] BaseVj;
-            ChangeNumbering(ConvPEM[s], BaseV[j][], BaseVj);
-            Cint(i,j) = innerprodX(BaseVi, BaseVj, ConvPEM[s]);
-            if(j<i){
-                Cint(j,i) = innerprodX(BaseVj, BaseVi, ConvPEM[s]);
-            }
 
-            if (s==i && (j!=i)){
-                for (int k=0; k<s; k++){
-                   real[int] BaseVk;
-                    ChangeNumbering(ConvPEM[s], BaseV[k][], BaseVk);
-                    Cint(k,j) = innerprodX(BaseVk, BaseVj, ConvPEM[s]);
-                }
-            }
-
-        }
-    }
-
-    ConvRB[s] += Cint;
+for(int s=0; s<NbasesV;s++){
+    real[int,int] ConvRBaux(ConvRB[s].n, MBaseVPETSc.m), ConvRBG(NbasesV, NbasesV);
+    MatMatMult(ConvPEM[s], MBaseVPETSc, ConvRBaux);
+    real[int,int] ConvRBL = MBaseVPETSc'*ConvRBaux;
+    mpiAllReduce(ConvRBL, ConvRBG, mpiCommWorld, mpiSUM);
+    ConvRB[s] = ConvRBG;
 }
-
 
 write("Output.txt","Conveccion OK.",1,1);
+// write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
 
-write("ConvRB"+mpisize+".txt", ConvRB, 1, 1); //REVISAR, ELIMINA EL VALOR DE LO QUE ESTABA DEFINIDO
 
-// Smagorinsky
 for (int s=0; s<Mbases; s++){
-    real[int, int] Sint(NbasesV, NbasesV);
-    Sint = SmagoRB[s];
-    for (int i=0; i<NbasesV; i++){
-		real[int] BaseVi;
-		ChangeNumbering(SmagoPEM[s], BaseV[i][], BaseVi); //Si se hace VMS hay que cambiarlo por FBaseV
-        for (int j=0; j<=i; j++){
-			real[int] BaseVj;
-			ChangeNumbering(SmagoPEM[s], BaseV[j][], BaseVj);
-            Sint(i,j) = innerprodX(BaseVi, BaseVj, SmagoPEM[s]);
-            if(j<i){
-                Sint(j,i) = Sint(i,j);
-            }
-        }
-    }
-    SmagoRB[s] += Sint;
+    real[int, int] SmagoRBaux(SmagoRB[s].n, MBaseVPETSc.m), SmagoRBG(NbasesV, NbasesV);
+	MatMatMult(SmagoPEM[s], MBaseVPETSc, SmagoRBaux);
+	real[int,int] SmagoRBL = MBaseVPETSc'*SmagoRBaux;
+	mpiAllReduce(SmagoRBL, SmagoRBG, mpiCommWorld, mpiSUM);
+    SmagoRB[s] = SmagoRBG;
 }
 
-
-// mpi(cout<<SmagoRB[0]<<endl;)
 write("Output.txt","Smagorinsky OK.",1,1);
 
 

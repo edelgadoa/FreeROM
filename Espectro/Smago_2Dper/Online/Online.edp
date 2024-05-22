@@ -56,16 +56,14 @@ include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
 
-/*
-varf NormaVel([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
-matrix MNormaVel = NormaVel(Vh2P2per, Vh2P2per);
-*/
-
 // Cargamos Bases y Matrices
+mpi(cout<<"Lectura datos BR... ";)
 include "Load_Basis_Data.idp"
-// int Nbases = 1;
-// Cargo los elementos del EIM (tanto para Smago como para LPS)
+mpi(cout<<"Done." << endl;)
+
+mpi(cout<<"Inicializacion EIM... ";)
 include "../Offline/EIM_Data.idp"
+mpi(cout<<"Done." << endl;)
 
 //////////////////////////
 // Cargamos la condicion inicial
@@ -75,6 +73,7 @@ Reynolds = Refijo;
 readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uEF0[] = Sol;
 
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
+mpi(cout<<"Resolviendo FOM... ";)
 real timeFE = clock();
 
 Vh3P2per [uEF, uEFY, uEFP]; 
@@ -84,16 +83,15 @@ VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
 
 Reynolds = 4892;
 
+[uEF, uEFY,uEFP] = [uEF0,uEF0Y,uEF0P];
 include "../FOM/FE_Smago_2D.idp"
-
-VhP2per UEF, UEFY, UEFP;
-UEF = uEF; UEFY = uEFY; UEFP = uEFP;
-
-//plot([uEF, uEFY], cmm = "FE solution for Re = " + Reynolds);
-//plot(UEFP, cmm = "FE solution for Re = " + Reynolds);
 
 timeFE = clock() - timeFE; 
 
+//plot([uEF, uEFY], cmm = "FE solution for Re = " + Reynolds);
+//plot(uEFP, cmm = "FE solution for Re = " + Reynolds);
+
+mpi(cout<<"Done." << endl;)
 /////////////////////////
 
 /////////////////////////
@@ -126,10 +124,9 @@ for (int k=0; k<Mbases; k++){
 	SmagoRB[k] = SmagoN[k](0:NbasesV-1,0:NbasesV-1);
 }
 
-
+// Condición inical
 Vh2P2per [uCI, uCIY];
 VhP1per uCIP;
-
 {
 	real ReInit = 8500; 
 	Vh3P2perG [uCIa,uCIYa,uCIPa];
@@ -154,8 +151,7 @@ ChangeNumbering(MPescV, uCI[], uCIv);
 real[int] uCIPv;
 ChangeNumbering(MPescP, uCIP[], uCIPv);
 real[int] uCIRBv(I);
-mpi(cout << uCIPv.n << endl;)
-mpi(cout << MBaseP.n << endl;)
+
 for(int ii = 0; ii<NbasesV;ii++){
 	real[int] Vi;
 	ChangeNumbering(MPescV, MBaseV(:,ii), Vi);
@@ -173,69 +169,54 @@ real[int] uRBv(Nbases); // Vectores donde almaceno la Solución Reducida
 real[int,int] MRB(Nbases,Nbases); // Matriz para resolver el sistema
 real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
 
+Vh2P2per [uN, uNY];
+VhP1per uNP;
+
 real nuRB = 1./Reynolds;
-uRBv = uCIRBv; // Falta condicion INICIAL
+uRBv = uCIRBv; 
+mpi(cout<<"Resolviendo RB... ";)
 
 real timeRB = clock();
 
 include "../Offline/RB_VMSSmago.idp"
 
-Vh2P2per [uN, uNY];
-VhP1per uNP;
-
-VhP2per UN, UNY;
-
-// real[int,int] MBaseVint(Vh2P2per.ndof, NbasesV), MBasePint(VhP1per.ndof, NbasesP); // Matrices intermedias
-// MBaseVint = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
-// MBasePint = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
-
 uN[] = MBaseV*uRBv(0:NbasesV-1);
 uNP[] = MBaseP*uRBv(NbasesV:I-1);
 
-// mpi(cout << "aaa" << endl;)
-// plot([uN, uNY], cmm = "RB solution (vel) for Re = " + Reynolds);
-// plot(uNP, cmm = "RB solution (pres) for Re = " + Reynolds);
-
 timeRB = clock() - timeRB;
 
-UN = uN; UNY = uNY;
+mpi(cout<<"Done." << endl;)
 
 ////////////////////////
 
 // Calculo errores y speedups
 Vh2P2per [uERR, uERRY];
-VhP2per uERRP;
-VhP2per UERR, UERRY;
+VhP1per uERRP;
 
-UERR = abs(UEF - UN);
-UERRY = abs(UEFY - UNY);
-uERRP = abs(UEFP - uNP);
+[uERR,uERRY] = [uEF-uN,uEFY-uNY];
 
+uERRP = uEFP - uNP;
 
-[uERR, uERRY] = [UERR, UERRY];
-/*
-VhP2per uFijo, uFijoY; //Para la normaT
-VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
-Mat prodV = MatAVh2P2per; 
-{
-	varf a([u,uY],[v,vY]) = int2d(ThL)((1./Refijo+MOD(uFijo))*gradugradv(u,uY,v,vY));
-	// matrix prodVtemp = a(Vh2P2perL, Vh2P2perL);
-	// Mat prodVT = prodVtemp;
-	// prodV = prodVT;
-	prodV = a(Vh2P2per, Vh2P2per);
-}
+real[int] errV; ChangeNumbering(MatVh2P2per, uERR[], errV);
+real normErrorV = normX(errV, MPescV);
+real[int] errP; ChangeNumbering(MatVhP1per, uERRP[], errP);
+real normErrorP = normX(errP, MPescP);
 
-real normErrorV = normX(uERR[], prodV);
-real normErrorP = normL2(uERRP[]);
-*/
+// Representacion opcional 
+// plot([uEF,uEFY],wait=1,cmm = "Vel FOM");
+// plot([uN,uNY],wait=1,cmm = "Vel RB");
+// plot([uERR,uERRY],wait=1,cmm = "Vel Error");
 
-real normErrorV = sqrt(int2d(Th)(uERR^2+uERRY^2));
-real normErrorP = sqrt(int2d(Th)(uERRP));
+// plot(uEFP,wait=1,cmm = "Pres FOM");
+// plot(uNP,wait=1,cmm = "Pres RB");
+// plot(uERRP,wait=1,cmm = "Pres Error");
 
+//////////////////////////
+// Cálculo de valor de speed-up y muestra por pantalla
 real speedup = timeFE/timeRB;
 
 mpi(cout<<"-------------------------------"<<endl;
-cout<<" "<<endl;
+cout<<"Para N = "+I+". Obtenemos: " <<endl;
 cout<<" "<<endl;
 cout<<"-------------------------------"<<endl;
 cout<<"Error T para velocidades= "<<normErrorV<<endl;
@@ -243,9 +224,6 @@ cout<<"Error L2 para presiones=  "<<normErrorP<<endl;
 cout<<"-------------------------------"<<endl;
 cout<<"Tiempo en resolver por F.E.:  "<<timeFE<<"s"<<endl;
 cout<<"Tiempo en resolver por B.R.:  "<<timeRB<<"s"<<endl;
-// cout<<"Numero iteraciones para B.R.: "<<RBit<<"s"<<endl;
 cout<<"-------------------------------"<<endl;
 cout<<"Speedup de la resolucion :    "<<speedup<<endl;
 cout<<"-------------------------------"<<endl;)
-
-
