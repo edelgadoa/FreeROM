@@ -204,7 +204,7 @@ UN = uN; UNY = uNY;
 
 // Calculo errores y speedups
 Vh2P2per [uERR, uERRY];
-VhP2per uERRP;
+VhP1per uERRP;
 VhP2per UERR, UERRY;
 
 UERR = abs(UEF - UN);
@@ -213,6 +213,8 @@ uERRP = abs(UEFP - uNP);
 
 
 [uERR, uERRY] = [UERR, UERRY];
+
+
 /*
 VhP2per uFijo, uFijoY; //Para la normaT
 VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
@@ -224,13 +226,13 @@ Mat prodV = MatAVh2P2per;
 	// prodV = prodVT;
 	prodV = a(Vh2P2per, Vh2P2per);
 }
-
-real normErrorV = normX(uERR[], prodV);
-real normErrorP = normL2(uERRP[]);
 */
+real normErrorV = normX(uERR[], MPescV, true);
+real normErrorP = normX(uERRP[], MPescP, true);
 
-real normErrorV = sqrt(int2d(Th)(uERR^2+uERRY^2));
-real normErrorP = sqrt(int2d(Th)(uERRP));
+
+//real normErrorV = sqrt(int2d(Th)(uERR^2+uERRY^2));
+//real normErrorP = sqrt(int2d(Th)(uERRP));
 
 real speedup = timeFE/timeRB;
 

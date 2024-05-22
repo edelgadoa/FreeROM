@@ -23,10 +23,11 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 func real innerprodX(real[int] &u, real[int] &v, Mat &X, bool &change){
 	real result;
 	real[int] aux;
-	if change{
-		real[int] uPETSc, vPETSc;
-		ChangeNumbering(Mat, u, uPETSc); 
-		ChangeNumbering(Mat, v, vPETSc); 
+	if (change){
+		real[int] uPETSc;
+		real[int] vPETSc;
+		ChangeNumbering(X, u, uPETSc); 
+		ChangeNumbering(X, v, vPETSc); 
 		MatMult(X, vPETSc, aux);
 		real resultL = uPETSc'*aux;
 		mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
@@ -71,6 +72,11 @@ func real normX(real[int] &u, matrix &X){
 
 func real normX(real[int] &u, Mat &X){
 	real result = innerprodX(u,u,X);
+	return sqrt(result);
+}
+
+func real normX(real[int] &u, Mat &X, bool &change){
+	real result = innerprodX(u,u,X,change);
 	return sqrt(result);
 }
 
