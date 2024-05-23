@@ -7,4 +7,4 @@ nameedp="Offline_2D.edp"
 verbosity=0
 
 rm freefem++.pref
-ff-mpirun -np $NP ./$nameedp -glut ffglut
+ff-mpirun -np $NP ./$nameedp -wg -ns

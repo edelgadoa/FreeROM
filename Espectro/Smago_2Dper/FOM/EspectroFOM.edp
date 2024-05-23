@@ -1,0 +1,112 @@
+
+verbosity = 0;
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Paralelo
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+include "../Auxiliary/Functions_MP.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+// Definimos los espacios de EF
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../Auxiliary/Normas.idp"
+
+// Cargamos el modulo para hacer transformadas
+include "../Auxiliary/fourier2D.idp"
+
+// Leemos los Reynolds calculados
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
+niRe = ReSnapshots.n;
+
+// Hallamos el espectro para cada valor del parametro
+real[int] DeltaFOM(niRe);
+k2 = NN/4;
+
+Vh3P2per [u,uY,uP];
+Vh3P2perG [uG,uGY,uGP];
+VhP2per<complex> uFX, uFY, uaux = 0.;
+
+for(int i = 0; i < niRe; i++){
+    Reynolds = ReSnapshots(i);
+
+    mpi(cout << "Calculando para Reynolds = "+Reynolds << endl;)
+
+    readvector("../Snapshots/Re_" + Reynolds + "_t_" +TF+ ".txt", real, Sol, 0); uG[] = Sol;
+    u[] = uG[](mapVh3P2per); // Pasamos la informacion a cada procesador
+
+    // Calculamos el espectro
+    uFX = u+uaux; //Para que uEF se convierta en complex
+    uFY = uY+uaux;
+
+    real[int] energykk = espectro2D(uFX[], uFY[], NN/2);
+    
+	real[int] energyk53(energykk.n),errk(k2-k1+1);
+	for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+	real amin=1.e-4,amax=1.e-3,adt=1.e-5;
+	real an=(amax-amin)/adt+1.;
+	real[int] difereL(an), difere(an);
+	difere = 0.; difereL = 0.;
+	int cont = 0;
+
+	write("Output.txt", "Calculando indicador ...", 1, 1);
+	for(real a=amin;a<=amax;a+=adt){
+		if(mpirank==cont%mpisize){
+			errk(0:errk.n-1)=a*energyk53(k1:k2);
+			errk(0:errk.n-1)-=energykk(k1:k2);
+			difereL(cont)=errk.l2;
+			errk(0:errk.n-1)=energykk(k1:k2); // En el articulo Cristina divide por a*energyk53;
+			difereL(cont)/=errk.l2;
+		}
+		cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
+	DeltaFOM(i)=difere.min;
+	write("Output.txt","    - estimate= "+DeltaFOM(i),1,1);
+
+	write("Output.txt", "Espectro OK.", 1, 1);
+
+}
+write("../Offline/DataCompletePOD/EspectroFOM.txt", DeltaFOM, 0, 0);

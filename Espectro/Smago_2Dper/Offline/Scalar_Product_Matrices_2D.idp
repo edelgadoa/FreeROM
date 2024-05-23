@@ -1,0 +1,80 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Defino las matrices de producto escalar, que voy a considerar para la ortonormalizacion #TODO: definir pescX en [P2,P2,P1]
+Mat MPescT;
+Mat MPescV;
+{
+	macro def(i) [i, i#Y] //
+	macro init(i) [i, i] // EOM
+
+	MatCreate(Th, MPescV, Pk2P2);
+}
+
+Mat MPescP;
+MatCreate(Th, MPescP, PkP1);
+{
+	
+	varf pescV([uu,uuY],[vv,vvY]) = int2d(Th)(GradUGradV(uu,vv));
+    matrix PescV =  pescV(Vh2P2per, Vh2P2per);
+	MPescV = PescV;
+
+	varf pescP(u,v) = int2d(Th)(u*v);
+    matrix PescP = pescP(VhP1per, VhP1per);
+	MPescP = PescP;
+}
+///////////////////////////////////////////////////////
+
+Mat DiffPEM;
+Mat DivPPEM;
+Mat PenPEM;
+Mat DTPEM;
+{
+	macro def(i) [i, i#Y] // EOM
+	macro init(i) [i, i] // EOM
+	MatCreate(Th, DiffPEM, Pk2P2);
+	MatCreate(Th, DTPEM, Pk2P2);
+}
+MatCreate(Th, PenPEM, PkP1);
+
+
+{
+	varf DiffPE([uu,uuY], [v,vY]) = int2d(Th)(GradUGradV(uu,v));
+	matrix DiffPEMT = DiffPE(Vh2P2per,Vh2P2per);
+//	Mat DiffPEMTemp = DiffPEMT;
+	DiffPEM = DiffPEMT;
+
+	varf DivPPE([uu,uuY], [vP]) = int2d(Th)(Div(uu)*vP);
+	matrix DivPPEMT = DivPPE(Vh2P2per, VhP1per);
+	Mat DivPPEMTemp(MatVhP1per, MatVh2P2per, DivPPEMT);
+	DivPPEM = DivPPEMTemp;
+
+	varf PenPE(uP, vP) = int2d(Th)(epspen*uP*vP);
+	matrix PenPEMT = PenPE(VhP1per, VhP1per);
+	// Mat PenPEMTemp = PenPEMT;
+	PenPEM = PenPEMT;//(VhP1perL, VhP1perL);; //PenPEMTemp;
+
+	varf DTPE([uu,uuY], [v,vY]) = int2d(Th)(UporV(uu,v));
+	matrix DTPEMT = DTPE(Vh2P2per, Vh2P2per);
+	// Mat DTPEMTemp = DTPEMT;
+	DTPEM = DTPEMT;//(Vh2P2perL, Vh2P2perL); //DTPEMTemp;
+}
+
+Mat[int] ConvPEM(2*Nbases); // Simplemente inicializo, dentro del bucle del greedy definiré los prod. esc. segun vaya calculando las bases
+
+
+Mat[int] SmagoPEM(Mbases);
+{
+	for (int s=0; s<Mbases; s++){
+		// Mat SmagoPEMs;//
+		macro def(i) [i, i#Y] //
+		macro init(i) [i, i] // EOM
+		MatCreate(Th, SmagoPEM[s], Pk2P2);
+		// Matrices Smago
+		varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
+		matrix SmagoPEMT = SmagoPE(Vh2P2per, Vh2P2per);
+		// SmagoPEMs = SmagoPE(Vh2P2perL, Vh2P2perL);
+		SmagoPEM[s] = SmagoPEMT;
+	}
+}

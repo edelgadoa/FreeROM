@@ -1,0 +1,139 @@
+include "../auxiliary/write.idp";
+include "../auxiliary/parameters.idp";
+include "../auxiliary/macros.idp";
+include "../auxiliary/ortho.idp";
+include "../auxiliary/auxPOD.idp";
+IFMACRO(prob,"Stokes")include "../auxiliary/EFStokes.idp";include "../auxiliary/BRStokes.idp";ENDIFMACRO
+IFMACRO(prob,"NS")include "../auxiliary/EFNS.idp";include "../auxiliary/BRNS.idp";ENDIFMACRO
+IFMACRO(prob,"Smago")include "../auxiliary/EFSmago.idp";include "../auxiliary/BRSmago.idp";ENDIFMACRO
+infoparam;
+
+// Greedy param
+int nselectedRe=niRe;
+dtRe/=8;
+niRe=(Remax-Remin)/dtRe+1.;
+real [int] vtrain(niRe);
+for (int ig=0; ig<niRe; ig++)vtrain(ig)=Remin+ig*dtRe;
+
+int Greedymax=5;
+real epsGreedy=1.e-08;
+real[int,int] selectedRe(2,niRe+Greedymax);
+write("Output.txt","Computing the offline phase",0,1);
+readTh(NN);
+readparameters(ReSta);
+
+real[int] errGreedy(Greedymax+1);errGreedy(0)=10;
+real[int] ReSelec(Greedymax+1); ReSelec(0)=Remin;
+real[int,int] ReBest(numparam,Greedymax);
+ReBest(0:numparam-1,0)=Remin;
+ReBest(0:numparam-1,1)=Remax;
+real[int,int] selected(numparam,niRe);selected=vtrain;
+int M1v=0,M1p=0,M2v=0,M2p=0,Nv=0,Np=0,N,MZv=0,MZp=0,Nvmax=(nEF+1)*niRe*Greedymax,Npmax=Nvmax;
+VhGVP[int] defVP(uEF)(nEF+1),defVP(uBR)(nEF+1);
+VhGVel[int] defVel(basetVel)(nEF+1),defVel(baseZVel)(Nvmax),defVel(baseVel)(Nvmax+Npmax);
+VhGP1[int] basetPres(nEF),baseZPres(Npmax),basePres(Npmax);
+VhGVel defVel(supEF);
+
+IFMACRO(prob,"Smago")
+write("Output.txt","Reading the EIM...",1,1);
+include "../auxiliary/auxEIMsta.idp";
+readEIM;
+ini(VhGP1dc,GradX)
+ini(VhGP1dc,GradY)
+ini(VhGP1dc,GradZ)
+macrogradinter(VhG,matrixD);
+ini(VhGP2,w0);
+VhGP1dc gradw0,nut;
+nut[]=0;
+// {ifstream read("../solutions/txt/nut.txt");
+// read >> nut[];}
+ENDIFMACRO
+
+write("Output.txt","Generating matrixes...",1,1);
+matrixprodV(prodV);matrixprodP(prodP);matrixprodVP(prodVP);
+matrixgeneration;
+real[int] delta(niRe),estiEF(niRe),estiBR(niRe),estiBR0(niRe);
+write("Output.txt","Computing the real estimate...",1,1);
+// selectedRe=0;
+// for(int i=0;i<vRe.n;i++)
+// {
+// 	Re=vRe(i);
+// 	selectedRe(0,i)=Re[0];
+// 	EFSta(uEF,Re);
+// 	estimate(uEF[nEF],uEFY[nEF],selectedRe(1,i));
+// 		if(mpirank==0)cout << selectedRe(1,i) << endl;
+// }
+write("Output.txt","Starting the algorithm...",1,1);
+for(int ip=0;ip<Greedymax && errGreedy(ip)>epsGreedy;ip++)
+{
+	Re=ReBest(0:numparam-1,ip);
+	write("Output.txt","------------------------------ ITERATION "+ip+" for Re="+Re[0]+" ------------------------------",1,1);
+	EFSta(uEF,Re);
+	// {
+	// 	selectedRe(0,nselectedRe)=Re[0];
+	// 	estimate(uEF[nEF],uEFY[nEF],selectedRe(1,nselectedRe));
+	// 	if(mpirank==0)cout << selectedRe << endl;
+	// 	nselectedRe++;
+	// }
+	real[int,int] snapsVel(VhGVel.ndof,nEF+1),snapsPres(VhGP1.ndof,nEF);
+    readsol(snaps,T0+dtsave,T,Re[0],Re[0])
+    // Aqui se incluye sol de EF con la ic una sola vez
+	for(int i=0;i<nEF;i++)baseZVel[i+MZv][]=snapsVel(:,i);
+	for(int i=0;i<nEF;i++)baseZPres[i+MZp][]=snapsPres(:,i);
+	MZv+=nEF;MZp+=nEF;
+	epsPOD=1.e-10;
+	{
+		real[int,int] snapsVel(VhGVel.ndof,MZv),snapsPres(VhGP1.ndof,MZp);
+		for(int i=0;i<MZv;i++)snapsVel(:,i)=baseZVel[i][];
+		for(int i=0;i<MZp;i++)snapsPres(:,i)=baseZPres[i][];
+		write("Output.txt","Computing the complete basis...",1,1);
+		{
+			POD(snapsVel,prodV,baseVel,Nv,autovalVel);
+			POD(snapsPres,prodP,basePres,Np,autovalPres);
+		}
+		write("Output.txt","At the end, for vel "+Nv+" basis and for pres "+Np+" basis.",1,1);
+	}
+	write("Output.txt","Supremizer construction...",1,1);
+	for(int i=0;i<Np;i++)
+	{
+		supremizer(basePres[i],Refijo,supEF);
+		// plot(supEF,value=1,fill=1,wait=1,cmm="i"+i);
+		baseVel[Nv+i][]=supEF[];
+	}
+	write("Output.txt","Ok.",1,1);
+	if(GS)
+	{
+		include "../auxiliary/ortho.idp";
+		write("Output.txt","   Orthonormalization...",1,1);
+		for(int i=0;i<Nv+Np;i++)ortho(baseVel,i+1,prodV);
+		for(int i=0;i<Np;i++)ortho(basePres,i+1,prodP);
+		normalization(baseVel,Nv+Np,prodV);
+		normalization(basePres,Np,prodP);
+		int[int] check=[1,1];
+		orthocheck(Nv+Np,prodV,Np,prodP,check);
+		if(check[0]==0)
+		{
+			write("Output.txt","   Bad ortho Vel...",1,1);
+			for(int i=0;i<Nv+Np;i++)ortho(baseVel,i+1,prodV);
+		}
+		if(check[1]==0)
+		{
+			write("Output.txt","   Bad ortho Pres...",1,1);
+			for(int i=0;i<Np;i++)ortho(basePres,i+1,prodP);
+		}
+	}
+	N=Nv+2*Np;
+	IFMACRO(prob,"Smago")
+	real[int,int][int] gradbaseVel(M);real[int][int] auxgrad(M);
+	{real[int,int] aux(dimension^2,Nv+Np);aux=0;for(int s=0;s<M;s++)gradbaseVel[s]=aux(0:dimension^2-1,0:Nv+Np-1);}
+	ini(VhGP2,auxbase);
+	for(int ii=0;ii<Nv+Np;ii++)
+	{
+		VeltoP2(VhG,baseVel[ii],auxbase);
+		gradEIM(auxbase,auxgrad,EIMx,Grad);
+		for(int ss=0;ss<M;ss++)gradbaseVel[ss](:,ii)=auxgrad[ss];
+	}
+	ENDIFMACRO
+	include "greedy.idp";
+}
+write("Output.txt","Done.",1,1);

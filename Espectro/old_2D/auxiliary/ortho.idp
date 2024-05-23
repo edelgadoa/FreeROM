@@ -1,0 +1,79 @@
+func real[int] proy(real[int] & u,real[int] & v, matrix & X)
+{
+	real[int] aux=X*u;
+	real vu=v'*aux;
+	real uu=u'*aux;
+	real[int] result=u;
+	result*=vu/uu;
+	return result;
+}
+macro ortho(base,NN,prod)
+{real[int] proyection(base[0][].n);
+proyection=0;
+for(int ii=0;ii<NN-1;ii++)proyection+=proy(base[ii][],base[NN-1][],prod);
+base[NN-1][]-=proyection;}
+//EOM
+macro orthoVel(Nv,prodV)
+{real[int] proyectionVel(VhGVel.ndof);
+proyectionVel=0;
+for(int ii=0;ii<Nv-1;ii++)proyectionVel+=proy(baseVel[ii][],baseVel[Nv-1][],prodV);
+baseVel[Nv-1][]-=proyectionVel;}
+//EOM
+macro orthoPres(Np,prodP)
+{real[int] proyectionPres(VhGP1.ndof);
+proyectionPres=0;
+for(int ii=0;ii<Np-1;ii++)proyectionPres+=proy(basePres[ii][],basePres[Np-1][],prodP);
+basePres[Np-1][]-=proyectionPres;}
+//EOM
+macro orthoTemp(Nt)
+{real[int] proyectionTemp(VhGP2.ndof);
+proyectionTemp=0;
+for(int ii=0;ii<Nt-1;ii++)proyectionTemp+=proy(baseTemp[ii][],baseTemp[Nt-1][],prodTemp);
+baseTemp[Nt-1][]-=proyectionTemp;}
+//EOM
+
+macro normalization(base,nbasis,X)
+{for(int ii=0; ii<nbasis;ii++)base[ii][]/=normL2(base[ii][],X);}//EOM
+
+macro orthocheck(nbasisv,prodV,nbasisp,prodP,result)
+{
+	result=[1,1];
+	for(int ii=0;ii<nbasisv;ii++)
+	{
+		for(int jj=0;jj<ii;jj++)
+		{
+			real pesc=innerprod(baseVel[ii][],baseVel[jj][],prodV);
+			if(abs(pesc)>1.e-8)
+			{
+				cout << ii << ", " << jj <<", " << pesc <<  endl;
+				result[0]=0;
+			}
+		}
+	}
+	for(int ii=0;ii<nbasisp;ii++)
+	{
+		for(int jj=0;jj<ii;jj++)
+		{
+			real pesc=innerprod(basePres[ii][],basePres[jj][],prodP);
+			if(abs(pesc)>1.e-8)
+			{
+				cout << ii << ", " << jj <<", " << pesc <<  endl;
+				result[1]=0;
+			}
+		}
+	}
+}
+// EOM
+macro orthocheckTemp(nbasis,result)
+{
+	result=[1];
+	for(int ii=0;ii<nbasis;ii++)
+	{
+		for(int jj=0;jj<ii;jj++)
+		{
+			real pesc=innerprod(baseTemp[ii][],baseTemp[jj][],prodTemp);
+			if(abs(pesc)>1.e-10)result[0]=0;
+		}
+	}
+}
+// EOM

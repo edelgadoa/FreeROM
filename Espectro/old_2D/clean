@@ -1,0 +1,18 @@
+rm EIM/results/*.txt
+rm betah/results/*.txt
+echo 'Que parametros quieres actualizar'
+read prob
+nombre="parameters$prob"
+nombre2="SolEF$prob"
+cp ./auxiliary/parameters.txt ./solutions/$nombre.txt
+rm ./solutions/txt/$nombre2*
+rm offline/results/*.txt
+rm offline/*.txt
+rm offline/vtu/*.txt
+rm EIM/*.txt
+rm betah/*.txt
+rm mesh/*.msh
+rm mesh/*.txt
+rm lift/*.txt
+rm results/*
+rm online/*.txt

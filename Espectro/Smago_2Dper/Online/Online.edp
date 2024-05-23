@@ -1,0 +1,229 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Programa principal que resuelve la fase ONLINE LPS 2D (P2-P2)
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Paralelo
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+include "../Auxiliary/Functions_MP.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
+
+// Definimos las matrices de interpolacion y derivacion
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../Auxiliary/Normas.idp"
+
+// Cargamos Bases y Matrices
+mpi(cout<<"Lectura datos BR... ";)
+include "Load_Basis_Data.idp"
+mpi(cout<<"Done." << endl;)
+
+mpi(cout<<"Inicializacion EIM... ";)
+include "../Offline/EIM_Data.idp"
+mpi(cout<<"Done." << endl;)
+
+//////////////////////////
+// Cargamos la condicion inicial
+Vh3P2per [uEF0,uEF0Y,uEF0P];
+
+Reynolds = Refijo;
+readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uEF0[] = Sol;
+
+// Resolvemos el problema de FE, y calculamos el tiempo en resolver
+mpi(cout<<"Resolviendo FOM... ";)
+real timeFE = clock();
+
+Vh3P2per [uEF, uEFY, uEFP]; 
+VhP2per uprev, uprevY;
+VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior CON LEVANTAMIENTO
+VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
+
+Reynolds = 4892;
+
+[uEF, uEFY,uEFP] = [uEF0,uEF0Y,uEF0P];
+include "../FOM/FE_Smago_2D.idp"
+
+timeFE = clock() - timeFE; 
+
+//plot([uEF, uEFY], cmm = "FE solution for Re = " + Reynolds);
+//plot(uEFP, cmm = "FE solution for Re = " + Reynolds);
+
+mpi(cout<<"Done." << endl;)
+/////////////////////////
+
+/////////////////////////
+//	Resolvemos el problema de RB, y calculamos el tiempo en resolver
+
+// Inicializamos las matrices para el problema reducido
+int I = Nbases;   			 			  
+
+// Inicializamos las matrices para el problema reducido
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDTRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffN;
+DivPRBi = DivPN;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenN;
+DTRBi = DTN;
+real[int,int] DTRB = DTN;
+
+real[int,int][int] ConvRB(NbasesV), SmagoRB(Mbases);
+
+for (int k=0; k<NbasesV; k++){
+	ConvRB[k] = ConvN[k](0:NbasesV-1,0:NbasesV-1);
+}
+
+for (int k=0; k<Mbases; k++){
+	SmagoRB[k] = SmagoN[k](0:NbasesV-1,0:NbasesV-1);
+}
+
+// Condición inical
+Vh2P2per [uCI, uCIY];
+VhP1per uCIP;
+{
+	real ReInit = 8500; 
+	Vh3P2perG [uCIa,uCIYa,uCIPa];
+	readvector("../Snapshots/Re_" + ReInit + "_t_" +T0+ ".txt", real, Sol, 0); uCIa[] = Sol; 
+	
+	VhP2perG CIaux, CIauxY;
+	VhP1perG CIauxP;
+	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
+	
+	VhP2per CIauxL, CIauxYL;
+
+	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
+	uCIP[] = CIauxP[](mapVhP1per);
+	
+	[uCI, uCIY] = [CIauxL, CIauxYL];
+}
+
+include "../Offline/Scalar_Product_Matrices_2D.idp"
+
+real[int] uCIv;
+ChangeNumbering(MPescV, uCI[], uCIv);
+real[int] uCIPv;
+ChangeNumbering(MPescP, uCIP[], uCIPv);
+real[int] uCIRBv(I);
+
+for(int ii = 0; ii<NbasesV;ii++){
+	real[int] Vi;
+	ChangeNumbering(MPescV, MBaseV(:,ii), Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescV);
+}
+for(int ii = NbasesV; ii<I; ii++){
+	real[int] Pi;
+	ChangeNumbering(MPescP, MBaseP(:,ii-NbasesV), Pi);
+	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
+}
+
+//////////////////
+
+real[int] uRBv(Nbases); // Vectores donde almaceno la Solución Reducida
+real[int,int] MRB(Nbases,Nbases); // Matriz para resolver el sistema
+real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
+
+Vh2P2per [uN, uNY];
+VhP1per uNP;
+
+real nuRB = 1./Reynolds;
+uRBv = uCIRBv; 
+mpi(cout<<"Resolviendo RB... ";)
+
+real timeRB = clock();
+
+include "../Offline/RB_VMSSmago.idp"
+
+uN[] = MBaseV*uRBv(0:NbasesV-1);
+uNP[] = MBaseP*uRBv(NbasesV:I-1);
+
+timeRB = clock() - timeRB;
+
+mpi(cout<<"Done." << endl;)
+
+////////////////////////
+
+// Calculo errores y speedups
+Vh2P2per [uERR, uERRY];
+VhP1per uERRP;
+
+[uERR,uERRY] = [uEF-uN,uEFY-uNY];
+
+uERRP = uEFP - uNP;
+
+real[int] errV; ChangeNumbering(MatVh2P2per, uERR[], errV);
+real normErrorV = normX(errV, MPescV);
+real[int] errP; ChangeNumbering(MatVhP1per, uERRP[], errP);
+real normErrorP = normX(errP, MPescP);
+
+// Representacion opcional 
+// plot([uEF,uEFY],wait=1,cmm = "Vel FOM");
+// plot([uN,uNY],wait=1,cmm = "Vel RB");
+// plot([uERR,uERRY],wait=1,cmm = "Vel Error");
+
+// plot(uEFP,wait=1,cmm = "Pres FOM");
+// plot(uNP,wait=1,cmm = "Pres RB");
+// plot(uERRP,wait=1,cmm = "Pres Error");
+
+//////////////////////////
+// Cálculo de valor de speed-up y muestra por pantalla
+real speedup = timeFE/timeRB;
+
+mpi(cout<<"-------------------------------"<<endl;
+cout<<"Para N = "+I+". Obtenemos: " <<endl;
+cout<<" "<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Error T para velocidades= "<<normErrorV<<endl;
+cout<<"Error L2 para presiones=  "<<normErrorP<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Tiempo en resolver por F.E.:  "<<timeFE<<"s"<<endl;
+cout<<"Tiempo en resolver por B.R.:  "<<timeRB<<"s"<<endl;
+cout<<"-------------------------------"<<endl;
+cout<<"Speedup de la resolucion :    "<<speedup<<endl;
+cout<<"-------------------------------"<<endl;)

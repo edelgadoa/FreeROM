@@ -1,0 +1,162 @@
+///////////////
+// FreeROM 
+/////////////// 
+int I = NbasesV + NbasesP; // Para ajustar los indices
+
+// Inicializamos los vectores donde almacenaré los residuos y estimadores de cada iteracion del Greedy
+real[int] DeltaG(Ntrain); 
+
+// Inicializamos las matrices para el problema reducido
+matrix DiffRBi, DivPRBi, DivPRBTi, PenRBi, DTRBi;
+			   			   			 			  
+// Inicializamos los segundos miembros
+real[int] bDTRBi(I); 
+
+// Matrices fijas 
+DiffRBi = DiffRB;
+DivPRBi = DivPRB;
+DivPRBTi = DivPRBi'; DivPRBTi = (-1)*DivPRBTi;
+PenRBi = PenRB;
+DTRBi = DTRB;
+
+// Condicion inicial
+write("Output.txt", "Calculando condicion inicial ...", 1, 1);
+
+Vh2P2per [uCI, uCIY];
+VhP1per uCIP;
+
+{
+	real ReInit = 8500; 
+	Vh3P2perG [uCIa,uCIYa,uCIPa];
+	readvector("../Snapshots/Re_" + ReInit + "_t_" +T0+ ".txt", real, Sol, 0); uCIa[] = Sol; 
+	
+	VhP2perG CIaux, CIauxY;
+	VhP1perG CIauxP;
+	CIaux = uCIa; CIauxY =  uCIYa; CIauxP = uCIPa;
+	
+	VhP2per CIauxL, CIauxYL;
+
+	CIauxL[] = CIaux[](mapVhP2per); CIauxYL[] = CIauxY[](mapVhP2per);
+	uCIP[] = CIauxP[](mapVhP1per);
+	
+	[uCI, uCIY] = [CIauxL, CIauxYL];
+}
+
+real[int] uCIv;
+ChangeNumbering(MPescV, uCI[], uCIv);
+real[int] uCIPv;
+ChangeNumbering(MPescP, uCIP[], uCIPv);
+
+real[int] uCIRBv(I);
+for(int ii = 0; ii<NbasesV;ii++){
+	real[int] Vi;
+	ChangeNumbering(MPescV, BaseV[ii][], Vi);
+	uCIRBv(ii) = innerprodX(Vi,uCIv,MPescV);
+}
+for(int ii = NbasesV; ii<I; ii++){
+	real[int] Pi;
+	ChangeNumbering(MPescP, BaseP[ii-NbasesV][], Pi);
+	uCIRBv(ii) = innerprodX(Pi,uCIPv,MPescP);
+}
+
+write("Output.txt", "Condicion inicial OK.", 1, 1);
+
+// Comenzamos el bucle del greedy 
+// for (int iRB=0; iRB<Ntrain; iRB++){
+for (int iRB=0; iRB<Ntrain; iRB++){
+	
+	mpi(cout<<"----Reynolds= "<<MuTrain(iRB)<<"-----------"<<endl;)
+	real nuRB = 1./MuTrain(iRB);
+	
+	// Resuelvo el problema 
+	real[int] uRBv(I); // Vectores donde almaceno la Solución Reducida
+	real[int] bRB(I); // Segundo miembro para resolver el sistema
+	
+	uRBv = uCIRBv; // Falta condicion INICIAL
+	mpi(cout<<"Calculando solucion reducida..."<<endl;)
+	include "RB_VMSSmago.idp"
+	mpi(cout<<"Reconstruyendo solucion reducida..."<<endl;)
+	// Reconstruyo la solución reducida
+	
+	Vh2P2per [uRB, uRBY];
+	VhP1per uRBP;
+
+	real[int,int] MBaseVint(Vh2P2per.ndof, NbasesV), MBasePint(VhP1per.ndof, NbasesP); // Matrices intermedias
+	MBaseVint = MBaseV(0:Vh2P2per.ndof-1, 0:NbasesV-1);
+	MBasePint = MBaseP(0:VhP1per.ndof-1, 0:NbasesP-1);
+	
+	uRB[] = MBaseVint*uRBv(0:NbasesV-1);
+	uRBP[] = MBasePint*uRBv(NbasesV:I-1);
+	{
+		macro defPK2(i) [i, i#Y] // EOM		
+		plotMPI(Th, [uRB, uRBY], Pk2P2, defPK2, real, cmm="Sol RB Vel Re="+MuTrain(iRB));		
+		plotMPI(Th, uRBP, PkP1, def, real, cmm="Sol RB P Re="+MuTrain(iRB));	
+	}	
+	mpi(cout<<"Hecho."<<endl;)
+	
+	// Calculo el estimador de error 
+
+	write("Output.txt", "Calculando espectro...", 1, 1);
+
+	// Calculamos el espectro de la funcion reducida
+	VhP2per<complex> uC, uCY, aux=0.;
+	uC = uRB+aux; uCY = uRBY+aux;
+
+	int k2 = NN/4;
+	real[int] energykk = espectro2D(uC[], uCY[], NN/2);
+	write("Output.txt", "Hecho.", 1, 1);
+	real[int] energyk53(energykk.n),errk(k2-k1+1);
+	for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+	real amin=1.e-4,amax=1.e-3,adt=1.e-5;
+	real an=(amax-amin)/adt+1.;
+	real[int] difereL(an), difere(an);
+	difere = 0.; difereL = 0.;
+	int cont = 0;
+
+
+	write("Output.txt", "Calculando indicador ...", 1, 1);
+	for(real a=amin;a<=amax;a+=adt){
+		if(mpirank==cont%mpisize){
+			errk(0:errk.n-1)=a*energyk53(k1:k2);
+			errk(0:errk.n-1)-=energykk(k1:k2);
+			difereL(cont)=errk.l2;
+			errk(0:errk.n-1)=energykk(k1:k2); // En el articulo Cristina divide por a*energyk53;
+			difereL(cont)/=errk.l2;
+		}
+		cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
+	DeltaG(iRB)=difere.min;
+	write("Output.txt","    - estimate= "+DeltaG(iRB),1,1);
+
+	write("Output.txt", "Espectro OK.", 1, 1);
+
+}
+
+
+mpi(cout<<" - Method data...";)
+write("DeltaN_"+I+".txt", DeltaG, 0, 0);
+
+// Modificacion del criterio del Greedy
+if (search(MuBest,MuTrain(DeltaG.imax))>=0){
+
+	// Se haya la diferencia de los espectros
+	real[int] pdelta(Ntrain); pdelta = 0.;
+	pdelta = DeltaG-Delta0;
+	pdelta = abs(pdelta);
+	while(search(MuBest,MuTrain(pdelta.imax))>=0){
+		// Eliminamos los ya elegidos
+		pdelta(pdelta.imax) = 0.;
+	}
+	// Escogemos el valor para la mayor diferencia
+	DeltaN(iGreedy) = pdelta.max;
+	MuBest(iGreedy+1)= MuTrain(pdelta.imax);
+}
+else{
+	DeltaN(iGreedy) = DeltaG.max;
+	MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
+}
+
+// Actualizo el valor del espectro anterior
+Delta0 = DeltaG;

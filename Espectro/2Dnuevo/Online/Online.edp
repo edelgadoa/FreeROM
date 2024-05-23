@@ -15,14 +15,14 @@ include "../Auxiliary/search.idp"
 // Creamos la malla
 include "../Auxiliary/Malla.idp"
 
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
 // Definimos los espacios de EF
 include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
 
 // Definimos las matrices de interpolacion y derivacion
 include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
-
-// Definimos los parametros a usar
-include "../Auxiliary/Parametros_2D.idp"
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 include "../Auxiliary/Normas.idp"
@@ -33,8 +33,8 @@ matrix MNormaVel = NormaVel(Vh2P2per, Vh2P2per);
 */
 
 // Cargamos Bases y Matrices
-// include "Load_Basis_Data.idp"
-int Nbases = 1;
+include "Load_Basis_Data.idp"
+//int Nbases = 1;
 // Cargo los elementos del EIM (tanto para Smago como para LPS)
 include "../Offline/EIM_Data.idp"
 
@@ -46,9 +46,7 @@ Vh3P2per [uEF0,uEF0Y,uEF0P];
 
 Reynolds = Refijo;
 
-readvector("../Snapshots/Vx_" + Reynolds + "_t_" +T0+ ".txt", real, SolX, 0); uEF0[] = SolX;
-readvector("../Snapshots/Vy_" + Reynolds + "_t_" +T0+ ".txt", real, SolY, 0); uEF0Y[] = SolY;
-readvector("../Snapshots/P_" + Reynolds + "_t_" +T0+ ".txt", real, SolP, 0); uEF0P[] = SolP;
+readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uEF0[] = Sol;
 
 // Resolvemos el problema de FE, y calculamos el tiempo en resolver
 real timeFE = clock();
@@ -79,17 +77,16 @@ real[int] bRB(Nbases); // Segundo miembro para resolver el sistema
 
 real timeRB = clock();
 
-// include "../Offline/RB_VMSSmago.idp"
+include "../Offline/RB_VMSSmago.idp"
 
 Vh2P2per [uN, uNY];
 VhP2per uNP;
 
 VhP2per UN, UNY;
 
-/*
+
 uN[] = MBaseV*uRB(0:NbasesV-1);
 uNP[] = MBaseP*uRB(NbasesV:Nbases-1);
-*/
 
 //plot([uN, uNY], cmm = "RB solution for Re = " + Reynolds);
 plot(uNP, cmm = "RB solution for Re = " + Reynolds);

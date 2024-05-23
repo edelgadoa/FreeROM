@@ -2,29 +2,34 @@
 // FreeROM 
 ///////////////
 
+int sEIM = 0; // contador con el indice para el vector de snapshots
+for(int i=0; i<niRe; i++){
+	for(int ti = T0+dt; ti<=TF; ti+=dt){
+		Reynolds = vReynolds(i);
+		
+		
+		// Cargamos los Snapshots 
+		readvector("../Snapshots/Re_" + Reynolds + "_t_" + ti + ".txt", real, SnapGlobal, 0);
+		
+		Vh3P2perG [SnapG, SnapGY, SnapGP];
+		SnapG[] = SnapGlobal;
+		
+		Vh3P2per [Snap, SnapY, SnapP];
+		Snap[] = SnapG[](mapVh3P2); //Paso los snapshots a local
+		
+		BVX[sEIM] = Snap; BVY[sEIM] = SnapY;
+		
 
-for(int i=0; i<nSnapshots; i++){
-	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
-	Vh3P2per [SauxX,SauxY,SauxP];
+		{
+			VhP2per udcAux;
+			udcAux[] = IPhP2P1*BVX[sEIM][];
+			BVdX[sEIM][] = DXP2*udcAux[];
+			BVdY[sEIM][] = DYP2*udcAux[];
 
-	ifstream SnapshotVXFILE("../Snapshots/Vx_" + vReynolds(i) + "_t_" +TF+ ".txt");
-	ifstream SnapshotVYFILE("../Snapshots/Vy_" + vReynolds(i) + "_t_" +TF+ ".txt");
-
-	// Cargamos los Snapshots 
-	SnapshotVXFILE>>SauxX[];
-	BVX[i] = SauxX;
-
-	SnapshotVYFILE>>SauxY[];
-	BVY[i] = SauxY;
-
-	{
-		VhP2per udcAux;
-		udcAux[] = IPhP2P1*BVX[i][];
-		BVdX[i][] = DXP2*udcAux[];
-		BVdY[i][] = DYP2*udcAux[];
-
-		udcAux[] = IPhP2P1*BVY[i][];
-		BVYdX[i][] = DXP2*udcAux[];
-		BVYdY[i][] = DYP2*udcAux[];
-	}
+			udcAux[] = IPhP2P1*BVY[sEIM][];
+			BVYdX[sEIM][] = DXP2*udcAux[];
+			BVYdY[sEIM][] = DYP2*udcAux[];
+		}
+		
+		sEIM++; 
 }

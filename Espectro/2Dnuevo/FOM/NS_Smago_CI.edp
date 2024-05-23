@@ -1,0 +1,152 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + Smago evolutivo      /////////
+////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago. 
+// Elemento Finito P2-P1 (no estable) en vel-pres 
+
+// Cargamos librerias
+load "iovtk" 
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+///////////////////////////////////////////////////////
+/// Establecemos la CI para EF: Cavidad 2D periodica///
+///////////////////////////////////////////////////////
+
+// Cargamos el modulo para hacer transformadas
+include "../Auxiliary/fourier2D.idp"
+
+int kmax = NN/2-1;
+
+complex[int,int] Coefs(2*kmax+1,2*kmax+1);
+Coefs = 0.;
+
+// Creamos el espectro artificialmente
+real module;
+for(int k=-kmax;k<=kmax;k++){
+	for(int l=-kmax;l<=kmax;l++){
+		module=sqrt(k^2+l^2);
+		Coefs(k+kmax,l+kmax)=module^(-(alpha+1)/2);
+	}
+}
+Coefs(kmax,kmax) = 0.; // Quito el término relativo a k=l=0. Por si acaso.
+
+// Calculamos la transformada inversa
+VhP2per zper;
+Fh<complex> zz;
+zz[] = FourierInverse2D(Coefs);
+real zmaxL = real(zz[].max);
+real zmax;
+mpiAllReduce(zmaxL,zmax,mpiCommWorld,mpiMAX);
+zz[] = zz[]/zmax;
+
+Fh zreal;
+zreal = real(zz);
+zper = zreal;
+VhP2per zmod; zmod = sqrt(zper^2+zper^2);
+plotMPI(Th,zreal,PkP2,def,real, cmm = "Condicion inicial t=0");
+
+
+real[int] spectrum = espectro2D(zz[], zz[], kmax);
+write("../PruebaTransformada/Espectro_inicial_Medio.txt", spectrum, 0, 0);
+
+/*
+Vh3P2per [u,uY,uP];
+readvector("../PruebaTransformada/icNN64alpha1.66667.txt", real, Sol, 0); u[] = Sol;
+zmod = sqrt(u^2+uY^2);
+plotMPI(Th,u,PkP2,def,real, cmm = "Condicion inicial Cris");
+
+
+Fh<complex> uXc, uYc, uaux = 0.;
+uXc = u+uaux;
+uYc = uY+uaux;
+spectrum = espectro2D(uXc[], uYc[], kmax);
+write("../PruebaTransformada/Espectro_inicial0_Cris_c.txt", spectrum, 0, 0);
+*/
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2per [uEF, uEFY,uEFP];
+VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
+VhP2per uprev, uprevY;
+VhP1dcper Gr; // Para el termino de Smagorinsky
+
+T0 = 0;
+TF = 15;
+
+Reynolds = 8500;
+[uEF, uEFY,uEFP] = [zper, zper, 0];
+
+include "FE_Smago_2D.idp"
+
+// Dibujamos la solucion
+
+VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
+plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad tfinal");
+//plotMPI(Th, uEFP, PkP1, def, real, cmm="presion tfinal"); 
+
+// Calculamos su espectro
+Fh<complex> uX, uY, uaux = 0.;
+uX = uEF+uaux;
+uY = uEFY+uaux;
+
+real[int] spectrumTF = espectro2D(uX[], uY[], kmax);
+write("../PruebaTransformada/Espectro_inicial"+TF+"_Medio.txt", spectrumTF, 0, 0);
+
+// Guardamos los snapshots
+// write("../SnapshotsN/Re_" + Reynolds + "_t_" +TF+ ".txt", uEF[], 0, 0);
+
+/*
+
+Fh umodd;
+umodd = sqrt(u^2+uY^2);
+
+plotMPI(Th,umodd,PFourier,def,real, cmm = "Condicion inicial t=0");
+
+Fh<complex> ufX, ufY, uaux = 0.;
+ufX = u+uaux;
+ufY = uY+uaux;
+
+plot([ufX,ufY]);
+
+real[int] spectrumTF = espectro2D(ufX[], ufY[], kmax);
+write("../PruebaTransformada/Espectro_inicial_Cris15.txt", spectrumTF, 0, 0);
+*/

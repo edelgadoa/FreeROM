@@ -1,0 +1,116 @@
+// Archivo auxiliar calculo de transformadas de fourier
+
+func PFourier = P2;
+real[int] dFourier;
+PartitionCreate(Th,dFourier,PFourier);
+fespace Fh(Th,PFourier);
+Fh DFourier;
+DFourier[] = dFourier;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
+// El vector en el argumento debe ser un vector en P2.
+
+func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax){
+    Fh<complex> uFourier;
+    uFourier[] = uFourierv;
+    complex[int,int] FCoefs((2*kmax+1)^2,2*kmax+1); 
+    // Parece que no permite complex[int,int][int] como argumento de entrada, así que la salida de este debe ser un complex[int,int]
+
+    for(int kk=-kmax; kk<=kmax; kk++){
+        for(int ii=-kmax; ii<=kmax; ii++){
+            for(int jj=-kmax; jj<=kmax; jj++){
+                func fourier = exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
+                FCoefs(ii+kmax+(2*kmax+1)*(kk+kmax),jj+kmax) = int3d(Th)(D*fourier*uFourier); // No deja hacer integral 2D
+            }
+        }
+    }
+
+    return FCoefs;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+func complex[int] FourierInverse3D(complex[int,int] Coefs){
+    // Esta versión de FreeFEM++ (4.14) no permite complex[int,int][int] como argumento de entrada.
+    int kcoefs = (Coefs.m-1)/2;
+    Fh<complex> uFourier;
+
+    for(int kk = -kcoefs; kk<=kcoefs; kk++){
+        for(int ii = -kcoefs; ii<=kcoefs; ii++){
+            for(int jj = -kcoefs; jj<=kcoefs; jj++){
+                complex FCoef = CoefsAux(ii+kcoefs+(2*kcoefs+1)*(kk+kcoefs),jj+kcoefs);
+                func BaseFourier = FCoef*exp(-1*1i*2*pi*(x*ii+y*jj+z*kk));
+                uFourier =  uFourier+BaseFourier;
+            }
+        }
+    }
+    
+    return uFourier[];
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Cálculo del espectro
+
+/*
+func real[int] energycomputation(complex[int] & u,complex[int] & uY, complex[int] & uZ)
+{
+	real[int] resultL(u.n), result(u.n);
+	resultL=0.; result=0.; 
+	int cont = 1;
+	for(int ii=0;ii<result.n;ii++){
+		if(mpirank==cont%mpisize){
+			resultL[ii]=(uporu(u[ii])+uporu(uY[ii])+uporu(uZ[ii]))/2.;
+		}
+	cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Suma de la energía por coronas
+func real[int] energyk2d(real[int,int] & Energy)
+{
+    int kmax = (Energy.n-1)/2;
+    int LN=sqrt(2*kmax^2);
+	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
+	energykbycrownsL=0.; energykbycrowns=0.;
+	real module;int l;
+	int cont = 1;
+	for(int k1=-kmax;k1<kmax;k1++){
+        if(mpirank==cont%mpisize){
+		for(int k2=-kmax;k2<kmax;k2++){
+                module=sqrt(k1^2+k2^2);
+                l=module;
+                energykbycrownsL[l]+=Energy(k1+kmax,k2+kmax);
+            }
+		}
+        cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	return energykbycrowns;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Función simplificadora
+
+func real[int] espectro2D(complex[int] uFourierv, complex[int] uFouriervY, int kmax){
+
+    complex[int,int] FCoefsX(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsY(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsXL(2*kmax+1,2*kmax+1);
+    complex[int,int] FCoefsYL(2*kmax+1,2*kmax+1);
+
+    FCoefsXL = FourierTransform2D(uFourierv,kmax);
+    mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
+
+    FCoefsYL = FourierTransform2D(uFouriervY,kmax);
+    mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
+
+    real[int,int] energyhat = energycomputation(FCoefsX,FCoefsY);
+    real[int] energykk = energyk2d(energyhat);
+    return energykk;
+}

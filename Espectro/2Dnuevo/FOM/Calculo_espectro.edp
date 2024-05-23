@@ -3,7 +3,7 @@
 // Cargamos macros
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/Parametros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
 
 // Creamos la malla
 include "../Auxiliary/Malla.idp"
@@ -14,6 +14,7 @@ fespace VhhP1(Th2,P1);
 
 // Definimos los espacios de EF 
 include "FE_Spaces_NoStab_VP_2D.idp"
+include "../Auxiliary/Parametros_2D.idp"
 
 // Cargamos el modulo para hacer transformadas
 include "../Auxiliary/fourier.idp"

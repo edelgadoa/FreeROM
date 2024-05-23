@@ -6,12 +6,11 @@ readvector("../EIM/Bases_EIM/muEIM_Smago.txt", real, muEIM, 0);
 
 int Mbases = muEIM.n;
 
-VhP1dcperL[int] EIMSmago(Mbases);
+VhP1dcper[int] EIMSmago(Mbases);
 
-//////////////////////////////////////////
 // Cargo los elementos del EIM SMAGO
 for (int i=0; i<Mbases; i++){
-	VhP1dcper EIMSmagoG;
+	VhP1dcperG EIMSmagoG;
 	readvector("../EIM/Bases_EIM/Base_EIM_" + muEIM(i) + ".txt", real, BaseEIM, 0);
 	EIMSmagoG[] = BaseEIM;
 	EIMSmago[i][] = EIMSmagoG[](mapVhP1dcper); //Cargo la bases EN LOCAL
@@ -27,5 +26,3 @@ readvector("../EIM/Bases_EIM/TintEIM_Smago.txt", int, PuntosMSmago, 0);
 int[int] PuntosMSmagoL = MagicPointG2L(mapVhP1dcper, PuntosMSmago); // Vector local de Puntos magicos
 real[int] NumberPMSmago = NumberMagicPoint(mapVhP1dcper, PuntosMSmago); // 1: esta en proc, 0: no esta en proc
 real[int] WeightPMSmago = WeightMagicPoint(NumberPMSmago); //Pesos de cada Magic Point
-
-// cout<<NumberPMSmago<<endl;

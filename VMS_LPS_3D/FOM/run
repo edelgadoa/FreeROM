@@ -3,8 +3,9 @@ echo 'Numero de procesadores:'
 read NP
 
 verbosity=0
-rm freefem++.pref 
+
 
 ff-mpirun -np $NP NS_VMS_Smago_Pres.edp
+
 
 
