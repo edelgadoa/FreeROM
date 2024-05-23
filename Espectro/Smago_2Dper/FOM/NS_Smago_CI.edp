@@ -132,4 +132,4 @@ write("EspectroInicial/Espectro_inicial_t_"+TF+".txt", spectrumTF, 0, 0);
 // Guardamos la condición inicial para el resto de simulaciones
 Vh3P2perG [uG,uGY,uGP];
 uG[] = reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
-write("../Snapshots/Re_" + Reynolds + "_t_" +ti+ ".txt", uG[], 0, 0);
+write("../Snapshots/Re_" + Reynolds + "_t_" +TF+ ".txt", uG[], 0, 0);
