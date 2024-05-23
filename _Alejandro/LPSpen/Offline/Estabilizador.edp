@@ -3,7 +3,6 @@
 // Cargamos macros, funciones i/o
 include "../Auxiliary/IO.idp"
 include "../Auxiliary/Macros_2D.idp"
-include "../Auxiliary/macro_ddm.idp"
 include "../Auxiliary/search.idp"
 
 // Definimos los parametros a usar
@@ -58,9 +57,9 @@ real c1=16;
 real c2=4;
 
 real t00 = TF - period;
-t00 = 6.73;
 int iter0 = t00/dt;
-int nitertau = nit-iter0;
+int iterF = TF/dt;
+int nitertau = iterF-iter0;
 
 real[int,int] tauv(VhP1.ndof,nitertau+1);
 
@@ -71,7 +70,7 @@ for(int i=0; i< Th.nv; i++){
         int indT = Triangles(i,j);
         if(indT!=-1){indv[][indT] = 1;}else{ break;}
     }
-    for(int iter=iter0; iter <=nit; iter++){
+    for(int iter=iter0; iter <=iterF; iter++){
         real ti = t0+iter*dt;
         // Snapshots
         Vh3P2 [SnapX,SnapY,SnapP];
@@ -84,7 +83,6 @@ for(int i=0; i< Th.nv; i++){
     real aa = i;
     real bb = Th.nv;
     real cc = 100*aa/bb;
-    cout << cc << endl;
     write("Output.txt","Estabilizador "+cc+"%",1,1);
 }
 

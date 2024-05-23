@@ -22,8 +22,8 @@ for(int i=0;i<nSnap;i++){
 }
 
 // Carga de bases POD
-readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVTauRBF,0);
-readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVDTauRBF,0);
+readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",real,BaseVTauRBF,0);
+readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",real,BaseVDTauRBF,0);
 int nPODVTau = BaseVTauRBF.m;
 int nPODVDTau = BaseVDTauRBF.m;
 
@@ -86,5 +86,5 @@ pesosRBFVTau = MgaussRBF^(-1)*YVTau;
 real[int,int] pesosRBFVDTau(nSnap,nPODVDTau);
 pesosRBFVDTau = MgaussRBF^(-1)*YVDTau;
 
-write("RBF/PesosVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",pesosRBFVTau, 0, 0);
-write("RBF/PesosVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",pesosRBFVDTau, 0, 0);
+write("RBF/PesosVTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",pesosRBFVTau, 0, 0);
+write("RBF/PesosVDTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",pesosRBFVDTau, 0, 0);

@@ -130,8 +130,11 @@ VhP2[int] BaseVDTau(niS);
     include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
     POD(MBaseV,MScalar2,BaseV,NbasesV,autovalV);
     POD(MBaseConv,MScalar2,BaseConv,NbasesConv,autovalVConv);
+    real epsAUX = epsPOD;
+    epsPOD = epsRBF;
     POD(MBaseVTau,MScalar2,BaseVTau,NbasesVTau,autovalVTau);
     POD(MBaseVDTau,MScalar,BaseVDTau,NbasesVDTau,autovalVDTau);
+    epsPOD = epsAUX;
 }
 write("Output.txt","After POD, for vel "+NbasesV+" basis, for veltau "+NbasesVTau+" basis, for conv "+NbasesConv+", and for ugradtau "+NbasesVDTau+".",1,1);
 
@@ -157,13 +160,13 @@ for(int i=0; i<NbasesVTau; i++){
     BVTau(:,i) = BaseVTau[i][];
     //plot([BaseVTau[i],BaseVTauY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
-write("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVTau, 0, 0);
+write("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt", BVTau, 0, 0);
 
 for(int i=0; i<NbasesVDTau; i++){
     BVDTau(:,i) = BaseVDTau[i][];
     //plot(BaseVDTau[i],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
-write("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BVDTau, 0, 0);
+write("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt", BVDTau, 0, 0);
 write("Output.txt","Basis saved.",1,1);
 
 write("Output.txt","Building offline matrices...",1,1);
