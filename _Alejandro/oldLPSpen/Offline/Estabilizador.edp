@@ -1,0 +1,84 @@
+// Cálculo del estabilizador
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de Snapshots
+write("Output.txt","Cargando Snapshots...",1,1);
+real[int,int] Triangles(Th.nv,Th.nt);
+Triangles = -1;
+int[int] headv(Th.nv), next(Th.nt*3);
+
+headv=-1; //
+for(int k =0;k< Th.nt; ++k){
+for(int i =0;i< 3; ++i)
+{ int v = Th[k][i]; // vertex number
+next[3*k+i] = headv[v];
+headv[v]= 3*k+i;
+}
+}
+// show the list of triangle of vertex v
+int[int] NTri(Th.nv);
+for(int v=0; v<Th.nv;++v)
+{ cout << v << " : ";
+int ind = 0;
+for(int p=headv[v]; p >=0; p=next[p])
+{
+int k = p/3, i = p%3;
+assert( Th[k][i]==v); // check …
+cout << k << " " ;
+Triangles(v,ind) = k;
+++ind;
+}
+NTri(v) = ind;
+cout << endl;
+}
+Triangles.resize(Th.nv, NTri.max);
+
+VhP0 indv;
+VhP1 tau;
+VhP0 h=hTriangle;
+
+real hmax2 = 2*h[].max;
+cout << hmax2^2 << endl;
+
+real c1=16;
+real c2=4;
+
+int iter0 = 3500-period/dt;
+for(int iter=iter0; iter <=nit; iter++){
+    real ti = t0+iter*dt;
+    write("Output.txt","t = "+ti,1,1);
+    // Snapshots
+    Vh3P2 [SnapX,SnapY,SnapP];
+    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SolX, 0);
+    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0);
+    SnapX[] = SolX; SnapY[] = SolY;
+
+    // Estabilizador
+    for(int i=0; i< Th.nv; i++){
+        indv = 0.;
+        for(int j=0; j<NTri.max;j++){
+            int indT = Triangles(i,j);
+            if(indT!=-1){indv[][indT] = 1;}else{ break;}
+        }
+        real umod = int2d(Th,qforder=0)(indv*(SnapX^2+SnapY^2));
+        real areav = int2d(Th,qforder=0)(indv);
+        tau[][i] = (c1*nu/(hmax2^2)+c2*sqrt(umod/areav)/(hmax2))^(-1);
+    }
+    //plot(tau,wait=1,fill=1,value=1,cmm="t="+ti);
+	write("Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
+}
+write("Output.txt","Estabilizador OK.",1,1);

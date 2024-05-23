@@ -165,17 +165,18 @@ func int write(string filename,string towrite,int ind,bool show)
 func int write(string filename,string towrite,int ind,bool show,int proces)
 {
 	if(mpirank==proces){
-	if(ind==0)
-	{
-		ofstream file(filename);
-		file << towrite << endl;
+		if(ind==0)
+		{
+			ofstream file(filename);
+			file << towrite << endl;
+		}
+		else
+		{
+			ofstream file(filename,append);
+			file << towrite << endl;
+		}
+		if(show==1) cout <<towrite << endl;
 	}
-	else
-	{
-		ofstream file(filename,append);
-		file << towrite << endl;
-	}
-	if(show==1) cout <<towrite << endl;}
 	return 1;
 }
 

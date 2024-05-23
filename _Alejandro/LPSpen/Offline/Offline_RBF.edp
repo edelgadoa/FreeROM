@@ -39,13 +39,13 @@ include "../Auxiliary/Normas.idp"
 // Carga de datos importantes
 real tS0 = TF-period;
 real tSF = TF;
-real niS = (tSF-tS0)/dt;
+int niS = period/dt+1;
 
 //Definicion de Constantes y variables varias
-real[int,int] MBaseV(Vh2P2.ndof,niS+1);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
-real[int,int] MBaseConv(Vh2P2.ndof,niS+1); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
-real[int,int] MBaseVTau(Vh2P2.ndof,niS+1); real[int] MediaVTau(Vh2P2.ndof);  MediaVTau = 0.;
-real[int,int] MBaseVDTau(VhP2.ndof,niS+1); real[int] MediaVDTau(Vh2P2.ndof); MediaVDTau = 0.;
+real[int,int] MBaseV(Vh2P2.ndof,niS);    real[int] MediaV(Vh2P2.ndof);     MediaV = 0.;
+real[int,int] MBaseConv(Vh2P2.ndof,niS); real[int] MediaConv(Vh2P2.ndof);  MediaConv = 0.;
+real[int,int] MBaseVTau(Vh2P2.ndof,niS); real[int] MediaVTau(Vh2P2.ndof);  MediaVTau = 0.;
+real[int,int] MBaseVDTau(VhP2.ndof,niS); real[int] MediaVDTau(Vh2P2.ndof); MediaVDTau = 0.;
 
 // Recuperacion de resultados en tiempo
 for(int iter=0; iter <niS; iter++){
@@ -55,9 +55,8 @@ for(int iter=0; iter <niS; iter++){
     VhP2 aux, aux2;
     // Snapshots
     Vh3P2 [SnapX,SnapY,SnapP];
-    readvector("../Snapshots/Vx_" + Reynolds + "_t_" +ti+ ".txt", real, SolX, 0);
-    readvector("../Snapshots/Vy_" + Reynolds + "_t_" +ti+ ".txt", real, SolY, 0);
-    SnapX[] = SolX; SnapY[] = SolY;
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0);
+    SnapX[] = Sol;
 
     Vh2P2 [SX,SY];
     [SX,SY] = [SnapX, SnapY];
@@ -66,7 +65,7 @@ for(int iter=0; iter <niS; iter++){
     //plot(aux,fill=1,value=1,cmm="t="+ti);
 
     MBaseV(:,iter) = SX[];
-    MediaV += 1/(niS+1)*SX[];
+    MediaV += SX[];
 
     // Estabilizador
     VhP1 tau;
@@ -84,17 +83,11 @@ for(int iter=0; iter <niS; iter++){
     //plot(aux,fill=1,value=1,cmm="t="+ti);
     
     MBaseVTau(:,iter) = uxtau[];
-    MediaVTau += 1/(niS+1)*uxtau[];
+    //MediaVTau += 1/(niS+1)*uxtau[];
 
     // Conveccion (2 componentes)
     Vh2P2 [zx,zy];
-    VhP2 zzx,zzy;
-    aux = SX^2; 
-    aux2 = SX*SY;
-    zzx = dx(aux)+dy(aux2);
-    aux = SY^2;
-    zzy = dx(aux2)+dy(aux);
-    [zx,zy] = [zzx,zzy];
+    [zx,zy] = ugradv(SX,SY,SX,SY);
 
     //aux = zx^2+zy^2;
     //plot(aux,fill=1,value=1,cmm="t="+ti);
@@ -107,23 +100,18 @@ for(int iter=0; iter <niS; iter++){
     udtau = SX*dx(tau)+SY*dy(tau);
 
     MBaseVDTau(:,iter) = udtau[];
-    MediaVDTau += 1/(niS+1)*udtau[];
+    //MediaVDTau += 1/(niS+1)*udtau[];
 
     // plot(udtau,fill=1,value=1,cmm="t="+ti);
 }
 
 // Hay que quitar la media
 write("Output.txt","Substracting and saving mean value ...",1,1);
+MediaV /= MBaseV.m; 
 for(int i=0; i <niS; i++){
     MBaseV(:,i) -= MediaV; 
-    //MBaseConv(:,i) -= MediaConv; 
-    //MBaseVTau(:,i) -= MediaVTau; 
-    //MBaseVDTau(:,i) -= MediaVDTau; 
 }
-write("Bases/MediaV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaV, 0, 0);
-//write("Bases/MediaConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaConv, 0, 0);
-//write("Bases/MediaVTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaVTau, 0, 0);
-//write("Bases/MediaVDTau_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", MediaVDTau, 0, 0);
+write("Bases/MediaV_" + Reynolds + ".txt", MediaV, 0, 0);
 
 write("Output.txt","Mean values OK.",1,1);
 
@@ -155,7 +143,7 @@ real[int,int] BVDTau(VhP2.ndof,NbasesVDTau);
 
 for(int i=0; i<NbasesV; i++){
     BV(:,i) = BaseV[i][];
-    //plot([BaseV[i],BaseVY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
+    // plot([BaseV[i],BaseVY[i]],fill=1,wait=1,value=1,cmm = "Modo "+(i+1));
 }
 write("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt", BV, 0, 0);
 
@@ -187,5 +175,6 @@ write("Output.txt","Reduced Matrices Ok.",1,1);
 write("Output.txt","Saving data for RBF...",1,1);
 write("RBF/DataVTau_" + Reynolds + ".txt", MBaseVTau, 0, 0);
 write("RBF/DataVDTau_" + Reynolds + ".txt", MBaseVDTau, 0, 0);
+write("RBF/DataV_" + Reynolds + ".txt", MBaseV, 0, 0);
 include "RBF.idp"
 write("Output.txt","RBF Ok.",1,1);

@@ -45,11 +45,13 @@ macro MOD(U) (sqrt(U#dX^2 + U#dY^2 + U#dZ^2 +
 macro UporV(U,V) ( [U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
 
+// macro para la igualdad de matrices
+macro equal(MatrixBig, MatrixSmall) for [i,j, Mij : MatrixSmall]{MatrixBig(i,j) = Mij;} //EOM
 
 //// MACROS DEL PARALELO
 macro pause() mpiBarrier(mpiCommWorld)// EOM
 macro mpi(variable) if(mpirank==0){variable} //EOM
-
+macro mpiall(variable) for(int k=0;k<mpisize;k++){if (mpirank==k){variable}} //EOM
 // mpiComm comm(mpiCommWorld, 0, 0);
 
 //Local2Global: Hace lo mismo que reduceSolution pero con la notación uL para el EF local de u
@@ -63,75 +65,86 @@ NewMacro Local2Global(u,D,map)
 }
 EndMacro
 
-NewMacro reduceSolution(uL,u,D,map)
+// Function to obtain the solution on the global mesh
+func real[int] reduceSolution(real[int] &uL, real[int] &u, real[int] &D, int[int] &map)
 {
-	real[int] aux(u[].n); aux = 0;
-	uL[] .*= D;
-	aux(map) = uL[];
-	u[] = 0;
-	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
+	real[int] aux(u.n); aux = 0;
+	real[int] auxL = uL;
+	auxL .*= D;
+	aux(map) = auxL;
+	real[int] result(u.n); result = 0;
+	mpiAllReduce(aux, result, mpiCommWorld, mpiSUM);
+	return result;
 }
-EndMacro
-
-NewMacro solvesystem(A,b,u)
-{
-	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
-	MatAVh4P2 = A;
-	
-    Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
-    string[int] names(2);
-    names[0] = "velocity";
-    names[1] = "pressure";
-	
-	set(MatAVh4P2, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200", fields=uuL[], names=names);
-	// set(MatAVh4P2, prefix = "block_", sparams = "-block_pc_type fieldsplit -block_ksp_type fgmres -block_pc_fieldsplit_type schur -block_pc_fieldsplit_detect_saddle_point "
-	// + " -block_fieldsplit_velocity_pc_type lu -block_fieldsplit_velocity_mat_solver_type mumps"
-	// + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names);
-	
-	set(MatAVh4P2,sparams=sparamsv);
-	u#L[] = MatAVh4P2^-1*b;
-	reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
-}
-EndMacro
 
 
-NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
-{
-	Vh4P2L [u#L, u#LY, u#LZ, u#LP]; 
-	u#L[] = 0;
-	MatAVh4P2 = A;
-	
-	b.resize(b.n + 1);
-	b(b.n - 1) = 0;
-		
-	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
-	real[int] Lag = Lagrange(0,Vh4P2L);
-	
-	real[int] pLag;
-	ChangeNumbering(MatAVh4P2, Lag, pLag);
+// NewMacro solvesystem(A,b,u)
+// {
+// 	// Vh4P2L [u#L, u#LY, u#LZ, u#LP];
+// 	MatAVh4P2 = A;
+//
+//     // Vh4P2L [uuL, uuLY, uuLZ, uuLP] = [1.0, 1.0, 1.0, 2.0];
+//     // string[int] names(2);
+//     // names[0] = "velocity";
+//     // names[1] = "pressure";
+//
+// 	// set(MatAVh4P2, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200", fields=uuL[], names=names);
+// 	// set(MatAVh4P2, prefix = "block_", sparams = "-block_pc_type fieldsplit -block_ksp_type fgmres -block_pc_fieldsplit_type schur  -block_pc_fieldsplit_schur_fact_type lower -block_pc_fieldsplit_detect_saddle_point "
+// 	//  + " -block_fieldsplit_velocity_pc_type lu -block_fieldsplit_velocity_mat_solver_type mumps"
+// 	//  + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names);
+//
+// 	 // set(MatAVh4P2, sparams = "-ksp_type fgmres -pc_type fieldsplit -pc_fieldsplit_type schur -pc_fieldsplit_schur_fact_type lower -pc_fieldsplit_detect_saddle_point -fieldsplit_velocity_sub_pc_type lu "
+// 	 // + " -fieldsplit_pressure_sub_pc_type lu -fieldsplit_velocity_sub_pc_factor_mat_solver_type superlu -fieldsplit_pressure_sub_pc_factor_mat_solver_type superlu -ksp_monitor -ksp_view "
+// 	 // + " -fieldsplit_velocity_ksp_type gmres -fieldsplit_velocity_ksp_max_it 5 -fieldsplit_pressure_ksp_type gmres -fieldsplit_pressure_ksp_max_it 5 -ksp_rtol 1e-6", fields = u[], names = names);
+//
+// 	set(MatAVh4P2, sparams=sparamsv);
+// 	u[] = MatAVh4P2^-1*b;
+// 	// reduceSolution(u#L,u,MatAVh4P2.D,mapVh4P2);
+// }
+// EndMacro
 
-	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
-	
-	Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
-	real[int] Fields(Vh4P2L.ndof + 1);
-	Fields(0: Vh4P2L.ndof - 1) = uuL[];
-	Fields(Vh4P2L.ndof) = 3.0;
-    string[int] names(2);
-    names[0] = "velocity";
-    names[1] = "pressure";
-	names[2] = "Lagrange";
-	
-	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
-	 set(MatLPS, sparams=sparamsv);
-	
-	real[int] solLPS = MatLPS^-1*b;
 
-	u#L[] = 0.;
-	u#L[] = solLPS;
-	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
-
-}
-EndMacro
+// NewMacro solvesystemLPS(A,b,u) // Nuevo Macro para resolver los problemas con multiplicador de Lagrange
+// {
+// 	Vh4P2L [u#L, u#LY, u#LZ, u#LP];
+// 	u#L[] = 0;
+// 	MatAVh4P2 = A;
+//
+// 	b.resize(b.n + 1);
+// 	b(b.n - 1) = 0;
+//
+// 	varf Lagrange([uu,uuY,uuZ,uuP],[v,vY,vZ,vP]) = intN(ThL)(vP);
+// 	real[int] Lag = Lagrange(0,Vh4P2L);
+//
+// 	real[int] pLag;
+// 	ChangeNumbering(MatAVh4P2, Lag, pLag);
+//
+// 	Mat MatLPS = [[MatAVh4P2,pLag], [pLag',1]];
+//
+// 	Vh4P2L [uu#L, uu#LY, uu#LZ, uu#LP] = [1.0, 1.0, 1.0, 2.0];
+// 	real[int] Fields(Vh4P2L.ndof + 1);
+// 	Fields(0: Vh4P2L.ndof - 1) = uuL[];
+// 	Fields(Vh4P2L.ndof) = 3.0;
+//     string[int] names(2);
+//     names[0] = "velocity";
+//     names[1] = "pressure";
+// 	names[2] = "Lagrange";
+//
+// 	//set(MatLPS, sparams = "-pc_type fieldsplit -pc_type bjacobi -ksp_type gmres -ksp_gmres_restart 200 -ksp_converged_reason", fields=uuL[], names=names);
+// 	 // set(MatLPS, sparams=sparamsv);
+//
+//  	// set(MatAVh4P2, prefix = "block_", sparams = "-block_pc_type fieldsplit -block_ksp_type fgmres -block_pc_fieldsplit_type schur -block_pc_fieldsplit_detect_saddle_point "
+//  	//  + " -block_fieldsplit_velocity_pc_type lu -block_fieldsplit_velocity_mat_solver_type mumps"
+//  	//  + " -block_ksp_monitor -block_ksp_view", fields = uuL[], names = names);
+//
+// 	real[int] solLPS = MatLPS^-1*b;
+//
+// 	u#L[] = 0.;
+// 	u#L[] = solLPS;
+// 	reduceSolution(u#L, u, MatAVh4P2.D, mapVh4P2);
+//
+// }
+// EndMacro
 
 
 

@@ -49,16 +49,49 @@ func complex[int] DFFT2d(complex[int] & f,real epsi,int n)
 	return F;
 }
 
+int NN = 33;
+int[int] labPeriodic = [2, 4, 1, 3];
+mesh Th=square(NN,NN,[-0.5+x, -0.5+y],flags=0);
 
-
-int NN = 32;
-mesh Th=square(NN,NN,flags=0);
-
-fespace VhP1(Th,P1);
+fespace VhP1(Th,P1,periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+//fespace VhP1(Th,P1);
 real alpha = -5./3.;
-
+NN -=1;
 VhP1 <complex> ZZ,zz;
 
+func f = exp(-x^2-y^2);
+VhP1<complex> uf = f;
+VhP1 uplot;
+uplot = real(uf);
+plot(uplot);
+uplot = imag(uf);
+plot(uplot);
+VhP1<complex> uhf;
+uhf[] = dfft(uf[],NN+1,-1);
+uplot = real(uhf);
+plot(uplot);
+uplot = imag(uhf);
+plot(uplot);
+VhP1<complex> uhhf;
+uhhf[] = dfft(uhf[],NN+1,1);
+uplot = real(uhhf);
+plot(uplot);
+uplot = imag(uhhf);
+plot(uplot);
+
+real k1,k2;
+k1=5;
+k2=1;
+VhP1<complex> faux = exp(1i*k1*x*2*pi)*exp(1i*k2*y*2*pi);
+
+VhP1<complex> ff; 
+ff[] = dfft(faux[],NN+1,-1); 
+uplot = real(ff);
+plot(uplot);
+uplot = imag(ff);
+plot(uplot);
+
+/*
 // Creamos el espectro artificialmente
 real module;
 for(int k=-NN/2;k<=NN/2;k++)
@@ -86,3 +119,4 @@ plot(zr,zr); // solution in the corners of the domain with instability
 zz[]=DFFT2d(ZZ[],1,NN/2);
 zr = real(zz);
 plot(zr,zr); // solution in the center of the domain with no instability
+*/

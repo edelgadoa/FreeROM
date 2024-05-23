@@ -1,0 +1,238 @@
+load "Element_P4"
+load "Element_P3"
+load "Element_P3dc"
+load "UMFPACK64"
+
+
+macro grad(u) [dx(u),dy(u)] //
+macro div(u1,u2)(dx(u1)+dy(u2)) //
+macro nor(u,w) (dx(u)-dx(w))^2+(dy(u)-dy(w))^2 // 
+macro norm1(u)(dx(u)^2+dy(u)^2) //
+
+int Nx1=25; 
+int Nx2=50;
+int Nx3=100;  
+real L=1;
+real H=3;
+real alfa=0.18;
+
+border fr1(t=0,0.488){x=t; y=0; label=1;}
+border fr2(t=pi/2,3*pi/2){x=0.488+0.144*cos(t); y=0.144+0.144*sin(t); label=1;}
+border fr3(t=0.488,0.488+0.8){x=t; y=0.288; label=1;}
+border fr4(t=0,1){x=1.288+t*(0.2); y=0.288-t*(0.288-alfa); label=1;}
+border fr5(t=alfa,0){x=1.488; y=t; label=1;}
+border fr6(t=1.488,H){x=t; y=0; label=1;}
+border fr7(t=0,L){x=H; y=t; label=2;}
+border fr8(t=H,0){x=t; y=L; label=2;}
+border fr9(t=L, 0){x=0; y=t; label=3;}
+//plot(fr1(Nx1)+fr2(-Nx1)+fr3(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx3)+fr7(Nx2)+fr8(Nx1)+fr9(Nx1));
+mesh Th=buildmesh(fr1(Nx1)+fr2(-Nx2)+fr3(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx2)+fr7(Nx2)+fr8(Nx2)+fr9(Nx1));
+
+border fr1a(t=0,1.288){x=t; y=0.288; label=1;}
+border fr9a(t=L,0.288){x=0; y=t; label=3;}
+//plot(fr1a(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx2)+fr7(Nx2)+fr8(Nx2)+fr9a(Nx1));
+
+//mesh Th=buildmesh(fr1a(Nx3)+fr4(2*Nx3)+fr5(Nx3)+fr6(Nx2)+fr7(Nx2)+fr8(Nx2)+fr9a(Nx1));
+
+plot(Th,wait=1); 
+
+
+
+real nMesh=2;
+string sfxt="ns"+nMesh+".txt";
+string solu="u"+nMesh+".txt";
+
+
+
+int qfo=10; // order of the Quadature Form. 
+func Pk=P2; 
+func Pk1=P1;
+func Pk1dc=P1dc;
+ 
+
+
+real reynoldsNew = 2*1.e+3;
+
+real epsError = 1.e-4;
+real dt  = 1.e-0;
+real dtt = 1/dt;
+
+real epsilon1=1.e-8;
+real epsilon2=1.e-1;
+int itmax=50000.;
+real error;
+
+
+real cs=0.18*0.18;
+
+//Vaciado del fichero
+
+{
+  ofstream ftxt(sfxt);//  to empty  the file 
+ }
+
+{
+ofstream ftxt(solu);
+}
+
+
+real U0 =0.01;
+func inlet =U0;
+
+real velMaxima = U0;
+
+real nu = 1/reynoldsNew;
+
+
+func f1 = 0.;
+func f2 = 0.;
+
+fespace Whh(Th,Pk);
+//Inicializacion de la velocidad 
+Whh w1=0;
+Whh w2=0.;
+
+
+ //espacios elementos finitos
+  fespace Wh(Th,[Pk,Pk,Pk1]);
+  fespace Wh1(Th,Pk);
+  fespace Vh(Th,Pk1);
+  fespace Vdch(Th,Pk1dc);
+cout << " Grados de libertad totales " << Wh.ndof<< endl;
+cout << " Grados de libertad  veloc " << Wh1.ndof<< endl;
+cout << " Grados de libertad  pres" << Vh.ndof<< endl;
+
+
+// proceso de iteracion en tiempo
+//matrices independientes de la etapa de tiempo
+
+//Calculo de las matrices de la formulacion variacional //independientes del tiempo
+
+ varf va([u1,u2,p],[v1,v2,q]) =
+    int2d(Th,qforder=qfo)(u1*v1+u2*v2+ grad(u1)'* grad(v1) * nu *dt+  grad(u2)'* grad(v2) * nu *dt
+	       - dt*div(u1,u2)*q - dt*div(v1,v2)*p - 1e-6*dt*p*q )
+    + int2d(Th,qforder=qfo)(dt*f1*v1+dt*f2*v2);
+ //   + on(1,u1=0,u2=0)+on(2,u1=inlet,u2=0)+on(3, u2=0);
+  
+  matrix A= va(Wh,Wh,solver=UMFPACK);
+ 
+  real[int] b=va(0,Wh);
+ 
+matrix IPh;
+{
+fespace Xhu(Th,[Pk1,Pk,Pk1]);
+fespace Xhv(Th,[Pk,Pk1,Pk1]);
+int[int] c1=[2];
+c1=[0,-1,-1];
+matrix Ihuu=interpolate(Xhu,Wh, U2Vc=c1, op=0);
+matrix Ithuu=interpolate(Wh,Xhu, U2Vc=c1, op=0);
+matrix IPhu=Ithuu*Ihuu;
+c1=[-1,1,-1];
+matrix Ihvv=interpolate(Xhv,Wh, U2Vc=c1, op=0);
+matrix Ithvv=interpolate(Wh,Xhv, U2Vc=c1, op=0);
+matrix IPhv=Ithvv*Ihvv;
+real[int] dd1(Wh.ndof);
+dd1=1;
+matrix Idh=dd1; 
+//
+IPh=IPhu+IPhv; 
+IPh=Idh+(-1.)*IPh;
+}
+
+for (int it=0; it <itmax; it++)
+{
+	
+varf vat([u1,u2,p],[v1,v2,q])=int2d(Th,qforder=qfo)((dt*v1*(w1*dx(u1)+w2*dy(u1)))+(dt*v2*(w1*dx(u2)+w2*dy(u2))))
++int2d(Th,qforder=qfo)(w1*v1+w2*v2)
+   + on(1,u1=0,u2=0)+on(3,u1=inlet,u2=0); //+on(2, u2=0);
+matrix C=vat(Wh,Wh);
+matrix AT=A+C;
+real[int] bc=vat(0,Wh);
+real[int] bt=b+bc; 
+
+
+//matriz del smagorinski
+
+
+Wh1 mr1,mr2;
+{
+Wh [mw1,mw2,mw3]=[w1,w2,0.];
+Wh [mx1,mx2,mx3];
+mx1[]=IPh*mw1[];
+mr1=mx1;
+mr2=mx2;
+}
+func mod=sqrt(dx(mr1)^2+dy(mr1)^2+dx(mr2)^2+dy(mr2)^2);
+
+varf vMtk([u1,u2,p],[v1,v2,q])=int2d(Th,qforder=qfo)(cs*hTriangle^2*mod*dx(u1)*dx(v1)+cs*mod*hTriangle^2*dy(u1)*dy(v1)+cs*mod*hTriangle^2*dx(u2)*dx(v2)+cs*mod*hTriangle^2*dy(u2)*dy(v2));
+
+matrix Mtk=vMtk(Wh,Wh);
+
+matrix EE;
+{
+EE=Mtk*IPh;
+EE=IPh'*EE;
+EE=dt*EE; 
+}
+
+AT=AT+EE;
+set(AT, solver=UMFPACK);
+Wh [u1,u2,p];
+u1[]=AT^-1*bt;
+//plot(u1,wait=1,value=1);
+
+error=int2d(Th,qforder=qfo)(nor(u1,w1)+nor(u2,w2))/int2d(Th)(norm1(u1)+norm1(u2));
+error=sqrt(error)*100; 
+
+//plot([u1,u2],wait=1, cmm=" velocidad ");
+//plot(p,wait=1,nbiso=100, cmm=" presion ");
+
+
+
+
+cout << "Numero de iteraciones=" << it+1 << " " << error <<  endl; 
+
+if (error < epsilon2) // ||(abs(erp)< 1.e-4))	
+{ 
+plot(Th,wait=1);
+//plot([u1,u2],wait=1, cmm="velocidad");
+plot(u1,wait=1, cmm=" solucion aproximada 1 " );
+plot(u2,wait=1, cmm=" solucion aproximada 2 " );
+//plot(p,wait=1, cmm=" solucion aproximada 3 " );
+w1=u1;
+w2=u2;
+{
+ofstream ftxt(solu,append);
+ftxt<<u1[];
+}
+plot([u1,u2],wait=1, cmm=" velocidad ");
+plot(p,wait=1,nbiso=100, cmm=" presion ");
+
+break;
+}
+if((it%10)==0)
+{
+	Vh u,v;
+	solve corriente(u,v)=int2d(Th)(dx(u)*dx(v)+dx(u)*dx(v))-int2d(Th)(dx(u1)*v+dy(u2)*v)+on(1,2,3,u=0); 
+	plot(u,wait=1, cmm="corriente");
+	plot(u1,wait=1, cmm="horizontal");
+	plot(u2,wait=1, cmm="vertical");
+	plot([u1,u2],wait=1, cmm=" velocidad ");
+	plot(p,wait=1,nbiso=100, cmm=" presion ");
+	
+}
+// Actualización de la velocidad de convección 
+w1=u1;
+w2=u2;
+//
+// Final de iteración en tiempo
+if(it==itmax-1)
+{
+ofstream ftxt(solu,append);
+ftxt << u1;
+plot([u1,u2],wait=1);
+plot(p,wait=1,nbiso=100);
+}
+}
+
+

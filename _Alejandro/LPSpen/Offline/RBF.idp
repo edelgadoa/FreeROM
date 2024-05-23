@@ -3,12 +3,22 @@
 // Carga de datos
 readmatrix("RBF/DataVTau_" + Reynolds + ".txt",real,SnapVTau,0);
 readmatrix("RBF/DataVDTau_" + Reynolds + ".txt",real,SnapVDTau,0);
+readmatrix("RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
+readvector("Bases/MediaV_" + Reynolds + ".txt",real, mSnapV,0);
+readmatrix("Bases/BaseV_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",real,BaseVRBF,0);
 int nSnap = SnapVTau.m;
+int nBasesV = BaseVRBF.m;
 
-// Vector de parametros (Solo tiempo)
-real[int] X(nSnap);
+// Vector de parametros velocidades reducidas
+real[int,int] X(nBasesV,nSnap);
 for(int i=0;i<nSnap;i++){
-    X(nSnap-i-1) = TF-dt*i;
+    real[int] Snapi = SnapV(:,i);
+    Vh2P2 [sV,sVY]; sV[] = Snapi-mSnapV;
+    for(int j=0;j<nBasesV;j++){
+        real[int] Basej = BaseVRBF(:,j);
+        Vh2P2 [bV,bVY]; bV[] = Basej;
+        X(j,i) = int2d(Th)(bV*sV+bVY*sVY);
+    }
 }
 
 // Carga de bases POD
@@ -22,10 +32,10 @@ int nPODVDTau = BaseVDTauRBF.m;
 
 // Definicion de la funcion Gaussiana
 func real gauss(real r){
- 	if(1-r/period>=0){
-	    return (1-r/period);
+ 	if(1-r>=0){
+	    return (1-r);
     }else{
-	    return 	 0;
+	    return 0;
     }
 }
 
@@ -57,16 +67,17 @@ for(int i=0; i<nSnap; i++){
 
 // Definicion de la matriz de pesos
 real[int,int] gaussRBF(nSnap,nSnap);
-real dist;
+real[int] dist(nBasesV);
 for(int i=0; i<nSnap; i++){
     for(int j=i; j<nSnap; j++){
-        dist = abs(X(i)-X(j));
-        gaussRBF(i,j)=gauss(dist);
+        dist = X(:,i)-X(:,j);
+        gaussRBF(i,j)=gauss(dist.l2);
         gaussRBF(j,i)=gaussRBF(i,j);
     }
 }
 matrix MgaussRBF = gaussRBF;
 set(MgaussRBF,solver=UMFPACK);
+cout << gaussRBF << endl;
 
 // Solve the linear system
 

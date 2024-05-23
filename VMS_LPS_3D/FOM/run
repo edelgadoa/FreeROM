@@ -4,5 +4,8 @@ read NP
 
 verbosity=0
 
+
 ff-mpirun -np $NP NS_VMS_Smago_Pres.edp
+
+
 

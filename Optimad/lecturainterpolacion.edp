@@ -1,0 +1,59 @@
+mesh Th=readmesh("mallapm.am_fmt");
+
+mesh Th0=readmesh("malla12018.am_fmt");
+
+fespace Vh(Th,P1); 
+fespace Wh(Th,P2);
+
+fespace Vh0(Th0,P1);
+fespace Wh0(Th0,P2); 
+/*
+Wh0 u1,u2; 
+Vh0 pr;
+ifstream pres("p-1-0.12018.txt");
+{
+pres>> pr[];
+}
+plot(pr, wait=1);
+ifstream velox("vx-1-0.12018.txt");
+{
+velox>> u1[];
+}
+plot(u1,wait=1);
+
+ifstream veloy("vy-1-0.12018.txt");
+{
+veloy>> u2[];
+}
+plot(u2,wait=1);
+
+Wh u,v;
+Vh p; 
+
+u=u1;
+v=u2; 
+p=pr; 
+plot(p, wait=1); 
+plot(u, wait=1);
+plot(v,wait=1);
+*/
+
+real h=0.288+0.045; 
+real L=0.12018+0.045; 
+real Lm=0.186457+0.045;
+real coef=1; 
+func psi2=(y*((h*Lm-L^2)/((h-L)*L)+((L-Lm)/(L*(h-L)))*y)*(x>=2.744)*(x<=2.944))*(y<=0.333)*(y>=0.045);
+Vh0 tf=psi2; 
+plot(tf, wait=1);
+/*
+// Checkmovemesh
+real minT0 = checkmovemesh(Th, [x, y]); //return the min triangle area
+while(1){ // find a correct move mesh
+  real minT = checkmovemesh(Th, [x, 0.045+coef*psi2]);
+  if (minT > minT0/5) break; //if big enough
+  coef /= 1.5;
+}
+*/
+//mesh Thm=movemesh(Th0,[x,coef*psi2+0.045]);
+//plot(Th0, wait=1);
+//plot(Thm,wait=1);

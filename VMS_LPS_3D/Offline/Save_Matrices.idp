@@ -3,51 +3,51 @@
 /////////////// 
 
 write("DeltaNmax.txt", DeltaG, 0, 0);
-write("DeltaN.txt", DeltaN(0:NRB), 0, 0);
-write("TauN.txt", TauN(0:NRB), 0, 0);
-write("MuBest.txt", MuBest(0:NRB), 0, 0);
+write("DeltaN.txt", DeltaN(0:NRB-1), 0, 0);
+write("TauN.txt", TauN(0:NRB-1), 0, 0);
+write("MuBest.txt", MuBest(0:NRB-1), 0, 0);
 
 
-real[int,int] DiffN(2*NRB,2*NRB), DivPN(2*NRB,2*NRB), ConvLevN(2*NRB,2*NRB), DTN(2*NRB,2*NRB), PenN(2*NRB,2*NRB), bSmagoN(Mbases,2*NRB);
-real[int] bDiffN(2*NRB), bConvN(2*NRB);
-real[int,int][int] ConvN(NRB), SmagoN(Mbases), StabPN(Taubases), NukN(Taubases), NGukN(Taubases);
+real[int,int] DiffN(NRB,NRB), DivPN(NRB,NRB), ConvLevN(NRB,NRB), DTN(NRB,NRB), PenN(NRB,NRB), bSmagoN(Mbases,NRB);
+real[int] bDiffN(NRB), bConvN(NRB);
+real[int,int][int] ConvN(NRB), SmagoN(Mbases), StabPN(Taubases), NukN(Taubases), NGukN(Taubases), GradPMN(Mbases);
 
 
-DiffN = DiffRB(0:2*NRB-1, 0:2*NRB-1);
-DivPN = DivPRB(Nbases-NRB:Nbases+NRB-1, 0:2*NRB-1);
-ConvLevN = ConvLevRB(0:2*NRB-1, 0:2*NRB-1);
-DTN = DTRB(0:2*NRB-1, 0:2*NRB-1);
-PenN = PenRB(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
-bSmagoN = bSmagoRB(0:Mbases-1, 0:2*NRB-1);
+DiffN = DiffRBG(0:NRB-1, 0:NRB-1);
+DivPN = DivPRBG(0:NRB-1, 0:NRB-1);
+ConvLevN = ConvLRBG(0:NRB-1, 0:NRB-1);
+DTN = DTRBG(0:NRB-1, 0:NRB-1);
+PenN = PenRBG(0:NRB-1, 0:NRB-1);
+bSmagoN = bSmagoRBG(0:Mbases-1, 0:NRB-1);
 
-bDiffN = bDiffRB(0:2*NRB-1);
-bConvN = bConvRB(0:2*NRB-1);
+bDiffN = bDiffRBG(0:NRB-1);
+bConvN = bConvLRBG(0:NRB-1);
 
 for (int s=0; s<NRB; s++){
-	real [int,int] cint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
+	real [int,int] cint(NRB,NRB), aux(Nbases,Nbases);
 	aux = ConvRB[s];
-	cint = aux(0:2*NRB-1, 0:2*NRB-1);
-	ConvN[s] = cint(0:2*NRB-1, 0:2*NRB-1);
+	cint = aux(0:NRB-1, 0:NRB-1);
+	ConvN[s] = cint(0:NRB-1, 0:NRB-1);
 }
 for (int s=0; s<Mbases; s++){
-	real [int,int] sint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
-	aux=SmagoRB[s];
-	sint=aux(0:2*NRB-1, 0:2*NRB-1);
-	SmagoN[s]=sint(0:2*NRB-1, 0:2*NRB-1);
+	real [int,int] sint(NRB,NRB), aux(Nbases,Nbases);
+	aux = SmagoRB[s];
+	sint = aux(0:NRB-1, 0:NRB-1);
+	SmagoN[s] = sint(0:NRB-1, 0:NRB-1);
 }
 
 for (int s=0; s<Taubases; s++){
-    real[int,int] Spresint(2*NRB,2*NRB), aux(2*Nbases,2*Nbases);
+    real[int,int] Spresint(NRB,NRB), aux(Nbases,Nbases);
     aux = StabPRB[s];
-    Spresint = aux(Nbases-NRB:Nbases+NRB-1, Nbases-NRB:Nbases+NRB-1);
-    StabPN[s] = Spresint(0:2*NRB-1, 0:2*NRB-1);
+    Spresint = aux(0:NRB-1, 0:NRB-1);
+    StabPN[s] = Spresint(0:NRB-1, 0:NRB-1);
 }
 
 for (int s=0;s<Mbases;s++){
 	real [int,int] GradPMint(9,NRB), aux(9,Nbases); 
 	aux = GradPM[s];
 	GradPMint = aux(0:8,0:NRB-1);
-	GradPM[s] = GradPMint(0:8,0:NRB-1);
+	GradPMN[s] = GradPMint(0:8,0:NRB-1);
 }
 
 for (int s=0; s<Taubases; s++){
@@ -82,11 +82,22 @@ write("MatricesRB/GradPM.txt", GradPM, 0, 0, 0, 20);
 write("MatricesRB/NUK.txt", NukN, 0, 0, 0, 20);
 write("MatricesRB/NGUK.txt", NGukN, 0, 0, 0, 20);
 
-// Guardo los Snapshots calculados
+// Guardo los Snapshots calculados en GLOBAL
 
-real[int, int] MBaseVN(Vh3P2.ndof, NRB), MBasePN(VhP2.ndof, NRB);
-MBaseVN = MBaseV(0:Vh3P2.ndof-1, 0:NRB-1);
-MBasePN = MBaseP(0:VhP2.ndof-1, 0:NRB-1);
+Vh3P2G[int] [BaseVG, BaseVGY, BaseVGZ](NRB);
+VhP2G[int] BasePG(NRB);
+
+for (int k=0; k<NRB; k++){
+	BaseVG[k][] = reduceSolution(BaseV[k][], BaseVG[k][], MatVh3P2.D, mapVh3P2);
+	BasePG[k][] = reduceSolution(BaseP[k][], BasePG[k][], MatVhP2.D, mapVhP2);
+}
+
+
+real[int, int] MBaseVN(Vh3P2G.ndof, NRB), MBasePN(VhP2G.ndof, NRB);
+for (int k=0; k<NRB; k++){
+	MBaseVN(:,k) = BaseVG[k][];
+	MBasePN(:,k) = BasePG[k][];
+}
 
 write("MatricesRB/BaseV.txt", MBaseVN, 0, 0, 0, 20);
 write("MatricesRB/BaseP.txt", MBasePN, 0, 0, 0, 20);

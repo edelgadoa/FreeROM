@@ -1,0 +1,68 @@
+//  run with MPI:  ff-mpirun -np 4 hpddm.edp -ns  -pc_type lu 
+// Options for -pc_type: lu , gamg, hpddm 
+// lu: direct solver , gamg : algebraic multigrid , hpddm : two (or more) level domain decomposition method with the GenEO coarse space
+// Options for hpddm via PETSc are given in:
+// https://petsc.org/main/manualpages/PC/PCHPDDM/
+// NBPROC 4
+
+load "PETSc"                        // PETSc plugin
+macro dimension()2// EOM            // 2D or 3D
+include "macro_ddm.idp"             // additional DDM functions
+
+macro grad(u)[dx(u), dy(u)]// EOM   // two-dimensional gradient
+func Pk = P1;                       // finite element space
+
+mesh Th = square(getARGV("-global", 40), getARGV("-global", 40)); // global mesh
+Mat A , B ,  C;
+macro ThRefinementFactor()getARGV("-split", 1)//
+
+// Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
+MatCreate(Th, A, Pk);
+MatCreate(Th, B, Pk);
+MatCreate(Th, C, Pk);
+
+fespace Wh(Th, Pk);                 // local finite element space on the local mesh Th_i
+varf vPb(u, v) = int2d(Th)(grad(u)' * grad(v)) + int2d(Th)(v) + on(1, u = 0.0);
+real[int] rhs = vPb(0, Wh);   // local component of the global right hand side
+
+//set(A, sparams = "-ksp_view");
+Wh<real> u;                         // local solution
+
+matrix Neumann = vPb(Wh, Wh); // local matrix for the Neumann in the subdomain
+matrix NeumannB = vPb(Wh, Wh); // local matrix for the Neumann in the subdomain
+// Recall that A is Mat a distributed matrix and Neumann is a local one. The entries of the distributed matrix A are filled with the entries of the local Neumann matrix. 
+// How to add matrices 
+A = Neumann; 
+NeumannB = NeumannB + Neumann;
+
+C = NeumannB;
+
+real memory = PetscMemoryGetCurrentUsage();
+// u[] = A^-1 * rhs;
+memory = PetscMemoryGetCurrentUsage() - memory;
+if(mpirank == 0)
+    cout << memory << " bytes of memory in usage" << endl;
+
+real[int] err = A * u[];            // restriction to my subdomain of the global matrix-vector product
+real[int] transpose = A' * u[];
+exchange(A, rhs, scaled = true);
+err -= rhs;
+
+macro def(u)u//
+plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
+u[] = err;
+plotMPI(Th, u, Pk, def, real, cmm = "Global residual");
+
+Wh<real> Rb[1];
+Rb[0] = 1;
+// use direct solver
+//set(A, sparams = " -pc_type lu -ksp_type gmres  -ksp_monitor");
+// use multigrid
+//set(A, sparams = "-pc_type gamg  -ksp_type gmres -ksp_max_it 200 -ksp_monitor", nearnullspace = Rb);
+// use hpddm 
+//set(A, sparams = "-pc_type  hpddm -pc_hpddm_levels_1_sub_pc_type lu -pc_hpddm_levels_1_eps_nev 10 -pc_hpddm_define_subdomains -pc_hpddm_has_neumann -pc_hpddm_coarse_p 2 -ksp_type gmres -ksp_max_it 200   -ksp_monitor");
+// all in one
+set(A, sparams = "-pc_hpddm_levels_1_sub_pc_type lu -pc_hpddm_levels_1_eps_nev 10 -pc_hpddm_define_subdomains -pc_hpddm_has_neumann -pc_hpddm_coarse_p 2 -ksp_type fgmres  -ksp_max_it 200  -ksp_monitor", nearnullspace = Rb);
+u[] = 0.0;
+u[] = A^-1 * rhs;
+plotMPI(Th, u, Pk, def, real, cmm = "Global solution");
