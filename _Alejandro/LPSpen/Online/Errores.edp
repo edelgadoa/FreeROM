@@ -35,7 +35,7 @@ int m = 0;
 
 VhP2 umod;
 
-int NbasesConv = 4;
+int NbasesConv = 5;
 
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
@@ -60,7 +60,7 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorEstabR0l2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
     cout << "Error with Estabilization (R=0) (L2) = " << errorEstabR0l2(m) << endl;
-    */
+   */
     // Penalizacion con Filtrado
     readvector("Resultados/Snap_POD_PEN_FIL_Re_" + Reynolds + "_F_" + NbasesConv + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SX, 0); uR[] = SX;
     [err,errY] = [u-uR,uY-uRY];

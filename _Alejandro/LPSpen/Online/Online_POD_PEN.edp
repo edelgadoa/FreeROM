@@ -84,13 +84,13 @@ write("Output.txt","Reduced Matrices Ok.",1,1);
 
 // RBF
 write("Output.txt","Reading RBF elements...",1,1);
-readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVTau,0);
-readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
+readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,PesosVTau,0);
+readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,PesosVDTau,0);
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
 
-readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
-readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
+readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,BaseVTau,0);
+readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,BaseVDTau,0);
 
 readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0); 
 readtensor("../Offline/ElementosOffline/MsVTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVTauR,0); 
@@ -115,20 +115,20 @@ func real gauss(real r){
 // Vector de parametros velocidades reducidas
 readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
 nit = SnapV.m;
-/*
-real[int,int] Xaux(NbasesV,nit);
-for(int i=0;i<nit;i++){
-    real[int] Snapi = SnapV(:,i);
-    Vh2P2 [sV,sVY]; sV[] = Snapi;
-    [sV,sVY] = [sV-uM,sVY-uMY];
-    for(int j=0;j<NbasesV;j++){
-        real[int] Basej = BaseV(:,j);
-        Vh2P2 [bV,bVY]; bV[] = Basej;
-        Xaux(j,i) = int2d(Th)(bV*sV+bVY*sVY);
-    }
-}
-write("../Offline/RBF/Parametros_" + Reynolds + ".txt", Xaux, 0, 0);
-*/
+
+// real[int,int] Xaux(NbasesV,nit);
+// for(int i=0;i<nit;i++){
+//     real[int] Snapi = SnapV(:,i);
+//     Vh2P2 [sV,sVY]; sV[] = Snapi;
+//     [sV,sVY] = [sV-uM,sVY-uMY];
+//     for(int j=0;j<NbasesV;j++){
+//         real[int] Basej = BaseV(:,j);
+//         Vh2P2 [bV,bVY]; bV[] = Basej;
+//         Xaux(j,i) = int2d(Th)(bV*sV+bVY*sVY);
+//     }
+// }
+// write("../Offline/RBF/Parametros_" + Reynolds + ".txt", Xaux, 0, 0);
+
 readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
 
 write("Output.txt","RBF Ok.",1,1);

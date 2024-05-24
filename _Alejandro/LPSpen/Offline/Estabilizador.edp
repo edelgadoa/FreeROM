@@ -93,4 +93,4 @@ for(int iter=iter0; iter <=nit; iter++){
     plot(tau,fill=1,value=1,cmm="Tau en t"+ti);
 	write("Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
 }
-write("Output.txt","Estabilizador OK.",1,1);
+write("Output.txt","Estabilizador OK.",0,0);

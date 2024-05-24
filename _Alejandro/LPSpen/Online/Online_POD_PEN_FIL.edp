@@ -86,14 +86,14 @@ write("Output.txt","Reduced Matrices Ok.",1,1);
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // RBF
 write("Output.txt","Reading RBF elements...",1,1);
-readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVTau,0);
-readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,PesosVDTau,0);
+readmatrix("../Offline/RBF/PesosVTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,PesosVTau,0);
+readmatrix("../Offline/RBF/PesosVDTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,PesosVDTau,0);
 int NbasesVTau = PesosVTau.m;
 int NbasesVDTau = PesosVDTau.m;
-int NbasesConv = 4;
+int NbasesConv = 6;
 
-readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVTau,0);
-readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,BaseVDTau,0);
+readmatrix("../Offline/RBF/BaseVTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,BaseVTau,0);
+readmatrix("../Offline/RBF/BaseVDTau_"+Reynolds+"_PODtol_"+(-log10(epsRBF))+".txt",real,BaseVDTau,0);
 
 // Penalizacion
 readtensor("../Offline/ElementosOffline/MsVDTauR_"+Reynolds+"_PODtol_"+(-log10(epsPOD))+".txt",real,MsVDTauR,0);
