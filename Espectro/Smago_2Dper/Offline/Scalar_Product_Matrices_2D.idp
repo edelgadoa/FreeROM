@@ -72,9 +72,24 @@ Mat[int] SmagoPEM(Mbases);
 		macro init(i) [i, i] // EOM
 		MatCreate(Th, SmagoPEM[s], Pk2P2);
 		// Matrices Smago
-		varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*GradUGradV(uu,v));
-		matrix SmagoPEMT = SmagoPE(Vh2P2per, Vh2P2per);
+		varf SmagoPE([uu,uuY],[v,vY]) = int2d(Th)((CS*hTriangle)^2*EIMSmago[s]*UporV(uu,v));
+		matrix SmagoPEMT = SmagoPE(Vh2P1dcper, Vh2P1dcper);
 		// SmagoPEMs = SmagoPE(Vh2P2perL, Vh2P2perL);
-		SmagoPEM[s] = SmagoPEMT;
+		
+		matrix DXX, DYY;
+		{
+			matrix Maux; 
+			//COMPONENTE X 
+			Maux = DX2P2*IPh2P22P1;
+			DXX = (Maux')*SmagoPEMT;
+			DXX = DXX*Maux;
+		
+			Maux = DY2P2*IPh2P22P1;
+			DYY = (Maux')*SmagoPEMT;
+			DYY = DYY*Maux;
+		
+		}
+		matrix SmagoPEMTxy = DXX + DYY;	
+		SmagoPEM[s] = SmagoPEMTxy;
 	}
 }
