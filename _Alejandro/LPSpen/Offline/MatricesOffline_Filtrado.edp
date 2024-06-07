@@ -31,7 +31,7 @@ readmatrix("Bases/BaseConv_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ ".txt",r
 readmatrix("RBF/BaseVTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",real,BaseVTau,0);
 readmatrix("RBF/BaseVDTau_" + Reynolds + "_PODtol_" +(-log10(epsRBF))+ ".txt",real,BaseVDTau,0);
 int NbasesV = BaseV.m;
-int NbasesConv = BaseConv.m; NbasesConv = 25;
+int NbasesConv = BaseConv.m; NbasesConv = 20;
 int NbasesVTau = BaseVTau.m;
 int NbasesVDTau = BaseVDTau.m;
 

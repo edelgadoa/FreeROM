@@ -1,0 +1,84 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+//////////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////////
+//// Unsteady NS + Smago + BC periodicas /////////
+//////////////////////////////////////////////////
+
+verbosity = 0;
+
+// Codigo para calcular la fase offline VMS-Smago con estabilizacion LPS en la presion. 
+// Elemento Finito P2-P2 (no estable) en vel-pres SIN SUPREMIZER
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+int mpirank = 0;
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/macro_ddm.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+include "../Auxiliary/Normas.idp"
+
+////////////////////////////////////////////////////////////////////////////////////
+
+// Carga de datos importantes
+real tS0 = TF-period;
+real tSF = TF;
+int niS = period/dt+1;
+
+// Recuperacion de resultados en tiempo
+for(int iter=0; iter <niS; iter++){
+    real ti = tS0+iter*dt;
+    write("Output.txt","t = "+ti,1,1);
+
+    VhP2 aux, aux2;
+    // Snapshots
+    Vh3P2 [SnapX,SnapY,SnapP];
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0);
+    SnapX[] = Sol;
+
+    Vh2P2 [SX,SY];
+    [SX,SY] = [SnapX, SnapY];
+    // VhP2 umod;
+    // umod = sqrt(SX^2+SY^2);
+    // plot(umod,value=1,fill=1);
+
+    // Estabilizador
+    VhP1 tau;
+    readvector("Estabilizador/tau_" + Reynolds + "_t_" +ti+ ".txt", real, tauvec, 0);
+    tau[] = tauvec;
+    //plot(tau,value=1,fill=1);
+
+    // Definicion de elementos para hacer la POD
+    // u por tau (2 componentes)
+    Vh2P2 [uxtau, uytau];
+    aux = tau*SX; aux2 = tau*SY;
+    [uxtau, uytau] = [aux,aux2];
+    VhP2 modd;
+    modd = sqrt(uxtau^2+uytau^2);
+    plot(modd,value=1,fill=1);
+    
+
+    // u por gradiente de tau (1 componente)
+    VhP2 udtau;
+    Vh2P2 [dtau,dtauY];
+    [dtau,dtauY] = [dx(tau),dy(tau)];
+    udtau = SX*dx(tau)+SY*dy(tau);
+    //plot(udtau,value=1,fill=1);
+
+    // plot(udtau,fill=1,value=1,cmm="t="+ti);
+}
