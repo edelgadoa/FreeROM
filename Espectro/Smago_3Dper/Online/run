@@ -1,0 +1,5 @@
+#!/bin/bash
+echo 'Numero de procesadores:'
+read NP
+
+ff-mpirun -np $NP Online.edp -wg -ns -v 0

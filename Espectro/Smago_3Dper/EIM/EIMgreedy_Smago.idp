@@ -1,0 +1,69 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Programa que obtiene el valor del parametro en cada iteracion del GREEDY para EIM
+
+// Definimos la matriz del sistema que resolveremos para calcular el EIM en cada iteracion
+real [int,int] BMi(i,i);
+BMi = BM(0:i-1,0:i-1);
+matrix BMs = BMi;
+set(BMs, solver=LU, factorize=1); //Hay que usar un solver eficiente, pues BM es una matriz triangular inferior
+
+real [int] bEIM(i),sigmai(i);
+
+for (int imu=0; imu<nSnapshots; imu++){
+	gEIML = mod(BVdX[imu], BVdY[imu], BVYdX[imu], BVYdY[imu]);
+	gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dcper.D, mapVhP1dcper);
+	
+	for (int j=0; j<i; j++){
+		bEIM(j) = gEIM[](Tmax(j));
+	}
+	
+	sigmai = BMs^-1*bEIM;
+	
+	IgEIM = 0;
+	for (int j=0;j<i;j++){
+		IgEIM[] += sigmai(j)*BEIM[j][];
+	}
+	
+	VhP1dcperG Linf = abs(gEIM-IgEIM); 
+	
+	Errorit(imu) = Linf[].max/gEIM[].max;
+}
+
+// Calculamos la base escogida
+int imaximo = Errorit.imax;
+
+ErrorMaxEIM(i-1) = Errorit.max;
+int iTmax = Errorit.imax%niT;
+int iRemax = (Errorit.imax - iTmax)/niT;
+
+muEIM(i,0) = vReynolds(iRemax);
+muEIM(i,1) = T0 + dt*(iTmax+1);	
+
+gEIML = mod(BVdX[imaximo], BVdY[imaximo], BVYdX[imaximo], BVYdY[imaximo]); // Tomo la base donde se encuentra el Reynolds con mayor error
+gEIM[] = reduceSolution(gEIML[], gEIM[], MatVhP1dcper.D, mapVhP1dcper);
+
+//bEIM = 0;
+for (int j=0; j<i; j++){
+	bEIM(j) = gEIM[](Tmax(j));
+}
+
+sigmai = BMs^-1*bEIM;
+
+BEIM[i] = gEIM;
+for (int j=0; j<i; j++){
+	BEIM[i][] -= sigmai(j)*BEIM[j][]; // Calculo los residuos
+}
+
+VhP1dcperG absBEIM = abs(BEIM[i]);
+Tmax(i) = absBEIM[].imax;
+BEIM[i][] /= BEIM[i][](Tmax(i));
+
+for (int j=0; j<=i; j++){
+	BM(i,j) = BEIM[j][](Tmax(i));
+}
+
+// Almacenamos la base escogida 
+write("Bases_EIM/Base_EIM_" + muEIM(i,0) + "_t_" + muEIM(i,1) + ".txt", BEIM[i][], 0, 0, 0, 20);

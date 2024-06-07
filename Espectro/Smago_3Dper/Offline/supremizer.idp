@@ -1,0 +1,18 @@
+Mat Asup;
+{
+	macro def(i) [i, i#Y] // EOM
+	macro init(i) [i, i] // EOM
+	MatCreate(Th, Asup, Pk2P2);
+}
+real[int] bsup(Vh2P2per.ndof);
+
+varf Supremizer([u,uY],[v,vY])= int2d(Th)(//(1./Refijo+MOD(uFijo))*
+gradugradv(u,uY,v,vY)) + int2d(Th)(1e-6*(u*v + uY*vY)) - int2d(Th)(BaseP[i]*div(v,vY));
+
+matrix Asuptemp = Supremizer(Vh2P2per,Vh2P2per);
+Asup = Asuptemp;
+bsup = Supremizer(0,Vh2P2per);
+
+set(Asup, sparams = "-pc_type lu"); //TODO comprobar con otros parametros 
+
+supEF[] = Asup^-1*bsup; 

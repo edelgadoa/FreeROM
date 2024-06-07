@@ -1,0 +1,77 @@
+///////////////
+// FreeROM 
+///////////////
+
+// Matriz del sistema lineal
+Mat MatFinal;
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatFinal, Pk3P2);
+}
+
+// Defininimos la matriz y segundo miembro fijos
+matrix MFija;
+real[int] bFija(Vh3P2per.ndof);
+
+include "Matrices_fijas_NS_2D.idp"
+
+for(real ti = T0+dt; ti<=TF; ti+=dt){
+	// Comenzamos el bucle iterativo para resolver el problema de EF
+	
+	write("Output.txt","t = " + ti,0,1);
+	
+	// Definimos la solución del paso anterior, y  calculamos sus derivadas
+	
+	uprev = uEF;
+	uprevY = uEFY;
+
+	{
+		uEFdX[] = DXP2*uprev[];
+		uEFdY[] = DYP2*uprev[];
+
+		uEFYdX[] = DXP2*uprevY[];
+		uEFYdY[] = DYP2*uprevY[];
+	}
+
+	// incluimos la matriz del término de convección y segundo miembro término temporal
+	matrix MNS;
+	real[int] bNS(Vh3P2per.ndof);
+	
+	include "Matrices_variables_NS_2D.idp"
+	
+	// incluimos la matriz y segundo miembro de VMS-Smagorinsky
+	matrix Smago;
+	
+	include "Matriz_Smago_2D.idp"
+	
+	// Definimos la matriz final y segundo miembro final, y resolvemos el sistema
+	matrix MFinal;
+	real[int] bFinal(Vh3P2per.ndof);
+	MFinal = MFija;
+	MFinal += MNS;
+ 	MFinal += Smago;
+	
+	bFinal = bFija;
+	bFinal += bNS;
+	
+	MatFinal = MFinal;
+
+	set(MatFinal, sparams=sparamsv);
+	
+	uEF[] = MatFinal^-1*bFinal;
+	
+	// Guardamos la solución y representamos (opcional)
+	/*
+	{
+		Vh3P2perG [uG,uGY,uGP];
+		uG[] = reduceSolution(uEF[],uG[],MatVh3P2per.D,mapVh3P2per);
+	
+		// Guardamos los snapshots
+		write("../Snapshots/Re_" + Reynolds + "_t_" +ti+ ".txt", uG[], 0, 0);
+	}
+	
+	VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
+	plotMPI(Th, umod, PkP2, def, real, cmm="modulo velocidad t"+ti);
+	*/
+}

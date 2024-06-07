@@ -1,0 +1,65 @@
+///////////////
+// FreeROM //
+///////////////
+
+// Parametros a usar durante la ejecucion del codigo
+
+// Parametros para el paralelo
+Mat MatVh3P2per;
+int[int] mapVh3P2per;
+
+Mat MatVhP1per;
+int[int] mapVhP1per;
+
+Mat MatVhP2per;
+int[int] mapVhP2per;
+
+Mat MatVhP1dcper;
+int[int] mapVhP1dcper;
+
+Mat MatVh4P2per;
+int[int] mapVh4P2per;
+
+// Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
+
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+// Parametros del modelo VMS-Smago
+real CS = 0.18; // Smago  --> 0.1 o 0.18??
+
+// Parametros mu
+real Reynolds;
+real Remin = 1000;
+real Remax = 16000;
+real dtRe = 625;
+int niRe = (Remax-Remin)/dtRe+1.;
+real Refijo = (Remax+Remin)/2.;
+
+// Parametros para el problema de EF
+real epspen = 1e-8;
+real dt = 10./32;
+real dtsave = dt;
+real TF = 30.;
+real T0 = 15.;
+int niT = (TF-T0)/dt;
+real errEF = 10., epsEF = 1.e-11, errBR = 10., epsBR = epsEF;
+
+// Parametros para el espectro
+real hTri = sqrt(2)/NN; 
+real k1 = 5, k2 = NN/2; //256/2,
+real kc = 1./hTri;
+real alpha = 5./3.;
+
+// Parametros para el problema ROM
+int niterRB = 2000;
+real epsPOD = 1.e-4;
+real epsEIM = 1.e-2;
+
+// Parametros para el Greedy
+int NiterGreddy = 8;
+real epsGreedy = 1.e-4;
+int Ntrain = niRe;
+real[int] MuTrain(Ntrain);
+for (int ig=0; ig<Ntrain; ig++){
+	MuTrain(ig) = Remin+ig*(Remax-Remin)/(Ntrain - 1);
+}

@@ -1,0 +1,36 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Definicion de los espacios de EF no estables para problemas 2D. NECESARIO ESTABILIZAR LA PRESION 
+
+// Este programa define espacios de EF no estables para Velocidad-Presion [P2-P2]
+// Sintaxis de los espacios de EF: VhNPX    --> N Elementos Finitos PX. Ej : Vh3P2 -> [P2, P2, P2]
+//                                 VhNPXMPY	--> N Elementos Finitos PX y M Py. Ej: Vh2P2P1 -> [P2, P2, P1]	
+//								   VhNPXdc  --> N Elementos Finitos PXdc			
+
+
+// LOCALES PERIODICAS
+fespace Vh3P2per(Th,[P2,P2,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1per(Th,[P1,P1,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace VhP0per(Th, P0, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1dcper(Th, [P1dc, P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1dcper(Th, P1dc, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1per(Th, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP2per(Th, P2, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace Vh2P2per(Th,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh2P1per(Th, [P1, P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+fespace Vh2P1dcper(Th, [P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+
+
+// GLOBLAES PERIODICAS
+fespace Vh3P2perG(ThG,[P2,P2,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1perG(ThG,[P1,P1,P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace VhP0perG(ThG, P0, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh3P1dcperG(ThG, [P1dc, P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1dcperG(ThG, P1dc, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP1perG(ThG, P1, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace VhP2perG(ThG, P2, periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);  
+fespace Vh2P2perG(ThG,[P2,P2], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]); 
+fespace Vh2P1perG(ThG, [P1, P1], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);
+fespace Vh2P1dcperG(ThG, [P1dc, P1dc], periodic=[[labPeriodic[0],y], [labPeriodic[1],y], [labPeriodic[2],x], [labPeriodic[3],x]]);

@@ -1,0 +1,110 @@
+///////////////
+// FreeROM 
+///////////////
+
+/////////////////////////////////////////
+//// NS + VMS-Smago + Estab Pres (LPS)///
+/////////////////////////////////////////
+
+// Codigo para resolver el problema de EF de VMS-Smago. 
+// Elemento Finito P2-P1 (no estable) en vel-pres 
+
+// Cargamos librerias
+load "iovtk" 
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+// Definimos los espacios de EF 
+include "FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
+
+// Definimos las matrices de interpolacion y derivacion
+include "Interp_matrix_NoStab_VP_2D.idp"
+
+// Cargamos el modulo para hacer transformadas
+include "../Auxiliary/fourier2D.idp"
+
+/////////////////////////////////////////////
+/// Establecemos la CI para EF: Cavidad 2D///
+/////////////////////////////////////////////
+
+Vh3P2per [uEF0,uEF0Y,uEF0P];
+Vh3P2perG [uG,uGY,uGP];
+Reynolds = Refijo;
+
+readvector("../Snapshots/Re_" + Reynolds + "_t_" +T0+ ".txt", real, Sol, 0); uG[] = Sol;
+uEF0[] = uG[](mapVh3P2per); // Pasamos la informacion a cada procesador
+
+/////////////////////////////////////////////
+// Cargamos los valores de parametros calculados
+
+readvector("../Snapshots/Snapshots.txt", real, ReSolved, 0);
+
+/////////////////////////////////////////////
+// Resolvemos el problema de EF: Cavidad 2D//
+/////////////////////////////////////////////
+
+Vh3P2per [uEF, uEFY,uEFP];
+VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior
+VhP2per uprev, uprevY;
+VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
+
+for(int iRe=0;iRe<niRe;iRe++)
+{
+	// Nuevo Reynolds
+	Reynolds = Remin+iRe*dtRe;
+	write("Output.txt"," - Reynold="+Reynolds,1,1);
+
+	// Comprobamos si la solucion no esta calculada
+	if(search(ReSolved,Reynolds)==-1){
+		[uEF, uEFY,uEFP] = [uEF0,uEF0Y,uEF0P];
+
+		// Resolvemos
+		include "FE_Smago_2D.idp"
+
+		// Actualizamos parametros
+		ReSolved.resize(ReSolved.n+1);
+		ReSolved(ReSolved.n-1) = Reynolds;
+		write("../Snapshots/Snapshots.txt", ReSolved, 0, 0);
+
+		// Representamos (opcional)
+		VhP2per umod; umod = sqrt(uEF^2+uEFY^2);
+		plotMPI(Th, umod, PkP2, def, real, cmm="Modulo velocidad tfinal");
+	}
+	write("Output.txt","Done",1,1);
+}
+
+write("Output.txt","FOM Done",1,1);

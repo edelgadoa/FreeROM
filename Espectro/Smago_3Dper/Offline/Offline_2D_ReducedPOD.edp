@@ -1,0 +1,285 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+//////////////////////////////////////////////////
+/////////// FASE OFFLINE /////////////////////////
+//// Unsteady NS + Smago + BC periodicas /////////
+//////////////////////////////////////////////////
+
+verbosity = 0;
+
+// Cargamos librerias
+load "iovtk" 
+load "lapack"
+
+// Paralelo
+macro dimension() 2 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos macros
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Creamos la malla
+include "../Auxiliary/Malla.idp"
+include "../Auxiliary/Functions_MP.idp"
+
+// Definimos los parametros a usar junto con las matrices Mat de EF
+include "../Auxiliary/Parametros_2D.idp"
+
+MatCreate(Th, MatVhP1dcper, PkP1dc);
+{
+    macro def(i) [i, iY] // EOM
+    macro init(i) [i, i] // EOM
+    MatCreate(Th, MatVh2P2per, Pk2P2);
+}
+
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P2per, Pk3P2);
+}
+
+MatCreate(Th, MatVhP1per, PkP1);
+MatCreate(Th, MatVhP2per, PkP2);
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+mapVhP1per = restrict(VhP1per, VhP1perG, myN2o);
+mapVhP2per = restrict(VhP2per, VhP2perG, myN2o);
+mapVhP1dcper = restrict(VhP1dcper, VhP1dcperG, myN2o);
+mapVh2P2per = restrict(Vh2P2per,Vh2P2perG,myN2o);
+mapVh3P2per = restrict(Vh3P2per,Vh3P2perG,myN2o);
+
+// Definimos las matrices de interpolacion y derivacion
+include "../FOM/Interp_matrix_NoStab_VP_2D.idp"
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "../Auxiliary/Normas.idp"
+
+// Cargamos el modulo para hacer transformadas
+include "../Auxiliary/fourier2D.idp"
+
+//Definicion de Constantes y variables varias
+int Nbases = NiterGreddy*niT; 
+int NbasesV = 1; 
+int NbasesP = 1;
+
+real[int] MuBest(NiterGreddy+1), DeltaN(NiterGreddy), TauN(NiterGreddy), ErrorVN(NiterGreddy), ErrorPN(NiterGreddy);
+
+// Leo los valores de los parámetros para los cuales he calculado ya Snapshots
+readvector("../Snapshots/Snapshots.txt", real, ReSnapshots, 0);
+
+//////////////////////////////////////////
+////DEFINICION DE LOS ESPACIOS DE BR//////
+//////////////////////////////////////////
+mpi(cout<<"Inicializacion espacios BR..." <<endl;)
+
+Vh2P2per[int] [BaseV,BaseVY](2*Nbases);
+VhP1per[int] BaseP(Nbases);
+VhP2per[int] BaseVel(2*Nbases);
+VhP2per[int] BaseVelY(2*Nbases);
+
+// Si hacemos Smagorinsky (sin VMS), esto no es necesario. 
+//Vh2P2per[int] [FBaseV, FBaseVY](2*Nbases);//, FBaseVY(Nbases);
+//VhP2per[int] FBaseVel(2*Nbases), FBaseVelY(2*Nbases);;
+
+VhP1dcper[int] BVdX(2*Nbases), BVdY(2*Nbases);
+VhP1dcper[int] BVYdX(2*Nbases),BVYdY(2*Nbases);
+
+// Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
+real[int, int] MBaseV(Vh2P2per.ndof, 1), MBaseP(VhP1per.ndof, 1);
+Reynolds = Refijo;
+MuBest(0) = Reynolds;
+readvector("../Snapshots/Re_" + Reynolds + "_t_" + T0 + ".txt", real, SolX, 0);
+
+// Cargamos el Snapshot de la condicion inicial en local
+Vh3P2perG [SnapXa, SnapYa, SnapPa];
+SnapXa[] = SolX;
+
+VhP2perG SnapXG, SnapYG; 
+VhP1perG SnapPG;  
+SnapXG = SnapXa; SnapYG = SnapYa; SnapPG = SnapPa;
+
+VhP2per SnapX, SnapY;
+VhP1per SnapP;
+SnapX[] = SnapXG[](mapVhP2per); SnapY[] = SnapYG[](mapVhP2per);
+SnapP[] = SnapPG[](mapVhP1per);
+
+Vh2P2per [VelX, VelY] = [SnapX, SnapY]; 
+
+// Inicializacion de las matrices de reducido, de esta forma la CI solo se incluye una vez
+MBaseV(:,0) = VelX[];
+MBaseP(:,0) = SnapP[];
+ 
+/////////////////////////////////////////
+mpi(cout<<"Inicializacion EIM..." <<endl;)
+// Cargo los elementos del EIM
+include "EIM_Data.idp"
+
+/////////////////////////////////////////
+// Comenzamos con el Algoritmo Greedy
+mpi(cout<<"Inicializacion Greedy..." <<endl;)
+
+Reynolds = Remin; // Inicializamos el Reynolds, y todas las variables para resolver el problema de EF
+MuBest(0) = Reynolds;
+
+/// Esto hay que mirarlo, en principio iría en LOCAL tambien (como no resolvemos el FOM, no hace falta ahora)
+VhP2per uFijo, uFijoY; //Para la normaT
+uFijo = SnapX; uFijoY = SnapY; 
+VhP1dcper uFijodX, uFijodY, uFijoYdX, uFijoYdY;
+uFijodX[] = DXP2*uFijo[]; uFijodY[] = DYP2*uFijo[];
+uFijoYdX[] = DXP2*uFijoY[]; uFijoYdY[] = DYP2*uFijoY[];
+
+Vh3P2per [uEF, uEFY, uEFP]; // Serán las soluciones para el Re_fijo
+VhP1dcper uEFdX, uEFdY, uEFYdX, uEFYdY; //las derivadas de uEF del paso anterior 
+VhP2per uprev, uprevY;
+VhP1dcper Gr; // Para el termino de VMS-Smagorinsky
+
+// Defino los diferentes productos escalares para construir las matrices reducidas
+include "Scalar_Product_Matrices_2D.idp"
+real[int] Delta0(Ntrain); Delta0 = 0.; // Valor auxiliar para el criterio de seleccion modificado
+
+for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
+	
+	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
+	if (search(ReSnapshots, Reynolds, 1.e-9)==-1){
+
+		// Si no lo he calculado todavía, lo calculo
+		include "../FOM/FE_Smago_2D.idp"	
+		
+		// Actualizamos el vector de parametros calculados
+		ReSnapshots.resize(ReSnapshots.n+1);
+		ReSnapshots(ReSnapshots.n-1) = Reynolds;
+		write("../Snapshots/Snapshots.txt", ReSnapshots, 0, 0);
+	}
+
+	// Cargamos todos los snapshots en tiempo
+	
+	NbasesV = (iGreedy == 0) ? 1 : NbasesV-NbasesP;
+	
+	MBaseV.resize(MBaseV.n, NbasesV + niT);
+	MBaseP.resize(MBaseP.n, NbasesP + niT);
+	for(int i=0; i<niT; i++){
+		real tt = T0 + (i+1)*dt;
+		Vh3P2perG [SnapXa,SnapYa,SnapPa];
+		VhP2perG SnapXG, SnapYG;
+		VhP1perG SnapPG;
+		
+		readvector("../Snapshots/Re_" + Reynolds + "_t_" +tt+ ".txt", real, SolX, 0);
+
+		SnapXa[] = SolX; 
+		SnapXG = SnapXa; SnapYG = SnapYa; SnapPG = SnapPa;
+		
+		VhP2per SnapX, SnapY; VhP1per SnapP;
+		SnapX[] = SnapXG[](mapVhP2per); SnapY[] = SnapYG[](mapVhP2per);
+		SnapP[] = SnapPG[](mapVhP1per);
+		
+		Vh2P2per [VelX, VelY] = [SnapX, SnapY];
+
+		MBaseV(:, NbasesV+i) = VelX[];
+		MBaseP(:, NbasesP+i) = SnapP[];
+	}
+	 
+	// {
+	// 	Vh2P2per [VEL, VELY];
+	// 	VEL[] = MBaseV(:,niT);
+
+	// 	macro defPK2(i) [i, i#Y] // EOM
+	// 	plotMPI(Th, [VEL, VELY], Pk2P2, defPK2, real, cmm="Sol FE Re=1000")
+
+	// }
+
+	// Calculamos la POD
+	write("Output.txt","Computing the complete basis...",1,1);
+	{
+		include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
+		POD(MBaseV,MPescV,BaseV,NbasesV,autovalVel);
+		POD(MBaseP,MPescP,BaseP,NbasesP,autovalPres);
+	}
+	write("Output.txt","After POD, for vel "+NbasesV+" basis and for pres "+NbasesP+" basis.",1,1);
+
+	// Calculamos el supremizer
+	write("Output.txt","Supremizer construction...",1,1);
+	for(int i=0; i<NbasesP; i++){
+		
+		Vh2P2per [supEF, supEFY];
+		
+		{include "Supremizer.idp"} //El calculo del supremizer esta en paralelo (TODO: comprobar que funciona)
+
+		BaseV[NbasesV+i][] = supEF[];
+	}
+	NbasesV += NbasesP; 
+	
+	// Inicializo las matrices para la fase offline
+	mpi(cout<<"Inicializacion matrices..." <<endl;)
+	include "Allocate_matrices_2D.idp"
+	
+	write("Output.txt","After supremizer, a total of "+(NbasesV+NbasesP)+" basis.",1,1);
+	write("Output.txt","Ok.",1,1);
+
+	// Hacemos la ortonormalizacion
+	write("Output.txt","Orthonormalization...",1,1);
+	
+	for (int i=0; i<NbasesV; i++){
+		MBaseV(:,i) = BaseV[i][];
+	}
+
+	for (int i=0; i<NbasesP; i++){
+		MBaseP(:,i) = BaseP[i][];
+	}
+
+	include "GramSchmidt_2D.idp" // No merece la pena para lo que cambia, las bases ya son ortonomales con la POD, incluso los supremizers
+	
+	mpi(cout<<"Bases almacenadas."<<endl;)
+	
+	for(int s=0;s<NbasesV;s++){
+	
+		// Defino el nuevo producto escalar para la convección
+		varf ConvPE([uu,uuY], [v,vY]) = int2d(Th)(antisimetric(BaseV[s],BaseVY[s],uu,uuY,v,vY));
+		macro def(i) [i, i#Y] // EOM
+		macro init(i) [i, i] // EOM
+		MatCreate(Th, ConvPEM[s], Pk2P2);
+		matrix ConvPEMs = ConvPE(Vh2P2per, Vh2P2per);
+		ConvPEM[s] = ConvPEMs;
+		
+		BaseVel[s] = BaseV[s]; BaseVelY[s] = BaseVY[s];
+		
+		BVdX[s][] = DXP2*BaseVel[s][]; BVdY[s][] = DYP2*BaseVel[s][];
+		BVYdX[s][] = DXP2*BaseVelY[s][]; BVYdY[s][] = DYP2*BaseVelY[s][];
+		
+	}
+		
+	// // Actualizo las soluciones filtradas (Si hacemos Smagorinsky solo, esto no es necesario)
+	// FBaseV[i][] = IPh2P22P1 * BaseV[i][];
+	//
+	// FBaseVel[i][] = IPhP2P1*BaseVel[i][]; FBaseVelY[i][] = IPhP2P1*BaseVelY[i][];
+	//
+	
+	// Construyo las matrices
+	write("Output.txt","Building offline matrices...",1,1);
+	include "MatricesOffline_2D.idp"
+	write("Output.txt","Ok.",1,1);
+
+	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
+	write("Output.txt","Solving Reduced problem...",1,1);
+	include "Greedy_2D.idp"
+	
+	// Actualizo el nuevo Reynolds
+	Reynolds = MuBest(iGreedy+1);
+	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
+	
+	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
+	
+	if (DeltaN(iGreedy)<epsGreedy){
+		mpi(cout<<"Saving matrices..."<<endl;)
+		int NRB = NbasesV+NbasesP; // Aqui habia un +1
+		include "Save_Matrices.idp"
+		break;
+	}
+}
+mpi(cout<<"Fin del Greedy."<<endl;)
