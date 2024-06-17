@@ -1,0 +1,62 @@
+// Archivo de pruebas para realizar la transformada de fourier en FreeFEM++ Paralelo
+
+// Preliminares
+include "macro_ddm.idp"
+load "PETSc"
+macro dimension() 3; // EOM
+
+// Malla
+int NN = 8;
+include "../Auxiliary/CuboPeriodico.idp"
+// medit("Th",Th);
+
+// Creación de matrices distribuidas
+Mat A;
+
+// Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
+MatCreate(Th, A, PkP1nper);
+
+/*
+// Definición de elementos finitos
+fespace Wh(Th, PkP2);                 // local finite element space on the local mesh Th_i
+
+// Cálculo de la transformada de fourier
+func uf = exp(-(x^2+y^2+z^2));
+Wh u=uf;
+plotMPI(Th, u, PkP2, def, real, cmm = "Global solution");
+
+Wh<complex> uF = uf;
+int k = NN/2.-1;
+
+complex[int] uFourierv = uF[];
+include "fourier3D.idp"
+
+complex[int,int] FCoefs(2*k+1,(2*k+1)^2);
+complex[int,int] FCoefsL(2*k+1,(2*k+1)^2);
+
+FCoefsL = FourierTransform2D(uFourierv,k);
+
+mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
+
+// cout << FCoefs;
+
+// Calculamos la transformada inversa, si sabemos los coeficientes
+
+
+Wh<complex> uReal; 
+uReal[] = FourierInverse3D(FCoefs);
+
+Wh uRReal;
+uRReal = real(uReal);
+plotMPI(Th,uRReal,PkP2,def,real, cmm = "Retransformada");
+
+real[int,int] energyhat = energycomputation(FCoefs,FCoefs,FCoefs);
+
+real[int] spectrum = energyk3d(energyhat);
+cout << spectrum << endl;
+
+//real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
+//cout << spectrum << endl;
+
+*/
+

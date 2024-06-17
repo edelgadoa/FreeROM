@@ -9,10 +9,9 @@ include "Cube.idp" //Program of FreeFem++ documentation
 mesh3 Th, ThG;
  
 {
-
-	int Nx = 7; // X
-	int Ny = 7; // Y
-	int Nz = 7; // Z
+	int Nx = NN; // X
+	int Ny = NN; // Y
+	int Nz = NN; // Z
 
 	int[int] Nxyz = [Nx,Ny,Nz]; // 3 directions
 	
@@ -31,7 +30,8 @@ mesh3 Th, ThG;
 	int wallBottom = 5; // In my problem, floor and walls have the same BC
 	int wallTop = 6; 
 	
-	int [int,int]  Lxyz = [[wallBack, wallFront], [wallLeft, wallRight],[wallBottom, wallTop]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	int [int,int]  Lxyz = [[wallBack, wallFront], [wallLeft, wallRight], [wallBottom, wallTop]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	// int [int,int]  Lxyz = [[1,2],[3,4],[5,6]]; // Asi esta en la documentacion
 
 	
 	Th = Cube(Nxyz, Bxyz, Lxyz);
@@ -44,6 +44,7 @@ mesh3 Th, ThG;
 	ThG = Th; // For the GLOBAL mesh
 }
 
+
 // Parametros del PETSC
 int[int] myN2o;
 macro ThN2O() myN2o // EOM
@@ -51,11 +52,11 @@ macro ThOverlap() 2 // EOM
 int[int] labPeriodic = [4, 3, 1, 2, 5, 6]; // Back-Front / Left-Righ / Bottom-Top
 macro ThPeriodicity() labPeriodic //EOM
 
-
+macro PkP1nper() P1 // EOM
 macro Pk3P2() [P2,P2,P2], periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 macro Pk4P2() [P2,P2,P2,P1], periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 macro PkP1() P1, periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 macro PkP2() P2, periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
-macro PkP1dc() P1dc, periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] //EOM
+macro PkP1dc() P1dc, periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 
-//buildDmesh(Th);
+// buildDmesh(Th);
