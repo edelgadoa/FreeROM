@@ -52,7 +52,6 @@ macro ThOverlap() 2 // EOM
 int[int] labPeriodic = [4, 3, 1, 2, 5, 6]; // Back-Front / Left-Righ / Bottom-Top
 macro ThPeriodicity() labPeriodic //EOM
 
-macro PkP1nper() P1 // EOM
 macro Pk3P2() [P2,P2,P2], periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 macro Pk4P2() [P2,P2,P2,P1], periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM
 macro PkP1() P1, periodic = [[labPeriodic[0],x,y], [labPeriodic[1],x,y], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,z], [labPeriodic[5],x,z]] // EOM

@@ -1,0 +1,63 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+// Mesh creation. Cubic domain with Nx,Ny,Nz divisions. 
+
+include "Cube.idp" //Program of FreeFem++ documentation
+
+mesh3 Th, ThG;
+ 
+{
+	int Nx = NN; // X
+	int Ny = NN; // Y
+	int Nz = NN; // Z
+
+	int[int] Nxyz = [Nx,Ny,Nz]; // 3 directions
+	
+	// Cube's geometry:
+	real x01 = -0.5, x11 = 0.5;
+	real y01 = -0.5, y11 = 0.5;
+	real z01 = -0.5, z11 = 0.5;
+	
+	real [int,int]  Bxyz = [[x01, x11], [y01, y11], [z01, z11]]; // Cube's coordinates
+	
+	//Labels for BC
+	int wallLeft = 1; // Left wall
+	int wallRight = 2; // Right wall
+	int wallFront = 3; // Frontal wall
+	int wallBack = 4; // Back wall
+	int wallBottom = 5; // In my problem, floor and walls have the same BC
+	int wallTop = 6; 
+	
+	//int [int,int]  Lxyz = [[wallBack, wallFront], [wallLeft, wallRight], [wallBottom, wallTop]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	int [int,int]  Lxyz = [[wallLeft, wallRight], [wallFront, wallBack], [wallBottom, wallTop]]; // References to the planes [[x00,x01],[y00,y01],[z00,z01]]
+	
+	Th = Cube(Nxyz, Bxyz, Lxyz);
+	// We refine the positions near the walls
+    // real pmove = 2;
+	// func fx = (1 + (tanh(pmove*x))/(tanh(pmove)));
+	// func fy = (1 + (tanh(pmove*y))/(tanh(pmove)));
+	// func fz = (1 + (tanh(pmove*z))/(tanh(pmove)));
+	// Th = movemesh(Th,[fx,fy,fz]);
+	
+	ThG = Th; // For the GLOBAL mesh
+}
+
+
+// Parametros del PETSC
+int[int] myN2o;
+macro ThN2O() myN2o // EOM
+macro ThOverlap() 2 // EOM  
+int[int] labPeriodic = [4, 3, 1, 2, 5, 6]; // Back-Front / Left-Righ / Bottom-Top
+macro ThPeriodicity() labPeriodic //EOM
+
+func perio = [[labPeriodic[0],x,z], [labPeriodic[1],x,z], [labPeriodic[2],z,y], [labPeriodic[3],z,y], [labPeriodic[4],x,y], [labPeriodic[5],x,y]];
+
+macro Pk3P2() [P2,P2,P2], periodic = perio // EOM
+macro Pk4P2() [P2,P2,P2,P1], periodic = perio // EOM
+macro PkP1() P1, periodic = perio // EOM
+macro PkP2() P2, periodic = perio // EOM
+macro PkP1dc() P1dc, periodic = perio // EOM
+
+// buildDmesh(Th);

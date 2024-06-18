@@ -164,13 +164,13 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     complex[int,int] FCoefsYL(2*kmax+1,(2*kmax+1)^2);
     complex[int,int] FCoefsZL(2*kmax+1,(2*kmax+1)^2);
 
-    FCoefsXL = FourierTransform2D(uFourierv,kmax);
+    FCoefsXL = FourierTransform3D(uFourierv,kmax);
     mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
 
-    FCoefsYL = FourierTransform2D(uFouriervY,kmax);
+    FCoefsYL = FourierTransform3D(uFouriervY,kmax);
     mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
     
-	FCoefsZL = FourierTransform2D(uFouriervY,kmax);
+	FCoefsZL = FourierTransform3D(uFouriervY,kmax);
     mpiAllReduce(FCoefsZL,FCoefsZ,mpiCommWorld,mpiSUM);
 
 	write("Output.txt", " - Calculando energia...", 1, 1);

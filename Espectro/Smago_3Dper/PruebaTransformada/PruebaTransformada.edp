@@ -1,40 +1,54 @@
 // Archivo de pruebas para realizar la transformada de fourier en FreeFEM++ Paralelo
 
 // Preliminares
-include "macro_ddm.idp"
+load "medit"
+macro dimension()3 // EOM
 load "PETSc"
-macro dimension() 3; // EOM
+load "msh3"
+include "macro_ddm.idp"
 
 // Malla
 int NN = 8;
-include "../Auxiliary/CuboPeriodico.idp"
-// medit("Th",Th);
+include "../Auxiliary/Cubo_A.idp"
+
+include "../Auxiliary/Parametros_3D.idp" 
+include "../Auxiliary/IO.idp"
+
+macro def(i)i // EOM 
+macro init(i)i // EOM
 
 // Creación de matrices distribuidas
 Mat A;
+//plot(Th);
 
 // Decompose and distribute the mesh, and allocates data structures for the communication and distributed matrix
-MatCreate(Th, A, PkP1nper);
+MatCreate(Th, A, PkP2);
 
-/*
 // Definición de elementos finitos
-fespace Wh(Th, PkP2);                 // local finite element space on the local mesh Th_i
+fespace VhP2per(Th,PkP2);    // local finite element space on the local mesh Th_i
+
 
 // Cálculo de la transformada de fourier
 func uf = exp(-(x^2+y^2+z^2));
-Wh u=uf;
+VhP2per u=uf;
 plotMPI(Th, u, PkP2, def, real, cmm = "Global solution");
+cout << mpisize << endl;
+for(int k=0;k<mpisize;k++){
+    cout << k << endl;
+    if (mpirank==k){write("ulocal"+k+".txt", u[], 0, 0, k);}
+}
 
-Wh<complex> uF = uf;
+/*
+VhP2per<complex> uF = uf;
 int k = NN/2.-1;
 
 complex[int] uFourierv = uF[];
-include "fourier3D.idp"
+include "../Auxiliary/fourier3D.idp"
 
 complex[int,int] FCoefs(2*k+1,(2*k+1)^2);
 complex[int,int] FCoefsL(2*k+1,(2*k+1)^2);
 
-FCoefsL = FourierTransform2D(uFourierv,k);
+FCoefsL = FourierTransform3D(uFourierv,k);
 
 mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
@@ -42,11 +56,10 @@ mpiAllReduce(FCoefsL,FCoefs,mpiCommWorld,mpiSUM);
 
 // Calculamos la transformada inversa, si sabemos los coeficientes
 
-
-Wh<complex> uReal; 
+VhP2per<complex> uReal; 
 uReal[] = FourierInverse3D(FCoefs);
 
-Wh uRReal;
+VhP2per uRReal;
 uRReal = real(uReal);
 plotMPI(Th,uRReal,PkP2,def,real, cmm = "Retransformada");
 
@@ -57,6 +70,4 @@ cout << spectrum << endl;
 
 //real[int] spectrum = espectro2D(uFourierv, uFourierv, k);
 //cout << spectrum << endl;
-
 */
-
