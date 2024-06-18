@@ -26,14 +26,7 @@ int[int] fforder=[1,1,1,1];
 include "IE2FF.idp"
 
 // Cargo las funciones para el calculo de productos escalares y normas
-func real innerprodX(real[int] &u, real[int] &v, Mat &X){
-	real[int] aux;
-	MatMult(X, v, aux);
-	real resultL = u'*aux;
-	real result;
-	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
-	return result;
-}
+include "Normas_3D.idp"
 
 mesh3 ThG = readmesh3("IEfluids.mesh"); 
 mesh3 Th = ThG;
