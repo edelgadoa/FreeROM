@@ -10,7 +10,7 @@ load "lapack" // Eigenvalue problem solving
 include "IO.idp" // Para leer y guardar 
 
 // Calculo en paralelo
-macro dimension()3 //EOM
+macro dimension() 3 //EOM
 include "macro_ddm.idp";
 load "PETSc";
 
@@ -35,8 +35,8 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 	return result;
 }
 
-mesh3 Th = readmesh3("IEfluids.mesh"); 
-mesh3 ThL = Th;
+mesh3 ThG = readmesh3("IEfluids.mesh"); 
+mesh3 Th = ThG;
 
 // PETSc matrices
 Mat MatNormL2;
@@ -44,46 +44,50 @@ Mat MatNormH1;
 int[int] mapVh3P1, mapVhP1;
 
 int[int] myN2o;
-macro ThLN2O() myN2o //EOM
-buildDmesh(ThL);
+macro ThN2O() myN2o //EOM
+buildDmesh(Th);
+
+fespace VhP1G(ThG, P1);
+fespace Vh3P1G(ThG, [P1,P1,P1]);
 
 fespace VhP1(Th, P1);
 fespace Vh3P1(Th, [P1,P1,P1]);
 
-fespace VhP1L(ThL, P1);
-fespace Vh3P1L(ThL, [P1,P1,P1]);
 
-
-mapVh3P1 = restrict(Vh3P1L,Vh3P1,myN2o);
-mapVhP1 = restrict(VhP1L,VhP1,myN2o);
+mapVh3P1 = restrict(Vh3P1,Vh3P1G,myN2o);
+mapVhP1 = restrict(VhP1,VhP1G,myN2o);
 
 {
 	macro def(i) [i, iY, iZ] //
 	macro init(i) [i, i, i] // EOM
-	createMat(ThL, MatNormH1, [P1, P1, P1]);
+	createMat(Th, MatNormH1, [P1, P1, P1]);
 }
 {
-	createMat(ThL, MatNormL2, P1);
+	createMat(Th, MatNormL2, P1);
 }
 
 
 {
-	varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(ThL)(GradUGradV(u,v));
-	MatNormH1 = NormH1(Vh3P1L, Vh3P1L); //H1PEMat;
+	varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(GradUGradV(u,v));
+	
+	matrix H1Pesc = NormH1(Vh3P1, Vh3P1); //H1PEMat;
+	MatNormH1 = H1Pesc;
 
-	varf NormL2(p,q) = int3d(ThL)(p*q);
-	MatNormL2 = NormL2(VhP1L, VhP1L); //L2PEMat;
+	varf NormL2(p,q) = int3d(Th)(p*q);
+	
+	matrix L2Pesc = NormL2(VhP1, VhP1); //L2PEMat;
+	MatNormL2 = L2Pesc;
 }
 
 
-int ReSnap = 5; // numero de Snapshots de Reynolds
-int TimeSnap = 3; // numero de Snapshots en tiempo por cada Reynolds
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
 // Variables donde guardo los snapshots que cargo
 
-Vh3P1L[int] [VhL,VhLY,VhLZ](Nsnap);
-VhP1L[int] PhL(Nsnap);
+Vh3P1[int] [Vh ,VhY, VhZ](Nsnap);
+VhP1[int] Ph(Nsnap);
 
 // Comienzo bucle de lectura de snapshots
 
@@ -92,25 +96,25 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 		int i = (NTemp-1) + (NRe-1)*TimeSnap;
 		if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
 		{
-			Vh3P1 [Vh,VhY,VhZ];			
+			Vh3P1G [VhG,VhGY,VhGZ];			
 			readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
-			Vh[] = Vel;
-			VhL[i][] = Vh[](mapVh3P1); // Load in the local mesh
+			VhG[] = Vel;
+			Vh[i][] = VhG[](mapVh3P1); // Load in the local mesh
 		}	
 			
 		if(mpirank==0)cout<<"P_"+NRe+"_meanfile"+NTemp<<endl;
 		{
-			VhP1 Ph;	
+			VhP1G PhG;	
 			readvector("Snapshots/P_"+NRe+"_meanfile"+NTemp+".txt", real, Pres, 0);
-			Ph[] = Pres; 
-			PhL[i][] = Ph[](mapVhP1); // Load in the local mesh
+			PhG[] = Pres; 
+			Ph[i][] = PhG[](mapVhP1); // Load in the local mesh
 		}
 	}
 }
 
 real[int,int] Vhi(MatNormH1.n, Nsnap), Phi(MatNormL2.n, Nsnap);
-ChangeNumbering(MatNormH1, VhL, Vhi);
-ChangeNumbering(MatNormL2, PhL, Phi);
+ChangeNumbering(MatNormH1, Vh, Vhi);
+ChangeNumbering(MatNormL2, Ph, Phi);
 
 // Calculo de matrices de Correlacion
 real[int, int] AuxV(MatNormH1.n, Vhi.m), AuxP(MatNormL2.n, Phi.m); 
