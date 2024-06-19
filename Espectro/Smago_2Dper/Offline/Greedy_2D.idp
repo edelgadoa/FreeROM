@@ -139,7 +139,7 @@ mpi(cout<<" - Method data...";)
 write("DeltaN_"+I+".txt", DeltaG, 0, 0);
 
 // Modificacion del criterio del Greedy
-if (search(MuBest,MuTrain(DeltaG.imax))>=0){
+if (search(MuBest,MuTrain(DeltaG.imax))>=0){ // Si vamos a seleccionar el mismo
 
 	// Se haya la diferencia de los espectros
 	real[int] pdelta(Ntrain); pdelta = 0.;

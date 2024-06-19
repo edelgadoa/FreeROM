@@ -1,0 +1,97 @@
+///////////////////////////////////////////////////////////////////////////////
+
+// Aquí se debe llegar con una base del espacio reducido de la velocidad.
+// Llamo a la base BaseV y es una matriz.
+
+fespace Vh3P2(Th,[P2,P2,P2]); // ** Esto habrá que definirlo en el preámbulo del script master 
+
+macro Pk3P2() [P2,P2,P2] // EOM // ** Esto habrá que definirlo en el preámbulo del script master 
+
+real[int] dUnity;  // Creo la partición de la unidad
+PartitionCreate(Th, dUnity, Pk3P2); 
+Vh3P2 [DUnity,DUnityY,DUnityZ]; DUnity[] = dUnity;
+
+int NbasesGreedy = BaseV.m; // ** Esto habrá que inicializarlo en parámetros y actualizarlo aquí
+
+// Bucle en el parámetro
+for(int iparam=0; iparam<Nparam; iparam++){// ** Revisar como llamamos a los parametros
+
+    // Reconstrucción de la solución en el espacio reducido.
+
+    real[int] erreltime(6);
+    for(int itime = 0; itime < 6; itime++){
+        // Leo en cada tiempo
+        Vh3P2 [s,sY,sZ];
+        s[] = readvector("Snapshots/V_"+(iparam+1)+"_meanfile"+(itime+1)+".txt", real, iparam, 0); // Estos deberían ser los (very)low-fidelity
+
+        // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
+        real[int] coefLF(NbasesGreddy); // Lo dejo así por si queremos guardar los coeficientes en algún momento
+        Vh3P2 [uRB,uRBY,uRBZ]; uRB[]=0.;
+        for(int j=0;j<NbasesGreddy;j++){
+            Vh3P2 [base,baseY,baseZ];
+            base[] = BaseV(:,j);
+            coef(j) = int3d(Th)(UporV(base,s));
+            uRB[] += coef(j)*BaseV(:,j); 
+        }
+
+        // Calculo el error/espectro
+        Vh3P2 [eRB,eRBY,eRBZ]; eRB=s-uRB;
+        erabstime = sqrt(int3d(Th)(UporV(eRB,eRB))); // error absoluto
+        erreltime(itime) = erabstime/sqrt(int3d(Th)(UporV(s,s))); // error relativo
+        erel(iparam) += erreltime(itime); 
+
+        //     // Calculamos el espectro de la funcion reducida
+        //     write("Output.txt", "Calculando espectro...", 1, 1);
+        //     VhP2<complex> uC, uCY, uCZ, aux=0.;
+        //     uC = uRB+aux; uCY = uRBY+aux; uCZ = uRBZ+aux;
+        //     int k2 = NN/4;
+        //     real[int] energykk = espectro3D(uC[], uCY[], NN/2);
+        //     write("Output.txt", "Hecho.", 1, 1);
+        //     real[int] energyk53(energykk.n),errk(k2-k1+1);
+        //     for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+        //     real amin=1.e-4,amax=1.e-3,adt=1.e-5;
+        //     real an=(amax-amin)/adt+1.;
+        //     real[int] difereL(an), difere(an);
+        //     difere = 0.; difereL = 0.;
+        //     int cont = 0;write("Output.txt", "Calculando indicador ...", 1, 1);
+        //     for(real a=amin;a<=amax;a+=adt){
+        //         if(mpirank==cont%mpisize){
+        //             errk(0:errk.n-1)=a*energyk53(k1:k2);
+        //             errk(0:errk.n-1)-=energykk(k1:k2);
+        //             difereL(cont)=errk.l2;
+        //             errk(0:errk.n-1)=energykk(k1:k2); 
+        //             difereL(cont)/=errk.l2;
+        //         }
+        //     cont++;
+	    //     }
+        //     mpiBarrier(mpiCommWorld);
+        //     mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
+        // delta(itime+iparam*6)=difere.min;    
+    }
+    errel(iparam) = errel(iparam)/6;
+}
+ErrorrelN(iGreedy) = errel.max;
+MuBest(iGreedy+1) = MuTrain(errel.imax);
+
+// // Modificacion del criterio del Greedy
+// if (search(MuBest,MuTrain(DeltaG.imax))>=0){ // Si vamos a seleccionar uno ya seleccionado
+
+// 	// Se haya la diferencia de los espectros
+// 	real[int] pdelta(Ntrain); pdelta = 0.;
+// 	pdelta = DeltaG-Delta0;
+// 	pdelta = abs(pdelta);
+// 	while(search(MuBest,MuTrain(pdelta.imax))>=0){
+// 		// Eliminamos los ya elegidos
+// 		pdelta(pdelta.imax) = 0.;
+// 	}
+// 	// Escogemos el valor para la mayor diferencia
+// 	DeltaN(iGreedy) = pdelta.max;
+// 	MuBest(iGreedy+1)= MuTrain(pdelta.imax);
+// }
+// else{
+// 	DeltaN(iGreedy) = DeltaG.max;
+// 	MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
+// }
+
+// // Actualizo el valor del espectro anterior
+// Delta0 = DeltaG;
