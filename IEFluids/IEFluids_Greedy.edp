@@ -8,6 +8,8 @@ load "gmsh"
 load "iovtk"
 load "lapack"
 
+verbosity = 0;
+
 // Paralelo
 macro dimension() 3 //EOM
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
@@ -26,6 +28,7 @@ include "IO.idp"
 mpi(cout<< "Cargando la malla...";)
 mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
 mesh3 ThG = Th;
+
 // ** Creo una inicializacion para BaseV
 mpi(cout<< "Hecho." << endl;)
 
@@ -40,7 +43,7 @@ int[int] mapVh3P1;
 
 int[int] myN2o;
 macro ThN2O() myN2o //EOM
-//buildDmesh(Th);
+buildDmesh(Th);
 mpi(cout<< "Hecho." << endl;)
 
 mpi(cout<< "Creando espacio de elementos finitos...";)
