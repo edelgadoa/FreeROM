@@ -44,6 +44,12 @@ func real normX(real[int] &u, Mat &X){
 	real result = innerprodX(u,u,X);
 	return sqrt(result);
 }
+
+func real normX(real[int] &u, Mat &X, bool &change){
+	real result = innerprodX(u,u,X,change);
+	return sqrt(result);
+}
+
 // func real innerprodL2(real[int] &u, real[int] &v){
 // 	varf norml2(uu, vv) = int3d(ThL)(uu*vv);
 // 	matrix XL2 = norml2(VhP2L, VhP2L);
