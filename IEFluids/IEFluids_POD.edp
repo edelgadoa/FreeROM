@@ -20,6 +20,8 @@ load "PETSc";
 macro GradUGradV(U,V) (dx(U)*dx(V)     + dy(U)*dy(V)     + dz(U)*dz(V) 
 					 + dx(U#Y)*dx(V#Y) + dy(U#Y)*dy(V#Y) + dz(U#Y)*dz(V#Y)
 					 + dx(U#Z)*dx(V#Z) + dy(U#Z)*dy(V#Z) + dz(U#Z)*dz(V#Z)) //EOM
+					 
+macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
 int[int] fforder=[1,1,1,1];
 // Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
@@ -32,8 +34,8 @@ mesh3 ThG = readmesh3("IEfluids.mesh");
 mesh3 Th = ThG;
 
 // PETSc matrices
-Mat MatNormL2;
-Mat MatNormH1;
+Mat MatNormP;
+Mat MatNormV;
 int[int] mapVh3P1, mapVhP1;
 
 int[int] myN2o;
@@ -53,23 +55,23 @@ mapVhP1 = restrict(VhP1,VhP1G,myN2o);
 {
 	macro def(i) [i, iY, iZ] //
 	macro init(i) [i, i, i] // EOM
-	createMat(Th, MatNormH1, [P1, P1, P1]);
+	createMat(Th, MatNormV, [P1, P1, P1]);
 }
 {
-	createMat(Th, MatNormL2, P1);
+	createMat(Th, MatNormP, P1);
 }
 
 
 {
-	varf NormH1([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(GradUGradV(u,v));
+	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
 	
-	matrix H1Pesc = NormH1(Vh3P1, Vh3P1); //H1PEMat;
-	MatNormH1 = H1Pesc;
+	matrix PescV = NormV(Vh3P1, Vh3P1); //H1PEMat;
+	MatNormV = PescV;
 
-	varf NormL2(p,q) = int3d(Th)(p*q);
+	varf NormP(p,q) = int3d(Th)(p*q);
 	
-	matrix L2Pesc = NormL2(VhP1, VhP1); //L2PEMat;
-	MatNormL2 = L2Pesc;
+	matrix PescP = NormP(VhP1, VhP1); //L2PEMat;
+	MatNormP = PescP;
 }
 
 
@@ -105,14 +107,14 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 	}
 }
 
-real[int,int] Vhi(MatNormH1.n, Nsnap), Phi(MatNormL2.n, Nsnap);
-ChangeNumbering(MatNormH1, Vh, Vhi);
-ChangeNumbering(MatNormL2, Ph, Phi);
+real[int,int] Vhi(MatNormV.n, Nsnap), Phi(MatNormP.n, Nsnap);
+ChangeNumbering(MatNormV, Vh, Vhi);
+ChangeNumbering(MatNormP, Ph, Phi);
 
 // Calculo de matrices de Correlacion
-real[int, int] AuxV(MatNormH1.n, Vhi.m), AuxP(MatNormL2.n, Phi.m); 
-MatMatMult(MatNormH1, Vhi, AuxV);
-MatMatMult(MatNormL2, Phi, AuxP);		
+real[int, int] AuxV(MatNormV.n, Vhi.m), AuxP(MatNormP.n, Phi.m); 
+MatMatMult(MatNormV, Vhi, AuxV);
+MatMatMult(MatNormP, Phi, AuxP);		
 
 
 real [int,int] CVL= Vhi'*AuxV; // El producto se hace de manera local, luego hay que reunir la info de todos los procesadores.
