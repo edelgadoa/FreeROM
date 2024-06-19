@@ -82,6 +82,7 @@ int Nsnap = ReSnap*TimeSnap;
 // Variables donde guardo los snapshots que cargo
 
 Vh3P1[int] [Vh ,VhY, VhZ](Nsnap);
+Vh3P1G [VhG ,VhGY, VhGZ];
 VhP1[int] Ph(Nsnap);
 
 // Comienzo bucle de lectura de snapshots

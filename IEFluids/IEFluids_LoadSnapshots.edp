@@ -17,7 +17,6 @@ mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
 fespace VhP1(Th, P1);
 fespace Vh3P1(Th, [P1,P1,P1]);
 
-
 int ReSnap = 20; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
