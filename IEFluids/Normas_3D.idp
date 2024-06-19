@@ -20,10 +20,10 @@ func real innerprodX(real[int] &u, real[int] &v, Mat &X){
 	return result;
 }
 
-func real innerprodX(real[int] &u, real[int] &v, Mat &X, bool &change){
+func real innerprodX(real[int] &u, real[int] &v, Mat &X, bool &Pescchange){
 	real result;
 	real[int] aux;
-	if (change){
+	if (Pescchange){
 		real[int] uPETSc;
 		real[int] vPETSc;
 		ChangeNumbering(X, u, uPETSc); 
@@ -45,8 +45,8 @@ func real normX(real[int] &u, Mat &X){
 	return sqrt(result);
 }
 
-func real normX(real[int] &u, Mat &X, bool &change){
-	real result = innerprodX(u,u,X,change);
+func real normX(real[int] &u, Mat &X, bool &Pescchange){
+	real result = innerprodX(u,u,X,Pescchange);
 	return sqrt(result);
 }
 
