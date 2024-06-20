@@ -120,11 +120,11 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
     // Reconstrucción de la solución en el espacio reducido.
 
     real[int] erreltime(TimeSnap);
-	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
         // Leo en cada tiempo
         Vh3P1 [s,sY,sZ];
         readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, ss, 0); // Estos deberían ser los (very)low-fidelity
-        s[] = s;
+        s[] = ss;
 
         // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
         real[int] coefLF(NbasesGreedy); // Lo dejo así por si queremos guardar los coeficientes en algún momento
@@ -142,7 +142,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         //real erabstime = sqrt(int3d(Th)(DUnity*UporV(eRB,eRB))); // error absoluto
         // erreltime(NTemp) = erabstime/sqrt(int3d(Th)(DUnity*UporV(s,s))); // error relativo
         real erabstime = sqrt((innerprodX(eRB[],eRB[],MatNormV,bb))); // error absoluto
-        erreltime(NTemp) = erabstime/sqrt(innerprodX(s[],s[],MatNormV,bb)); // error relativo
+        erreltime(NTemp-1) = erabstime/sqrt(innerprodX(s[],s[],MatNormV,bb)); // error relativo
         
 
         //     // Calculamos el espectro de la funcion reducida
@@ -173,9 +173,9 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         //     mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
         // delta(NTemp+NRe*6)=difere.min;    
     }
-    errel(NRe) = erreltime.max;
+    errel(NRe-1) = erreltime.max;
 
-    mpi(cout<< " error relativo = "+errel(NRe) << endl;)
+    mpi(cout<< " error relativo = "+errel(NRe-1) << endl;)
 }
 ErrorrelN(iGreedy) = errel.max;
 MuBest(iGreedy+1) = errel.imax;
