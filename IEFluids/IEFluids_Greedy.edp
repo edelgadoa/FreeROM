@@ -19,7 +19,7 @@ include "macro_ddm.idp"
 load "PETSc"
 
 // Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
-include "IE2FF.idp"
+// include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
 include "Normas_3D.idp"
 
 // Cargo las funciones de lectura y guardado
@@ -29,14 +29,6 @@ mpi(cout<< "Cargando la malla...";)
 mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
 mesh3 ThG = Th;
 
-// ** Creo una inicializacion para BaseV
-mpi(cout<< "Hecho." << endl;)
-
-mpi(cout<< "Parametros de paralelizacion...";)
-int ReSnap = 20; // numero de Snapshots de Reynolds
-int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
-int Nsnap = ReSnap*TimeSnap;
-
 // PETSc matrices
 Mat MatNormV;
 int[int] mapVh3P1;
@@ -44,6 +36,16 @@ int[int] mapVh3P1;
 int[int] myN2o;
 macro ThN2O() myN2o //EOM
 buildDmesh(Th);
+mpi(cout<< "Hecho." << endl;)
+
+
+// ** Creo una inicializacion para BaseV
+
+mpi(cout<< "Parametros de paralelizacion...";)
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
 mpi(cout<< "Hecho." << endl;)
 
 mpi(cout<< "Creando espacio de elementos finitos...";)
@@ -56,11 +58,10 @@ mpi(cout<< "Mas cosas de paralelo...";)
 Vh3P1[int] [Vh,VhY,VhZ](TimeSnap);
 Vh3P1G [VhG ,VhGY, VhGZ];
 
-mpi(cout<< "Aqui...";)
+
 mapVh3P1 = restrict(Vh3P1,Vh3P1G,myN2o);
 
 {
-    mpi(cout<< "Aqui...";)
 	macro def(i) [i, iY, iZ] //
 	macro init(i) [i, i, i] // EOM
 	createMat(Th, MatNormV, [P1, P1, P1]);
@@ -78,6 +79,7 @@ mpi(cout<< "Hecho." << endl;)
 mpi(cout<< "Leyendo datos...";)
 int NRe = 1;
 real[int, int] MBaseV(Vh3P1.ndof, TimeSnap);
+
 for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
     int i = NTemp-1;
     if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
@@ -96,7 +98,7 @@ mpi(cout<< "Hecho." << endl;)
 mpi(cout<< "Calculando POD...";)
 Vh3P1[int] [BaseV,BaseVY,BaseVZ](TimeSnap);
 int NbasesV = 1; 
-real epsPOD = 1e-8;
+real epsPOD = 1e-4;
 include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
 POD(MBaseV,MatNormV,BaseV,NbasesV,autovalVel);
 mpi(cout<< "Hecho." << endl;)
@@ -112,7 +114,7 @@ real[int] ErrorrelN(6);
 real[int] MuBest(6);
 MuBest(0) = 1;
 real[int] errel(ReSnap);
-bool bb=1;
+
 // Bucle en el parámetro
 for (int NRe=1; NRe<=ReSnap; NRe++){
 
@@ -122,27 +124,27 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
     real[int] erreltime(TimeSnap);
 	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
         // Leo en cada tiempo
-        Vh3P1 [s,sY,sZ];
-        readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, ss, 0); // Estos deberían ser los (very)low-fidelity
-        s[] = ss;
+        Vh3P1G [SnapG, SnapGY, SnapGZ];
+		Vh3P1 [Snap, SnapY, SnapZ];
+        readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Solution, 0); // Estos deberían ser los (very)low-fidelity
+       	SnapG[] = Solution;
+		Snap[] = SnapG[](mapVh3P1);
 
         // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
         real[int] coefLF(NbasesGreedy); // Lo dejo así por si queremos guardar los coeficientes en algún momento
         Vh3P1 [uRB,uRBY,uRBZ]; uRB[]=0.;
-        for(int j=0;j<NbasesGreedy;j++){
-            Vh3P1 [base,baseY,baseZ];
-            base[] = BaseV[j][];
-            // coefLF(j) = int3d(Th)(DUnity*UporV(base,s)); // Cambiar a innerprod
-            coefLF(j) = innerprodX(base[],s[],MatNormV,bb);
+        
+		for(int j=0;j<NbasesGreedy;j++){
+            coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormV, bPETSc);
             uRB[] += coefLF(j)*BaseV[j][]; 
         }
 
         // Calculo el error/espectro
-        Vh3P1 [eRB,eRBY,eRBZ]; eRB[]=s[]-uRB[]; // ** Poner en vector
-        //real erabstime = sqrt(int3d(Th)(DUnity*UporV(eRB,eRB))); // error absoluto
-        // erreltime(NTemp) = erabstime/sqrt(int3d(Th)(DUnity*UporV(s,s))); // error relativo
-        real erabstime = sqrt((innerprodX(eRB[],eRB[],MatNormV,bb))); // error absoluto
-        erreltime(NTemp-1) = erabstime/sqrt(innerprodX(s[],s[],MatNormV,bb)); // error relativo
+        Vh3P1 [eRB,eRBY,eRBZ]; 
+		eRB[] = Snap[] - uRB[]; 
+		
+        real erabstime = sqrt((innerprodX(eRB[], eRB[], MatNormV, bPETSc))); // error absoluto
+        erreltime(NTemp-1) = erabstime/sqrt(innerprodX(Snap[], Snap[], MatNormV, bPETSc)); // error relativo
         
 
         //     // Calculamos el espectro de la funcion reducida
