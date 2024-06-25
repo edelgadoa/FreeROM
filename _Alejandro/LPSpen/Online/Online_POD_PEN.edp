@@ -116,18 +116,18 @@ func real gauss(real r){
 readmatrix("../Offline/RBF/DataV_" + Reynolds + ".txt",real,SnapV,0);
 nit = SnapV.m;
 
-// real[int,int] Xaux(NbasesV,nit);
-// for(int i=0;i<nit;i++){
-//     real[int] Snapi = SnapV(:,i);
-//     Vh2P2 [sV,sVY]; sV[] = Snapi;
-//     [sV,sVY] = [sV-uM,sVY-uMY];
-//     for(int j=0;j<NbasesV;j++){
-//         real[int] Basej = BaseV(:,j);
-//         Vh2P2 [bV,bVY]; bV[] = Basej;
-//         Xaux(j,i) = int2d(Th)(bV*sV+bVY*sVY);
-//     }
-// }
-// write("../Offline/RBF/Parametros_" + Reynolds + ".txt", Xaux, 0, 0);
+real[int,int] Xaux(NbasesV,nit);
+for(int i=0;i<nit;i++){
+    real[int] Snapi = SnapV(:,i);
+    Vh2P2 [sV,sVY]; sV[] = Snapi;
+    [sV,sVY] = [sV-uM,sVY-uMY];
+    for(int j=0;j<NbasesV;j++){
+        real[int] Basej = BaseV(:,j);
+        Vh2P2 [bV,bVY]; bV[] = Basej;
+        Xaux(j,i) = int2d(Th)(bV*sV+bVY*sVY);
+    }
+}
+write("../Offline/RBF/Parametros_" + Reynolds + ".txt", Xaux, 0, 0);
 
 readmatrix("../Offline/RBF/Parametros_" + Reynolds + ".txt",real,X,0);
 

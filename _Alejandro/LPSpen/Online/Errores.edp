@@ -35,7 +35,7 @@ int m = 0;
 
 VhP2 umod;
 
-int NbasesConv = 4;
+int NbasesConv = 10;
 
 for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     
@@ -44,14 +44,14 @@ for(real ti=TF+dt;ti<=TFR+epsEF;ti+=dt){
     readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0); uEF[] = Sol;
     [u,uY] = [uEF,uEFY];
     
-    // Galerkin
     /*
+    // Galerkin
     readvector("Resultados/Snap_POD_Re_" + Reynolds + "_t_" +ti+ ".txt", real, SPOD, 0); uR[] = SPOD;
     [err,errY] = [u-uR,uY-uRY];
     //umod = err^2+errY^2;
     //plot(umod,fill=1,value=1,cmm="t = "+ti);
     errorPODl2(m) = sqrt(int2d(Th)(err^2+errY^2)/int2d(Th)(u^2+uY^2));
-    cout << "Error without Estabilization (L2) = " << errorPODl2(m) << endl;
+    cout << "Error without Estabilization    (L2) = " << errorPODl2(m) << endl;
     
     // Penalizacion sin Filtrado
     readvector("Resultados/Snap_POD_PEN_Re_" + Reynolds + "_PODtol_" +(-log10(epsPOD))+ "_t_" +ti+ ".txt", real, SPEN, 0); uR[] = SPEN;

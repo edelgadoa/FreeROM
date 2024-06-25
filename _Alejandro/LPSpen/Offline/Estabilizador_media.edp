@@ -1,0 +1,109 @@
+// Cálculo del estabilizador
+
+// Cargamos macros, funciones i/o
+include "../Auxiliary/IO.idp"
+include "../Auxiliary/Macros_2D.idp"
+include "../Auxiliary/search.idp"
+
+// Definimos los parametros a usar
+include "../Auxiliary/Parametros_2D.idp"
+
+// Creamos la Malla
+include "../Auxiliary/Malla.idp"
+
+// Definimos los espacios de EF
+include "../FOM/FE_Spaces_NoStab_VP_2D.idp"
+
+// Carga de Snapshots
+write("Output.txt","Cargando Snapshots...",1,1);
+real[int,int] Triangles(Th.nv,Th.nt);
+Triangles = -1;
+int[int] headv(Th.nv), next(Th.nt*3);
+
+headv=-1; //
+for(int k =0;k< Th.nt; ++k){
+for(int i =0;i< 3; ++i)
+{ int v = Th[k][i]; // vertex number
+next[3*k+i] = headv[v];
+headv[v]= 3*k+i;
+}
+}
+// show the list of triangle of vertex v
+int[int] NTri(Th.nv);
+for(int v=0; v<Th.nv;++v)
+{ cout << v << " : ";
+int ind = 0;
+for(int p=headv[v]; p >=0; p=next[p])
+{
+int k = p/3, i = p%3;
+assert( Th[k][i]==v); // check …
+cout << k << " " ;
+Triangles(v,ind) = k;
+++ind;
+}
+NTri(v) = ind;
+cout << endl;
+}
+Triangles.resize(Th.nv, NTri.max);
+
+//cout << Triangles << endl;
+cout << "Adyacencia calculada" << endl;
+
+VhP0 indv;
+VhP0 h=hTriangle;
+VhP0 Area = area;
+VhP1 tau;
+VhP1 taupond;
+
+// Calculamos tau en P0
+cout << "Calculo de tau en P0" << endl;
+real t00 = TF - period;
+int iter0 = t00/dt;
+int iterF = TF/dt;
+int nitertau = iterF-iter0;
+real c1=16;
+real c2=4;
+VhP0[int] tauP0(nitertau+1);
+real[int,int] tauP0matrix(VhP0.ndof,nitertau+1);
+for(int iter=iter0; iter <=iterF; iter++){
+    real ti = t0+iter*dt;
+    cout << " -- t = "+ti << endl;
+    // Snapshots
+    Vh3P2 [SnapX,SnapY,SnapP];
+    readvector("../Snapshots/Snap_Re_" + Reynolds + "_t_" +ti+ ".txt", real, Sol, 0);
+    SnapX[] = Sol;
+    tauP0[iter-iter0] = (c1*nu/(hTriangle^2)+c2*sqrt((SnapX^2+SnapY^2)/area)/(hTriangle))^(-1);
+    tauP0matrix(:,iter-iter0) = tauP0[iter-iter0][];
+    // plot(tauP0[iter-iter0],fill=1,value=1);
+}
+real[int,int] tauv(VhP1.ndof,nitertau+1); tauv = 0.;
+real[int,int] tauvponderado(VhP1.ndof,nitertau+1); tauv = 0.;
+real areap;
+real[int] areav = Area[];
+
+// Estabilizador
+for(int iter=iter0; iter <=iterF; iter++){
+    for(int i=0; i< Th.nv; i++){
+        areap = 0.;
+        for(int j=0; j<NTri(i);j++){
+            int indT = Triangles(i,j); 
+            if(indT==-1){ break;}
+            tauv(i,iter-iter0) += tauP0matrix(indT,iter-iter0);
+            tauvponderado(i,iter-iter0) += areav(indT)*tauP0matrix(indT,iter-iter0);
+            areap += areav(indT);
+        }
+        tauv(i,iter-iter0)/=NTri(i);
+        tauvponderado(i,iter-iter0)/=areap;
+    }
+    real ti = t0+iter*dt;
+    tau[] = tauv(:,iter-iter0);
+    taupond[] = tauvponderado(:,iter-iter0);
+    if(iter==iterF){
+        plot(Th);
+        plot(tauP0[iter-iter0],fill=1,value=1,cmm="Tau P0 en t"+ti);
+        plot(tau,fill=1,value=1,cmm="Tau en t"+ti);
+        plot(taupond,fill=1,value=1,cmm="Tau ponderado en P1 t"+ti);
+    }
+	write("Estabilizador/tau_media_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
+	write("Estabilizador/tau_mediaponderada_" + Reynolds + "_t_" +ti+ ".txt", tau[], 0, 0);
+}
