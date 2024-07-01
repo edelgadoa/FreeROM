@@ -1,0 +1,31 @@
+// Parametros
+
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int niT = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Reynolds;
+int Nsnap = ReSnap*niT;
+bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
+
+// Parametros para el paralelo
+Mat MatVhP1; 	int[int] mapVhP1;
+Mat MatVh3P1;	int[int] mapVh3P1;
+
+// Creo las matrices Mat asociadas a la malla en Descomposicion de Dominios
+
+string sparamsv = "-pc_type lu -pc_factor_mat_solver_type mumps";
+
+// // Parametros para el espectro (si necesario)
+// real k1 = 5,k2 = NN/2;//256/2,
+// real alpha = 5./3.;
+
+// Parametros para el problema ROM
+real epsPOD = 1.e-4;
+
+// Parametros para el Greedy
+int NiterGreddy = 4;
+real epsGreedy = 1.e-4;
+int Ntrain = ReSnap;
+real[int] MuTrain(Ntrain);
+for (int ig=0; ig<Ntrain; ig++){
+	MuTrain(ig) = ig+1;
+}
