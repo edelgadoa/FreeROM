@@ -2,24 +2,24 @@
 
 
 real[int] dFourier;
-PartitionCreate(Th, dFourier, PkP2); 
-VhP2per DP2per; DP2per[] = dFourier;
+PartitionCreate(Th, dFourier, PkP1); 
+VhP1 DP1; DP1[] = dFourier;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
 // El vector en el argumento debe ser un vector en P2.
 
 func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax){
-    VhP2per<complex> uFourier;
+    VhP1<complex> uFourier;
     uFourier[] = uFourierv;
     complex[int,int] FCoefs(2*kmax+1,(2*kmax+1)^2);
 	
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
-			for(int kk=-kmax; kk<= kmax; k++){
+			for(int kk=-kmax; kk<= kmax; kk++){
 				func fourier =exp(-1i*pi*(x*ii+y*jj+z*kk));
-				VhP2per<complex> EFufourier = fourier;
-				FCoefs(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax) = int3d(Th)(DP2per*EFufourier*uFourier);
+				VhP1<complex> EFufourier = fourier;
+				FCoefs(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax) = int3d(Th)(DP1*EFufourier*uFourier);
 			}
         }
     }
@@ -30,7 +30,7 @@ func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax){
 // Transformada de fourier inversa.
 func complex[int] FourierInverse3D(complex[int,int] Coefs){
     int kcoefs = (Coefs.n-1)/2;
-    VhP2per<complex> uFourier;
+    VhP1<complex> uFourier;
 	
 	uFourier = 0;
     for(int ii = -kcoefs; ii<kcoefs; ii++){
@@ -38,7 +38,7 @@ func complex[int] FourierInverse3D(complex[int,int] Coefs){
 			for(int kk = -kcoefs; kk<kcoefs; kk++){
 				complex FCoef = Coefs(ii+kcoefs,(jj+kcoefs)*(2.*kcoefs+1)+kk+kcoefs);
             	func BaseFourier = FCoef*exp(-1i*pi*(x*ii+y*jj+z*kk));
-				VhP2per<complex> EFBaseFourier = BaseFourier;
+				VhP1<complex> EFBaseFourier = BaseFourier;
 				uFourier =  uFourier + EFBaseFourier;
 			}
         }
@@ -82,19 +82,19 @@ func complex[int] FourierInverse3D(complex[int,int] Coefs){
 // 	TFourieru[] = TFourieruG[](mapVhKP1);
 // 	VhKP1 Transu = real(TFourieru);
 	
-// 	VhP2perG<complex> uFourierG, uFourierGL;
-// 	VhP2per<complex> uFourier;
+// 	VhP1G<complex> uFourierG, uFourierGL;
+// 	VhP1<complex> uFourier;
 // 	uFourierG = 0;
 	
-// 	VhP2perG xx, yy;
+// 	VhP1G xx, yy;
 // 	xx = x; yy = y; // Para tener la informacion de las coordenadas espaciales
-// 	for (int ii=0; ii<VhP2perG.ndof; ii++){
+// 	for (int ii=0; ii<VhP1G.ndof; ii++){
 // 		func BaseFourier = exp(1i*pi*(xx[][ii]*x+yy[][ii]*y));
 // 		VhKP1<complex> BaseFourierEF = BaseFourier;
 // 		uFourierGL[][ii] = int2d(ThK)(DP1KEF*TFourieru*BaseFourierEF);
 // 	}
 // 	mpiAllReduce(uFourierGL[], uFourierG[], mpiCommWorld, mpiSUM);
-// 	uFourier[] = uFourierG[](mapVhP2per);
+// 	uFourier[] = uFourierG[](mapVhP1);
 //     return uFourier[];
 // }
 
@@ -170,7 +170,7 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     FCoefsYL = FourierTransform3D(uFouriervY,kmax);
     mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
     
-	FCoefsZL = FourierTransform3D(uFouriervY,kmax);
+	FCoefsZL = FourierTransform3D(uFouriervZ,kmax);
     mpiAllReduce(FCoefsZL,FCoefsZ,mpiCommWorld,mpiSUM);
 
 	write("Output.txt", " - Calculando energia...", 1, 1);
