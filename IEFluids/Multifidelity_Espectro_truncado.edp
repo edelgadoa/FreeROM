@@ -56,6 +56,9 @@ MatCreate(Th, MatVhP1, PkP1);
 }
 
 // Parametros truncamiento
+int[int] myN2oTrunc;
+macro ThTruncN2O() myN2oTrunc // EOM
+
 Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
 Mat MatVh3P1trunc;	int[int] mapVh3P1trunc;
 
@@ -72,9 +75,9 @@ fespace Vh3P1G(ThG, [P1,P1,P1]);
 fespace VhP1trunc(ThTrunc, P1);           fespace VhP1Gtrunc(ThTruncG, P1);
 fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P1]);
 
-mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2o);
+mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
 int[int] mapVh3P1truncamiento;
-mapVh3P1truncamiento = restrict(Vh3P1truncG,Vh3P1G,myN2o);
+mapVh3P1truncamiento = restrict(Vh3P1truncG,Vh3P1G,myN2oTrunc); // ESTO NO LO ENTIENDO
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 //include "Normas_3D.idp"
