@@ -41,6 +41,10 @@ ThTrunc = trunc(ThTrunc, ((z>150)),split=1);
 cout<<"Hecho." << endl;
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
+// Macros PETSc truncamiento
+int[int] myN2oTrunc;
+macro ThTruncN2O() myN2oTrunc // EOM
+
 buildDmesh(ThTrunc);
 mpi(cout<<"Hecho." << endl;)
 
@@ -56,9 +60,6 @@ MatCreate(Th, MatVhP1, PkP1);
 }
 
 // Parametros truncamiento
-int[int] myN2oTrunc;
-macro ThTruncN2O() myN2oTrunc // EOM
-
 Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
 Mat MatVh3P1trunc;	int[int] mapVh3P1trunc;
 
