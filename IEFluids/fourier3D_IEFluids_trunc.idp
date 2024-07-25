@@ -127,7 +127,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 func real[int] energyk3d(real[int,int] & Energy)
 {
     int kmax = (Energy.n-1)/2;
-    int LN = sqrt(2*kmax^2)/2;
+    int LN = sqrt(3*kmax^2)/2;
 	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
 	energykbycrownsL = 0.; energykbycrowns = 0.;
 	real module; int l;
