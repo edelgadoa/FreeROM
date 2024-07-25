@@ -77,8 +77,6 @@ fespace VhP1trunc(ThTrunc, P1);           fespace VhP1Gtrunc(ThTruncG, P1);
 fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P1]);
 
 mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
-int[int] mapVh3P1truncamiento;
-// mapVh3P1truncamiento = restrict(Vh3P1truncG,Vh3P1G,myN2oTrunc); // ESTO NO LO ENTIENDO
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 //include "Normas_3D.idp"
@@ -121,23 +119,17 @@ include "fourier3D_IEFluids_trunc.idp";
 Reynolds = 1;
 int i = 1;
 
-mpi(cout<< "111 Hecho." << endl;)
 readvector("Snapshots/V_"+Reynolds+"_meanfile" + i + ".txt", real, SolG, 0);
 SnapG[] = SolG;
 
-mpi(cout<< "Hecho." << endl;)
 [SnapTruncG, SnapTruncGY, SnapTruncGZ] = [SnapG, SnapGY, SnapGZ];
-
-mpi(cout<< "Hecho." << endl;)
 Snap[] = SnapTruncG[](mapVh3P1trunc);
 
-mpi(cout<< "Hecho." << endl;)
 SF = Snap + auxc;
 SFY = SnapY + auxc;
 SFZ = SnapZ + auxc;
 
 int kmax = 20;
-mpi(cout<< "Hecho." << endl;)
 real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax);
 
 write("Espectros/Espectro_Re_"+Reynolds+"_t_"+i+".txt", espectroIEFluids, 0 , 0, 0, 20);
