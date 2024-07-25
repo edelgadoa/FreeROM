@@ -6,6 +6,8 @@ load "gmsh"
 load "iovtk"
 load "lapack"
 
+verbosity = 0;
+
 int[int] fforder=[1,1,1,1];
 
 // Cargo los archivos auxiliares
@@ -101,7 +103,7 @@ for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
 	MBaseCompleteV.resize(MBaseCompleteV.n, niT*(iGreedy+1));
 
     for(int i = 0; i<niT; i++){
-        readvector("Snapshots/V_"+Reynolds+"_meanfile" + i + ".txt", real, SolG, 0);
+        readvector("Snapshots/V_"+Reynolds+"_meanfile" + (i+1) + ".txt", real, SolG, 0);
         SnapG[] = SolG;
         Snap[] = SnapG[](mapVh3P1);
         MBaseCompleteV(:,niT*iGreedy+i) = Snap[];

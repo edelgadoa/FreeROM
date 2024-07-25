@@ -78,7 +78,7 @@ fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P
 
 mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
 int[int] mapVh3P1truncamiento;
-mapVh3P1truncamiento = restrict(Vh3P1truncG,Vh3P1G,myN2oTrunc); // ESTO NO LO ENTIENDO
+// mapVh3P1truncamiento = restrict(Vh3P1truncG,Vh3P1G,myN2oTrunc); // ESTO NO LO ENTIENDO
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 //include "Normas_3D.idp"
