@@ -75,12 +75,12 @@ include "Levantamiento_3D.idp"
 include "../Auxiliary/Normas_3D.idp"
 
 //Definimos el intervalo de Reynolds que  vamos a considerar para resolver el problema de EF
-int nSnapshots = 11; // numero de Snapshots que voy a querer calcular 
+int nSnapshots = 25; // numero de Snapshots que voy a querer calcular 
 real[int] vReynolds(nSnapshots);
 
 
 Remin = 1000;
-Remax = 1500;
+Remax = 2200;
 for(int i=0; i<nSnapshots; i++){
 	vReynolds(i)=Remin+i*(Remax-Remin)/(nSnapshots-1);
 }
