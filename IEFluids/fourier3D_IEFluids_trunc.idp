@@ -1,0 +1,181 @@
+// Archivo auxiliar calculo de transformadas de fourier
+
+
+real[int] dFourier;
+PartitionCreate(ThTrunc, dFourier, PkP1); 
+VhP1trunc DP1; DP1[] = dFourier;
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
+// El vector en el argumento debe ser un vector en P2.
+
+func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax){
+    VhP1trunc<complex> uFourier;
+    uFourier[] = uFourierv;
+    complex[int,int] FCoefs(2*kmax+1,(2*kmax+1)^2);
+	
+    for(int ii=-kmax; ii<=kmax; ii++){
+        for(int jj=-kmax; jj<=kmax; jj++){
+			for(int kk=-kmax; kk<= kmax; kk++){
+				func fourier =exp(-1i*pi*(x*ii+y*jj+z*kk));
+				VhP1trunc<complex> EFufourier = fourier;
+				FCoefs(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax) = int3d(ThTrunc)(DP1*EFufourier*uFourier);
+			}
+        }
+    }
+    return FCoefs;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Transformada de fourier inversa.
+func complex[int] FourierInverse3D(complex[int,int] Coefs){
+    int kcoefs = (Coefs.n-1)/2;
+    VhP1trunc<complex> uFourier;
+	
+	uFourier = 0;
+    for(int ii = -kcoefs; ii<kcoefs; ii++){
+        for(int jj = -kcoefs; jj<kcoefs; jj++){
+			for(int kk = -kcoefs; kk<kcoefs; kk++){
+				complex FCoef = Coefs(ii+kcoefs,(jj+kcoefs)*(2.*kcoefs+1)+kk+kcoefs);
+            	func BaseFourier = FCoef*exp(-1i*pi*(x*ii+y*jj+z*kk));
+				VhP1trunc<complex> EFBaseFourier = BaseFourier;
+				uFourier =  uFourier + EFBaseFourier;
+			}
+        }
+	}
+	return uFourier[];
+}
+
+// Función en 2D para la transformada inversa con DD (no mejora frente a la utilizada)
+// func complex[int] FourierInverse2D(complex[int,int] &Coefs, int &kmax){
+// 	int Nk = Coefs.n -1 ;
+//     mesh ThTruncKG = square(Nk, Nk, [-kmax+(2*kmax)*x, -kmax+(2*kmax)*y], flags=1);
+	
+// 	mesh ThTruncK = ThTruncKG;
+// 	int[int] mykN2o;
+// 	macro ThTruncKN2O() mykN2o // EOM
+// 	buildDmesh(ThTruncK);
+// 	fespace VhKP1G(ThTruncKG, P1);
+	
+// 	fespace VhKP1(ThTruncK, P1);
+// 	int[int] mapVhKP1;
+
+// 	real[int] DP1K;
+// 	VhKP1 DP1KEF;
+	
+// 	VhKP1G xxk, yyk;
+// 	xxk = x; yyk = y;
+	
+// 	mapVhKP1 = restrict(VhKP1, VhKP1G, mykN2o);
+	
+// 	PartitionCreate(ThTruncK, DP1K, P1);
+// 	DP1KEF[] = DP1K;
+// 	VhKP1G<complex> TFourieruG;
+// 	TFourieruG = 0;
+// 	for(int kk=-kmax; kk<=kmax; kk++){
+// 		for(int jj=-kmax; jj<=kmax; jj++){
+// 			TFourieruG[][kk+kmax + (2*kmax+1)*(jj+kmax)] = Coefs(kk+kmax, jj+kmax); //paso la matriz a EF P1<complex>
+// 		}
+// 	}
+	
+// 	VhKP1<complex> TFourieru;
+// 	TFourieru[] = TFourieruG[](mapVhKP1);
+// 	VhKP1 Transu = real(TFourieru);
+	
+// 	VhP1truncG<complex> uFourierG, uFourierGL;
+// 	VhP1trunc<complex> uFourier;
+// 	uFourierG = 0;
+	
+// 	VhP1truncG xx, yy;
+// 	xx = x; yy = y; // Para tener la informacion de las coordenadas espaciales
+// 	for (int ii=0; ii<VhP1truncG.ndof; ii++){
+// 		func BaseFourier = exp(1i*pi*(xx[][ii]*x+yy[][ii]*y));
+// 		VhKP1<complex> BaseFourierEF = BaseFourier;
+// 		uFourierGL[][ii] = int2d(ThTruncK)(DP1KEF*TFourieru*BaseFourierEF);
+// 	}
+// 	mpiAllReduce(uFourierGL[], uFourierG[], mpiCommWorld, mpiSUM);
+// 	uFourier[] = uFourierG[](mapVhP1trunc);
+//     return uFourier[];
+// }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Cálculo del espectro.
+func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY, complex[int,int] & CoefsZ)
+{
+    int kmax = (CoefsX.n-1)/2;
+    real[int,int] resultL(2*kmax+1,(2*kmax+1)^2), result(2*kmax+1,(2*kmax+1)^2);
+	resultL=0.; result=0.; 
+	int cont = 1;
+		
+	for(int ii=-kmax;ii<=kmax;ii++){
+		if(mpirank==cont%mpisize){ // Paralelizo por filas
+            for(int jj=-kmax; jj<=kmax; jj++){
+            	for(int kk=-kmax; kk<=kmax; kk++){
+                	resultL(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax)=(1./2)*(abs(CoefsX(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsY(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsZ(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2);
+				}
+			}
+		}
+		cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+	return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Suma de la energía por coronas.
+func real[int] energyk3d(real[int,int] & Energy)
+{
+    int kmax = (Energy.n-1)/2;
+    int LN = sqrt(3*kmax^2)/2;
+	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
+	energykbycrownsL = 0.; energykbycrowns = 0.;
+	real module; int l;
+	int cont = 1;
+	for(int k1=-kmax; k1<=kmax; k1++){
+        if(mpirank==cont%mpisize){ // Paralelizo por filas
+			for(int k2=-kmax; k2<=kmax; k2++){
+				for(int k3=-kmax; k3<=kmax; k3++){
+					module = sqrt(k1^2+k2^2+k3^2)/2;
+					l = module;
+					//cout << "Modulo" << module << ", con entero: " << l << endl;
+					energykbycrownsL[l] += Energy(k1+kmax,(k2+kmax)*(2*kmax+1)+k3+kmax);
+				}
+			}
+		}
+        cont++;
+	}
+	mpiBarrier(mpiCommWorld);
+	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	return energykbycrowns;
+}
+//**Se puede evitar calcular puntos superfluos fuera del círculo cincunscrito al dominio.
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Función simplificadora.
+
+func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, complex[int] uFouriervZ, int kmax){
+
+	write("Output.txt", " - Calculando Coeficientes...", 1, 1);
+    complex[int,int] FCoefsX(2*kmax+1,(2*kmax+1)^2);
+    complex[int,int] FCoefsY(2*kmax+1,(2*kmax+1)^2);
+    complex[int,int] FCoefsZ(2*kmax+1,(2*kmax+1)^2);
+    complex[int,int] FCoefsXL(2*kmax+1,(2*kmax+1)^2);
+    complex[int,int] FCoefsYL(2*kmax+1,(2*kmax+1)^2);
+    complex[int,int] FCoefsZL(2*kmax+1,(2*kmax+1)^2);
+
+    FCoefsXL = FourierTransform3D(uFourierv,kmax);
+    mpiAllReduce(FCoefsXL,FCoefsX,mpiCommWorld,mpiSUM);
+
+    FCoefsYL = FourierTransform3D(uFouriervY,kmax);
+    mpiAllReduce(FCoefsYL,FCoefsY,mpiCommWorld,mpiSUM);
+    
+	FCoefsZL = FourierTransform3D(uFouriervZ,kmax);
+    mpiAllReduce(FCoefsZL,FCoefsZ,mpiCommWorld,mpiSUM);
+
+	write("Output.txt", " - Calculando energia...", 1, 1);
+    real[int,int] energyhat = energycomputation(FCoefsX,FCoefsY,FCoefsZ);
+	write("Output.txt", " - Sumando por coronas...", 1, 1);
+    real[int] energykk = energyk3d(energyhat);
+    return energykk;
+}

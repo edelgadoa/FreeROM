@@ -1,0 +1,179 @@
+///////////////
+// FreeROM 
+/////////////// 
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+
+verbosity = 0;
+
+int[int] fforder=[1,1,1,1];
+
+// Cargo los archivos auxiliares
+macro dimension() 3 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+macro mpi(variable) if(mpirank==0){variable} //EOM
+include "IO.idp"
+
+// Cargo/Creo la malla 
+mpi(cout<<"Cargando malla global y creando mallas locales...";)
+mesh3 Th = readmesh3("IEfluids.mesh"); 
+mesh3 ThG = Th; // For the global mesh
+
+int[int] myN2o;
+macro ThN2O() myN2o // EOM
+macro Pk3P1() [P1,P1,P1] // EOM
+macro PkP1() P1 // EOM // No sé si este es necesario
+
+buildDmesh(Th);
+mpi(cout<<"Hecho." << endl;)
+
+// Parametros 
+mpi(cout<<"Cargando parametros y otros...";)
+include "Parametros.idp"
+
+MatCreate(Th, MatVhP1, PkP1);
+{
+    macro def(i) [i, iY, iP] // EOM
+    macro init(i) [i, i, i] // EOM
+    MatCreate(Th, MatVh3P1, Pk3P1);
+}
+
+// Variables donde guardo los snapshots que cargo
+fespace VhP1(Th, P1);           fespace VhP1G(ThG, P1);
+fespace Vh3P1(Th, [P1,P1,P1]);  fespace Vh3P1G(ThG, [P1,P1,P1]);
+
+mapVhP1 = restrict(VhP1, VhP1G, myN2o);
+mapVh3P1 = restrict(Vh3P1,Vh3P1G,myN2o);
+
+// Defino funciones para ortonormalizar y productos escalares / normas
+include "Normas_3D.idp"
+mpi(cout<< "Creando matriz de productos escalares...";)
+Mat MatNormV;
+{
+	macro def(i) [i, iY, iZ] //
+	macro init(i) [i, i, i] // EOM
+	createMat(Th, MatNormV, [P1, P1, P1]);
+	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
+	matrix MPescV = NormV(Vh3P1, Vh3P1); //H1PEMat;
+	MatNormV = MPescV;
+}
+mpi(cout<< "Hecho." << endl;)
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Definicion de Constantes y variables varias
+int Nbases = NiterGreddy*niT; 
+int NbasesV = niT; // Porque inicializo con los snapshots de un valor de Reynolds
+
+real[int] MuBest(NiterGreddy+1), DeltaN(NiterGreddy);
+
+// Definición de los espacios de Base ReducidaDEFINICION DE LOS ESPACIOS DE BR
+mpi(cout<<"Inicializacion espacios BR... ";)
+
+Vh3P1[int] [BaseV,BaseVY,BaseVZ](Nbases);
+VhP1[int] BaseVel(Nbases);
+VhP1[int] BaseVelY(Nbases);
+
+// Defino las matrices donde almaceno los snapshots por columnas, para la reconstruccion de la solucion reducida
+real[int, int] MBaseV(Vh3P1.ndof, niT);
+real[int, int] MBaseCompleteV(Vh3P1.ndof, niT);
+mpi(cout<<"Hecho." << endl;)
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Comenzamos con el Algoritmo Greedy
+Reynolds = 1;
+MuBest(0) = Reynolds;
+Vh3P1G [SnapG, SnapGY, SnapGZ];
+Vh3P1 [Snap, SnapY, SnapZ];
+
+mpi(cout<<"Inicio del Algoritmo Greedy." << endl;)
+//real[int] Delta0(Ntrain); Delta0 = 0.; // Valor auxiliar para el criterio de seleccion modificado
+real[int] ErrorrelN(NiterGreddy);
+real[int] errel(ReSnap);
+
+for (int iGreedy=0; iGreedy<NiterGreddy; iGreedy++){
+	
+	mpi(cout<<"---Iteracion " + (iGreedy+1) + " for Re=" + Reynolds <<endl;)
+	MBaseCompleteV.resize(MBaseCompleteV.n, niT*(iGreedy+1));
+
+    for(int i = 0; i<niT; i++){
+        readvector("Snapshots/V_"+Reynolds+"_meanfile" + (i+1) + ".txt", real, SolG, 0);
+        SnapG[] = SolG;
+        Snap[] = SnapG[](mapVh3P1);
+        MBaseCompleteV(:,niT*iGreedy+i) = Snap[];
+    }
+
+	// Calculamos la POD
+	write("Output.txt","Computing the complete basis...",1,1);
+	{
+		include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
+		POD(MBaseCompleteV,MatNormV,BaseV,NbasesV,autovalVel);
+	}
+	write("Output.txt","After POD, for vel "+NbasesV+" basis.",1,1);
+
+    MBaseV.resize(MBaseV.n, NbasesV);
+	for (int i=0; i<NbasesV; i++){
+		MBaseV(:,i) = BaseV[i][];
+	}
+	mpi(cout<<"Bases almacenadas."<<endl;)
+	
+	// Hago el algoritmo Greedy para determinar el nuevo valor del parámetro
+
+    // Bucle en el parámetro
+    for (int NRe=1; NRe<=ReSnap; NRe++){
+
+        mpi(cout<< " -- NRe = "+NRe << endl;)
+        // Reconstrucción de la solución en el espacio reducido.
+
+        real[int] erreltime(niT);
+        for (int NTemp=1; NTemp<=niT; NTemp++){ 
+            // Leo en cada tiempo
+            readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, SolG, 0); // Estos deberían ser los (very)low-fidelity
+            SnapG[] = SolG;
+            Snap[] = SnapG[](mapVh3P1);
+
+            // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
+            real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
+            Vh3P1 [uRB,uRBY,uRBZ]; uRB[]=0.;
+            
+            for(int j=0;j<NbasesV;j++){
+                coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormV, bPETSc);
+                uRB[] += coefLF(j)*BaseV[j][]; 
+            }
+
+            // Calculo el error/espectro
+            Vh3P1 [eRB,eRBY,eRBZ]; 
+            eRB[] = Snap[] - uRB[]; 
+            
+            real erabstime = sqrt((innerprodX(eRB[], eRB[], MatNormV, bPETSc))); // error absoluto
+            erreltime(NTemp-1) = erabstime/sqrt(innerprodX(Snap[], Snap[], MatNormV, bPETSc)); // error relativo
+            
+        }
+        errel(NRe-1) = erreltime.max;
+
+        mpi(cout<< " error relativo = "+errel(NRe-1) << endl;)
+    }
+    ErrorrelN(iGreedy) = errel.max;
+    MuBest(iGreedy+1) = errel.imax+1;
+	write("Output.txt","    - Error relativo maximo= "+ErrorrelN(iGreedy),1,1);
+
+	// Actualizo el nuevo Reynolds
+	Reynolds = MuBest(iGreedy+1);
+	mpi(cout<<"New Reynolds: "<<Reynolds<<endl;)
+	
+    // Guardar las matrices de la POD
+    write("MatricesRB/MatrizPOD_iter"+iGreedy+".txt", MBaseV, 0 , 0, 0, 20);
+
+    // Criterio de parada
+    if (ErrorrelN(iGreedy)<epsGreedy){
+		break;
+	}	
+
+	mpi(cout<<"-------FIN DE LA ITERACION "<<iGreedy<<"-------"<<endl;)
+}

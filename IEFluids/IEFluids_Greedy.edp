@@ -1,0 +1,206 @@
+///////////////////////////////////////////////////////////////////////////////
+
+// Aquí se debe llegar con una base del espacio reducido de la velocidad.
+// Llamo a la base BaseV y es una matriz.
+
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+
+verbosity = 0;
+
+// Paralelo
+macro dimension() 3 //EOM
+macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+
+macro mpi(variable) if(mpirank==0){variable} //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+// include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
+include "Normas_3D.idp"
+
+// Cargo las funciones de lectura y guardado
+include "IO.idp" 
+
+mpi(cout<< "Cargando la malla...";)
+mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
+mesh3 ThG = Th;
+
+// PETSc matrices
+Mat MatNormV;
+int[int] mapVh3P1;
+
+int[int] myN2o;
+macro ThN2O() myN2o //EOM
+buildDmesh(Th);
+mpi(cout<< "Hecho." << endl;)
+
+
+// ** Creo una inicializacion para BaseV
+
+mpi(cout<< "Parametros de paralelizacion...";)
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
+mpi(cout<< "Hecho." << endl;)
+
+mpi(cout<< "Creando espacio de elementos finitos...";)
+fespace Vh3P1(Th, [P1,P1,P1]);
+fespace Vh3P1G(ThG, [P1,P1,P1]);
+mpi(cout<< "Hecho." << endl;)
+
+mpi(cout<< "Mas cosas de paralelo...";)
+// Variables donde guardo los snapshots que cargo
+Vh3P1[int] [Vh,VhY,VhZ](TimeSnap);
+Vh3P1G [VhG ,VhGY, VhGZ];
+
+
+mapVh3P1 = restrict(Vh3P1,Vh3P1G,myN2o);
+
+{
+	macro def(i) [i, iY, iZ] //
+	macro init(i) [i, i, i] // EOM
+	createMat(Th, MatNormV, [P1, P1, P1]);
+}
+mpi(cout<< "Hecho." << endl;)
+
+mpi(cout<< "Creando matriz de productos escalares...";)
+{
+	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
+	
+	matrix PescV = NormV(Vh3P1, Vh3P1); //H1PEMat;
+	MatNormV = PescV;
+}
+mpi(cout<< "Hecho." << endl;)
+mpi(cout<< "Leyendo datos...";)
+int NRe = 1;
+real[int, int] MBaseV(Vh3P1.ndof, TimeSnap);
+
+for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+    int i = NTemp-1;
+    if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+    {
+        Vh3P1G [VhG,VhGY,VhGZ];			
+        readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Vel, 0);
+        VhG[] = Vel;
+        Vh[i][] = VhG[](mapVh3P1); // Load in the local mesh
+
+		MBaseV(:,i) = Vh[i][];
+    }	
+}
+mpi(cout<< "Hecho." << endl;)
+
+// Calculo los eigenvalues y eigenvectors 
+mpi(cout<< "Calculando POD...";)
+Vh3P1[int] [BaseV,BaseVY,BaseVZ](TimeSnap);
+int NbasesV = 1; 
+real epsPOD = 1e-4;
+include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
+POD(MBaseV,MatNormV,BaseV,NbasesV,autovalVel);
+mpi(cout<< "Hecho." << endl;)
+
+mpi(cout<< NbasesV+" bases"<< endl;)
+// ** Aquí hay que calcular autovalores no valores singulares
+
+// Comienzo bucle de lectura de snapshots
+
+int NbasesGreedy = NbasesV; // ** Esto habrá que inicializarlo en parámetros y actualizarlo aquí
+int iGreedy = 0;
+real[int] ErrorrelN(6);
+real[int] MuBest(6);
+MuBest(0) = 1;
+real[int] errel(ReSnap);
+
+// Bucle en el parámetro
+for (int NRe=1; NRe<=ReSnap; NRe++){
+
+    mpi(cout<< " -- NRe = "+NRe << endl;)
+    // Reconstrucción de la solución en el espacio reducido.
+
+    real[int] erreltime(TimeSnap);
+	for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
+        // Leo en cada tiempo
+        Vh3P1G [SnapG, SnapGY, SnapGZ];
+		Vh3P1 [Snap, SnapY, SnapZ];
+        readvector("Snapshots/V_"+NRe+"_meanfile"+NTemp+".txt", real, Solution, 0); // Estos deberían ser los (very)low-fidelity
+       	SnapG[] = Solution;
+		Snap[] = SnapG[](mapVh3P1);
+
+        // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
+        real[int] coefLF(NbasesGreedy); // Lo dejo así por si queremos guardar los coeficientes en algún momento
+        Vh3P1 [uRB,uRBY,uRBZ]; uRB[]=0.;
+        
+		for(int j=0;j<NbasesGreedy;j++){
+            coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormV, bPETSc);
+            uRB[] += coefLF(j)*BaseV[j][]; 
+        }
+
+        // Calculo el error/espectro
+        Vh3P1 [eRB,eRBY,eRBZ]; 
+		eRB[] = Snap[] - uRB[]; 
+		
+        real erabstime = sqrt((innerprodX(eRB[], eRB[], MatNormV, bPETSc))); // error absoluto
+        erreltime(NTemp-1) = erabstime/sqrt(innerprodX(Snap[], Snap[], MatNormV, bPETSc)); // error relativo
+        
+
+        //     // Calculamos el espectro de la funcion reducida
+        //     write("Output.txt", "Calculando espectro...", 1, 1);
+        //     VhP2<complex> uC, uCY, uCZ, aux=0.;
+        //     uC = uRB+aux; uCY = uRBY+aux; uCZ = uRBZ+aux;
+        //     int k2 = NN/4;
+        //     real[int] energykk = espectro3D(uC[], uCY[], NN/2);
+        //     write("Output.txt", "Hecho.", 1, 1);
+        //     real[int] energyk53(energykk.n),errk(k2-k1+1);
+        //     for(int i=0;i<energyk53.n;i++)energyk53(i)=i^(-alpha);
+        //     real amin=1.e-4,amax=1.e-3,adt=1.e-5;
+        //     real an=(amax-amin)/adt+1.;
+        //     real[int] difereL(an), difere(an);
+        //     difere = 0.; difereL = 0.;
+        //     int cont = 0;write("Output.txt", "Calculando indicador ...", 1, 1);
+        //     for(real a=amin;a<=amax;a+=adt){
+        //         if(mpirank==cont%mpisize){
+        //             errk(0:errk.n-1)=a*energyk53(k1:k2);
+        //             errk(0:errk.n-1)-=energykk(k1:k2);
+        //             difereL(cont)=errk.l2;
+        //             errk(0:errk.n-1)=energykk(k1:k2); 
+        //             difereL(cont)/=errk.l2;
+        //         }
+        //     cont++;
+	    //     }
+        //     mpiBarrier(mpiCommWorld);
+        //     mpiAllReduce(difereL,difere,mpiCommWorld,mpiSUM);
+        // delta(NTemp+NRe*6)=difere.min;    
+    }
+    errel(NRe-1) = erreltime.max;
+
+    mpi(cout<< " error relativo = "+errel(NRe-1) << endl;)
+}
+ErrorrelN(iGreedy) = errel.max;
+MuBest(iGreedy+1) = errel.imax;
+
+// // Modificacion del criterio del Greedy
+// if (search(MuBest,MuTrain(DeltaG.imax))>=0){ // Si vamos a seleccionar uno ya seleccionado
+
+// 	// Se haya la diferencia de los espectros
+// 	real[int] pdelta(Ntrain); pdelta = 0.;
+// 	pdelta = DeltaG-Delta0;
+// 	pdelta = abs(pdelta);
+// 	while(search(MuBest,MuTrain(pdelta.imax))>=0){
+// 		// Eliminamos los ya elegidos
+// 		pdelta(pdelta.imax) = 0.;
+// 	}
+// 	// Escogemos el valor para la mayor diferencia
+// 	DeltaN(iGreedy) = pdelta.max;
+// 	MuBest(iGreedy+1)= MuTrain(pdelta.imax);
+// }
+// else{
+// 	DeltaN(iGreedy) = DeltaG.max;
+// 	MuBest(iGreedy+1) = MuTrain(DeltaG.imax);
+// }
+
+// // Actualizo el valor del espectro anterior
+// Delta0 = DeltaG;

@@ -18,7 +18,7 @@ func real[int] IE2FF(real[int] &v, int &mx, int &my, int &mz){
 }
 
 func real[int] IE2FF(real[int] &v){
-	int mx = 272, my = 88, mz = 128; //El caso estandard
+	int mx = 272, my = 88, mz = 128; //El caso standard
 	real[int] w(v.n);
 	int cont = 0;
 	for (int j=0; j<my; j++){
