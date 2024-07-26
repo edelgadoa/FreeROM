@@ -5,7 +5,7 @@ load "msh3"
 load "gmsh"
 load "iovtk"
 load "lapack"
-
+verbosity = 0;
 int[int] fforder=[1,1,1,1];
 
 // Cargo los archivos auxiliares
