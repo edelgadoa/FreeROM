@@ -1,0 +1,8 @@
+#!/bin/bash
+#SBATCH --time=7-00:00:00
+#SBATCH --ntasks=32
+#SBATCH --mem=0
+#SBATCH --partition=cpu
+
+
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 Multifidelity_Espectro_truncado.edp > "terminal_Trunc_1.txt"
