@@ -108,17 +108,17 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 	int cont = 1;
 		
 	for(int ii=-kmax;ii<=kmax;ii++){
-		if(mpirank==cont%mpisize){ // Paralelizo por filas
+		//if(mpirank==cont%mpisize){ // Paralelizo por filas
             for(int jj=-kmax; jj<=kmax; jj++){
             	for(int kk=-kmax; kk<=kmax; kk++){
-                	resultL(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax)=(1./2)*(abs(CoefsX(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsY(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsZ(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2);
+                	result(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax)=(1./2)*(abs(CoefsX(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsY(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2+abs(CoefsZ(ii+kmax,(jj+kmax)*(2.*kmax+1)+kk+kmax))^2);
 				}
 			}
-		}
-		cont++;
-	}
-	mpiBarrier(mpiCommWorld);
-	mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
+        //}
+	//	cont++;
+    }
+	//mpiBarrier(mpiCommWorld);
+	//mpiAllReduce(resultL,result,mpiCommWorld,mpiSUM);
 	return result;
 }
 
@@ -127,26 +127,26 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 func real[int] energyk3d(real[int,int] & Energy)
 {
     int kmax = (Energy.n-1)/2;
-    int LN = sqrt(3*kmax^2)/2;
+    int LN = sqrt(3*kmax^2);
 	real[int] energykbycrownsL(LN+1), energykbycrowns(LN+1);
 	energykbycrownsL = 0.; energykbycrowns = 0.;
 	real module; int l;
-	int cont = 1;
+	//int cont = 1;
 	for(int k1=-kmax; k1<=kmax; k1++){
-        if(mpirank==cont%mpisize){ // Paralelizo por filas
+        //if(mpirank==cont%mpisize){ // Paralelizo por filas
 			for(int k2=-kmax; k2<=kmax; k2++){
 				for(int k3=-kmax; k3<=kmax; k3++){
-					module = sqrt(k1^2+k2^2+k3^2)/2;
+					module = sqrt(k1^2+k2^2+k3^2);
 					l = module;
 					//cout << "Modulo" << module << ", con entero: " << l << endl;
-					energykbycrownsL[l] += Energy(k1+kmax,(k2+kmax)*(2*kmax+1)+k3+kmax);
+					energykbycrowns[l] += Energy(k1+kmax,(k2+kmax)*(2*kmax+1)+k3+kmax);
 				}
 			}
-		}
-        cont++;
+        //}
+        //cont++;
 	}
-	mpiBarrier(mpiCommWorld);
-	mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
+	//mpiBarrier(mpiCommWorld);
+	//mpiAllReduce(energykbycrownsL,energykbycrowns,mpiCommWorld,mpiSUM);
 	return energykbycrowns;
 }
 //**Se puede evitar calcular puntos superfluos fuera del círculo cincunscrito al dominio.
