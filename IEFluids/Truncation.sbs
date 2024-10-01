@@ -5,6 +5,4 @@
 #SBATCH --partition=cpu
 
 
-module load freefem/4.9
-
 mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 Multifidelity_Espectro_truncado.edp > "terminal_Trunc_1.txt"
