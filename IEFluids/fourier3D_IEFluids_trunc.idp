@@ -211,15 +211,15 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
         
         FCoefsXL = FourierTransform3D(uFourierv, kmax, kk);
         mpiAllReduce(FCoefsXL, AuxFCoefsX, mpiCommWorld, mpiSUM);
-        FCoefsX[kk] = AuxFCoefsX;
+        FCoefsX[kk+kmax] = AuxFCoefsX;
     
         FCoefsYL = FourierTransform3D(uFouriervY, kmax, kk);
         mpiAllReduce(FCoefsYL, AuxFCoefsY, mpiCommWorld, mpiSUM);
-        FCoefsY[kk] = AuxFCoefsY;
+        FCoefsY[kk+kmax] = AuxFCoefsY;
     
 	    FCoefsZL = FourierTransform3D(uFouriervZ, kmax, kk);
         mpiAllReduce(FCoefsZL, AuxFCoefsZ, mpiCommWorld, mpiSUM);
-        FCoefsZ[kk] = AuxFCoefsZ;
+        FCoefsZ[kk+kmax] = AuxFCoefsZ;
     
     }   
 
@@ -227,7 +227,7 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     real[int,int][int] energyhat(2*kmax+1);
     for (int kk=-kmax; kk<=kmax; kk++){
         real[int,int] energyhatAux = energycomputation(FCoefsX, FCoefsY, FCoefsZ, kk);
-        energyhat[kk] = energyhatAux;
+        energyhat[kk+kmax] = energyhatAux;
     }   
     
 	write("Output.txt", " - Sumando por coronas...", 1, 1);
