@@ -73,7 +73,7 @@ MatCreate(ThTrunc, MatVhP1trunc, PkP1);
 // Variables donde guardo los snapshots que cargo
 fespace VhP1G(ThG, P1);
 fespace Vh3P1G(ThG, [P1,P1,P1]);
-fespace VhP1trunc(ThTrunc, P1);           fespace VhP1Gtrunc(ThTruncG, P1);
+fespace VhP1trunc(ThTrunc, P1);           fespace VhP1truncG(ThTruncG, P1);
 fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P1]);
 
 mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
@@ -119,7 +119,7 @@ include "fourier3D_IEFluids_trunc.idp";
 Reynolds = 1;
 int i = 1;
 
-readvector("Snapshots/V_"+Reynolds+"_meanfile" + i + ".txt", real, SolG, 0);
+readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
 SnapG[] = SolG;
 
 [SnapTruncG, SnapTruncGY, SnapTruncGZ] = [SnapG, SnapGY, SnapGZ];
