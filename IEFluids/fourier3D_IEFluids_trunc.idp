@@ -154,16 +154,17 @@ func real[int,int][int] energycomputation(complex[int,int][int] & CoefsX, comple
 func real[int,int] energycomputation(complex[int,int][int] & CoefsX, complex[int,int][int] & CoefsY, complex[int,int][int] & CoefsZ, int kk)
 {
     int kmax = (CoefsX.n-1)/2;
+    mpi(cout<<"kmax = "<<kmax<<", CoefsXYZ.n = "<<CoefsX.n<<", "<<CoefsY.n<<", "<<CoefsZ.n<<endl;)
     real[int,int] result(2*kmax+1, 2*kmax+1);
 	// resultL=0.; result=0.; 
 	
-    	    for(int ii=-kmax;ii<=kmax;ii++){
-            for(int jj=-kmax; jj<=kmax; jj++){
-            	result(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))
-                                                + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))
-                                                + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax)));
-				}
-			}
+    for(int ii=-kmax;ii<=kmax;ii++){
+        for(int jj=-kmax; jj<=kmax; jj++){
+            result(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))
+                                            + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))
+                                            + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax)));
+		}
+	}
     
 	return result;
 }
@@ -206,6 +207,7 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     complex[int,int] FCoefsZL(2*kmax+1, 2*kmax+1);
     
     for (int kk=-kmax; kk<=kmax; kk++){
+        mpi(cout<<"iteracion: "<<kk<<"/"<<2*kmax+1<<endl;)
         complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1), AuxFCoefsY(2*kmax+1, 2*kmax+1), 
                           AuxFCoefsZ(2*kmax+1, 2*kmax+1);
         
@@ -226,6 +228,7 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
 	write("Output.txt", " - Calculando energia...", 1, 1);
     real[int,int][int] energyhat(2*kmax+1);
     for (int kk=-kmax; kk<=kmax; kk++){
+        mpi(cout<<"iteracion: "<<kk<<"/"<<2*kmax+1<<endl;)
         real[int,int] energyhatAux = energycomputation(FCoefsX, FCoefsY, FCoefsZ, kk);
         energyhat[kk+kmax] = energyhatAux;
     }   

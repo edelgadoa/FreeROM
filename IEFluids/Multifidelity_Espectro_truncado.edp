@@ -38,7 +38,6 @@ ThTrunc = trunc(ThTrunc, ((y<240)),split=1);
 ThTrunc = trunc(ThTrunc, ((y>40)),split=1);
 ThTrunc = trunc(ThTrunc, ((z<350)),split=1); 
 ThTrunc = trunc(ThTrunc, ((z>150)),split=1);
-cout<<"Hecho." << endl;
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
 // Macros PETSc truncamiento
@@ -46,7 +45,6 @@ int[int] myN2oTrunc;
 macro ThTruncN2O() myN2oTrunc // EOM
 
 buildDmesh(ThTrunc);
-mpi(cout<<"Hecho." << endl;)
 
 // Parametros 
 mpi(cout<<"Cargando parametros y otros...";)
@@ -104,7 +102,6 @@ Mat MatNormVtrunc;
 	MatNormVtrunc = MPescVtrunc;
 }
 */
-mpi(cout<< "Hecho." << endl;)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
