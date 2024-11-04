@@ -207,14 +207,9 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     complex[int,int] FCoefsZL(2*kmax+1, 2*kmax+1);
     
     for (int kk=-kmax; kk<=kmax; kk++){
-<<<<<<< HEAD
-        mpi(cout<<"iteracion: "<<kk+kmax<<"/"<<2*kmax+1<<endl;)
-        complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1), AuxFCoefsY(2*kmax+1, 2*kmax+1), 
-=======
         mpi(cout<<"iteracion Fourier: "<<kk<<"/"<<2*kmax+1<<endl;)
         complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1), 
                           AuxFCoefsY(2*kmax+1, 2*kmax+1), 
->>>>>>> Posible solucion al problema. Revisar con más calma
                           AuxFCoefsZ(2*kmax+1, 2*kmax+1);
         
         FCoefsXL = FourierTransform3D(uFourierv, kmax, kk);
@@ -234,13 +229,9 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
 	write("Output.txt", " - Calculando energia...", 1, 1);
     real[int,int][int] energyhat(2*kmax+1);
     for (int kk=-kmax; kk<=kmax; kk++){
-<<<<<<< HEAD
-        mpi(cout<<"iteracion: "<<kk+kmax<<"/"<<2*kmax+1<<endl;)
-        real[int,int] energyhatAux = energycomputation(FCoefsX, FCoefsY, FCoefsZ, kk);
-=======
+
         mpi(cout<<"iteracion energia: "<<kk<<"/"<<2*kmax+1<<endl;)
         real[int,int] energyhatAux = energycomputation(FCoefsX[kk+kmax], FCoefsY[kk+kmax], FCoefsZ[kk+kmax], kk);
->>>>>>> Posible solucion al problema. Revisar con más calma
         energyhat[kk+kmax] = energyhatAux;
     }   
     
