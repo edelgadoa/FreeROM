@@ -27,8 +27,6 @@ macro Pk3P1() [P1,P1,P1] // EOM
 macro PkP1() P1 // EOM // No sé si este es necesario
 
 //buildDmesh(Th);
-mpi(cout<<"Hecho." << endl;)
-cout<<"Hecho." << endl;
 
 // Creo la malla truncada
 // mpi(cout<<"Truncando malla global y creando mallas truncadas locales...";)
