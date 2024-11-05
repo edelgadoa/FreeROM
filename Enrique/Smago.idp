@@ -1,0 +1,146 @@
+/////////////////////////////////////////////////////////////////
+// Smagorinsky 2D -- Semi-implicit time evolution -> stationary /
+/////////////////////////////////////////////////////////////////
+
+// Load saving vtk
+load "iovtk"
+int[int] fforder=[1,1,1]; // 0 save a cell value, 1 save point value
+
+// Macros 
+macro grad(u) [dx(u), dy(u)]//
+macro div(u1,u2) (dx(u1)+dy(u2))//
+macro UgradV(u1,u2,v1,v2) [[u1,u2]'*[dx(v1),dy(v1)],[u1,u2]'*[dx(v2),dy(v2)]]//
+macro moduleU(u1x,u1y,u2x,u2y) (sqrt(u1x^2+u1y^2+u2x^2+u2y^2))//
+macro GradGrad(u1,u2,v1,v2) (dx(u1)*dx(v1)+dy(u1)*dy(v1)+dx(u2)*dx(v2)+dy(u2)*dy(v2))//
+macro ugradvw(u1,u2,v1,v2,w1,w2) (UgradV(u1,u2,v1,v2)'*[w1,w2]) //EOM
+macro antisimetric(u1,u2,v1,v2,w1,w2) (0.5*(ugradvw(u1,u2,v1,v2,w1,w2)-ugradvw(u1,u2,w1,w2,v1,v2))) //EOM
+
+// Mesh building
+int NN = 80; //Number of division for the mesh
+mesh Th = square(NN,NN);
+
+// Finite Element spaces
+fespace VhP2(Th, P2); //Lagrange P2 FE space
+fespace VhP1(Th, P1); //Lagrange P1 FE space
+fespace Vh3P2(Th, [P2, P2, P1]); // Lagrange Taylor-Hood FE space (por pair velocity-pressure)
+fespace VhP1dc(Th, P1dc); //Lagrange P1 discontinuous FE space (for gradient of velocity)
+
+// Matrix for derivation (gradient construction)
+matrix DX = interpolate(VhP1dc, VhP2, op=1); //Derive wrt X
+matrix DY = interpolate(VhP1dc, VhP2, op=2); //Derive wrt Y
+
+// Problem constants
+real CS = 0.1; //Smagorinsky constant
+real dt = 1;
+real epspen = 1e-6; 
+
+int nItmax = 2000; // maximum number of iterations
+real epsError = 1.e-10; // Error tolerance
+real ErrRel = 10; //initalization of the error
+
+real Reynolds = 1000;
+real nu = 1./Reynolds;
+
+
+// Lift function
+func Lift = 1*(y>=1);
+
+Vh3P2 [G, GY, GP];
+VhP2 GP2 = Lift;
+VhP2 GzeroP2 = 0.;
+VhP1 GzeroP1 = 0.;
+
+[G, GY, GP] = [GP2, GzeroP2, GzeroP1];
+
+/////////
+// Computation of the Smagorinsky solution	
+////////
+
+Vh3P2 [uEF, uEFY, uEFP]; // Initial solution for Smagorinsky
+Vh3P2 [uEFp, uEFpY, uEFpP]; // Previous solution iteration 
+
+VhP1dc uEFdX, uEFdY, uEFYdX, uEFYdY; //Functions for gradient of u
+
+/////////////////////////	
+// Fixed Matrix
+/////////////////////////
+
+varf FVFix([u,uY,uP],[v,vY,vP]) = int2d(Th)((1./dt)*(u*v + uY*vY))
+								+ int2d(Th)(div(u,uY)*vP - div(v,vY)*uP)
+								+ int2d(Th)(nu*GradGrad(u,uY,v,vY))
+								+ int2d(Th)(antisimetric(u,uY,G,GY,v,vY)) 
+                                + int2d(Th)(antisimetric(G,GY,u,uY,v,vY))
+								+ int2d(Th)(epspen*uP*vP)
+							    //RHS 
+								- int2d(Th)(antisimetric(G,GY,G,GY,v,vY)) 
+								- int2d(Th)(nu*GradGrad(G,GY,v,vY))
+								+ on(1,2,3,4, u=0., uY=0.); 
+
+
+matrix MFix = FVFix(Vh3P2,Vh3P2);
+real[int] bFix = FVFix(0,Vh3P2);
+
+
+for (int iterEF = 1; iterEF <= nItmax && (ErrRel > epsError); iterEF++) {
+
+/////////////////////////////////////////////////////
+// Smagorinsky + Convection Matrix + Time derivative
+/////////////////////////////////////////////////////
+	
+    VhP2 uEFG, uEFGY; // Solutions for previous iteration with lift function
+    VhP1dc Gr; // Function for the module of gradient u
+    
+    uEFG = uEF + G;
+    uEFGY = uEFY + GY;
+
+    uEFdX[] = DX*uEFG[];
+    uEFdY[] = DY*uEFG[];
+    uEFYdX[] = DX*uEFGY[];
+    uEFYdY[] = DY*uEFGY[];
+
+    Gr = moduleU(uEFdX,uEFdY,uEFYdX,uEFYdY); //module of gradient of u			
+					
+    // variational formulation of convection + Smago + time derivative (RHS)                
+	varf FVTemp([u,uY,uP],[v,vY,vP]) = int2d(Th)(antisimetric(uEF,uEFY,u,uY,v,vY))
+						             + int2d(Th)((CS*hTriangle)^2*Gr*GradGrad(u,uY,v,vY))
+								     // RHS
+						             + int2d(Th)((1./dt)*(uEF*v+uEFY*vY))
+                                     - int2d(Th)((CS*hTriangle)^2*Gr*GradGrad(G,GY,v,vY))       
+						             ;
+	
+	matrix MTemp = FVTemp(Vh3P2,Vh3P2);
+	real [int] bTemp = FVTemp(0,Vh3P2);
+		
+    // Ensambling the complete matrix and RHS    
+	matrix MFinal = MFix + MTemp;
+    set(MFinal, solver = sparsesolver);
+    
+    real[int] bFinal = bFix + bTemp;
+    
+    uEFp[] = uEF[];
+    // Compute the solution
+	uEF[] = MFinal^-1*bFinal;
+	
+	
+    Vh3P2 [ErrorEF, ErrorEFY, ErrorEFP];
+	ErrorEF[] = uEF[] - uEFp[];
+    // Relative velocity error 
+	real AbsError = sqrt(int2d(Th)([ErrorEF, ErrorEFY]'*[ErrorEF, ErrorEFY])
+                  +      int2d(Th)(GradGrad(ErrorEF,ErrorEFY,ErrorEF,ErrorEFY))); // H1 velocity error 		     	 
+    ErrRel = AbsError / sqrt(int2d(Th)([uEF,uEFY]'*[uEF,uEFY])); 
+
+} 
+
+// Plotting the solution
+VhP2 uEFG, uEFGY;
+
+uEFG = uEF + G;
+uEFGY = uEFY + GY;
+
+// Plot with FreeFem++
+plot([uEFG, uEFGY], cmm="Velocity for Reynolds= " + Reynolds, value=1);
+plot(uEFP, cmm="Pressure for Reynolds= " + Reynolds);
+
+// Plot with Paraview
+savevtk("Smagorinsky" + Reynolds + ".vtu", Th, [uEFG, uEFGY, 0], uEFP, dataname="Velocity Pressure", order=fforder, bin=true);
+
