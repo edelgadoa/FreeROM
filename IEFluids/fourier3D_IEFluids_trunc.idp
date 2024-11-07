@@ -214,15 +214,15 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
         
         FCoefsXL = FourierTransform3D(uFourierv, kmax, kk);
         mpiAllReduce(FCoefsXL, AuxFCoefsX, mpiCommWorld, mpiSUM);
-        FCoefsX[kk+kmax] = AuxFCoefsX;
+        FCoefsX[kk+kmax] = AuxFCoefsX(0:2*kmax, 0:2*kmax);
     
         FCoefsYL = FourierTransform3D(uFouriervY, kmax, kk);
         mpiAllReduce(FCoefsYL, AuxFCoefsY, mpiCommWorld, mpiSUM);
-        FCoefsY[kk+kmax] = AuxFCoefsY;
+        FCoefsY[kk+kmax] = AuxFCoefsY(0:2*kmax, 0:2*kmax);
     
 	    FCoefsZL = FourierTransform3D(uFouriervZ, kmax, kk);
         mpiAllReduce(FCoefsZL, AuxFCoefsZ, mpiCommWorld, mpiSUM);
-        FCoefsZ[kk+kmax] = AuxFCoefsZ;
+        FCoefsZ[kk+kmax] = AuxFCoefsZ(0:2*kmax, 0:2*kmax);
     
     }   
 
