@@ -232,7 +232,7 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
 
         mpi(cout<<"iteracion energia: "<<kk+kmax<<"/"<<2*kmax+1<<endl;)
         real[int,int] energyhatAux = energycomputation(FCoefsX[kk+kmax], FCoefsY[kk+kmax], FCoefsZ[kk+kmax], kk);
-        energyhat[kk+kmax] = energyhatAux;
+        energyhat[kk+kmax] = energyhatAux(0:2*kmax,0:2*kmax);
     }   
     
 	write("Output.txt", " - Sumando por coronas...", 1, 1);
