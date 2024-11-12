@@ -141,8 +141,8 @@ func real[int,int][int] energycomputation(complex[int,int][int] & CoefsX, comple
 	    for(int ii=-kmax;ii<=kmax;ii++){
             for(int jj=-kmax; jj<=kmax; jj++){
             	resultAux(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))
-                                                 + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))
-                                                 + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax)));
+                                                   + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))
+                                                   + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax)));
 				}
 			}
         result[kk+kmax] = resultAux;
@@ -158,7 +158,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
     real[int,int] result(2*kmax+1, 2*kmax+1);
 	// resultL=0.; result=0.; 
 	
-    for(int ii=-kmax;ii<=kmax;ii++){
+    for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
             result(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX(ii+kmax,jj+kmax))
                                             + abs(CoefsY(ii+kmax,jj+kmax))
@@ -207,7 +207,6 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
     complex[int,int] FCoefsZL(2*kmax+1, 2*kmax+1);
     
     for (int kk=-kmax; kk<=kmax; kk++){
-        mpi(cout<<"iteracion Fourier: "<<kk+kmax<<"/"<<2*kmax+1<<endl;)
         complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1), 
                           AuxFCoefsY(2*kmax+1, 2*kmax+1), 
                           AuxFCoefsZ(2*kmax+1, 2*kmax+1);
@@ -229,10 +228,8 @@ func real[int] espectro3D(complex[int] uFourierv, complex[int] uFouriervY, compl
 	write("Output.txt", " - Calculando energia...", 1, 1);
     real[int,int][int] energyhat(2*kmax+1);
     for (int kk=-kmax; kk<=kmax; kk++){
-
-        mpi(cout<<"iteracion energia: "<<kk+kmax<<"/"<<2*kmax+1<<endl;)
         real[int,int] energyhatAux = energycomputation(FCoefsX[kk+kmax], FCoefsY[kk+kmax], FCoefsZ[kk+kmax], kk);
-        energyhat[kk+kmax] = energyhatAux(0:2*kmax,0:2*kmax);
+        energyhat[kk+kmax] = energyhatAux(0:2*kmax, 0:2*kmax);
     }   
     
 	write("Output.txt", " - Sumando por coronas...", 1, 1);
