@@ -167,4 +167,4 @@ for (int kk=-kmax; kk<=kmax; kk++){
 
 real[int] energykk = energyk3d(energyhat);
 
-write("Espectros/Espectro_Artificial"+.txt", energykk, 0 , 0, 0, 20);
+write("Espectros/Espectro_Artificial.txt", energykk, 0 , 0, 0, 20);
