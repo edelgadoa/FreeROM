@@ -141,7 +141,7 @@ for (int kz=-kmax; kz<=kmax; kz++){
     for(int kx=-kmax; kx<=kmax; kx++){
 	    for(int ky=-kmax; ky<=kmax; ky++){
 		    module = sqrt(kx^2 + ky^2 + kz^2);
-            CoefsArtAux(kx+kmax, ky+kmax) = module^(-(5./3. + 1)/2); 
+            CoefsArtAux(kx+kmax, ky+kmax) = module^(-5./3); 
                                                         //Se supone que consigue k^-5/3
 	    }
     }
@@ -167,4 +167,4 @@ for (int kk=-kmax; kk<=kmax; kk++){
 
 real[int] energykk = energyk3d(energyhat);
 
-write("Espectros/Espectro_Artificial"+.txt", energykk, 0 , 0, 0, 20);
+write("Espectros/Espectro_Artificial.txt", energykk, 0 , 0, 0, 20);
