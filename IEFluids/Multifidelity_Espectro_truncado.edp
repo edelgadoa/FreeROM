@@ -131,41 +131,39 @@ SFZ = SnapZ + auxc;
 int kmax = 16;
 
 
-complex[int,int][int] CoefsArtificial(2*kmax+1);
 
-// Creamos el espectro artificialmente
-real module;
-for (int kz=-kmax; kz<=kmax; kz++){
-    // CoefsArtificial[kz+kmax] = 0;
-    complex[int, int] CoefsArtAux(2*kmax+1, 2*kmax+1);
-    for(int kx=-kmax; kx<=kmax; kx++){
-	    for(int ky=-kmax; ky<=kmax; ky++){
-		    module = sqrt(kx^2 + ky^2 + kz^2);
+// // Creamos el espectro artificialmente
 
-            CoefsArtAux(kx+kmax, ky+kmax) = module^(-(5./3+3./2)/2); 
-                                                        //Se supone que consigue k^-5/3
-	    }
-    }
-    
-    CoefsArtificial[kz+kmax] = CoefsArtAux(0:2*kmax, 0:2*kmax);
-}
+// complex[int,int][int] CoefsArtificial(2*kmax+1);
+// real module;
+// for (int kz=-kmax; kz<=kmax; kz++){
+//     // CoefsArtificial[kz+kmax] = 0;
+//     complex[int, int] CoefsArtAux(2*kmax+1, 2*kmax+1);
+//     for(int kx=-kmax; kx<=kmax; kx++){
+//         for(int ky=-kmax; ky<=kmax; ky++){
+//             module = sqrt(kx^2 + ky^2 + kz^2);
+//             CoefsArtAux(kx+kmax, ky+kmax) = module^(-(5./3+3./2)/2);
+//                                                         //Se supone que consigue k^-5/3
+//         }
+//     }
+//
+//     CoefsArtificial[kz+kmax] = CoefsArtAux(0:2*kmax, 0:2*kmax);
+// }
+
+// real[int,int][int] energyhat(2*kmax+1);
+// for (int kk=-kmax; kk<=kmax; kk++){
+//     real[int,int] energyhatAux = energycomputation(CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], kk);
+//     energyhat[kk+kmax] = energyhatAux(0:2*kmax, 0:2*kmax);
+// }
+//
+// real[int] energykk = energyk3d(energyhat);
+
+//////////////////////////
+
+real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax);
+write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
 
 
-//write("../PruebaTransformada/Coefs.txt", Coefs, 0,0);
-//real[int, int] CoefsArtificialKmax = CoefsArtificial[kmax](0:2*kmax, 0:2*kmax);
 
 
-
-//real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax);
-//write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
-
-
-real[int,int][int] energyhat(2*kmax+1);
-for (int kk=-kmax; kk<=kmax; kk++){
-    real[int,int] energyhatAux = energycomputation(CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], kk);
-    energyhat[kk+kmax] = energyhatAux(0:2*kmax, 0:2*kmax);
-}   
-
-real[int] energykk = energyk3d(energyhat);
-
-write("Espectros/Espectro_Artificial.txt", energykk, 0 , 0, 0, 20);
+//write("Espectros/Espectro_Re_"+Reynolds+"_k32_"+i+".txt", espectroIEFluids, 0 , 0, 0, 20);
