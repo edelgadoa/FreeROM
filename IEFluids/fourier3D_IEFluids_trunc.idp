@@ -140,9 +140,9 @@ func real[int,int][int] energycomputation(complex[int,int][int] & CoefsX, comple
         real[int,int] resultAux(2*kmax+1, 2*kmax+1);
 	    for(int ii=-kmax;ii<=kmax;ii++){
             for(int jj=-kmax; jj<=kmax; jj++){
-            	resultAux(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))
-                                                   + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))
-                                                   + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax)));
+            	resultAux(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))^2
+                                                   + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))^2
+                                                   + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax))^2);
 				}
 			}
         result[kk+kmax] = resultAux;
