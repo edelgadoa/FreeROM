@@ -5,6 +5,14 @@ real[int] dFourier;
 PartitionCreate(ThTrunc, dFourier, PkP1); 
 VhP1trunc DP1; DP1[] = dFourier;
 
+Mat<complex> MProdL2;
+MatCreate(ThTrunc, MProdL2, P1);
+
+{
+    varf L2Prod(u,v) = int3d(ThTrunc)(u*v);
+    matrix<complex> ProdL2 = L2Prod(VhP1trunc<complex>, VhP1trunc<complex>);
+    MProdL2 = ProdL2;
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
 // El vector en el argumento debe ser un vector en P2.
