@@ -11,7 +11,8 @@ int[int] fforder=[1,1,1,1];
 // Cargo los archivos auxiliares
 macro dimension() 3 //EOM
 include "macro_ddm.idp"
-load "PETSc"
+// load "PETSc"
+load "PETSc-complex"
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 macro mpi(variable) if(mpirank==0){variable} //EOM
 include "IO.idp"
@@ -48,23 +49,25 @@ buildDmesh(ThTrunc);
 mpi(cout<<"Cargando parametros y otros...";)
 include "Parametros.idp"
 
-MatCreate(Th, MatVhP1, PkP1);
-{
-    macro def(i) [i, iY, iP] // EOM
-    macro init(i) [i, i, i] // EOM
-    MatCreate(Th, MatVh3P1, Pk3P1);
-}
+// MatCreate(Th, MatVhP1, PkP1);
+// {
+//     macro def(i) [i, iY, iP] // EOM
+//     macro init(i) [i, i, i] // EOM
+//     MatCreate(Th, MatVh3P1, Pk3P1);
+// }
+//
+// // Parametros truncamiento
+// Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
+// Mat MatVh3P1trunc;	
 
-// Parametros truncamiento
-Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
-Mat MatVh3P1trunc;	int[int] mapVh3P1trunc;
-
-MatCreate(ThTrunc, MatVhP1trunc, PkP1);
-{
-    macro def(i) [i, iY, iP] // EOM
-    macro init(i) [i, i, i] // EOM
-    MatCreate(ThTrunc, MatVh3P1trunc, Pk3P1);
-}
+int[int] mapVh3P1trunc;
+//
+// MatCreate(ThTrunc, MatVhP1trunc, PkP1);
+// {
+//     macro def(i) [i, iY, iP] // EOM
+//     macro init(i) [i, i, i] // EOM
+//     MatCreate(ThTrunc, MatVh3P1trunc, Pk3P1);
+// }
 
 // Variables donde guardo los snapshots que cargo
 fespace VhP1G(ThG, P1);
@@ -72,7 +75,7 @@ fespace Vh3P1G(ThG, [P1,P1,P1]);
 fespace VhP1trunc(ThTrunc, P1);           fespace VhP1truncG(ThTruncG, P1);
 fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P1]);
 
-mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
+mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 //include "Normas_3D.idp"
