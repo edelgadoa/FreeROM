@@ -45,9 +45,12 @@ MatCreate(ThTrunc, MProdL2, PkP1);
 
 /////////////////////////////////////////////////////////////////////////////////
 func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax, int kZ){
-    VhP1trunc<complex> uFourier;
-    uFourier[] = uFourierv;
-    complex[int,int] FCoefs(2*kmax+1, 2*kmax+1);
+    //VhP1trunc<complex> uFourier;
+    //uFourier[] = uFourierv;
+    complex[int] uFourierPETSc(MProdL2.n);
+	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc);
+	
+	complex[int,int] FCoefs(2*kmax+1, 2*kmax+1);
     // Inicializo el tensor FCoefs (De momento pruebo sin inicializar, puede que no sea necesario)
     // for (int kk=-kmax; kk<=kmax; kk++){
     //     complex[int, int] auxFCoef (2*kmax+1, 2*kmax+1);
@@ -58,7 +61,13 @@ func complex[int,int] FourierTransform3D(complex[int] uFourierv, int kmax, int k
         for(int jj=-kmax; jj <= kmax; jj++){
             func fourier = exp(-1i*pi*(x*ii + y*jj + z*kZ));
 			VhP1trunc<complex> EFufourier = fourier;
-            FCoefs(ii+kmax, jj+kmax) = int3d(ThTrunc)(DP1*EFufourier*uFourier);
+			complex[int] EFuFourierv = EFufourier[];
+			complex[int] EFuFourierPETSc(MProdL2.n);
+			ChangeNumbering(MProdL2, EFuFourierv, EFuFourierPETSc);
+			complex[int] AuxFourier(uFourierPETSc.n);
+			MatMult(MProdL2, uFourierPETSc, AuxFourier);
+            FCoefs(ii+kmax, jj+kmax) = EFuFourierPETSc'*AuxFourier; 
+			//int3d(ThTrunc)(DP1*EFufourier*uFourier);
 		}
     }
     return FCoefs; // Los devuelve en local
