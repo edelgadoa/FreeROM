@@ -6,11 +6,11 @@ PartitionCreate(ThTrunc, dFourier, PkP1);
 VhP1trunc DP1; DP1[] = dFourier;
 
 Mat<complex> MProdL2;
-MatCreate(ThTrunc, MProdL2, P1);
+MatCreate(ThTrunc, MProdL2, PkP1);
 
 {
     varf L2Prod(u,v) = int3d(ThTrunc)(u*v);
-    matrix<complex> ProdL2 = L2Prod(VhP1trunc<complex>, VhP1trunc<complex>);
+    matrix<complex> ProdL2 = L2Prod(VhP1trunc, VhP1trunc);
     MProdL2 = ProdL2;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////
