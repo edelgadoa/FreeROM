@@ -171,7 +171,7 @@ func real[int,int][int] energycomputation(complex[int,int][int] & CoefsX, comple
 func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY, complex[int,int] & CoefsZ, int kk)
 {
     int kmax = (CoefsX.n-1)/2;
-    mpi(cout<<"kmax = "<<kmax<<", CoefsXYZ.n = "<<CoefsX.n<<", "<<CoefsY.n<<", "<<CoefsZ.n<<endl;)
+    // mpi(cout<<"kmax = "<<kmax<<", CoefsXYZ.n = "<<CoefsX.n<<", "<<CoefsY.n<<", "<<CoefsZ.n<<endl;)
     real[int,int] result(2*kmax+1, 2*kmax+1);
 	// resultL=0.; result=0.; 
 	
