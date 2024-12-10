@@ -11,7 +11,7 @@ int[int] fforder=[1,1,1,1];
 // Cargo los archivos auxiliares
 macro dimension() 3 //EOM
 include "macro_ddm.idp"
-// load "PETSc"
+//load "PETSc"
 load "PETSc-complex"
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 macro mpi(variable) if(mpirank==0){variable} //EOM

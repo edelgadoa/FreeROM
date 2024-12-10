@@ -13,6 +13,7 @@ MatCreate(ThTrunc, MProdL2, PkP1);
     matrix<complex> ProdL2 = L2Prod(VhP1trunc, VhP1trunc);
     MProdL2 = ProdL2;
 }
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Si tengo varias componentes, debo llamar varias veces a la transformada de fourier.
 // El vector en el argumento debe ser un vector en P2.
