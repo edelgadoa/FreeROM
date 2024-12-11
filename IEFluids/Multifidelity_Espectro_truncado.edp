@@ -33,10 +33,10 @@ macro PkP1() P1 // EOM // No sé si este es necesario
 // mpi(cout<<"Truncando malla global y creando mallas truncadas locales...";)
 mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1); 
 ThTrunc = trunc(ThTrunc, ((x>1350)),split=1);
-ThTrunc = trunc(ThTrunc, ((y<240)),split=1); //300 //original 240
-ThTrunc = trunc(ThTrunc, ((y>40)),split=1); //100 //original 40
-ThTrunc = trunc(ThTrunc, ((z<350)),split=1); //345 //original 350
-ThTrunc = trunc(ThTrunc, ((z>150)),split=1); //145 //original 150
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
 
 //Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
 mesh3 ThTruncG = ThTrunc; // For the global mesh
