@@ -35,8 +35,8 @@ mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1);
 ThTrunc = trunc(ThTrunc, ((x>1350)),split=1);
 ThTrunc = trunc(ThTrunc, ((y<300)),split=1); 
 ThTrunc = trunc(ThTrunc, ((y>100)),split=1);
-ThTrunc = trunc(ThTrunc, ((z<300)),split=1); 
-ThTrunc = trunc(ThTrunc, ((z>100)),split=1);
+ThTrunc = trunc(ThTrunc, ((z<400)),split=1); 
+ThTrunc = trunc(ThTrunc, ((z>200)),split=1);
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
 // Macros PETSc truncamiento
