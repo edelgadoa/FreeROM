@@ -112,7 +112,9 @@ Mat MatNormVtrunc;
 Vh3P1G [SnapG, SnapGY, SnapGZ];
 Vh3P1truncG [SnapTruncG, SnapTruncGY, SnapTruncGZ];
 Vh3P1trunc [Snap, SnapY, SnapZ];
-VhP1trunc<complex> SF, SFY, SFZ, auxc; auxc = 0.;
+//VhP1trunc<complex> SF, SFY, SFZ, auxc; auxc = 0.;
+VhP1trunc SF, SFY, SFZ;
+
 include "fourier3D_IEFluids_trunc.idp";
 Reynolds = 11;
 int i = 3;
@@ -123,9 +125,11 @@ SnapG[] = SolG;
 [SnapTruncG, SnapTruncGY, SnapTruncGZ] = [SnapG, SnapGY, SnapGZ];
 Snap[] = SnapTruncG[](mapVh3P1trunc);
 
-SF = Snap + auxc;
-SFY = SnapY + auxc;
-SFZ = SnapZ + auxc;
+savevtk("Snapshot_truncado.vtu",ThTruncG, [SnapTruncG, SnapTruncGY, SnapTruncGZ], order=fforder);
+
+SF = Snap;// + auxc;
+SFY = SnapY;// + auxc;
+SFZ = SnapZ;// + auxc;
 
 
 ///////////////////////////////////////////////////////
@@ -163,8 +167,7 @@ int kmax = 24;
 
 //////////////////////////
 
-// real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
-real[int] espectroIEFluids = espectro3D(SF[].re, SF[].im, SFY[].re, SFY[].im, SFZ[].re, SFZ[].im, kmax);
+real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
 
 write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
 
