@@ -33,10 +33,12 @@ macro PkP1() P1 // EOM // No sé si este es necesario
 // mpi(cout<<"Truncando malla global y creando mallas truncadas locales...";)
 mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1); 
 ThTrunc = trunc(ThTrunc, ((x>1350)),split=1);
-ThTrunc = trunc(ThTrunc, ((y<300)),split=1); 
-ThTrunc = trunc(ThTrunc, ((y>100)),split=1);
-ThTrunc = trunc(ThTrunc, ((z<400)),split=1); 
-ThTrunc = trunc(ThTrunc, ((z>200)),split=1);
+ThTrunc = trunc(ThTrunc, ((y<240)),split=1); //300 //original 240
+ThTrunc = trunc(ThTrunc, ((y>40)),split=1); //100 //original 40
+ThTrunc = trunc(ThTrunc, ((z<350)),split=1); //345 //original 350
+ThTrunc = trunc(ThTrunc, ((z>150)),split=1); //145 //original 150
+
+//Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
 // Macros PETSc truncamiento
@@ -116,8 +118,8 @@ Vh3P1trunc [Snap, SnapY, SnapZ];
 VhP1trunc SF, SFY, SFZ;
 
 include "fourier3D_IEFluids_trunc.idp";
-Reynolds = 12;
-int i = 1;
+Reynolds = 11;
+int i = 3;
 
 readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
 SnapG[] = SolG;
@@ -135,7 +137,7 @@ SFZ = SnapZ;// + auxc;
 ///////////////////////////////////////////////////////
 /// Establecemos Espectro artificial///
 ///////////////////////////////////////////////////////
-int kmax = 32;
+int kmax = 24;
 
 
 
@@ -167,9 +169,9 @@ int kmax = 32;
 
 //////////////////////////
 
-//real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
+real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
 
-//write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
+write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
 
 
 

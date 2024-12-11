@@ -83,12 +83,11 @@ MatCreate(ThTrunc, MProdL2, PkP1);
 //     return FCoefs; // Los devuelve en local
 // }
 
-func complex[int,int] FourierTransform3D(real[int] uFouriervRE, real[int] uFouriervIM, int kmax, int kZ){
+func complex[int,int] FourierTransform3D(real[int] uFourierv, int kmax, int kZ){
     //VhP1trunc<complex> uFourier;
     //uFourier[] = uFourierv;
-    real[int] uFourierREPETSc(MProdL2.n), uFourierIMPETSc(MProdL2.n);
-	ChangeNumbering(MProdL2, uFouriervRE, uFourierREPETSc);
-	ChangeNumbering(MProdL2, uFouriervIM, uFourierIMPETSc);
+    real[int] uFourierPETSc(MProdL2.n);
+	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc);
 	
 	complex[int,int] FCoefs(2*kmax+1, 2*kmax+1);
     // Inicializo el tensor FCoefs (De momento pruebo sin inicializar, puede que no sea necesario)
@@ -109,12 +108,11 @@ func complex[int,int] FourierTransform3D(real[int] uFouriervRE, real[int] uFouri
 			real[int] EFuFourierREPETSc(MProdL2.n),EFuFourierIMPETSc(MProdL2.n);
 			ChangeNumbering(MProdL2, EFuFouriervRE, EFuFourierREPETSc);
 			ChangeNumbering(MProdL2, EFuFouriervIM, EFuFourierIMPETSc);
-			real[int] AuxFourierRE(uFourierREPETSc.n), AuxFourierIM(uFourierIMPETSc.n);
-			MatMult(MProdL2, uFourierREPETSc, AuxFourierRE);
-			MatMult(MProdL2, uFourierIMPETSc, AuxFourierIM);
+			real[int] AuxFourier(MProdL2.n);
+			MatMult(MProdL2, uFourierPETSc, AuxFourier);
 			
-			real FCoefRE = EFuFourierREPETSc'*AuxFourierRE;
-			real FCoefIM = EFuFourierIMPETSc'*AuxFourierIM;
+			real FCoefRE = EFuFourierREPETSc'*AuxFourier;
+			real FCoefIM = EFuFourierIMPETSc'*AuxFourier;
 			
 			complex CoefAux = FCoefRE - 1i*FCoefIM;
 
@@ -307,7 +305,7 @@ func real[int] energyk3d(real[int,int][int] & Energy)
 //     return energykk;
 // }
 
-func real[int] espectro3D(real[int] uFouriervRE, real[int] uFouriervIM, real[int] uFouriervYRE, real[int] uFouriervYIM, real[int] uFouriervZRE, real[int] uFouriervZIM, int kmax){
+func real[int] espectro3D(real[int] uFourierv, real[int] uFouriervY, real[int] uFouriervZ, int kmax){
 
 	write("Output.txt", " - Calculando Coeficientes...", 1, 1);
     complex[int,int][int] FCoefsX(2*kmax+1);//,(2*kmax+1)^2);
@@ -323,15 +321,15 @@ func real[int] espectro3D(real[int] uFouriervRE, real[int] uFouriervIM, real[int
                           AuxFCoefsY(2*kmax+1, 2*kmax+1), 
                           AuxFCoefsZ(2*kmax+1, 2*kmax+1);
         
-        FCoefsXL = FourierTransform3D(uFouriervRE, uFouriervIM, kmax, kk);
+        FCoefsXL = FourierTransform3D(uFourierv, kmax, kk);
         mpiAllReduce(FCoefsXL, AuxFCoefsX, mpiCommWorld, mpiSUM);
         FCoefsX[kk+kmax] = AuxFCoefsX(0:2*kmax, 0:2*kmax);
     
-        FCoefsYL = FourierTransform3D(uFouriervYRE, uFouriervYIM, kmax, kk);
+        FCoefsYL = FourierTransform3D(uFouriervY, kmax, kk);
         mpiAllReduce(FCoefsYL, AuxFCoefsY, mpiCommWorld, mpiSUM);
         FCoefsY[kk+kmax] = AuxFCoefsY(0:2*kmax, 0:2*kmax);
     
-	    FCoefsZL = FourierTransform3D(uFouriervZRE, uFouriervZIM, kmax, kk);
+	    FCoefsZL = FourierTransform3D(uFouriervZ, kmax, kk);
         mpiAllReduce(FCoefsZL, AuxFCoefsZ, mpiCommWorld, mpiSUM);
         FCoefsZ[kk+kmax] = AuxFCoefsZ(0:2*kmax, 0:2*kmax);
     
