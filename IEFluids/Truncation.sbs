@@ -5,4 +5,4 @@
 #SBATCH --partition=cpu
 
 
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 Multifidelity_Espectro_truncado.edp >> "terminal_Trunc_k32.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 Multifidelity_Espectro_truncado.edp >> "terminal_Trunc_k24.txt"

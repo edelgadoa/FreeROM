@@ -114,8 +114,8 @@ Vh3P1truncG [SnapTruncG, SnapTruncGY, SnapTruncGZ];
 Vh3P1trunc [Snap, SnapY, SnapZ];
 VhP1trunc<complex> SF, SFY, SFZ, auxc; auxc = 0.;
 include "fourier3D_IEFluids_trunc.idp";
-Reynolds = 11;
-int i = 3;
+Reynolds = 12;
+int i = 1;
 
 readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
 SnapG[] = SolG;
@@ -131,7 +131,7 @@ SFZ = SnapZ + auxc;
 ///////////////////////////////////////////////////////
 /// Establecemos Espectro artificial///
 ///////////////////////////////////////////////////////
-int kmax = 24;
+int kmax = 32;
 
 
 
