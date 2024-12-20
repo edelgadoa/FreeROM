@@ -98,8 +98,10 @@ func complex[int,int] FourierTransform3D(real[int] uFourierv, int kmax, int kZ){
     // }
     for(int ii=-kmax; ii <= kmax; ii++){
         for(int jj=-kmax; jj <= kmax; jj++){
-            func fourierRE = cos(pi*(x*ii/450 + y*jj/200 + z*kZ/200)); // cos(pi*(x*ii + y*jj + z*kZ)); // Probar con cos(pi*(x*ii/400+ y*jj/200 + z*kZ/200)), w/(xmax-wmin)
-			func fourierIM = sin(pi*(x*ii/450 + y*jj/200 + z*kZ/200)); // sin(pi*(x*ii + y*jj + z*kZ)); // Probar con sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200))
+            func fourierRE = cos(pi*((2*(x-1350)/450-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ));
+             // cos(pi*(x*ii + y*jj + z*kZ)); // Probar con cos(pi*(x*ii/400+ y*jj/200 + z*kZ/200)), w/(xmax-wmin)
+			func fourierIM = sin(pi*((2*(x-1350)/450-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ)); 
+            // sin(pi*(x*ii + y*jj + z*kZ)); // Probar con sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200))
 			VhP1trunc EFufourierRE = fourierRE;
 			VhP1trunc EFufourierIM = fourierIM;
 			real[int] EFuFouriervRE = EFufourierRE[];
