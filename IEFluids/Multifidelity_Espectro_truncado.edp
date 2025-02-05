@@ -32,7 +32,7 @@ macro PkP1() P1 // EOM // No sé si este es necesario
 // Creo la malla truncada
 // mpi(cout<<"Truncando malla global y creando mallas truncadas locales...";)
 mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1); 
-ThTrunc = trunc(ThTrunc, ((x>1350)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
 ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
 ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
 ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
