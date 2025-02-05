@@ -102,7 +102,7 @@ func complex[int,int] FourierTransform3D(real[int] uFourierv, int kmax, int kZ){
             cos(pi*(((x-1350)/450)*ii + ((y-100)/200)*jj + ((z-145)/200)*kZ));
              // cos(pi*(x*ii + y*jj + z*kZ)); // Probar con cos(pi*(x*ii/400+ y*jj/200 + z*kZ/200)), w/(xmax-wmin)
 			func fourierIM = //sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200));
-             sin(pi*((x-1350)/450)*ii + ((y-100)/200)*jj + ((z-145)/200)*kZ)); 
+             sin(pi*(((x-1350)/450)*ii + ((y-100)/200)*jj + ((z-145)/200)*kZ)); 
             // sin(pi*(x*ii + y*jj + z*kZ)); // Probar con sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200))
 			VhP1trunc EFufourierRE = fourierRE;
 			VhP1trunc EFufourierIM = fourierIM;
