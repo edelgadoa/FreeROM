@@ -254,7 +254,7 @@ func real[int] energyk3d(real[int,int][int] & Energy)
 	for(int k1=-kmax; k1<=kmax; k1++){
 		for(int k2=-kmax; k2<=kmax; k2++){
 			for(int k3=-kmax; k3<=kmax; k3++){
-				module = sqrt(k1^2+k2^2+k3^2)-1e-2;
+				module = sqrt(k1^2+k2^2+k3^2);
 				l = module;
                //  mpi(cout<<"(k1,k2,k3)=("<<k1<<","<<k2<<","<<k3<<") --- module (real)= "<<module<<", module (int)= "<<l<<endl;)
 				energykbycrowns[l] += Energy[k3+kmax](k1+kmax,k2+kmax);
