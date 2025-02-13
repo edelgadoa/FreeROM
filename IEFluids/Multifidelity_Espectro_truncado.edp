@@ -12,6 +12,7 @@ int[int] fforder=[1,1,1,1];
 macro dimension() 3 //EOM
 include "macro_ddm.idp"
 load "PETSc"
+//load "PETSc-complex"
 macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 macro mpi(variable) if(mpirank==0){variable} //EOM
 include "IO.idp"
@@ -27,18 +28,17 @@ macro Pk3P1() [P1,P1,P1] // EOM
 macro PkP1() P1 // EOM // No sé si este es necesario
 
 //buildDmesh(Th);
-mpi(cout<<"Hecho." << endl;)
-cout<<"Hecho." << endl;
 
 // Creo la malla truncada
 // mpi(cout<<"Truncando malla global y creando mallas truncadas locales...";)
 mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1); 
-ThTrunc = trunc(ThTrunc, ((x>1350)),split=1);
-ThTrunc = trunc(ThTrunc, ((y<240)),split=1); 
-ThTrunc = trunc(ThTrunc, ((y>40)),split=1);
-ThTrunc = trunc(ThTrunc, ((z<350)),split=1); 
-ThTrunc = trunc(ThTrunc, ((z>150)),split=1);
-cout<<"Hecho." << endl;
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
+
+//Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
 // Macros PETSc truncamiento
@@ -46,37 +46,38 @@ int[int] myN2oTrunc;
 macro ThTruncN2O() myN2oTrunc // EOM
 
 buildDmesh(ThTrunc);
-mpi(cout<<"Hecho." << endl;)
 
 // Parametros 
 mpi(cout<<"Cargando parametros y otros...";)
 include "Parametros.idp"
 
-MatCreate(Th, MatVhP1, PkP1);
-{
-    macro def(i) [i, iY, iP] // EOM
-    macro init(i) [i, i, i] // EOM
-    MatCreate(Th, MatVh3P1, Pk3P1);
-}
+// MatCreate(Th, MatVhP1, PkP1);
+// {
+//     macro def(i) [i, iY, iP] // EOM
+//     macro init(i) [i, i, i] // EOM
+//     MatCreate(Th, MatVh3P1, Pk3P1);
+// }
+//
+// // Parametros truncamiento
+// Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
+// Mat MatVh3P1trunc;	
 
-// Parametros truncamiento
-Mat MatVhP1trunc; 	int[int] mapVhP1trunc;
-Mat MatVh3P1trunc;	int[int] mapVh3P1trunc;
-
-MatCreate(ThTrunc, MatVhP1trunc, PkP1);
-{
-    macro def(i) [i, iY, iP] // EOM
-    macro init(i) [i, i, i] // EOM
-    MatCreate(ThTrunc, MatVh3P1trunc, Pk3P1);
-}
+int[int] mapVh3P1trunc;
+//
+// MatCreate(ThTrunc, MatVhP1trunc, PkP1);
+// {
+//     macro def(i) [i, iY, iP] // EOM
+//     macro init(i) [i, i, i] // EOM
+//     MatCreate(ThTrunc, MatVh3P1trunc, Pk3P1);
+// }
 
 // Variables donde guardo los snapshots que cargo
 fespace VhP1G(ThG, P1);
 fespace Vh3P1G(ThG, [P1,P1,P1]);
-fespace VhP1trunc(ThTrunc, P1);           fespace VhP1Gtrunc(ThTruncG, P1);
+fespace VhP1trunc(ThTrunc, P1);           fespace VhP1truncG(ThTruncG, P1);
 fespace Vh3P1trunc(ThTrunc, [P1,P1,P1]);  fespace Vh3P1truncG(ThTruncG, [P1,P1,P1]);
 
-mapVh3P1trunc = restrict(Vh3P1trunc,Vh3P1truncG,myN2oTrunc);
+mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
 
 // Defino funciones para ortonormalizar y productos escalares / normas
 //include "Normas_3D.idp"
@@ -104,7 +105,6 @@ Mat MatNormVtrunc;
 	MatNormVtrunc = MPescVtrunc;
 }
 */
-mpi(cout<< "Hecho." << endl;)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,22 +114,66 @@ mpi(cout<< "Hecho." << endl;)
 Vh3P1G [SnapG, SnapGY, SnapGZ];
 Vh3P1truncG [SnapTruncG, SnapTruncGY, SnapTruncGZ];
 Vh3P1trunc [Snap, SnapY, SnapZ];
-VhP1trunc<complex> SF, SFY, SFZ, auxc; auxc = 0.;
-include "fourier3D_IEFluids_trunc.idp";
-Reynolds = 1;
-int i = 1;
+//VhP1trunc<complex> SF, SFY, SFZ, auxc; auxc = 0.;
+VhP1trunc SF, SFY, SFZ;
 
-readvector("Snapshots/V_"+Reynolds+"_meanfile" + i + ".txt", real, SolG, 0);
+include "fourier3D_IEFluids_trunc.idp";
+Reynolds = 11;
+int i = 3;
+
+readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
 SnapG[] = SolG;
 
 [SnapTruncG, SnapTruncGY, SnapTruncGZ] = [SnapG, SnapGY, SnapGZ];
 Snap[] = SnapTruncG[](mapVh3P1trunc);
 
-SF = Snap + auxc;
-SFY = SnapY + auxc;
-SFZ = SnapZ + auxc;
+savevtk("Snapshot_truncado.vtu",ThTruncG, [SnapTruncG, SnapTruncGY, SnapTruncGZ], order=fforder);
 
-int kmax = 20;
-real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax);
+SF = Snap;// + auxc;
+SFY = SnapY;// + auxc;
+SFZ = SnapZ;// + auxc;
 
-write("Espectros/Espectro_Re_"+Reynolds+"_t_"+i+"_1.txt", espectroIEFluids, 0 , 0, 0, 20);
+
+///////////////////////////////////////////////////////
+/// Establecemos Espectro artificial///
+///////////////////////////////////////////////////////
+int kmax = 24;
+
+
+
+// // Creamos el espectro artificialmente
+
+// complex[int,int][int] CoefsArtificial(2*kmax+1);
+// real module;
+// for (int kz=-kmax; kz<=kmax; kz++){
+//     // CoefsArtificial[kz+kmax] = 0;
+//     complex[int, int] CoefsArtAux(2*kmax+1, 2*kmax+1);
+//     for(int kx=-kmax; kx<=kmax; kx++){
+//         for(int ky=-kmax; ky<=kmax; ky++){
+//             module = sqrt(kx^2 + ky^2 + kz^2);
+//             CoefsArtAux(kx+kmax, ky+kmax) = module^(-(5./3+3./2)/2);
+//                                                         //Se supone que consigue k^-5/3
+//         }
+//     }
+//
+//     CoefsArtificial[kz+kmax] = CoefsArtAux(0:2*kmax, 0:2*kmax);
+// }
+
+// real[int,int][int] energyhat(2*kmax+1);
+// for (int kk=-kmax; kk<=kmax; kk++){
+//     real[int,int] energyhatAux = energycomputation(CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], CoefsArtificial[kk+kmax], kk);
+//     energyhat[kk+kmax] = energyhatAux(0:2*kmax, 0:2*kmax);
+// }
+//
+// real[int] energykk = energyk3d(energyhat);
+
+//////////////////////////
+
+real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
+
+write("Espectros/Espectro_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
+
+
+
+
+//write("Espectros/Espectro_Re_"+Reynolds+"_k32_"+i+".txt", espectroIEFluids, 0 , 0, 0, 20);
