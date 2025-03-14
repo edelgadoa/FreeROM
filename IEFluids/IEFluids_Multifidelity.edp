@@ -198,7 +198,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
         mpi(cout<< " -- NRe = "+NRe << endl;)
         // Reconstrucción de la solución en el espacio reducido.
-
+        
+        // HAY UN SEGMENTATION FAULT A PARTIR DE AQUÍ, NO LLEGA A CALCULAR EL ESPECTRO. HAY QUE AVERIGUAR DONDE.
         real[int] erreltime(TimeSnap);
         for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
@@ -243,7 +244,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         }
         
         EReynolds(NRe-1) = ETiempo.max; // ** Preguntar a Tomás si esto es correcto
-        mpi(cout<< " Espectro = "+EReynolds(NRe-1) << endl;)
+        mpi(cout << " Espectro = " + EReynolds(NRe-1) << endl;)
 
     }
     int nuevoRe = EReynolds.imax+1;
