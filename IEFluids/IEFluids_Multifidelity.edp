@@ -1,0 +1,274 @@
+///////////////////////////////////////////////////////////////////////////////
+
+// Código para hacer la fase OFFLINE del método multifidelitiy con los datos de IEFluids
+
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+
+verbosity = 0;
+
+// Paralelo
+macro dimension() 3 //EOM
+macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+
+macro mpi(variable) if(mpirank==0){variable} //EOM
+include "macro_ddm.idp"
+load "PETSc"
+
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+// include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
+include "Normas_3D.idp"
+
+// Cargo las funciones de lectura y guardado
+include "IO.idp" 
+include "../Auxiliary/search.idp"
+
+/////////////////////////////////////////////////////////////////////////////////////
+mpi(cout<< "Cargando la malla...";)
+mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
+mesh3 ThG = Th;
+
+
+// Creo la malla truncada
+mpi(cout<<" - Truncando malla global y creando mallas truncadas locales...";)
+mesh3 ThTrunc = trunc(ThG, ((x<1800)),split=1); 
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
+
+//Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
+mesh3 ThTruncG = ThTrunc; // For the global mesh
+
+
+// Macros para la malla en paralelo
+int[int] myN2o,myN2oTrunc;
+macro ThN2O() myN2o //EOM
+macro ThTruncN2O() myN2oTrunc // EOM
+
+buildDmesh(Th);
+buildDmesh(ThTrunc);
+
+mpi(cout<< "Hecho." << endl;)
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+
+mpi(cout<< "Parametros del problema...";)
+int ReSnap = 20; // numero de Snapshots de Reynolds
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
+
+// ** Creo una inicializacion para BaseV
+
+mpi(cout<< "Hecho." << endl;)
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+mpi(cout<< "Creando espacio de elementos finitos...";)
+macro Pk3P1() [P1,P1,P1] // EOM
+macro PkP1() P1 // EOM // No sé si este es necesario
+
+// Variables donde guardo los snapshots que cargo
+fespace VhP1G(ThG, P1); //*No lo uso de momento
+
+fespace Vh3P1G(ThG, Pk3P1);
+fespace Vh3P1(Th, Pk3P1);
+
+fespace VhP1trunc(ThTrunc, P1);      
+fespace VhP1truncG(ThTruncG, P1);
+
+fespace Vh3P1trunc(ThTrunc, Pk3P1);  
+fespace Vh3P1truncG(ThTruncG, Pk3P1);
+
+
+// PETSc matrices
+Mat MatNormL2;
+int[int] mapVh3P1trunc, mapVh3P1; 
+
+{
+	macro def(i) [i, iY, iZ] //
+	macro init(i) [i, i, i] // EOM
+	createMat(Th, MatNormL2, Pk3P1);   
+}
+
+mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
+mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// ** No sé si es necesaria
+mpi(cout<< "Creando matriz de productos escalares...";)
+{
+	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
+	
+	matrix PescV = NormV(Vh3P1, Vh3P1); //L2PEMat;
+	MatNormL2 = PescV;
+}
+mpi(cout<< "Hecho." << endl;)
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+mpi(cout<< "Leyendo datos low fidelity...";)
+real[int, int] MBaseVlow(Vh3P1.ndof, TimeSnap*ReSnap); 
+
+for (int NRe=1; NRe<=ReSnap; NRe++){
+    string Reynolds = NRe;
+    for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+        int i = NTemp-1;
+        mpi(cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;)
+        
+        Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
+        Vh3P1 [BaseV,BaseVY,BaseVZ];		
+        readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0); //** Estos serían los low fidelity
+        BaseVG[] = SolG;
+        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
+
+        MBaseVlow(:,i+(NRe-1)*TimeSnap) = BaseV[];
+    }
+}
+mpi(cout<< "Hecho." << endl;)
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+int maxGreedy = 6; // Número máximo de iteraciones del Greedy
+int NRe = 1; // Reynolds para la primera iteración
+int NbasesV = 1; 
+real epsPOD = 1e-4;
+real[int] MuBest(maxGreedy);
+MuBest(0) = 1;
+real[int] ETiempo(6);
+real[int] EReynolds(ReSnap);
+real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
+real[int] EGreedy(maxGreedy);
+int kmax = 24; // ** Comprobar
+int kinf = 3; // ** Comprobar
+int ksup = kmax; // ** Comprobar
+
+include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
+
+real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
+
+for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
+    
+    mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
+
+    mpi(cout<< "Inicializando Base reducida...";)
+    real[int, int] MBaseV(Vh3P1.ndof, TimeSnap*iGreedy); // Se modifica la dimension en cada etapa
+
+    mpi(cout<< " -- Cargando datos...";)
+    string Reynolds = NRe;
+    for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+        int i = NTemp-1;
+        mpi(cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;)
+        {
+            Vh3P1G [BaseVG,BaseVGY,BaseVGZ];
+            Vh3P1 [BaseV, BaseVY, BaseVZ];		
+            readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
+            BaseVG[] = SolG;
+            BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
+            MBaseVcomplete(:,i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
+        }	
+    }
+
+    for (int i=0; i<TimeSnap*iGreedy; i++){
+        MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
+    }
+    
+    mpi(cout<< "Hecho." << endl;)
+
+    // Calculo los eigenvalues y eigenvectors 
+    mpi(cout<< " - Calculando POD...";)
+    Vh3P1[int] [BaseV, BaseVY, BaseVZ](TimeSnap*iGreedy); 
+    include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
+    POD(MBaseV, MatNormL2, BaseV, NbasesV, autovalVel);
+    mpi(cout << "Terminado con " + NbasesV + " bases" << endl;)
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    // Bucle en el parámetro
+
+    mpi(cout<< "Multifidelity..."<< endl;)
+    for (int NRe=1; NRe<=ReSnap; NRe++){
+
+        mpi(cout<< " -- NRe = "+NRe << endl;)
+        // Reconstrucción de la solución en el espacio reducido.
+
+        real[int] erreltime(TimeSnap);
+        for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
+            // Leo en cada tiempo
+            Vh3P1 [Snap, SnapY, SnapZ];
+            Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
+            
+            Snap[] = MBaseVlow(:,NTemp-1+(NRe-1)*TimeSnap); 
+            [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
+            
+            // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
+            real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
+            Vh3P1 [uRB,uRBY,uRBZ]; uRB[]=0.;
+            
+            for(int j=0;j<NbasesV;j++){
+                Vh3P1 [BaseV, BaseVY, BaseVZ];
+                BaseV[] = MBaseV(j, :); //Tomo la base POD correspondiente para calcular su coeficiente
+                coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
+                uRB[] += coefLF(j)*BaseV[];
+            }
+
+            // Cálculo del espectro de la solución reducida
+            real[int] espectroIEFluids = espectro3D(uRB[], uRBY[], uRBZ[], kmax); //
+            
+            int kmed = kmax/2;
+            real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
+            real[int] diffespectro(kmax); diffespectro = 0.;
+            real[int] espectroteorico(kmax); espectroteorico = 0.;
+            for (int i=0; i<kmax; i++){
+                espectroteorico(i) = a*pow(i,-5/3);
+                diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i,-5/3));
+            }
+            ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ; // Es la versión relativa del indicador
+
+            /*
+            // Calculo el error relativo en tiempo
+            Vh3P1 [eRB,eRBY,eRBZ]; 
+            eRB[] = Snap[] - uRB[]; 
+            real erabstime = sqrt((innerprodX(eRB[], eRB[], MatNormV, bPETSc))); // error absoluto
+            ETiempo(NTemp-1) = erabstime/sqrt(innerprodX(Snap[], Snap[], MatNormV, bPETSc)); // error relativo
+            */
+
+        }
+        
+        EReynolds(NRe-1) = ETiempo.max; // ** Preguntar a Tomás si esto es correcto
+        mpi(cout<< " Espectro = "+EReynolds(NRe-1) << endl;)
+
+    }
+    int nuevoRe = EReynolds.imax+1;
+
+    // Modificacion del criterio del Greedy
+    if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
+
+    	// Se haya la diferencia de los espectros
+    	real[int] difEstimador(ReSnap); difEstimador = 0.;
+    	difEstimador = EReynolds-EReynolds0;
+    	difEstimador = abs(difEstimador);
+    	while(search(MuBest,difEstimador.imax+1)>=0){
+    		// Eliminamos los ya elegidos
+    		difEstimador(difEstimador.imax) = 0.;
+    	}
+    	// Escogemos el valor para la mayor diferencia
+    	EGreedy(iGreedy) = difEstimador.max;
+    	MuBest(iGreedy+1)= difEstimador.imax+1;
+    }
+    else{
+    	EGreedy(iGreedy) = EReynolds.max;
+    	MuBest(iGreedy+1) = EReynolds.imax+1;
+    }
+
+    // Actualizo el valor del espectro anterior
+    EReynolds0 = EReynolds;
+    // ** Añadir más comentarios para saber por donde vamos
+}
