@@ -120,11 +120,11 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
     string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
-        mpi(cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;)
+        mpi(cout << "V_" + NRe + "_meanfile" + NTemp << endl;)
         
         Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
         Vh3P1 [BaseV,BaseVY,BaseVZ];		
-        readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0); //** Estos serían los low fidelity
+        readvector("Snapshots/V_" + Reynolds + "_meanfile" + Ntemp + ".txt", real, SolG, 0); //** Estos serían los low fidelity
         BaseVG[] = SolG;
         BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
 
@@ -169,7 +169,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         {
             Vh3P1G [BaseVG,BaseVGY,BaseVGZ];
             Vh3P1 [BaseV, BaseVY, BaseVZ];		
-            readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
+            readvector("Snapshots/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolG, 0);
             BaseVG[] = SolG;
             BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
             MBaseVcomplete(:,i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
