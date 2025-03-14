@@ -29,13 +29,13 @@ mpi(cout<< "Cargando la malla...";)
 mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla
 mesh3 ThG = Th;
 
-// PETSc matrices
-Mat MatNormV;
-int[int] mapVh3P1;
-
-int[int] myN2o;
+// Macros para la malla en paralelo
+int[int] myN2o,myN2oTrunc;
 macro ThN2O() myN2o //EOM
+macro ThTruncN2O() myN2oTrunc // EOM
+
 buildDmesh(Th);
+buildDmesh(ThTrunc);
 
 // Creo la malla truncada
 mpi(cout<<" - Truncando malla global y creando mallas truncadas locales...";)
@@ -49,10 +49,7 @@ ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
 //Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
 mesh3 ThTruncG = ThTrunc; // For the global mesh
 
-// Macros PETSc truncamiento
-int[int] myN2oTrunc;
-macro ThTruncN2O() myN2oTrunc // EOM
-buildDmesh(ThTrunc);
+
 
 mpi(cout<< "Hecho." << endl;)
 
@@ -76,18 +73,31 @@ macro Pk3P1() [P1,P1,P1] // EOM
 macro PkP1() P1 // EOM // No sé si este es necesario
 
 // Variables donde guardo los snapshots que cargo
-fespace VhP1G(ThG, P1);
+fespace VhP1G(ThG, P1); //*No lo uso de momento
+
 fespace Vh3P1G(ThG, Pk3P1);
-fespace VhP1trunc(ThTrunc, P1);           fespace VhP1truncG(ThTruncG, P1);
-fespace Vh3P1trunc(ThTrunc, Pk3P1);  fespace Vh3P1truncG(ThTruncG, Pk3P1);
-mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
+fespace Vh3P1(Th, Pk3P1);
+
+fespace VhP1trunc(ThTrunc, P1);      
+fespace VhP1truncG(ThTruncG, P1);
+
+fespace Vh3P1trunc(ThTrunc, Pk3P1);  
+fespace Vh3P1truncG(ThTruncG, Pk3P1);
+
+
+// PETSc matrices
+Mat MatNormL2;
+int[int] mapVh3P1trunc, mapVh3P1; 
 
 {
 	macro def(i) [i, iY, iZ] //
 	macro init(i) [i, i, i] // EOM
-	createMat(Th, MatNormV, Pk3P1);
+	createMat(Th, MatNormV, Pk3P1);   
 }
-mpi(cout<< "Hecho." << endl;)
+
+mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
+mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 // ** No sé si es necesaria
@@ -95,8 +105,8 @@ mpi(cout<< "Creando matriz de productos escalares...";)
 {
 	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
 	
-	matrix PescV = NormV(Vh3P1, Vh3P1); //H1PEMat;
-	MatNormV = PescV;
+	matrix PescV = NormV(Vh3P1, Vh3P1); //L2PEMat;
+	MatNormL2 = PescV;
 }
 mpi(cout<< "Hecho." << endl;)
 
@@ -109,18 +119,15 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
     string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
-        if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
-        {
-            Vh3P1G [VhG,VhGY,VhGZ];		
-            Vh3P1truncG [VhtruncG,VhtruncGY,VhtruncGZ];		
-            Vh3P1trunc [Vhtrunc,VhtruncY,VhtruncZ];		
-            readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0); //** Estos serían los low fidelity
-            VhG[] = SolG;
-            [VhtruncG,VhtruncGY,VhtruncGZ] = [VhG,VhGY,VhGZ];
-            Vh3P1trunc[] = VhG[](mapVh3P1trunc); // Load in the local mesh
+        mpi(cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;)
+        
+        Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
+        Vh3P1 [BaseV,BaseVY,BaseVZ];		
+        readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0); //** Estos serían los low fidelity
+        BaseVG[] = SolG;
+        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
 
-            MBaseVlow(:,i+(NRe-1)*TimeSnap) = Vh3P1trunc[];
-        }	
+        MBaseVlow(:,i+(NRe-1)*TimeSnap) = BaseV[];
     }
 }
 mpi(cout<< "Hecho." << endl;)
@@ -132,7 +139,7 @@ int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
 real epsPOD = 1e-4;
-real[int] MuBest(6);
+real[int] MuBest(maxGreedy);
 MuBest(0) = 1;
 real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
@@ -141,9 +148,11 @@ real[int] EGreedy(maxGreedy);
 int kmax = 24; // ** Comprobar
 int kinf = 3; // ** Comprobar
 int ksup = kmax; // ** Comprobar
-include "fourier3D_IEFluids_trunc.idp";
+
+include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
+
 for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
     mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
@@ -155,17 +164,14 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
-        if(mpirank==0)cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;
+        mpi(cout<<"V_"+NRe+"_meanfile"+NTemp<<endl;)
         {
-            Vh3P1G [VhG,VhGY,VhGZ];		
-            Vh3P1truncG [VhtruncG,VhtruncGY,VhtruncGZ];		
-            Vh3P1trunc [Vhtrunc,VhtruncY,VhtruncZ];		
+            Vh3P1G [BaseVG,BaseVGY,BaseVGZ];
+            Vh3P1 [BaseV, BaseVY, BaseVZ];		
             readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
-            VhG[] = SolG;
-            [VhtruncG,VhtruncGY,VhtruncGZ] = [VhG,VhGY,VhGZ];
-            Vh3P1trunc[] = VhG[](mapVh3P1trunc); // Load in the local mesh
-
-            MBaseVcomplete(:,i+TimeSnap*(iGreedy-1)) = Vh3P1trunc[]; // Se añaden los nuevos snapshots a la base
+            BaseVG[] = SolG;
+            BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
+            MBaseVcomplete(:,i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
         }	
     }
 
@@ -177,7 +183,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
     // Calculo los eigenvalues y eigenvectors 
     mpi(cout<< " - Calculando POD...";)
-    Vh3P1[int] [BaseV,BaseVY,BaseVZ](TimeSnap);
+    Vh3P1[int] [BaseV,BaseVY,BaseVZ](TimeSnap*iGreedy); 
     include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
     POD(MBaseV,MatNormV,BaseV,NbasesV,autovalVel);
     mpi(cout<< "Terminado con "+NbasesV+" bases"<< endl;)
@@ -196,15 +202,20 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
             Vh3P1 [Snap, SnapY, SnapZ];
+            Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
+            
             Snap[] = MBaseVlow(:,NTemp-1+(NRe-1)*TimeSnap); 
-
+            [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
+            
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
             real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
             Vh3P1 [uRB,uRBY,uRBZ]; uRB[]=0.;
             
             for(int j=0;j<NbasesV;j++){
-                coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormV, bPETSc); // ** Comprobar para hacer en paralelo
-                uRB[] += coefLF(j)*BaseV[j][];
+                Vh3P1 [BaseV, BaseVY, BaseVZ];
+                BaseV[] = MBaseV(j, :); //Tomo la base POD correspondiente para calcular su coeficiente
+                coefLF(j) = innerprodX(BaseV[], Snap[], MatNormV, bPETSc); 
+                uRB[] += coefLF(j)*BaseV[];
             }
 
             // Cálculo del espectro de la solución reducida
