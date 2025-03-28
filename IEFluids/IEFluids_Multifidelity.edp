@@ -207,7 +207,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
             Snap[] = MBaseVlow(:,NTemp-1+(NRe-1)*TimeSnap); 
-            mpi(cout<<"He cargado los snapshots de la Base LowF")
+            mpi(cout<<"He cargado los snapshots de la Base LowF"<<endl;)
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
