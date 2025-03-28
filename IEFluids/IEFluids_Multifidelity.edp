@@ -207,6 +207,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
             Snap[] = MBaseVlow(:,NTemp-1+(NRe-1)*TimeSnap); 
+            mpi(cout<<"He cargado los snapshots de la Base LowF")
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
@@ -219,6 +220,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[];
             }
+            mpi(cout<<"Ya tengo la base de BR"<<endl;)
 
             // Cálculo del espectro de la solución reducida
             real[int] espectroIEFluids = espectro3D(uRB[], uRBY[], uRBZ[], kmax); //
