@@ -198,7 +198,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
         mpi(cout<< " -- NRe = "+NRe << endl;)
         // Reconstrucción de la solución en el espacio reducido.
-
+        
+        // HAY UN SEGMENTATION FAULT A PARTIR DE AQUÍ, NO LLEGA A CALCULAR EL ESPECTRO. HAY QUE AVERIGUAR DONDE.
         real[int] erreltime(TimeSnap);
         for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
@@ -206,6 +207,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
             Snap[] = MBaseVlow(:,NTemp-1+(NRe-1)*TimeSnap); 
+            mpi(cout<<"He cargado los snapshots de la Base LowF")
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
@@ -218,6 +220,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[];
             }
+            mpi(cout<<"Ya tengo la base de BR"<<endl;)
 
             // Cálculo del espectro de la solución reducida
             real[int] espectroIEFluids = espectro3D(uRB[], uRBY[], uRBZ[], kmax); //
@@ -243,7 +246,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         }
         
         EReynolds(NRe-1) = ETiempo.max; // ** Preguntar a Tomás si esto es correcto
-        mpi(cout<< " Espectro = "+EReynolds(NRe-1) << endl;)
+        mpi(cout << " Espectro = " + EReynolds(NRe-1) << endl;)
 
     }
     int nuevoRe = EReynolds.imax+1;
