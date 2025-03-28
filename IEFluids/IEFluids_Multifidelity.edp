@@ -172,7 +172,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             readvector("Snapshots/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolG, 0);
             BaseVG[] = SolG;
             BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
-            MBaseVcomplete(:,i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
+            MBaseVcomplete(:, i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
         }	
     }
 
@@ -216,7 +216,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             for(int j=0;j<NbasesV;j++){
                 Vh3P1 [BaseV, BaseVY, BaseVZ];
-                BaseV[] = MBaseV(j, :); //Tomo la base POD correspondiente para calcular su coeficiente
+                BaseV[] = MBaseV(:, j); //Tomo la base POD correspondiente para calcular su coeficiente
                 coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[];
             }
