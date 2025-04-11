@@ -227,7 +227,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
             real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
             
-            int kmed = kmax/2;
+            real kmed = kmax/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
             real[int] diffespectro(kmax); diffespectro = 0.;
             real[int] espectroteorico(kmax); espectroteorico = 0.;
