@@ -220,8 +220,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 uRB[] += coefLF(j)*BaseV[];
             }
             
-            // Cálculo del espectro de la solución reducida -> Hay qu truncar la solucion
-            Vh3P1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
+            // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
+            VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
             uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ; 
             
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
