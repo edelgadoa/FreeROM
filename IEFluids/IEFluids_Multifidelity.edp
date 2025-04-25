@@ -238,7 +238,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i,-5/3));
             }
             ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
-            mpi(cout<<"ETiempo = "<<ETtiempo<<endl;)
+            mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
              // Es la versión relativa del indicador
             /*
             // Calculo el error relativo en tiempo
@@ -270,7 +270,6 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     	// Escogemos el valor para la mayor diferencia
     	EGreedy(iGreedy) = difEstimador.max;
     	MuBest(iGreedy+1)= difEstimador.imax+1;
-        write("")
     }
     else{
     	EGreedy(iGreedy) = EReynolds.max;
