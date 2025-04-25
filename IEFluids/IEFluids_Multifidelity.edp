@@ -8,6 +8,8 @@ load "iovtk"
 load "lapack"
 
 verbosity = 0;
+int[int] fforder=[1,1,1,1];
+
 
 // Paralelo
 macro dimension() 3 //EOM
@@ -219,7 +221,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[];
             }
-            savevtk("uRB.vtu", ThTrunc, [uRB, uRBY, uRBZ], order=fforder);
+            savevtk("uRB.vtu", Th, [uRB, uRBY, uRBZ], order=fforder);
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
