@@ -227,6 +227,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
             real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
             
+            write("EspectrosGreedy/Espectro_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
+            
             real kmed = kmax/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
             real[int] diffespectro(kmax); diffespectro = 0.;
@@ -235,8 +237,9 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 espectroteorico(i) = a*pow(i,-5/3);
                 diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i,-5/3));
             }
-            ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ; // Es la versión relativa del indicador
-
+            ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
+            mpi(cout<<"ETiempo = "<<ETtiempo<<endl;)
+             // Es la versión relativa del indicador
             /*
             // Calculo el error relativo en tiempo
             Vh3P1 [eRB,eRBY,eRBZ]; 
@@ -267,6 +270,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     	// Escogemos el valor para la mayor diferencia
     	EGreedy(iGreedy) = difEstimador.max;
     	MuBest(iGreedy+1)= difEstimador.imax+1;
+        write("")
     }
     else{
     	EGreedy(iGreedy) = EReynolds.max;
