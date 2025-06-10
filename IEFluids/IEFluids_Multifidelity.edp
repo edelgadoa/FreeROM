@@ -218,12 +218,12 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [uRB, uRBY, uRBZ]; uRB[]=0.;
             
             for(int j=0;j<NbasesV;j++){
-                Vh3P1 [BaseV, BaseVY, BaseVZ];
+                // Vh3P1 [BaseV, BaseVY, BaseVZ];
                 // BaseV[] = MBaseV(:, j); //Tomo la base POD correspondiente para calcular su coeficiente 
                 //Enrique: ¿Esto es necesario? BaseV en teoría se modifica con POD, MBaseV no lo sé... 
-               // real normSnap = normX(BaseV[], MatNormL2, bPETSc);
-                
-            //    mpi(cout<<"Norma base: "<<normSnap<<endl;)
+               real normSnap = normX(BaseV[], MatNormL2, bPETSc);
+               
+                mpi(cout<<"Norma base: "<<normSnap<<endl;)
                 
                 coefLF(j) = innerprodX(BaseV[], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[];
