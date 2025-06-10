@@ -27,6 +27,7 @@ NewMacro eigenvaluescompute(C,autoval,autovect)
 {
 	autovect=0; autoval=0;
 	int keigen = dsyev(C,autoval,autovect); // devuelve los autovalores en forma ascendente
+    mpi(cout<<"Autovalores: "<<autoval<<endl;)
 	// keigen = 0 -> successful,  keigen = -i (<0) -> ith argument illegal value, keigen = i (>0) -> failed to converge
 }
 EndMacro
