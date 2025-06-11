@@ -60,7 +60,7 @@ mpi(cout<< "Hecho." << endl;)
 
 
 mpi(cout<< "Parametros del problema...";)
-int ReSnap = 20; // numero de Snapshots de Reynolds
+int ReSnap = 5; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
@@ -205,6 +205,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         // HAY UN SEGMENTATION FAULT A PARTIR DE AQUÍ, NO LLEGA A CALCULAR EL ESPECTRO. HAY QUE AVERIGUAR DONDE.
         real[int] erreltime(TimeSnap);
         for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
+            ETiempo = 0;
             // Leo en cada tiempo
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
@@ -229,14 +230,14 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 uRB[] += coefLF(j)*BaseV[j][];
             }
             mpi(cout<<"coefLF:"<<coefLF<<endl;)
-            savevtk("uRB.vtu", Th, [uRB, uRBY, uRBZ], order=fforder);
+            savevtk("uRB"+NRe+"_"+"NTemp"+".vtu", Th, [uRB, uRBY, uRBZ], order=fforder);
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
             uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ; 
             
             
-            savevtk("uRBTrunc.vtu", ThTrunc, [uRBTrunc, uRBTruncY, uRBTruncZ], order=fforder);
+            savevtk("uRBTrunc"+NRe+"_"+"NTemp"+".vtu", ThTrunc, [uRBTrunc, uRBTruncY, uRBTruncZ], order=fforder);
             
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
             real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
@@ -253,6 +254,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             }
             ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
             mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
+            mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
+            mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
              // Es la versión relativa del indicador
             /*
             // Calculo el error relativo en tiempo
