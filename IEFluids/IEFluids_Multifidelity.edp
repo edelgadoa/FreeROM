@@ -249,9 +249,9 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
             real[int] diffespectro(kmax); diffespectro = 0.;
             real[int] espectroteorico(kmax); espectroteorico = 0.;
-            for (int i=1; i<=kmax; i++){
-                espectroteorico(i) = a*pow(i,-5/3);
-                diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i,-5/3));
+            for (int i=; i<kmax; i++){
+                espectroteorico(i) = a*pow(i+1,-5/3);
+                diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i+1,-5/3));
             }
             ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
             mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
