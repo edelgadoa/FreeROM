@@ -202,10 +202,10 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         mpi(cout<< " -- NRe = "+NRe << endl;)
         // Reconstrucción de la solución en el espacio reducido.
         
-        // HAY UN SEGMENTATION FAULT A PARTIR DE AQUÍ, NO LLEGA A CALCULAR EL ESPECTRO. HAY QUE AVERIGUAR DONDE.
+        ETiempo = 0;
+        
         real[int] erreltime(TimeSnap);
         for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
-            ETiempo = 0;
             // Leo en cada tiempo
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
@@ -241,6 +241,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
             real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
+            mpi(cout<<"ESPECTRO: "<<espectroIEFluids<<endl;)
             
             write("EspectrosGreedy/Espectro_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
@@ -248,7 +249,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
             real[int] diffespectro(kmax); diffespectro = 0.;
             real[int] espectroteorico(kmax); espectroteorico = 0.;
-            for (int i=0; i<kmax; i++){
+            for (int i=1; i<=kmax; i++){
                 espectroteorico(i) = a*pow(i,-5/3);
                 diffespectro(i) = abs(espectroIEFluids(i)-a*pow(i,-5/3));
             }
