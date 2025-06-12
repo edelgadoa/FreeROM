@@ -243,16 +243,19 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             real kmed = kmax/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
+            mpi(cout<<"a= "<<a<<endl;)
             real[int] diffespectro(ksup-kinf); diffespectro = 0.;
             real[int] espectroteorico(ksup-kinf); espectroteorico = 0.;
             for (int i=kinf; i<ksup; i++){
-                espectroteorico(i-kinf) = a*pow(i,-5/3);
-                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(i,-5/3));
+                real ii = i*1.;
+                espectroteorico(i-kinf) = a*pow(ii,-5/3);
+                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-5/3));
             }
-            ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
-            mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
             mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
             mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
+            ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
+            mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
+         
              // Es la versión relativa del indicador
             /*
             // Calculo el error relativo en tiempo
