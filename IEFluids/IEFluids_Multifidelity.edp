@@ -265,7 +265,7 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         }
         
         EReynolds(NRe-1) = ETiempo.max; // ** Preguntar a Tomás si esto es correcto
-        mpi(cout << " Estimador final de espectros = " + EReynolds << endl;)
+        mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
 
     }
     int nuevoRe = EReynolds.imax + 1;
