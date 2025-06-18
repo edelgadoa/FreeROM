@@ -142,7 +142,7 @@ int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
 real epsPOD = 1e-4;
-real[int] MuBest(maxGreedy);
+real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
 real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
@@ -156,7 +156,7 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
-for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
+for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
     mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
 
@@ -233,13 +233,13 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                         
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
             real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
-            mpi(cout<<"ESPECTRO: "<<espectroIEFluids<<endl;)
+            //mpi(cout<<"ESPECTRO: "<<espectroIEFluids<<endl;)
             
             write("EspectrosGreedy/Espectro_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
             real kmed = kmax/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
-            mpi(cout<<"a= "<<a<<endl;)
+            //mpi(cout<<"a= "<<a<<endl;)
             real[int] diffespectro(ksup-kinf); diffespectro = 0.;
             real[int] espectroteorico(ksup-kinf); espectroteorico = 0.;
             for (int i=kinf; i<ksup; i++){
@@ -247,8 +247,8 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 espectroteorico(i-kinf) = a*pow(ii,-5/3);
                 diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-5/3));
             }
-            mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
-            mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
+            //mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
+            //mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
             // ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
             // mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
          
@@ -282,13 +282,13 @@ for (int iGreedy=1; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     	}
     	// Escogemos el valor para la mayor diferencia
     	EGreedy(iGreedy) = difEstimador.max;
-    	MuBest(iGreedy+1)= difEstimador.imax+1;
+    	MuBest(iGreedy+1)= difEstimador.imax + 1;
     }
     else{
     	EGreedy(iGreedy) = EReynolds.max;
-    	MuBest(iGreedy+1) = EReynolds.imax+1;
+    	MuBest(iGreedy+1) = EReynolds.imax + 1;
     }
-
+    mpi(cout<<"Reynolds escogidos"<<MuBest<<endl;)
     // Actualizo el valor del espectro anterior
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
