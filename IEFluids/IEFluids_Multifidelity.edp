@@ -174,7 +174,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             readvector("Snapshots/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolG, 0);
             BaseVG[] = SolG;
             BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
-            MBaseVcomplete(:, i+TimeSnap*(iGreedy-1)) = BaseV[]; // Se añaden los nuevos snapshots a la base
+            MBaseVcomplete(:, i+TimeSnap*(iGreedy)) = BaseV[]; // Se añaden los nuevos snapshots a la base
         }	
     }
 
