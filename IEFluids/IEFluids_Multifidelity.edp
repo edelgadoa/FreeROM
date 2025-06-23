@@ -179,12 +179,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     }
 
     for (int i=0; i<TimeSnap*(iGreedy+1); i++){
-<<<<<<< HEAD
-	MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
-=======
-        mpi(cout<<"i="<<i<<endl;)
-        MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
->>>>>>> Ahora no hace bien la POD
+	    MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
     }
     
     mpi(cout<< "Hecho." << endl;)
