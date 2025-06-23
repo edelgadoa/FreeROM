@@ -161,7 +161,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
 
     mpi(cout<< "Inicializando Base reducida...";)
-    real[int, int] MBaseV(Vh3P1.ndof, TimeSnap*iGreedy); // Se modifica la dimension en cada etapa
+    real[int, int] MBaseV(Vh3P1.ndof, TimeSnap*(iGreedy+1)); // Se modifica la dimension en cada etapa
 
     mpi(cout<< " -- Cargando datos...";)
     string Reynolds = NRe;
@@ -179,7 +179,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     }
 
     for (int i=0; i<TimeSnap*(iGreedy+1); i++){
-        MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
+	MBaseV(:,i) = MBaseVcomplete(:,i); // Se cogen los snapshots de la base completa
     }
     
     mpi(cout<< "Hecho." << endl;)
