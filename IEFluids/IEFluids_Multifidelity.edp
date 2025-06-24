@@ -290,6 +290,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     }
     mpi(cout<<"Reynolds escogidos"<<MuBest<<endl;)
     // Actualizo el valor del espectro anterior
+    NRe = MuBest(iGreedy + 1);
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
 }
