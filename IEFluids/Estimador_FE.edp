@@ -207,11 +207,13 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
         // for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
             Vh3P1 [Snap, SnapY, SnapZ];
-            Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
+            VhP1trunc SnapTrunc, SnapTruncY, SnapTruncZ;
             
             Snap[] = MBaseVlow(:, NRe-1); 
 
-            [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
+            SnapTrunc = Snap;
+            SnapTruncY = SnapY;
+            SnapTruncZ = SnapZ; // Tomo los truncados porque será lo que use el estimador
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
             // real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
