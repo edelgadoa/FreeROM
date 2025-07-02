@@ -225,7 +225,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
             }
-            mpi(cout<<"coefLF:"<<coefLF<<endl;)
+            // mpi(cout<<"coefLF:"<<coefLF<<endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
