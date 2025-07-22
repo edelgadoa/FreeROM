@@ -115,7 +115,7 @@ mpi(cout<< "Hecho." << endl;)
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-mpi(cout<< "Leyendo datos low fidelity...";)
+mpi(cout<< "Leyendo datos low fidelity..."<<endl;)
 real[int, int] MBaseVlow(Vh3P1.ndof, TimeSnap*ReSnap); 
 
 for (int NRe=1; NRe<=ReSnap; NRe++){
@@ -163,7 +163,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     mpi(cout<< "Inicializando Base reducida...";)
     real[int, int] MBaseV(Vh3P1.ndof, TimeSnap*(iGreedy+1)); // Se modifica la dimension en cada etapa
 
-    mpi(cout<< " -- Cargando datos...";)
+    mpi(cout<< " -- Cargando datos..." <<endl;)
     string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
