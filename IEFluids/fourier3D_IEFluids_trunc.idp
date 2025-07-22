@@ -87,7 +87,7 @@ func complex[int,int] FourierTransform3D(real[int] uFourierv, int kmax, int kZ){
     //VhP1trunc<complex> uFourier;
     //uFourier[] = uFourierv;
     real[int] uFourierPETSc(MProdL2.n);
-	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc);
+	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc); //AQUI ESTA EL ERROR, AL HACER EL CHANGE NUMBERING
 	
 	complex[int,int] FCoefs(2*kmax+1, 2*kmax+1);
     // Inicializo el tensor FCoefs (De momento pruebo sin inicializar, puede que no sea necesario)
