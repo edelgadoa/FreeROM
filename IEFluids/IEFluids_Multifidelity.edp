@@ -13,15 +13,16 @@ int[int] fforder=[1,1,1,1];
 
 // Paralelo
 macro dimension() 3 //EOM
-macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+//macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
 
-macro mpi(variable) if(mpirank==0){variable} //EOM
+// macro mpi(variable) if(mpirank==0){variable} //EOM
 include "macro_ddm.idp"
 load "PETSc"
 
 // Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
 // include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
 include "Normas_3D.idp"
+include "../Auxiliary/Macros_3D.idp"
 
 // Cargo las funciones de lectura y guardado
 include "IO.idp" 
@@ -266,7 +267,16 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; //ETiempo.max; // ** Preguntar a Tomás si esto es correcto
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
-
+		
+		// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
+		Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
+		
+		for (int k=0; k<NbasesV; k++){
+			BaseFinalG[k][] = reduceSolution(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
+		}
+		write("BasePOD_Greedy_" + iGreedy + ".txt", BaseFinalG, 0, 0, 0, 20);
+		write("BasePOD_N_" + NBasesV + ".txt", BaseFinalG, 0, 0, 0, 20);
+		
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
@@ -296,3 +306,4 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
 }
+
