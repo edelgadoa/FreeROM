@@ -306,4 +306,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
 }
+<<<<<<< Local Changes
 
+
+=======
+
+>>>>>>> External Changes
