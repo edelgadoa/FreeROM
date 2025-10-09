@@ -10,14 +10,25 @@ load "lapack"
 verbosity = 0;
 int[int] fforder=[1,1,1,1];
 
+load "PETSc"
 
 // Paralelo
 macro dimension() 3 //EOM
-//macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
-
+// macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
+//
 // macro mpi(variable) if(mpirank==0){variable} //EOM
+//
+// NewMacro reduceSolution(uL, u, D, map)
+// {
+// 	real[int] aux(u[].n); aux = 0;
+// 	uL[] .*= D;
+// 	aux(map) = uL[];
+// 	u[] = 0;
+// 	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
+// }
+// EndMacro
+
 include "macro_ddm.idp"
-load "PETSc"
 
 // Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
 // include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
@@ -271,11 +282,11 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 		// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
 		Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
 		
-		for (int k=0; k<NbasesV; k++){
-			BaseFinalG[k][] = reduceSolution(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
+		for(int k=0; k<NbasesV; k++){
+			reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
 		}
 		write("BasePOD_Greedy_" + iGreedy + ".txt", BaseFinalG, 0, 0, 0, 20);
-		write("BasePOD_N_" + NBasesV + ".txt", BaseFinalG, 0, 0, 0, 20);
+		write("BasePOD_N_" + NbasesV + ".txt", BaseFinalG, 0, 0, 0, 20);
 		
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
