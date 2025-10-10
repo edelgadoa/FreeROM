@@ -297,6 +297,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 		
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
+    int nuevoRe = EReynolds.imax + 1;
 
 
     // Modificacion del criterio del Greedy
