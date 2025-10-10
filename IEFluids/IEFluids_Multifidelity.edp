@@ -274,8 +274,14 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 		for (int k=0; k<NbasesV; k++){
 			BaseFinalG[k][] = reduceSolution(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
 		}
-		write("BasePOD_Greedy_" + iGreedy + ".txt", BaseFinalG, 0, 0, 0, 20);
-		write("BasePOD_N_" + NBasesV + ".txt", BaseFinalG, 0, 0, 0, 20);
+        
+        real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
+        for (int i=0; i<NbasesV; i++){
+    	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
+        }
+        
+		write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
+		write("BasePOD_N_" + NBasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
 		
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
@@ -306,9 +312,4 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
 }
-<<<<<<< Local Changes
 
-
-=======
-
->>>>>>> External Changes
