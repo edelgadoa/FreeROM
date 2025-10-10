@@ -285,11 +285,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 		for(int k=0; k<NbasesV; k++){
 			reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
 		}
-<<<<<<< HEAD
-		write("BasePOD_Greedy_" + iGreedy + ".txt", BaseFinalG, 0, 0, 0, 20);
-		write("BasePOD_N_" + NbasesV + ".txt", BaseFinalG, 0, 0, 0, 20);
-=======
-        
+
         real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
         for (int i=0; i<NbasesV; i++){
     	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
@@ -297,7 +293,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
 		write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
 		write("BasePOD_N_" + NBasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
->>>>>>> 6b547b34e5f4c6796ec13663cc6079411628361b
+
 		
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
