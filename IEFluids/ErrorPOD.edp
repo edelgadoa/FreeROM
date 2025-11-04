@@ -18,6 +18,7 @@ load "PETSc"
 
 // Paralelo
 macro dimension() 3 //EOM
+bool PETScON = true;
 
 include "macro_ddm.idp"
 
@@ -108,18 +109,30 @@ real[int] ErrorLinfL2(NGreedyMAX);
 for (int iGreedy=0; iGreedy<NGreedyMAX; iGreedy++){ // Bucle de las iteraciones Greedy
     
     // Cargo la base POD correspondiente a cada iteración Greedy
-    readmatrix("BasePOD_Greedy_" + iGreedy + ".txt", real, BasePOD, 0);
-    int NBasesPOD = BasePOD.m; //
-    
+    readmatrix("BasePOD_Greedy_" + iGreedy + ".txt", real, MBasePODG, 0); //Estas bases están en Global, hay que pasarlas a Local
+    int NBasesPOD = MBasePODG.m; 
+	real[int,int] MBasePOD(Vh3P1.ndof, NBasesPOD); 
+	for(int iPOD=0; iPOD<NBasesPOD; iPOD++){
+	    Vh3P1G [BasePODG, BasePODGY, BasePODGZ];
+		Vh3P1 [BasePOD, BasePODY, BasePODZ];
+		BasePODG[] = MBasePODG(:,iPOD);
+		BasePOD[] = BasePODG[](mapVh3P1);
+		MBasePOD(:,iPOD) = BasePOD[];
+	}
+	
+	
     Vh3P1[int] [uRB, uRBY, uRBZ](ReSnap);
     
     // Calculo los coeficientes POD y reconstruyo la solución POD para cada valor del parámetro 
     for (int iRe = 0; iRe<ReSnap; iRe++){
-    Vh3P1 [Snap, SnapY, SnapZ] = MBaseV(:,iRe);
-    real[int,int] MatPODAux(Vh3P1.ndof, NBasesPOD); 
-    MatMatMult(MatNormL2, BasePOD, MatPODAux);
-    real[int] alpha = MatPODAux*Snap[];    
-    mpi(cout<<alpha<<endl;)
+    	Vh3P1 [Snap, SnapY, SnapZ] = MBaseV(:,iRe);
+		real[int] alpha(NBasesPOD);
+		for(int iPOD=0; iPOD<NBasesPOD; iPOD++){
+			Vh3P1 [BasePOD, BasePODY, BasePODZ];
+			BasePOD[] = MBasePOD(:,iPOD);
+			alpha(iPOD) = innerprodX(Snap[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
+		}
+    	mpi(cout<<alpha<<endl;)
     }
 }
    //  for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
