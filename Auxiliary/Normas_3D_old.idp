@@ -5,18 +5,59 @@
 // Programa con funciones para calcular normas y productos escalares de vectores
 
 // Producto escalar general
-func real innerprodX(real[int] &u, real[int] &v, matrix &X){
-	real[int] aux = X*v;
-	real result = u'*aux;
+// func real innerprodX(real[int] &u, real[int] &v, matrix &X){
+// 	real[int] aux = X*v;
+// 	real result = u'*aux;
+// 	return result;
+// }
+
+func real innerprodX(real[int] &u, real[int] &v, Mat &X){
+	real[int] aux;
+	MatMult(X, v, aux);
+	real resultL = u'*aux;
+	real result;
+	mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
 	return result;
 }
 
-func real innerprodL2(real[int] &u, real[int] &v){
-	varf norml2(uu, vv) = int3d(Th)(uu*vv);
-	matrix XL2 = norml2(VhP2, VhP2);
-	real result = innerprodX(u, v, XL2);
+func real innerprodX(real[int] &u, real[int] &v, Mat &X, bool &Pescchange){
+	real result;
+	real[int] aux;
+	if (Pescchange){
+		real[int] uPETSc;
+		real[int] vPETSc;
+		ChangeNumbering(X, u, uPETSc); 
+		ChangeNumbering(X, v, vPETSc); 
+		MatMult(X, vPETSc, aux);
+		real resultL = uPETSc'*aux;
+		mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
+	}
+	else{
+		MatMult(X, v, aux);
+		real resultL = u'*aux;
+		mpiAllReduce(resultL, result, mpiCommWorld, mpiSUM);
+	}
 	return result;
 }
+
+func real normX(real[int] &u, Mat &X){
+	real result = innerprodX(u,u,X);
+	return sqrt(result);
+}
+
+func real normX(real[int] &u, Mat &X, bool &Pescchange){
+	real result = innerprodX(u,u,X,Pescchange);
+	return sqrt(result);
+}
+
+// func real innerprodL2(real[int] &u, real[int] &v){
+// 	varf norml2(uu, vv) = int3d(ThL)(uu*vv);
+// 	matrix XL2 = norml2(VhP2L, VhP2L);
+// 	real result = innerprodX(u, v, XL2);
+// 	return result;
+// }
+
+
 /*
 func real innerprodL2Vh4P2(real[int] &u, real[int] &v){
 	varf norml2(uu, vv) = int2d(Th)(uu*vv);
@@ -26,10 +67,10 @@ func real innerprodL2Vh4P2(real[int] &u, real[int] &v){
 }
 */
 
-func real normX(real[int] &u, matrix &X){
-	real result = innerprodX(u,u,X);
-	return sqrt(result);
-}
+// func real normX(real[int] &u, matrix &X){
+// 	real result = innerprodX(u,u,X);
+// 	return sqrt(result);
+// }
 
 /*
 func real normL2Vh4P2(real[int] &u){
@@ -38,32 +79,32 @@ func real normL2Vh4P2(real[int] &u){
 }
 */
 
-func real normL2(real[int] &u){
-	real result = innerprodL2(u,u);
-	return sqrt(result);
-}
+// func real normL2(real[int] &u){
+// 	real result = innerprodL2(u,u);
+// 	return sqrt(result);
+// }
 
-func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
-	real[int] Proy(u.n);
-	Proy = 0;
-	
-	for (int j=0; j<M.m; j++){
-		real Pesc = innerprodX(u, M(:,j), X);
-		Proy += Pesc*M(:,j);
-	}
-	u -= Proy;
-	real[int] result = u / normX(u, X);
-	return result;
-}
+// func real[int] OrtoX(real[int] &u, real[int,int] &M, matrix &X){
+// 	real[int] Proy(u.n);
+// 	Proy = 0;
+//
+// 	for (int j=0; j<M.m; j++){
+// 		real Pesc = innerprodX(u, M(:,j), X);
+// 		Proy += Pesc*M(:,j);
+// 	}
+// 	u -= Proy;
+// 	real[int] result = u / normX(u, X);
+// 	return result;
+// }
 
-func real[int] OrtoL2(real[int] &u, real[int,int] &M){
-	real[int] Proy(u.n);
-	Proy = 0;
-	for (int j=0; j<M.m; j++){
-		real Pesc = innerprodL2(u, M(:,j));
-		Proy += Pesc*M(:,j);
-		}
-	u -= Proy;
-	real[int] result = u / normL2(u);
-	return result;
-}
+// func real[int] OrtoL2(real[int] &u, real[int,int] &M){
+// 	real[int] Proy(u.n);
+// 	Proy = 0;
+// 	for (int j=0; j<M.m; j++){
+// 		real Pesc = innerprodL2(u, M(:,j));
+// 		Proy += Pesc*M(:,j);
+// 		}
+// 	u -= Proy;
+// 	real[int] result = u / normL2(u);
+// 	return result;
+// }
