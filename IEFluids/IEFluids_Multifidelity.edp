@@ -208,8 +208,12 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	
 	for(int k=0; k<NbasesV; k++){
 		reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
+        VhP1G BASEX, BASEY,BASEZ;
+        BASEX = BaseFinalG[k];
+        BASEY = BaseFinalGY[k];
+        BASEZ = BaseFinalGZ[k];
+        savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
 	}
-    mpi(cout<<BaseV[0][].min<<" "<<BaseFinalG[0][].min<<" "<<BaseV[0][].max<<" "<<BaseFinalG[0][].max<<endl;)
     real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
     for (int i=0; i<NbasesV; i++){
 	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
