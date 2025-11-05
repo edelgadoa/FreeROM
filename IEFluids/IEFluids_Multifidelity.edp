@@ -205,7 +205,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
 	// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
 	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
-	
+
 	for(int k=0; k<NbasesV; k++){
 		reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
         VhP1G BASEX, BASEY,BASEZ;
@@ -219,6 +219,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
     }
     
+    write("BaseLOCAL.txt", MBaseV,0,0,0,20);
 	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
 	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
     /////////////////////////////////////////////////////////////////////////////////////
