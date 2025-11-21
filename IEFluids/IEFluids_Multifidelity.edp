@@ -249,6 +249,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         uh[NRe-1][] = MBaseVcomplete(:, TimeSnap*NRe-1);
         ErrorL2(NRe-1) = innerprodX(uN[NRe-1][], uh[NRe-1][], MatNormL2, PETScON);
 
+        mpi(cout<<"Error L2 de la solucion POD"<<ErrorL2(NRe-1)<<endl;)
+
     
 
         mpi(cout<< " -- NRe = "+NRe << endl;)
