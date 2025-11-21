@@ -237,7 +237,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
         
-    	Vh3P1 [SnapPOD, SnapPODY, SnapPODZ] = MBaseV(:,NRe);
+    	Vh3P1 [SnapPOD, SnapPODY, SnapPODZ] = MBaseVcomplete(:,TimeSnap*NRe-1);
 		real[int] alpha(NbasesV) ;
 
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
@@ -245,8 +245,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 			BasePOD[] = MBaseV(:,iPOD);
 			alpha(iPOD) = innerprodX(SnapPOD[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
         }
-        uN[Re-1][] = 0;
-        for int(iPOD=0; iPOD<NbasesV; iPOD++0){
+        uN[NRe-1][] = 0;
+        for (int iPOD=0; iPOD<NbasesV; iPOD++){
             uN[NRe-1][] += MBaseV(:,iPOD)*alpha(iPOD);
         }
         uh[NRe-1][] = MBaseVcomplete(:, TimeSnap*NRe-1);
