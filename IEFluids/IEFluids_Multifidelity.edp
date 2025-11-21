@@ -14,6 +14,7 @@ load "PETSc"
 
 // Paralelo
 macro dimension() 3 //EOM
+bool PETScON = true;
 // macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 //
 // macro mpi(variable) if(mpirank==0){variable} //EOM
@@ -168,6 +169,9 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
+real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Para calcular los errores POD en el Greedy
+real[int] ErrorL1L2G(maxGreedy), ErrorLinfL2G(maxGreedy); // Lo mismo pero en Global
+
 for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
     mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
@@ -206,29 +210,46 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
 	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
 
-	for(int k=0; k<NbasesV; k++){
-		reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
-        VhP1G BASEX, BASEY,BASEZ;
-        BASEX = BaseFinalG[k];
-        BASEY = BaseFinalGY[k];
-        BASEZ = BaseFinalGZ[k];
-        savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
-	}
-    real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
-    for (int i=0; i<NbasesV; i++){
-	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
-    }
+	// for(int k=0; k<NbasesV; k++){
+	// 	reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
+    //     VhP1G BASEX, BASEY,BASEZ;
+    //     BASEX = BaseFinalG[k];
+    //     BASEY = BaseFinalGY[k];
+    //     BASEZ = BaseFinalGZ[k];
+    //     savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
+	// }
+    // real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
+    // for (int i=0; i<NbasesV; i++){
+	//     MBaseFinalG(:,i) = BaseFinalG[i][]; 
+    // }
     
-    write("BaseLOCAL.txt", MBaseV,0,0,0,20);
-	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
-	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
+    // write("BaseLOCAL.txt", MBaseV,0,0,0,20);
+	// write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
+	// write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
     /////////////////////////////////////////////////////////////////////////////////////
 
     // Bucle en el parámetro
 
     mpi(cout<< "Multifidelity..."<< endl;)
     EReynolds = 0;
+
+    Vh3P1[int] [uN, uNY, uNZ](ReSnap), [uh, uhY, uhZ](ReSnap);
+    real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
+        
+    	Vh3P1 [SnapPOD, SnapPODY, SnapPODZ] = MBaseV(:,NRe);
+		real[int] alpha(NbasesV) ;
+
+		for(int iPOD=0; iPOD<NbasesV; iPOD++){
+			Vh3P1 [BasePOD, BasePODY, BasePODZ];
+			BasePOD[] = MBaseV(:,iPOD);
+			alpha(iPOD) = innerprodX(SnapPOD[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
+        }
+        uN[NRe][] = alpha'*MBaseV(:, TimeSnap*NRe-1);
+        uh[NRe][] = MBaseVcomplete(:, TimeSnap*NRe-1);
+        ErrorL2(NRe) = innerprodX(uN[NRe][], uh[NRe][], MatNormL2, PETScON);
+
+    
 
         mpi(cout<< " -- NRe = "+NRe << endl;)
         // Reconstrucción de la solución en el espacio reducido.
@@ -305,6 +326,13 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
+    ErrorL1L2(iGreedy) = ErrorL2.l1;
+    ErrorLinfL2(iGreedy) = ErrorL2.max;
+    mpiAllReduce(ErrorL1L2, ErrorL1L2G, mpiCommWorld, mpiSUM);
+    mpiAllReduce(ErrorLinfL2, ErrorLinfL2G, mpiCommWorld, mpiSUM);
+
+    write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
+    write("ErrorL1L2.txt", ErrorLinfL2G, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
