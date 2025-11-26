@@ -240,20 +240,21 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     	Vh3P1 [SnapPOD, SnapPODY, SnapPODZ] = MBaseVcomplete(:,TimeSnap*NRe-1);
 		real[int] alpha(NbasesV) ;
 
+        uN[NRe-1][] = 0;
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
 			Vh3P1 [BasePOD, BasePODY, BasePODZ];
 			BasePOD[] = MBaseV(:,iPOD);
 			alpha(iPOD) = innerprodX(SnapPOD[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
-        }
-        uN[NRe-1][] = 0;
-        for (int iPOD=0; iPOD<NbasesV; iPOD++){
             uN[NRe-1][] += MBaseV(:,iPOD)*alpha(iPOD);
         }
+        
         uh[NRe-1][] = MBaseVcomplete(:, TimeSnap*NRe-1);
-        ErrorL2(NRe-1) = innerprodX(uN[NRe-1][], uh[NRe-1][], MatNormL2, PETScON);
+        Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
+        ErrorPOD[] = uh[NRe-1][] - uN[NRe-1][];
+        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, PETScON);
         real ErrorL2G;
         mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
-        mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2(NRe-1)<<endl;)
+        mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
 
     
 
