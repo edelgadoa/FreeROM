@@ -211,7 +211,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
 
 	// for(int k=0; k<NbasesV; k++){
-	// 	reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
+	// 	   reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
     //     VhP1G BASEX, BASEY,BASEZ;
     //     BASEX = BaseFinalG[k];
     //     BASEY = BaseFinalGY[k];
@@ -242,9 +242,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
        
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
             real alpha;
-            Vh3P1 [BasePOD, BasePODY, BasePODZ];
-			BasePOD[] = MBaseV(:,iPOD);
-			alpha = innerprodX(uh[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
+            //Vh3P1 [BasePOD, BasePODY, BasePODZ];
+			//BasePOD[] = BaseV[iPOD][](:,iPOD);
+			alpha = innerprodX(uh[], BaseV[iPOD][], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
             uN[] += alpha*MBaseV(:,iPOD);
         }
         
