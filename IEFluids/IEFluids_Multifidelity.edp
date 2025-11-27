@@ -236,20 +236,18 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
         Vh3P1 [uN, uNY, uNZ], [uh, uhY, uhZ];
-
+        
+        uh[] = MBaseVcomplete(:, TimeSnap*NRe-1);
         uN[] = 0;
-
+       
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
-            mpi(cout<<"TimeSnap= "<<TimeSnap<<", NRe= "<<NRe<<", iPOD= "<<iPOD<<endl;)
             real alpha;
-            Vh3P1 [SnapPOD, SnapPODY, SnapPODZ], [BasePOD, BasePODY, BasePODZ];
-            SnapPOD[] = MBaseVcomplete(:,TimeSnap*NRe-1);
+            Vh3P1 [BasePOD, BasePODY, BasePODZ];
 			BasePOD[] = MBaseV(:,iPOD);
-			alpha = innerprodX(SnapPOD[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
+			alpha = innerprodX(uh[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
             uN[] += alpha*MBaseV(:,iPOD);
         }
         
-        uh[] = MBaseVcomplete(:, TimeSnap*NRe-1);
         Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
         ErrorPOD[] = uh[] - uN[];
         ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, PETScON);
