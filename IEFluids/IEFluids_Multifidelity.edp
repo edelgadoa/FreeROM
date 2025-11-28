@@ -235,9 +235,10 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
     real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
+        mpi(cout<< " -- NRe = "+NRe << endl;)
         Vh3P1 [uN, uNY, uNZ], [uh, uhY, uhZ];
         
-        uh[] = MBaseVcomplete(:, TimeSnap*NRe-1);
+        uh[] = MBaseVlow(:, TimeSnap*NRe-1);
         uN[] = 0;
        
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
@@ -254,11 +255,10 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         real ErrorL2G;
         mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
         mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
-        mpi(cout<<"El error en local: "<<endl;)
-        cout<<ErrorL2<<endl;
 
 
-        mpi(cout<< " -- NRe = "+NRe << endl;)
+
+  
         // Reconstrucción de la solución en el espacio reducido.
         
         ETiempo = 0;
