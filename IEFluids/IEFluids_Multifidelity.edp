@@ -250,7 +250,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
         ErrorPOD[] = uh[] - uN[];
-        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc);
+        ErrorL2(NRe-1) = ErrorPOD[].l2 ; //normX(ErrorPOD[], MatNormL2, bPETSc);
         real ErrorL2G;
         mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
         mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
