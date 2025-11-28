@@ -254,7 +254,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         real ErrorL2G;
         mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
         mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
-        mpi(savevtk("ErrorPOD_Re_"+NRe+"_Greedy_"+iGreedy+".vtu", Th, [ErrorPOD, ErrorPODY, ErrorPODZ], order=fforder, bin=1);)
+        mpi(cout<<"El error en local: "<<endl;)
+        cout<<ErrorL2<<endl;
+
 
         mpi(cout<< " -- NRe = "+NRe << endl;)
         // Reconstrucción de la solución en el espacio reducido.
