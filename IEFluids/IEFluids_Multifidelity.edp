@@ -244,13 +244,13 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             real alpha;
             //Vh3P1 [BasePOD, BasePODY, BasePODZ];
 			//BasePOD[] = BaseV[iPOD][];
-			alpha = innerprodX(uh[], BaseV[iPOD][], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
+			alpha = innerprodX(uh[], BaseV[iPOD][], MatNormL2, bPETSc); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
             uN[] += alpha*BaseV[iPOD][];
         }
         
         Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
         ErrorPOD[] = uh[] - uN[];
-        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, PETScON);
+        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc);
         real ErrorL2G;
         mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
         mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
