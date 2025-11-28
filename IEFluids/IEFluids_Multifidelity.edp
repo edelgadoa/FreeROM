@@ -243,9 +243,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 		for(int iPOD=0; iPOD<NbasesV; iPOD++){
             real alpha;
             //Vh3P1 [BasePOD, BasePODY, BasePODZ];
-			//BasePOD[] = BaseV[iPOD][](:,iPOD);
+			//BasePOD[] = BaseV[iPOD][];
 			alpha = innerprodX(uh[], BaseV[iPOD][], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
-            uN[] += alpha*MBaseV(:,iPOD);
+            uN[] += alpha*BaseV[iPOD][];
         }
         
         Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
