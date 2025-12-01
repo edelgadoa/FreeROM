@@ -236,6 +236,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
         mpi(cout<< " -- NRe = "+NRe << endl;)
+        /*
         Vh3P1 [uN, uNY, uNZ], [uh, uhY, uhZ];
         
         uh[] = MBaseVlow(:, TimeSnap*NRe-1);
@@ -251,11 +252,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
         ErrorPOD[] = uh[] - uN[];
-        ErrorL2(NRe-1) = ErrorPOD[].l2 ; //normX(ErrorPOD[], MatNormL2, bPETSc);
-        real ErrorL2G;
-        mpiAllReduce(ErrorL2(NRe-1), ErrorL2G, mpiCommWorld, mpiSUM);
-        mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2G<<endl;)
-
+        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc); // Ya es el error L2 global
+        mpi(cout<<"Error L2 de la solucion POD: "<<ErrorL2(NRe-1)<<endl;)
+        /*
 
 
   
@@ -284,6 +283,11 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
             }
+            // Calculo el error L2 de la solucion para cada Reynols
+            Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
+            ErrorPOD[] = Snap[] - uRB[];
+            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc); // Ya es el error L2 global
+
             // mpi(cout<<"coefLF:"<<coefLF<<endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
@@ -339,7 +343,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     mpiAllReduce(ErrorLinfL2, ErrorLinfL2G, mpiCommWorld, mpiSUM);
 
     write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
-    write("ErrorL1L2.txt", ErrorLinfL2G, 0, 0, 0);
+    write("ErrorL1Linf.txt", ErrorLinfL2G, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
