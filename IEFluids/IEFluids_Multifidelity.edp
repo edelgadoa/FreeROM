@@ -265,7 +265,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             // Calculo el error L2 de la solucion para cada Reynols
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
             ErrorPOD[] = Snap[] - uRB[];
-            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO
+            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc);// /normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO
             mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
             // mpi(cout<<"coefLF:"<<coefLF<<endl;)
             
