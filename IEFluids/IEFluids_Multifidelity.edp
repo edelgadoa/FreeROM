@@ -217,7 +217,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         BASEX = BaseFinalG[k];
         BASEY = BaseFinalGY[k];
         BASEZ = BaseFinalGZ[k];
-        savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
+        // savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
 	}
     real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
     for (int i=0; i<NbasesV; i++){
