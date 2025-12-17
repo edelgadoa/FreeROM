@@ -124,6 +124,10 @@ mpi(cout<< "Creando matriz de productos escalares...";)
 	matrix PescV = NormV(Vh3P1, Vh3P1); //L2PEMat;
 	MatNormL2 = PescV;
 }
+
+Vh3P1 [vectorX, vectorY, vectorZ];
+Vh3P1G [vectorXG, vectorYG, vectorZG];
+mpi(cout<<"uL.n= "<<vectorX[].n<<", uG.n"<<vectorXG[].n<<" , map.n= "<<mapVh3P1.n<<", D.n= "<<MatNormL2.D.n<<endl;)
 mpi(cout<< "Hecho." << endl;)
 
 /////////////////////////////////////////////////////////////////////////////////////
