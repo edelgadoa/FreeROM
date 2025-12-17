@@ -125,9 +125,6 @@ mpi(cout<< "Creando matriz de productos escalares...";)
 	MatNormL2 = PescV;
 }
 
-Vh3P1 [vectorX, vectorY, vectorZ];
-Vh3P1G [vectorXG, vectorYG, vectorZG];
-mpi(cout<<"uL.n= "<<vectorX[].n<<", uG.n"<<vectorXG[].n<<" , map.n= "<<mapVh3P1.n<<", D.n= "<<MatNormL2.D.n<<endl;)
 mpi(cout<< "Hecho." << endl;)
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -214,22 +211,22 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
 	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
 
-	// for(int k=0; k<NbasesV; k++){
-	// 	   reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
-    //     VhP1G BASEX, BASEY,BASEZ;
-    //     BASEX = BaseFinalG[k];
-    //     BASEY = BaseFinalGY[k];
-    //     BASEZ = BaseFinalGZ[k];
-    //     savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
-	// }
-    // real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
-    // for (int i=0; i<NbasesV; i++){
-	//     MBaseFinalG(:,i) = BaseFinalG[i][]; 
-    // }
+	for(int k=0; k<NbasesV; k++){
+		BaseFinalG[k][] = Local2Global(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
+        VhP1G BASEX, BASEY,BASEZ;
+        BASEX = BaseFinalG[k];
+        BASEY = BaseFinalGY[k];
+        BASEZ = BaseFinalGZ[k];
+        savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
+	}
+    real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
+    for (int i=0; i<NbasesV; i++){
+	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
+    }
     
-    // write("BaseLOCAL.txt", MBaseV,0,0,0,20);
-	// write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
-	// write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
+    write("BaseLOCAL.txt", MBaseV,0,0,0,20);
+	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
+	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
     /////////////////////////////////////////////////////////////////////////////////////
 
     // Bucle en el parámetro
