@@ -309,17 +309,14 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; //ETiempo.max; // ** Preguntar a Tomás si esto es correcto
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
-		
-
-
-		
+				
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
-    ErrorL1L2(iGreedy) = ErrorL2.l1;
+    ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
     ErrorLinfL2(iGreedy) = ErrorL2.max;
-    mpiAllReduce(ErrorL1L2, ErrorL1L2G, mpiCommWorld, mpiSUM);
+    mpiAllReduce(ErrorL1L2, ErrorL1L2G, mpiCommWorld, mpiSUM); 
     mpiAllReduce(ErrorLinfL2, ErrorLinfL2G, mpiCommWorld, mpiSUM);
 
     write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
