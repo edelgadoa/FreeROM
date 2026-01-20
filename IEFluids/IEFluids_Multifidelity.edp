@@ -156,7 +156,7 @@ mpi(cout<< "Hecho." << endl;)
 int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
-real epsPOD = 1e-3;
+real epsPOD = 1e-5;
 real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
 real[int] ETiempo(6);
@@ -225,9 +225,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
     }
     
-    write("BaseLOCAL.txt", MBaseV,0,0,0,20);
-	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
-	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
+    // write("BaseLOCAL.txt", MBaseV,0,0,0,20);
+	write("BasePOD_Greedy_" + iGreedy + "_prueba.txt", MBaseFinalG, 0, 0, 0, 20);
+	write("BasePOD_N_" + NbasesV + "_prueba.txt", MBaseFinalG, 0, 0, 0, 20);
     /////////////////////////////////////////////////////////////////////////////////////
 
     // Bucle en el parámetro
@@ -268,7 +268,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
             ErrorPOD[] = Snap[] - uRB[];
             ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO
-        mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
+            mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
 
 
             // mpi(cout<<"coefLF:"<<coefLF<<endl;)
@@ -320,8 +320,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
     ErrorLinfL2(iGreedy) = ErrorL2.max;
 
-    write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
-    write("ErrorL1Linf.txt", ErrorLinfL2G, 0, 0, 0);
+    write("ErrorL1L2_prueba.txt", ErrorL1L2G, 0, 0 ,0);
+    write("ErrorL1Linf_prueba.txt", ErrorLinfL2G, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
