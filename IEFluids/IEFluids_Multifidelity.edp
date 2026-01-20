@@ -238,7 +238,11 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     real[int] ErrorL2(ReSnap);
     for (int NRe=1; NRe<=ReSnap; NRe++){
         mpi(cout<< " -- NRe = "+NRe << endl;)
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> Cambios menores
         // Reconstrucción de la solución en el espacio reducido.
         
         ETiempo = 0;
@@ -267,8 +271,13 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             // Calculo el error L2 de la solucion para cada Reynols
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
             ErrorPOD[] = Snap[] - uRB[];
+<<<<<<< HEAD
             ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO
         mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
+=======
+            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc); // Ya es el error L2 global
+            mpi(cout<<"Error L2 de la POD: "<<ErrorL2(NRe-1)<<endl;)
+>>>>>>> Cambios menores
             // mpi(cout<<"coefLF:"<<coefLF<<endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
