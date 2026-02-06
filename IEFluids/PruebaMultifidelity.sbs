@@ -6,4 +6,4 @@
 
 
 
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 IEFluids_Multifidelity.edp > "terminal_Multifidelity.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 IEFluids_Multifidelity.edp > "terminal_Multifidelity_2.txt"
