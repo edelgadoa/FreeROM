@@ -14,6 +14,7 @@ load "PETSc"
 
 // Paralelo
 macro dimension() 3 //EOM
+bool PETScON = true;
 // macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM
 //
 // macro mpi(variable) if(mpirank==0){variable} //EOM
@@ -29,6 +30,7 @@ macro dimension() 3 //EOM
 // EndMacro
 
 include "macro_ddm.idp"
+
 
 // Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
 // include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
@@ -123,6 +125,7 @@ mpi(cout<< "Creando matriz de productos escalares...";)
 	matrix PescV = NormV(Vh3P1, Vh3P1); //L2PEMat;
 	MatNormL2 = PescV;
 }
+
 mpi(cout<< "Hecho." << endl;)
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -168,6 +171,9 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
+real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Para calcular los errores POD en el Greedy
+real[int] ErrorL1L2G(maxGreedy), ErrorLinfL2G(maxGreedy); // Lo mismo pero en Global
+
 for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
     mpi(cout<< "Iteracion "+iGreedy+" del Greedy...";)
@@ -202,16 +208,37 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     include "POD.idp" // Hay que hacerla en paralelo, para que todo vaya bien (TODO)
     POD(MBaseV, MatNormL2, BaseV, NbasesV, autovalVel);
     mpi(cout << "Terminado con " + NbasesV + " bases" << endl;)
+    
+	// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
+	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
 
+	for(int k=0; k<NbasesV; k++){
+		BaseFinalG[k][] = Local2Global(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
+        VhP1G BASEX, BASEY,BASEZ;
+        BASEX = BaseFinalG[k];
+        BASEY = BaseFinalGY[k];
+        BASEZ = BaseFinalGZ[k];
+        // savevtk("BaseFinaL_"+k+".vtu", ThG, [BASEX, BASEY, BASEZ], order=fforder, bin =1);
+	}
+    real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
+    for (int i=0; i<NbasesV; i++){
+	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
+    }
+    
+    // write("BaseLOCAL.txt", MBaseV,0,0,0,20);
+	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
+	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
     /////////////////////////////////////////////////////////////////////////////////////
 
     // Bucle en el parámetro
 
     mpi(cout<< "Multifidelity..."<< endl;)
     EReynolds = 0;
-    for (int NRe=1; NRe<=ReSnap; NRe++){
 
+    real[int] ErrorL2(ReSnap);
+    for (int NRe=1; NRe<=ReSnap; NRe++){
         mpi(cout<< " -- NRe = "+NRe << endl;)
+
         // Reconstrucción de la solución en el espacio reducido.
         
         ETiempo = 0;
@@ -221,7 +248,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
-            Snap[] = MBaseVlow(:, TimeSnap-1+(NRe-1)*TimeSnap); 
+            Snap[] = MBaseVlow(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
 
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
             
@@ -230,13 +257,20 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [uRB, uRBY, uRBZ]; uRB[]=0.;
             
             for(int j=0;j<NbasesV;j++){
-                // Vh3P1 [BaseV, BaseVY, BaseVZ];
-                // BaseV[] = MBaseV(:, j); //Tomo la base POD correspondiente para calcular su coeficiente 
+               // Vh3P1 [BaseV, BaseVY, BaseVZ];
+                //BaseV[] = MBaseV(:, j); //Tomo la base POD correspondiente para calcular su coeficiente 
                 //Enrique: ¿Esto es necesario? BaseV en teoría se modifica con POD, MBaseV no lo sé... 
                 
                 coefLF(j) = innerprodX(BaseV[j][], Snap[], MatNormL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
             }
+            // Calculo el error L2 de la solucion para cada Reynols
+            Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
+            ErrorPOD[] = Snap[] - uRB[];
+            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO
+            mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
+
+
             // mpi(cout<<"coefLF:"<<coefLF<<endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
@@ -278,27 +312,16 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; //ETiempo.max; // ** Preguntar a Tomás si esto es correcto
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
-		
-		// Guardamos las bases POD de cada iteración del Greedy, así las podemos recuperar cuando queramos
-		Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
-		
-		for(int k=0; k<NbasesV; k++){
-			reduceSolution(BaseV[k], BaseFinalG[k], MatNormL2.D, mapVh3P1);
-		}
-
-        real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
-        for (int i=0; i<NbasesV; i++){
-    	    MBaseFinalG(:,i) = BaseFinalG[i][]; 
-        }
-        
-		write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
-		write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
-
-		
+				
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
+    ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
+    ErrorLinfL2(iGreedy) = ErrorL2.max;
+
+    write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
+    write("ErrorL1Linf.txt", ErrorLinfL2G, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
@@ -325,4 +348,3 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     EReynolds0 = EReynolds;
     // ** Añadir más comentarios para saber por donde vamos
 }
-
