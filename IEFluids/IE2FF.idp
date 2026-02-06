@@ -2,6 +2,7 @@
 // FreeROM 
 ///////////////
 
+// Para El Low-Fidelity es mx=136, my = 44 y mz=64
 
 func real[int] IE2FF(real[int] &v, int &mx, int &my, int &mz){
 	real[int] w(v.n);

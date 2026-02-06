@@ -132,10 +132,7 @@ for (int iGreedy=0; iGreedy<NGreedyMAX; iGreedy++){ // Bucle de las iteraciones 
 			BasePOD[] = MBasePOD(:,iPOD);
 			alpha(iPOD) = innerprodX(Snap[], BasePOD[], MatNormL2, PETScON); // Lo hago así porque lo tengo más fácil. Se podría pensar en crear un innerprodX que lo haga directo 
 		}
-<<<<<<< HEAD
-=======
-    	// mpi(cout<<alpha<<endl;)
->>>>>>> 29cb19d25f1a88bdc91e9112bf2e2531f61b01d8
+
     }
 }
    //  for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
