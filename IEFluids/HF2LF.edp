@@ -133,7 +133,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         // LowFidelity
         Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
         Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ], [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];		
-        readvector("SnapshotsLF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        readvector("SnapshotsLowF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
         
         BaseVLFG[] = SolLFG;
         BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
