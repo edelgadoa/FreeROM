@@ -58,8 +58,8 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 		
 		write("SnapshotsLowF/V_"+5*NRe+"_meanfile"+NTemp+".txt", Vh[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 0);
 		write("SnapshotsLowF/P_"+5*NRe+"_meanfile"+NTemp+".txt", Ph[(NTemp-1) + (NRe-1)*TimeSnap][], 0, 0, 1); //lo hago en "paralelo", un procesador para vel y otro para pres
-//		savevtk("Snapshots/IEfluidsSnapshot"+(NTemp-1) + (NRe-1)*TimeSnap+".vtu", Th, Ph[(NTemp-1) + (NRe-1)*TimeSnap], 
-//				[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]], dataname="Pressure Velocity", order=fforder);
+		savevtk("Snapshots/IEfluidsSnapshot"+(NTemp-1) + (NRe-1)*TimeSnap+".vtu", Th, Ph[(NTemp-1) + (NRe-1)*TimeSnap], 
+			[Vh[(NTemp-1) + (NRe-1)*TimeSnap], VhY[(NTemp-1) + (NRe-1)*TimeSnap], VhZ[(NTemp-1) + (NRe-1)*TimeSnap]], dataname="Pressure Velocity", order=fforder);
 	}
 }
 
