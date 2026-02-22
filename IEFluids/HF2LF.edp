@@ -36,7 +36,7 @@ include "../Auxiliary/search.idp"
 mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla HF
 mesh3 ThG = Th;
 
-mesh3 ThLF = readmesh3("IEFluids_LF.mesh"); //Cargo la malla LF
+mesh3 ThLF = readmesh3("IEfluids_LF.mesh"); //Cargo la malla LF
 mesh3 ThLFG = ThLF;
 
 // Macros para las mallas en paralelo **Puede ser que se necesiten las dos mallas
@@ -47,7 +47,7 @@ macro ThLFN2O() myN2oLF // EOM
 buildDmesh(Th);
 buildDmesh(ThLF);
 
-int ReSnap = 3; // numero de Snapshots de Reynolds **3 snapshots LF -> Re=5,10,15
+int ReSnap = 20; // numero de Snapshots de Reynolds **3 snapshots LF -> Re=5,10,15
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
@@ -114,10 +114,10 @@ Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*ReSnap),
                
 
 for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
-    string Reynolds = 5*NRe;
+    string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
-        mpi(cout << "V_" + 5*NRe + "_meanfile" + NTemp << endl;)
+        mpi(cout << "V_" + NRe + "_meanfile" + NTemp << endl;)
         
         // HighFidelity
         Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
@@ -130,18 +130,21 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         SnapshotsHF[i+(NRe-1)*TimeSnap][] = BaseV[];
         
         
-        // LowFidelity
-        Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
-        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ], [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];		
-        readvector("SnapshotsLowF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        // // LowFidelity interp 
+        // Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
+        // Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ], [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];		
+        // readvector("SnapshotsLowF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
         
-        BaseVLFG[] = SolLFG;
-        BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
+        // BaseVLFG[] = SolLFG;
+        // BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
+        
+        Vh3P1LF [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];
+        Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
         
         BaseVHFinterp[] = HF2LF*BaseV[];
-        
-        SnapshotsLF[i+(NRe-1)*TimeSnap][] = BaseVLF[];
-        SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
+        BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
+
+        write("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", BaseVLFG[], 0, 0, 0, 15);
     }
 }
 
