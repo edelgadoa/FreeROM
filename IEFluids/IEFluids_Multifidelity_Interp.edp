@@ -37,26 +37,26 @@ mesh3 ThG = Th, ThLFG = ThLF;
 
 // Creo la malla truncada
 mpi(cout<<" - Truncando malla global LF y creando mallas truncadas locales..."<<endl;)
-mesh3 ThTruncLF = trunc(ThLF, ((x<1800)),split=1); 
-ThTruncLF = trunc(ThTruncLF, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
-ThTruncLF = trunc(ThTruncLF, ((y<300)),split=1); //300 //original 240
-ThTruncLF = trunc(ThTruncLF, ((y>100)),split=1); //100 //original 40
-ThTruncLF = trunc(ThTruncLF, ((z<345)),split=1); //345 //original 350
-ThTruncLF = trunc(ThTruncLF, ((z>145)),split=1); //145 //original 150
+mesh3 ThTrunc = trunc(ThLF, ((x<1800)),split=1); 
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
 
 //Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
-mesh3 ThTruncLFG = ThTruncLF; // For the global mesh
+mesh3 ThTruncG = ThTrunc; // For the global mesh
 
 
 // Macros para la malla en paralelo
-int[int] myN2o, myN2oLF, myN2oTruncLF;
+int[int] myN2o, myN2oLF, myN2oTrunc;
 macro ThN2O() myN2o //EOM
 macro ThLFN2O() myN2oLF //EOM
-macro ThTruncLFN2O() myN2oTruncLF // EOM
+macro ThTruncN2O() myN2oTrunc // EOM
 
 buildDmesh(Th);
 buildDmesh(ThLF);
-buildDmesh(ThTruncLF);
+buildDmesh(ThTrunc);
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +69,7 @@ bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
 
 /////////////////////////////////////////////////////////////////////////////////////
 mpi(cout<< "Creando espacio de elementos finitos..."<<endl;)
+macro PkP1() P1 // EOM
 macro Pk3P1() [P1,P1,P1] // EOM
 
 // Variables donde guardo los snapshots que cargo
@@ -79,8 +80,10 @@ fespace Vh3P1(Th, Pk3P1);
 fespace Vh3P1LFG(ThLFG, Pk3P1);
 fespace Vh3P1LF(ThLF, Pk3P1);
 
-fespace Vh3P1truncLF(ThTruncLF, Pk3P1);  
-fespace Vh3P1truncLFG(ThTruncLFG, Pk3P1);
+fespace Vh3P1trunc(ThTrunc, Pk3P1);  
+fespace Vh3P1truncG(ThTruncG, Pk3P1);
+
+fespace VhP1trunc(ThTrunc, PkP1); 
 
 matrix MinterpHF2LF = interpolate(Vh3P1LF, Vh3P1);
 
@@ -98,7 +101,7 @@ int[int] mapVh3P1trunc, mapVh3P1, mapVh3P1LF;
 
 mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
 mapVh3P1LF = restrict(Vh3P1LF, Vh3P1LFG, myN2oLF);
-mapVh3P1trunc = restrict(Vh3P1truncLF, Vh3P1truncLFG, myN2oTruncLF);
+mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
 
 {
 	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
@@ -221,6 +224,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         // for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
             Vh3P1 [Snap, SnapY, SnapZ];
+            Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
             Snap[] = MBaseVcomplete(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
 
@@ -233,7 +237,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             for(int j=0; j<NbasesV; j++){               
                 coefLF(j) = innerprodX(BaseLFV[j][], Snap[], MatNormLFL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
-                uRBFL[] = MinterpHF2LF*uRB[];
+                uRBLF[] = MinterpHF2LF*uRB[];
             }
 
             // Calculo el error L2 de la solucion para cada Reynols
@@ -244,12 +248,12 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
-            VhP1truncLF uRBTrunc, uRBTruncY, uRBTruncZ;
-            uRBTrunc = uRBLF; uRBTruncLFY = uRBY; uRBTruncZ = uRBLFZ; 
+            VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
+            uRBTrunc = uRBLF; uRBTruncY = uRBY; uRBTruncZ = uRBLFZ; 
             
                         
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
-            real[int] espectroIEFluids = espectro3D(uRBTruncLF[], uRBTruncLFY[], uRBTruncLFZ[], kmax); //
+            real[int] espectroIEFluids = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax); //
                      
             write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
