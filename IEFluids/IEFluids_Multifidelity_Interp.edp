@@ -37,7 +37,7 @@ mesh3 ThG = Th, ThLFG = ThLF;
 
 // Creo la malla truncada
 mpi(cout<<" - Truncando malla global LF y creando mallas truncadas locales..."<<endl;)
-mesh3 ThTruncLF = trunc(ThLFG, ((x<1800)),split=1); 
+mesh3 ThTruncLF = trunc(ThLF, ((x<1800)),split=1); 
 ThTruncLF = trunc(ThTruncLF, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
 ThTruncLF = trunc(ThTruncLF, ((y<300)),split=1); //300 //original 240
 ThTruncLF = trunc(ThTruncLF, ((y>100)),split=1); //100 //original 40
