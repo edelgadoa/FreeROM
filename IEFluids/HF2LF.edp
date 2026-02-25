@@ -156,9 +156,9 @@ for (int i=0; i<TimeSnap; i++){
     Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap + i][];
     Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[2*TimeSnap + i][];
     
-    ErrorSnap5(i) = normX(Snap5[], MatNormL2LF, bPETSc);
-    ErrorSnap10(i) = normX(Snap10[], MatNormL2LF, bPETSc);
-    ErrorSnap15(i) = normX(Snap15[], MatNormL2LF, bPETSc);
+    ErrorSnap5(i) = normX(Snap5[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[i][],MatNormL2LF, bPETSc);
+    ErrorSnap10(i) = normX(Snap10[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[TimeSnap + i][],MatNormL2LF, bPETSc);
+    ErrorSnap15(i) = normX(Snap15[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[2*TimeSnap + i][],MatNormL2LF, bPETSc);
 }
 
 mpi(cout<<"Error Snap5:"<<ErrorSnap5<<endl<<"Error Snap10:"<<ErrorSnap10<<endl<<"Error Snap15:"<<ErrorSnap15<<endl;)
