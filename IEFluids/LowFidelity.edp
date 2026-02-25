@@ -108,7 +108,9 @@ int[int] mapVh3P1LF;
 mapVh3P1LF = restrict(Vh3P1LF, Vh3P1LFG, myN2oLF);
 
 mpi(cout<<"-- Cargamos Snapshots (HF-LF) --"<<endl;)
-real[int, int] SnapshotsHF(Vh3P1.ndof, TimeSnap*ReSnap), SnapshotsLF(Vh3P1LF.ndof, TimeSnap*ReSnap); 
+Vh3P1[int] [SnapshotsHF, SnapshotsHFY, SnapshotsHFZ](TimeSnap*ReSnap);
+Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*ReSnap), 
+		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*ReSnap); 
                
 
 for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
@@ -125,17 +127,20 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         BaseVG[] = SolG;
         BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
         
-        SnapshotsHF(:,i+(NRe-1)*TimeSnap) = BaseV[];
+        SnapshotsHF[i+(NRe-1)*TimeSnap][] = BaseV[];
         
         
         // LowFidelity
         Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
-        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
-        readvector("SnapshotsLF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ], [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];		
+        readvector("SnapshotsLowF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
         
         BaseVLFG[] = SolLFG;
         BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
         
-        SnapshotsLF(:,i+(NRe-1)*TimeSnap) = BaseVLF[];
+        BaseVHFinterp[] = HF2LF*BaseV[];
+        
+        SnapshotsLF[i+(NRe-1)*TimeSnap][] = BaseVLF[];
+        SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
     }
 }
