@@ -223,19 +223,21 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         
         // for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
+            Vh3P1LF [SnapLF, SnapLFY, SnapLFZ];
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
-            Snap[] = MBaseVcomplete(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
+            Snap[] = MBaseVcomplete(:, TimeSnap*NRe-1);
+            SnapLF[] = MBaseVlow(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
 
-            [SnapTrunc, SnapTruncY, SnapTruncZ] = [Snap, SnapY, SnapZ]; // Tomo los truncados porque será lo que use el estimador
+            [SnapTrunc, SnapTruncY, SnapTruncZ] = [SnapLF, SnapLFY, SnapLFZ]; // Tomo los truncados porque será lo que use el estimador
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
             real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
             Vh3P1 [uRB, uRBY, uRBZ]; uRB[]=0.; //La solucion RB tiene que ser HF, pues es combinacion de las funciones de base POD (HF)
             Vh3P1LF [uRBLF, uRBLFY, uRBLFZ]; //Tengo que obtener su interpolacion a LF para hallar el Kolmogorov
             for(int j=0; j<NbasesV; j++){               
-                coefLF(j) = innerprodX(BaseLFV[j][], Snap[], MatNormLFL2, bPETSc); 
+                coefLF(j) = innerprodX(BaseLFV[j][], SnapLF[], MatNormLFL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
                 uRBLF[] = MinterpHF2LF*uRB[];
             }
