@@ -258,7 +258,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             ErrorPODLF[] = SnapLF[] - uRBLF[];
             
             ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
-            real ErrorL2LF = normX(ErrorPODLF[], MatNormL2LF, bPETSc)/normX(SnapLF[], MatNormL2LF, bPETSc);
+            real ErrorL2LF = normX(ErrorPODLF[], MatNormLFL2, bPETSc)/normX(SnapLF[], MatNormLFL2, bPETSc);
             mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
             mpi(cout<<" Error L2 relativo LowF = " << ErrorL2LF<< endl;)
             
