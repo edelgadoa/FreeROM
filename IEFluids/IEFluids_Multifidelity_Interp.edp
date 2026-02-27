@@ -211,8 +211,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     }
     
     // Guardo dos veces la base, una destaca el numero de iter Greedy y otra destaca el numero de bases que hay
-	write("BasePOD_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
-	write("BasePOD_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
+	write("BaseMF_Greedy_" + iGreedy + ".txt", MBaseFinalG, 0, 0, 0, 20);
+	write("BaseMF_N_" + NbasesV + ".txt", MBaseFinalG, 0, 0, 0, 20);
 
     /////////////////////////////////////////////////////////////////////////////////////
 
