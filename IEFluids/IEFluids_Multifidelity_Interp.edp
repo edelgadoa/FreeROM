@@ -305,8 +305,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
     mpi(cout<<"Error maximo relativo"<<ErrorLinfL2<<endl;)
 
-    write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
-    write("ErrorL1Linf.txt", ErrorLinfL2G, 0, 0, 0);
+    write("ErrorL1L2.txt", ErrorL1L2, 0, 0 ,0);
+    write("ErrorL1Linf.txt", ErrorLinfL2, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
