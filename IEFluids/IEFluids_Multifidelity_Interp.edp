@@ -159,7 +159,7 @@ int kmax = 24; // ** Comprobar
 int kinf = 5; // ** Comprobar
 int ksup = kmax; // ** Comprobar
 
-include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
+include "fourier3D_IEFluids_LowF.idp"; // Funciones para calcular la transformada de fourier
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
@@ -252,10 +252,15 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
             // Calculo el error L2 de la solucion para cada Reynols
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
+            Vh3P1LF [ErrorPODLF, ErrorPODLFY, ErrorPODLFZ];
+            
             ErrorPOD[] = Snap[] - uRB[];
+            ErrorPODLF[] = SnapLF[] - uRBLF[];
             
             ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
+            real ErrorL2LF = normX(ErrorPODLF[], MatNormL2LF, bPETSc)/normX(SnapLF[], MatNormL2LF, bPETSc);
             mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
+            mpi(cout<<" Error L2 relativo LowF = " << ErrorL2LF<< endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
