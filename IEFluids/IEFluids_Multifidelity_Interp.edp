@@ -29,7 +29,7 @@ include "IO.idp"
 include "../Auxiliary/search.idp"
 
 /////////////////////////////////////////////////////////////////////////////////////
-mpi(cout<< "Cargando la mallas HF y LF";)
+mpi(cout<< "Cargando la mallas HF y LF"<<endl;)
 mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla HF
 mesh3 ThLF = readmesh3("IEfluids_LF.mesh"); // Cargo la malla LF
 mesh3 ThG = Th, ThLFG = ThLF;
@@ -117,21 +117,29 @@ mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-mpi(cout<< "Leyendo datos low fidelity..."<<endl;)
-real[int, int] MBaseVlow(Vh3P1LF.ndof, TimeSnap*ReSnap); 
+mpi(cout<< "Leyendo datos low fidelity y high fidelity (para calcular errores)..."<<endl;)
+real[int, int] MBaseVlow(Vh3P1LF.ndof, TimeSnap*ReSnap), MBaseVhigh(Vh3P1.ndof, TimeSnap*ReSnap); 
 
 for (int NRe=1; NRe<=ReSnap; NRe++){
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
         mpi(cout << "V_" + NRe + "_meanfile" + NTemp << endl;)
         
-        Vh3P1LFG [BaseVG,BaseVGY,BaseVGZ];		
-        Vh3P1LF [BaseV,BaseVY,BaseVZ];		
-        readvector("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolG, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
+        Vh3P1LFG [BaseVLFG,BaseVGLFY,BaseVGLFZ];		
+        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
+        readvector("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolGLF, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
+        BaseVLFG[] = SolGLF;
+        BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh (LF)
+        MBaseVlow(:,i+(NRe-1)*TimeSnap) = BaseVLF[];
+        
+        Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
+        Vh3P1 [BaseV,BaseVY,BaseVZ];		
+        readvector("Snapshots/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolG, 0); // Estos son los HIGH fidelity
         BaseVG[] = SolG;
-        BaseV[] = BaseVG[](mapVh3P1LF); // Load in the local mesh (LF)
-  
-        MBaseVlow(:,i+(NRe-1)*TimeSnap) = BaseV[];
+        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh (LF)
+        
+        MBaseVhigh(:,i+(NRe-1)*TimeSnap) = BaseV[];
+        
     }
 }
 
@@ -227,7 +235,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
-            Snap[] = MBaseVcomplete(:, TimeSnap*NRe-1);
+            Snap[] = MBaseVhigh(:, TimeSnap*NRe-1);
             SnapLF[] = MBaseVlow(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
 
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [SnapLF, SnapLFY, SnapLFZ]; // Tomo los truncados porque será lo que use el estimador
