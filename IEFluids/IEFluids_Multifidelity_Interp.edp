@@ -159,7 +159,7 @@ int kmax = 24; // ** Comprobar
 int kinf = 5; // ** Comprobar
 int ksup = kmax; // ** Comprobar
 
-include "fourier3D_IEFluids_LowF.idp"; // Funciones para calcular la transformada de fourier
+include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
