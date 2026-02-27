@@ -235,7 +235,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [Snap, SnapY, SnapZ];
             Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
             
-            Snap[] = MBaseVhigh(:, TimeSnap*NRe-1);
+            Snap[] = MBaseVhigh(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
             SnapLF[] = MBaseVlow(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
 
             [SnapTrunc, SnapTruncY, SnapTruncZ] = [SnapLF, SnapLFY, SnapLFZ]; // Tomo los truncados porque será lo que use el estimador
@@ -254,7 +254,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
             ErrorPOD[] = Snap[] - uRB[];
             
-            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc);///normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
+            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
             mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
