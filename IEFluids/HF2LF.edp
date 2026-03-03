@@ -44,6 +44,9 @@ int[int] myN2o, myN2oLF;
 macro ThN2O() myN2o //EOM
 macro ThLFN2O() myN2oLF // EOM
 
+macro ThOverlap() 2 // EOM  
+macro ThLFOverlap() 2 // EOM  
+
 buildDmesh(Th);
 buildDmesh(ThLF);
 
@@ -145,6 +148,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
 
         write("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", BaseVLFG[], 0, 0, 0, 15);
+        // savevtk("SnapshotsFinterp/V_"+ NRe + "_meanfile" + NTemp + ".vtu", ThF)
     }
 }
 
