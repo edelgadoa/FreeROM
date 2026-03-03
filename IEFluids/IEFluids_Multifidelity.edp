@@ -241,7 +241,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
         // Reconstrucción de la solución en el espacio reducido.
         
-        ETiempo = 0;
+        // ETiempo = 0;
         
         // for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
             // Leo en cada tiempo
@@ -320,8 +320,8 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
     ErrorLinfL2(iGreedy) = ErrorL2.max;
 
-    write("ErrorL1L2.txt", ErrorL1L2G, 0, 0 ,0);
-    write("ErrorL1Linf.txt", ErrorLinfL2G, 0, 0, 0);
+    write("ErrorL1L2.txt", ErrorL1L2, 0, 0 ,0);
+    write("ErrorL1Linf.txt", ErrorLinfL2, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
