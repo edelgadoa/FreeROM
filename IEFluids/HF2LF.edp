@@ -112,8 +112,8 @@ mapVh3P1LF = restrict(Vh3P1LF, Vh3P1LFG, myN2oLF);
 
 mpi(cout<<"-- Cargamos Snapshots (HF-LF) --"<<endl;)
 Vh3P1[int] [SnapshotsHF, SnapshotsHFY, SnapshotsHFZ](TimeSnap*ReSnap);
-Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*ReSnap), 
-		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*ReSnap); 
+Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*3), 
+		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*3); 
                
 
 for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
@@ -146,19 +146,34 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         
         BaseVHFinterp[] = HF2LF*BaseV[];
         BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
-
+        
+        SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
+       
         write("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", BaseVLFG[], 0, 0, 0, 15);
-        // savevtk("SnapshotsFinterp/V_"+ NRe + "_meanfile" + NTemp + ".vtu", ThF)
+        // savevtk("SnapshotsFinterp/V_"+ NRe + "_meanfile" + NTemp + ".vtu", ThFLG, [BaseVLFG,BaseVLFGY,BaseVLFGZ]);
     }
 }
 
+for (int NRe=1; NRe<=3; NRe++){ //Re = 1->5,2->10,3->15
+    for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+        int i = NTemp-1;
+        Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
+        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
+        readvector("SnapshotsLowF/V_" + NRe*5 + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        
+        BaseVLFG[] = SolLFG;
+        BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
+        SnapshotsLF[i+(NRe-1)*TimeSnap][] = BaseVLF[];
+
+    }
+}
 
 real[int] ErrorSnap5(TimeSnap), ErrorSnap10(TimeSnap), ErrorSnap15(TimeSnap);
 for (int i=0; i<TimeSnap; i++){
     Vh3P1LF [Snap5, Snap5Y, Snap5Z], [Snap10, Snap10Y, Snap10Z], [Snap15,Snap15Y,Snap15Z];
-    Snap5[] = SnapshotsLF[i][] - SnapshotsHFinterp[i][];
-    Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap + i][];
-    Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[2*TimeSnap + i][];
+    Snap5[] = SnapshotsLF[i][] - SnapshotsHFinterp[TimeSnap*4 + i][];
+    Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*9 + i][];
+    Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*14 + i][];
     
     ErrorSnap5(i) = normX(Snap5[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[i][],MatNormL2LF, bPETSc);
     ErrorSnap10(i) = normX(Snap10[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[TimeSnap + i][],MatNormL2LF, bPETSc);
