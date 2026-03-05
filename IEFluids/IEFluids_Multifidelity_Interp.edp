@@ -57,7 +57,7 @@ macro ThTruncN2O() myN2oTrunc // EOM
 buildDmesh(Th);
 buildDmesh(ThLF);
 buildDmesh(ThTrunc);
-
+// macro def(i) [i, i#Y, i#Z] // EOM
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -92,7 +92,7 @@ Mat MatNormL2, MatNormLFL2;
 int[int] mapVh3P1trunc, mapVh3P1, mapVh3P1LF; 
 
 {
-	macro def(i) [i, iY, iZ] //
+	macro def(i) [i, i#Y, i#Z] //
 	macro init(i) [i, i, i] // EOM
 	
     createMat(Th, MatNormL2, Pk3P1);
@@ -155,9 +155,9 @@ real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
 real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
 real[int] EGreedy(maxGreedy);
-int kmax = 24; // ** Comprobar
-int kinf = 5; // ** Comprobar
-int ksup = kmax; // ** Comprobar
+int kmax = 24; // ** Comprobar (approx 12)
+int kinf = 5; // ** Comprobar (se puede hacer mas pequeños)
+int ksup = kmax; // ** Comprobar (approx 15)
 
 include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
 
@@ -205,7 +205,16 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 	Vh3P1G[int] [BaseFinalG, BaseFinalGY, BaseFinalGZ](NbasesV);
     real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
 	for(int k=0; k<NbasesV; k++){
-        BaseLFV[k][] = MinterpHF2LF*BaseV[k][]; // Interpolo la base POD en la malla LF para el calculo de los coef. POD.
+
+        // BaseLFV[k][] = MinterpHF2LF*BaseV[k][]; // Interpolo la base POD en la malla LF para el calculo de los coef. POD.
+        {
+            macro def(i) [i, i#Y, i#Z] // EOM
+            macro init(i) [i, i, i] // EOM
+            Vh3P1 def(BaseVaux);  BaseVaux[]= BaseV[k][];
+            Vh3P1LF def(BaseLFVaux);
+		    VecInterpolate(Th, [P1,P1,P1], BaseVaux, ThLF, [P1,P1,P1], BaseLFVaux);
+            BaseLFV[k][] = BaseLFVaux[];
+        }
 		BaseFinalG[k][] = Local2Global(BaseV[k][], BaseFinalG[k][], MatNormL2.D, mapVh3P1);
         MBaseFinalG(:,k) = BaseFinalG[k][]; 	    
     }
@@ -242,13 +251,17 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
             real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
-            Vh3P1 [uRB, uRBY, uRBZ]; uRB[]=0.; //La solucion RB tiene que ser HF, pues es combinacion de las funciones de base POD (HF)
+            Vh3P1 [uRB, uRBY, uRBZ]; 
+            uRB[] = 0.; //La solucion RB tiene que ser HF, pues es combinacion de las funciones de base POD (HF)
             Vh3P1LF [uRBLF, uRBLFY, uRBLFZ]; //Tengo que obtener su interpolacion a LF para hallar el Kolmogorov
             for(int j=0; j<NbasesV; j++){               
                 coefLF(j) = innerprodX(BaseLFV[j][], SnapLF[], MatNormLFL2, bPETSc); 
                 uRB[] += coefLF(j)*BaseV[j][];
-                uRBLF[] = MinterpHF2LF*uRB[];
+                //uRBLF[] = MinterpHF2LF*uRB[];
             }
+            // VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
+            
+               
 
             // Calculo el error L2 de la solucion para cada Reynols
             Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];

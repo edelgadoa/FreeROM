@@ -1,9 +1,9 @@
 // Archivo auxiliar calculo de transformadas de fourier
 
 
-real[int] dFourier;
-PartitionCreate(ThTrunc, dFourier, PkP1); 
-VhP1trunc DP1; DP1[] = dFourier;
+// real[int] dFourier;
+// PartitionCreate(ThTrunc, dFourier, PkP1); 
+// VhP1trunc DP1; DP1[] = dFourier;
 
 
 Mat MProdL2;
