@@ -116,8 +116,8 @@ Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*3),
 		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*ReSnap); 
                
 
-for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
-    string Reynolds = NRe;
+for (int NRe=1; NRe<=3; NRe++){ //Re = 1->5,2->10,3->15
+    string Reynolds = 5*NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
         mpi(cout << "V_" + NRe + "_meanfile" + NTemp << endl;)
@@ -180,9 +180,9 @@ for (int NRe=1; NRe<=3; NRe++){ //Re = 1->5,2->10,3->15
 real[int] ErrorSnap5(TimeSnap), ErrorSnap10(TimeSnap), ErrorSnap15(TimeSnap);
 for (int i=0; i<TimeSnap; i++){
     Vh3P1LF [Snap5, Snap5Y, Snap5Z], [Snap10, Snap10Y, Snap10Z], [Snap15,Snap15Y,Snap15Z];
-    Snap5[] = SnapshotsLF[i][] - SnapshotsHFinterp[TimeSnap*4 + i][];
-    Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*9 + i][];
-    Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*14 + i][];
+    Snap5[] = SnapshotsLF[i][] - SnapshotsHFinterp[i][];
+    Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap + i][];
+    Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*2 + i][];
     
     ErrorSnap5(i) = normX(Snap5[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[i][],MatNormL2LF, bPETSc);
     ErrorSnap10(i) = normX(Snap10[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[TimeSnap + i][],MatNormL2LF, bPETSc);
