@@ -210,7 +210,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         {
             macro def(i) [i, i#Y, i#Z] // EOM
             macro init(i) [i, i, i] // EOM
-            Vh3P1 def(BaseVaux);  BaseVaux[]= BaseV[k][];
+            Vh3P1 def(BaseVaux);  BaseVaux[] = BaseV[k][];
             Vh3P1LF def(BaseLFVaux);
 		    VecInterpolate(Th, [P1,P1,P1], BaseVaux, ThLF, [P1,P1,P1], BaseLFVaux);
             BaseLFV[k][] = BaseLFVaux[];
@@ -259,7 +259,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 uRB[] += coefLF(j)*BaseV[j][];
                 //uRBLF[] = MinterpHF2LF*uRB[];
             }
-            // VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
+            VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
             
                
 
