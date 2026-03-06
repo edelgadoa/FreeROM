@@ -1,9 +1,0 @@
-#!/bin/bash
-#SBATCH --time=14-00:00:00
-#SBATCH --ntasks=32
-#SBATCH --mem=0
-#SBATCH --partition=cpu
-
-
-
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 HF2LF.edp > "terminal_Multifidelity_2.txt"

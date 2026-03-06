@@ -1,0 +1,8 @@
+#!/bin/bash
+#SBATCH --time=14-00:00:00
+#SBATCH --ntasks=4
+#SBATCH --partition=cpu
+#SBATCH --mem=0
+
+
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 HF2LF.edp > "terminal_SnapLF.txt"

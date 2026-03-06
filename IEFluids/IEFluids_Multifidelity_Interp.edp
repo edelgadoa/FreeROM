@@ -155,7 +155,7 @@ real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
 real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
 real[int] EGreedy(maxGreedy);
-int kmax = 24; // ** Comprobar (approx 12)
+int kmax = 12; // ** Comprobar (approx 12)
 int kinf = 5; // ** Comprobar (se puede hacer mas pequeños)
 int ksup = kmax; // ** Comprobar (approx 15)
 

@@ -1,0 +1,7 @@
+#!/bin/bash
+#SBATCH --time=14-00:00:00
+#SBATCH --ntasks=32
+#SBATCH --mem=0
+#SBATCH --partition=cpu
+
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 IEFluids_Multifidelity_Interp.edp > "terminal_LowFidelity.txt"
