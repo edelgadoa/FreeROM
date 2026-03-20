@@ -145,15 +145,33 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
         Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
         Vh3P1LF [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];
 
-       // BaseVHFinterp[] = HF2LF*BaseV[];
-       {
-            macro def(i) [i, i#Y, i#Z] // EOM
-            macro init(i) [i, i, i] // EOM
-            // Vh3P1 def(SnapHF) = BaseV;
-            // Vh3P1LF def(SnapLF);
-		    VecInterpolate(Th, [P1,P1,P1], BaseV, ThLF, [P1,P1,P1], BaseVHFinterp);
-            SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
-       }
+        // BaseVHFinterp[] = HF2LF*BaseV[];
+       // {
+//             macro def(i) [i, i#Y, i#Z] // EOM
+//             macro init(i) [i, i, i] // EOM
+//             // Vh3P1 def(SnapHF) = BaseV;
+//             // Vh3P1LF def(SnapLF);
+// 		    VecInterpolate(Th, [P1,P1,P1], BaseV, ThLF, [P1,P1,P1], BaseVHFinterp);
+//             SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
+//        }
+
+		
+// 		Hacemos proyección L2 -- (Es una prueba)
+		{
+			Mat Minterp;
+			
+				varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
+				macro def(i) [i, iY, iZ];
+				macro init(i) [i, i, i];
+				createMat(ThLF, Minterp, Vh3P1LF);
+				Minterp = vInterp(Vh3P1LF, Vh3P1LF);
+				set(Minterp, sparams = "-pc_type jacobi -ksp_type cg");
+			
+			varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
+			real[int] bInterp = vRHS(0,Vh3P1LF);
+			BaseVHFinterp[] = Minterp^-1 * bInterp;
+		}
+
         
 		BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
         
