@@ -127,7 +127,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         
         Vh3P1LFG [BaseVLFG,BaseVGLFY,BaseVGLFZ];		
         Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
-        readvector("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolGLF, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
+        readvector("SnapInterpLF1proc/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolGLF, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
         BaseVLFG[] = SolGLF;
         BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh (LF)
         MBaseVlow(:,i+(NRe-1)*TimeSnap) = BaseVLF[];

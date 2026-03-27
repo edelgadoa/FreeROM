@@ -163,13 +163,13 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 				varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
 				macro def(i) [i, iY, iZ];
 				macro init(i) [i, i, i];
-				createMat(ThLF, Minterp, Vh3P1LF);
+				createMat(ThLF, Minterp, PK3P1);
 				Minterp = vInterp(Vh3P1LF, Vh3P1LF);
 				set(Minterp, sparams = "-pc_type jacobi -ksp_type cg");
 			
 			varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
 			real[int] bInterp = vRHS(0,Vh3P1LF);
-			BaseVHFinterp[] = Minterp^-1 * bInterp;
+			KSPSolve(Minterp, bInterp, BaseVHFinterp[]);
 		}
 
         
