@@ -166,7 +166,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 				macro init(i) [i, i, i];
 				createMat(ThLF, Minterp, PK3P1);
 				Minterp = vInterp(Vh3P1LF, Vh3P1LF);
-				set(Minterp, sparams = "-pc_type bjacobi -ksp_type cg -ksp_monitor");
+				set(Minterp, sparams = "-ksp_view");
 
 			
 			varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
