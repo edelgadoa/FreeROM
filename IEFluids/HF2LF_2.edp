@@ -1,0 +1,223 @@
+///////////////
+// FreeROM 
+/////////////// 
+
+///////////////////////////////////////////////////////////////////////////////
+
+// Código para calcular solucion POD Low-Fidelity
+
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+
+verbosity = 0;
+int[int] fforder=[1,1,1,1];
+
+load "PETSc"
+
+// Parametros para el Paralelo
+macro dimension() 3 //EOM
+bool PETScON = true;
+bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
+
+include "macro_ddm.idp"
+
+
+// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
+include "Normas_3D.idp"
+include "../Auxiliary/Macros_3D.idp"
+
+// Cargo las funciones de lectura y guardado
+include "IO.idp" 
+include "../Auxiliary/search.idp"
+
+/////////////////////////////////////////////////////////////////////////////////////
+mesh3 Th = readmesh3("IEfluids.mesh"); //Cargo la malla HF
+mesh3 ThG = Th;
+
+mesh3 ThLF = readmesh3("IEfluids_LF.mesh"); //Cargo la malla LF
+mesh3 ThLFG = ThLF;
+
+// Macros para las mallas en paralelo **Puede ser que se necesiten las dos mallas
+int[int] myN2o, myN2oLF;
+macro ThN2O() myN2o //EOM
+macro ThLFN2O() myN2oLF // EOM
+
+macro ThOverlap() 2 // EOM  
+macro ThLFOverlap() 2 // EOM  
+
+buildDmesh(Th);
+buildDmesh(ThLF);
+
+int ReSnap = 3; // numero de Snapshots de Reynolds **3 snapshots LF -> Re=5,10,15
+int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
+int Nsnap = ReSnap*TimeSnap;
+
+
+
+///////////////////////////////////////////
+mpi(cout<< "---Creamos los espacios de elementos finitos, HF y LF---"<<endl;;)
+macro Pk3P1() [P1,P1,P1] // EOM
+
+// // Variables donde guardo los snapshots que cargo
+// // Elementos Finitos P1: **No los uso de momento
+// fespace VhP1G(ThG, P1); 
+// fespace VhP1(Th, P1);
+// 
+// fespace VhP1LFG(ThLFG, P1); 
+// fespace VhP1LF(ThLF, P1);
+
+
+// Elementos Finitos [P1,P1,P1];
+fespace Vh3P1(Th, Pk3P1);
+fespace Vh3P1G(ThG, Pk3P1);
+
+fespace Vh3P1LF(ThLF, Pk3P1);
+fespace Vh3P1LFG(ThLFG, Pk3P1);
+
+matrix HF2LF = interpolate(Vh3P1LF, Vh3P1);
+
+// Matrices PETSc
+ 
+// Producto L2-HF 
+Mat MatNormL2;
+
+{
+    macro def(i) [i, iY, iZ] // EOM
+    macro init(i) [i, i, i] // EOM
+    createMat(Th, MatNormL2, Pk3P1);
+    varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
+    matrix PescV = NormV(Vh3P1, Vh3P1); //L2PEMat;
+    MatNormL2 = PescV;
+}
+
+int[int] mapVh3P1;
+mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
+
+// Producto L2-LF 
+Mat MatNormL2LF;
+
+{
+    macro def(i) [i, iY, iZ] // EOM
+    macro init(i) [i, i, i] // EOM
+    createMat(ThLF, MatNormL2LF, Pk3P1);
+	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(ThLF)(UporV(u,v));
+	matrix PescV = NormV(Vh3P1LF, Vh3P1LF); //L2PEMat;
+	MatNormL2LF = PescV; 
+}
+
+int[int] mapVh3P1LF;
+mapVh3P1LF = restrict(Vh3P1LF, Vh3P1LFG, myN2oLF);
+
+mpi(cout<<"-- Cargamos Snapshots (HF-LF) --"<<endl;)
+Vh3P1[int] [SnapshotsHF, SnapshotsHFY, SnapshotsHFZ](TimeSnap*ReSnap);
+Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*3), 
+		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*ReSnap); 
+
+mpi(cout<<"Creamos la matriz del sistema"<<endl;)
+
+Mat Minterp;
+    
+{
+	macro def(i) [i, iY, iZ];
+	macro init(i) [i, i, i];
+	createMat(ThLF, Minterp, Pk3P1); 
+	set(Minterp, sparams = "-pc_type bjacobi -sub_pc_type ilu -ksp_type cg -ksp_rtol 1e-10 -ksp_monitor -log_view");
+} 
+
+    
+for (int NRe=1; NRe<=ReSnap; NRe++){
+    string Reynolds = 5*NRe;
+    for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+        int i = NTemp-1;
+        mpi(cout << "V_" + Reynolds + "_meanfile" + NTemp << endl;)
+        // HighFidelity
+        Vh3P1G [BaseVG,BaseVGY,BaseVGZ];	
+        Vh3P1 [BaseV,BaseVY,BaseVZ];
+		
+        readvector("Snapshots/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolG, 0);
+		
+        BaseVG[] = SolG;
+        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh
+        
+        SnapshotsHF[i+(NRe-1)*TimeSnap][] = BaseV[];
+        
+        // // LowFidelity interp 
+        // Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
+        // Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ], [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];		
+        // readvector("SnapshotsLowF/V_" + Reynolds + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        
+        // BaseVLFG[] = SolLFG;
+        // BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
+        
+        
+        Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
+        Vh3P1LF [BaseVHFinterp, BaseVHFinterpY, BaseVHFinterpZ];
+
+        // BaseVHFinterp[] = HF2LF*BaseV[];
+       // {
+//             macro def(i) [i, i#Y, i#Z] // EOM
+//             macro init(i) [i, i, i] // EOM
+//             // Vh3P1 def(SnapHF) = BaseV;
+//             // Vh3P1LF def(SnapLF);
+// 		    VecInterpolate(Th, [P1,P1,P1], BaseV, ThLF, [P1,P1,P1], BaseVHFinterp);
+//             SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
+//        }
+
+		
+// 		Hacemos proyección L2 -- (Es una prueba)
+
+		{
+        	varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
+			Minterp = vInterp(Vh3P1LF, Vh3P1LF);
+
+
+			
+			varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
+			real[int] bInterp = vRHS(0,Vh3P1LF);
+			BaseVHFinterp[] = Minterp^-1*bInterp;
+			
+			//KSPSolve(Minterp, bInterp, BaseVHFinterp[]);
+		}
+        
+        
+
+        
+		BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
+        
+        SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
+       	mpi(cout<<"Norma SnapHFinterp:"<<normX(SnapshotsHFinterp[i+(NRe-1)*TimeSnap][],MatNormL2LF,bPETSc)<<endl;)
+        write("SnapshotsLFinterp/V_" + Reynolds + "_meanfile" + NTemp + ".txt", BaseVLFG[], 0, 0, 0, 15);
+        savevtk("SnapshotsLFinterp/V_"+ NRe + "_meanfile" + NTemp + ".vtu", ThLFG, [BaseVLFG,BaseVLFGY,BaseVLFGZ], dataname="Velocity", order=fforder, bin=true);
+    }
+}
+
+for (int NRe=1; NRe<=3; NRe++){ //Re = 1->5,2->10,3->15
+    for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
+        int i = NTemp-1;
+        Vh3P1LFG [BaseVLFG,BaseVLFGY,BaseVLFGZ];		
+        Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
+        readvector("SnapshotsLowF/V_" + NRe*5 + "_meanfile" + NTemp + ".txt", real, SolLFG, 0); 
+        
+        BaseVLFG[] = SolLFG;
+        BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh
+        SnapshotsLF[i+(NRe-1)*TimeSnap][] = BaseVLF[];
+        savevtk("SnapshotsLowF/VLF_"+ NRe + "_meanfile" + NTemp + ".vtu", ThLFG, [BaseVLFG,BaseVLFGY,BaseVLFGZ], dataname="Velocity", order=fforder, bin=true);
+
+    }
+}
+
+real[int] ErrorSnap5(TimeSnap), ErrorSnap10(TimeSnap), ErrorSnap15(TimeSnap);
+for (int i=0; i<TimeSnap; i++){
+    Vh3P1LF [Snap5, Snap5Y, Snap5Z], [Snap10, Snap10Y, Snap10Z], [Snap15,Snap15Y,Snap15Z];
+    Snap5[] = SnapshotsLF[i][] - SnapshotsHFinterp[i][];
+    Snap10[] = SnapshotsLF[TimeSnap + i][] - SnapshotsHFinterp[TimeSnap + i][];
+    Snap15[] = SnapshotsLF[2*TimeSnap + i][] - SnapshotsHFinterp[TimeSnap*2 + i][];
+    
+    ErrorSnap5(i) = normX(Snap5[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[i][],MatNormL2LF, bPETSc);
+    ErrorSnap10(i) = normX(Snap10[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[TimeSnap + i][],MatNormL2LF, bPETSc);
+    ErrorSnap15(i) = normX(Snap15[], MatNormL2LF, bPETSc)/normX(SnapshotsLF[2*TimeSnap + i][],MatNormL2LF, bPETSc);
+}
+
+mpi(cout<<"Error Snap5:"<<ErrorSnap5<<endl<<"Error Snap10:"<<ErrorSnap10<<endl<<"Error Snap15:"<<ErrorSnap15<<endl;)
