@@ -114,8 +114,19 @@ mpi(cout<<"-- Cargamos Snapshots (HF-LF) --"<<endl;)
 Vh3P1[int] [SnapshotsHF, SnapshotsHFY, SnapshotsHFZ](TimeSnap*ReSnap);
 Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*3), 
 		     [SnapshotsHFinterp, SnapshotsHFinterpY, SnapshotsHFinterpZ](TimeSnap*ReSnap); 
-               
 
+mpi(cout<<"Creamos la matriz del sistema"<<endl;)
+
+Mat Minterp;
+    
+{
+	macro def(i) [i, iY, iZ];
+	macro init(i) [i, i, i];
+	createMat(ThLF, Minterp, PK3P1); 
+	set(Minterp, sparams = "-pc_type bjacobi -sub_pc_type ilu -ksp_type cg -ksp_rtol 1e-10-ksp_monitor -log_view");
+} 
+
+    
 for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
     string Reynolds = 5*NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
@@ -159,14 +170,8 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 // 		Hacemos proyección L2 -- (Es una prueba)
 
 		{
-			Mat Minterp;
-			
-				varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
-				macro def(i) [i, iY, iZ];
-				macro init(i) [i, i, i];
-				createMat(ThLF, Minterp, PK3P1);
-				Minterp = vInterp(Vh3P1LF, Vh3P1LF);
-				set(Minterp, sparams = "-pc_type bjacobi -sub_pc_type ilu -ksp_type cg -ksp_rtol 1e-10-ksp_monitor -log_view");
+        	varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
+			Minterp = vInterp(Vh3P1LF, Vh3P1LF);
 
 
 			
