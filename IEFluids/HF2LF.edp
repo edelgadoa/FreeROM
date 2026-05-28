@@ -164,8 +164,9 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 				varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
 				macro def(i) [i, iY, iZ];
 				macro init(i) [i, i, i];
-				createMat(ThLF, Minterp, PK3P1);
-				Minterp = vInterp(Vh3P1LF, Vh3P1LF);
+				createMat(ThLF, Minterp, Pk3P1);
+				matrix MatrixInterp = vInterp(Vh3P1LF, Vh3P1LF);
+                Minterp = MatrixInterp;
 				set(Minterp, sparams = "-pc_type jacobi -ksp_type cg -ksp_rtol 1e-8 -ksp_monitor -log_view");
 
 			varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
