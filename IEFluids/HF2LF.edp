@@ -157,10 +157,9 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 
 		
 // 		Hacemos proyección L2 -- (Es una prueba)
+    Mat Minterp;
 
 		{
-			Mat Minterp;
-			
 				varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
 				macro def(i) [i, iY, iZ] // EOM
 				macro init(i) [i, i, i] // EOM 
@@ -174,7 +173,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
             mpi(cout<<"Resuelvo el sistema lineal"<<endl;)
             //KSPSolve(Minterp, bInterp, BaseVHFinterp[]);
 			BaseVHFinterp[] = Minterp^-1*bInterp;
-            
+
 		}
         
         
