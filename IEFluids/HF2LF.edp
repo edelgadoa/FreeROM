@@ -179,7 +179,8 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 		BaseVLFG[] = Local2Global(BaseVHFinterp[], BaseVLFG[], MatNormL2LF.D, mapVh3P1LF);
         
         SnapshotsHFinterp[i+(NRe-1)*TimeSnap][] = BaseVHFinterp[];
-       	mpi(cout<<"Norma SnapHFinterp:"<<normX(SnapshotsHFinterp[i+(NRe-1)*TimeSnap][],MatNormL2LF,bPETSc)<<endl;)
+        real NormaSnap = normX(SnapshotsHFinterp[i+(NRe-1)*TimeSnap][],MatNormL2LF,bPETSc);
+       	mpi(cout<<"Norma SnapHFinterp:"<<NormaSnap<<endl;)
         write("SnapshotsLFinterp/V_" + Reynolds + "_meanfile" + NTemp + ".txt", BaseVLFG[], 0, 0, 0, 15);
         savevtk("SnapshotsLFinterp/V_"+ NRe + "_meanfile" + NTemp + ".vtu", ThLFG, [BaseVLFG,BaseVLFGY,BaseVLFGZ], dataname="Velocity", order=fforder, bin=true);
     }
