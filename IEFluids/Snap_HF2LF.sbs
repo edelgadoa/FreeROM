@@ -5,4 +5,4 @@
 #SBATCH --mem=0
 
 
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 HF2LF.edp > "terminal_SnapLF_2.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 HF2LF.edp > "terminal_SnapLF.txt"
