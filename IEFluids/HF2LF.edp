@@ -92,6 +92,20 @@ Mat MatNormL2;
     MatNormL2 = PescV;
 }
 
+// Hacemos proyección L2 -- (Es una prueba)
+
+Mat Minterp;
+
+{
+	varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
+	macro def(i) [i, iY, iZ] // EOM
+	macro init(i) [i, i, i] // EOM 
+	createMat(ThLF, Minterp, Pk3P1);
+	matrix MatrixInterp = vInterp(Vh3P1LF, Vh3P1LF);
+    Minterp = MatrixInterp;
+	set(Minterp, sparams = "-pc_type jacobi -ksp_type cg -ksp_rtol 1e-8 -ksp_monitor");
+}
+
 int[int] mapVh3P1;
 mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
 
@@ -156,19 +170,6 @@ for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
 //        }
 
 		
-// 		Hacemos proyección L2 -- (Es una prueba)
-        Mat Minterp;
-
-		{
-			varf vInterp([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(u,v));
-			macro def(i) [i, iY, iZ] // EOM
-			macro init(i) [i, i, i] // EOM 
-			createMat(ThLF, Minterp, Pk3P1);
-			matrix MatrixInterp = vInterp(Vh3P1LF, Vh3P1LF);
-            Minterp = MatrixInterp;
-			set(Minterp, sparams = "-pc_type jacobi -ksp_type cg -ksp_rtol 1e-8 -ksp_monitor");
-        }
-        
 		varf vRHS([u,uY,uZ],[v,vY,vZ]) = int3d(ThLF)(UporV(BaseV,v));
 		real[int] bInterp = vRHS(0,Vh3P1LF);
         mpi(cout<<"Resuelvo el sistema lineal"<<endl;)
