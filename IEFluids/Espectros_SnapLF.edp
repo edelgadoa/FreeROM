@@ -1,0 +1,88 @@
+///////////////
+// FreeROM 
+/////////////// 
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+verbosity = 0;
+int[int] fforder=[1,1,1,1];
+
+// Cargo los archivos auxiliares
+macro dimension() 3 //EOM
+include "macro_ddm.idp"
+load "PETSc"
+//load "PETSc-complex"
+macro UporV(U,V) ([U,U#Y,U#Z]'*[V,V#Y,V#Z]) //EOM 
+macro mpi(variable) if(mpirank==0){variable} //EOM
+include "IO.idp"
+
+// Cargo/Creo la malla 
+mpi(cout<<"Cargando malla global y creando mallas locales...";)
+mesh3 Th = readmesh3("IEfluids_LF.mesh"); 
+mesh3 ThG = Th; // For the global mesh
+
+int[int] myN2o;
+macro ThN2O() myN2o // EOM
+macro Pk3P1() [P1,P1,P1] // EOM
+macro PkP1() P1 // EOM // No sé si este es necesario
+
+buildDmesh(Th);
+
+// Parametros 
+mpi(cout<<"Cargando parametros y otros...";)
+include "Parametros.idp"
+
+
+// int[int] mapVh3P1;
+
+
+// Variables donde guardo los snapshots que cargo
+fespace VhP1G(ThG, P1);
+fespace Vh3P1G(ThG, [P1,P1,P1]);
+
+fespace VhP1(Th, P1);
+fespace Vh3P1(Th, [P1,P1,P1]);
+
+mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+// Cargamos el modulo de transformadas de fourier y calculamos el espectro
+Vh3P1G [SnapG, SnapGY, SnapGZ];
+Vh3P1 [Snap, SnapY, SnapZ];
+VhP1<complex> SF, SFY, SFZ, auxc; 
+auxc = 0.;
+
+include "fourier3D_IEFluids.idp";
+Reynolds = 5; // Puedo probar otros snapshots
+int i = 6;
+
+readvector("Snapshots/V_" + Reynolds + "_meanfile" + i + ".txt", real, SolG, 0);
+SnapG[] = SolG;
+
+//[SnapTruncG, SnapTruncGY, SnapTruncGZ] = [SnapG, SnapGY, SnapGZ];
+Snap[] = SnapG[](mapVh3P1);
+
+// savevtk("Snapshot_truncado.vtu",ThTruncG, [SnapTruncG, SnapTruncGY, SnapTruncGZ], order=fforder);
+
+SF = Snap + auxc;
+SFY = SnapY + auxc;
+SFZ = SnapZ + auxc;
+
+
+///////////////////////////////////////////////////////
+/// Establecemos Espectro artificial///
+///////////////////////////////////////////////////////
+int kmax = 24;
+
+//////////////////////////
+
+real[int] espectroIEFluids = espectro3D(SF[], SFY[], SFZ[], kmax); //Para trabajar con complejos
+
+write("Espectros/EspectroLF_Re_"+Reynolds+"_"+i+"_"+kmax+".txt", espectroIEFluids, 0 , 0, 0, 20);
+
+
+
+
+//write("Espectros/Espectro_Re_"+Reynolds+"_k32_"+i+".txt", espectroIEFluids, 0 , 0, 0, 20);
