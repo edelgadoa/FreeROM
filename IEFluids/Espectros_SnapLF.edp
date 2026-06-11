@@ -30,7 +30,7 @@ macro PkP1() P1 // EOM // No sé si este es necesario
 buildDmesh(Th);
 
 // Parametros 
-mpi(cout<<"Cargando parametros y otros...";)
+mpi(cout<<"Cargando parametros y otros..."<<endl;)
 include "Parametros.idp"
 
 
@@ -54,7 +54,7 @@ Vh3P1 [Snap, SnapY, SnapZ];
 VhP1<complex> SF, SFY, SFZ, auxc; 
 auxc = 0.;
 
-include "fourier3D_IEFluids.idp";
+include "fourier3D_LF.idp";
 Reynolds = 5; // Puedo probar otros snapshots
 int i = 6;
 
@@ -72,7 +72,7 @@ SFZ = SnapZ + auxc;
 
 
 ///////////////////////////////////////////////////////
-/// Establecemos Espectro artificial///
+/// Calculamos el espectro                          ///
 ///////////////////////////////////////////////////////
 int kmax = 24;
 
