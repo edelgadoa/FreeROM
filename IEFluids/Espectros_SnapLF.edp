@@ -51,7 +51,7 @@ mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
 // Cargamos el modulo de transformadas de fourier y calculamos el espectro
 Vh3P1G [SnapG, SnapGY, SnapGZ];
 Vh3P1 [Snap, SnapY, SnapZ];
-VhP1<complex> SF, SFY, SFZ, auxc; 
+VhP1 SF, SFY, SFZ, auxc; 
 auxc = 0.;
 
 include "fourier3D_LF.idp";
@@ -66,9 +66,9 @@ Snap[] = SnapG[](mapVh3P1);
 
 // savevtk("Snapshot_truncado.vtu",ThTruncG, [SnapTruncG, SnapTruncGY, SnapTruncGZ], order=fforder);
 
-SF = Snap + auxc;
-SFY = SnapY + auxc;
-SFZ = SnapZ + auxc;
+SF = Snap;// + auxc;
+SFY = SnapY;// + auxc;
+SFZ = SnapZ;// + auxc;
 
 
 ///////////////////////////////////////////////////////
