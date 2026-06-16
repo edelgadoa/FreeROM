@@ -62,7 +62,7 @@ buildDmesh(ThTrunc);
 /////////////////////////////////////////////////////////////////////////////////////
 
 
-int ReSnap = 3; // numero de Snapshots de Reynolds
+int ReSnap = 20; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
@@ -123,7 +123,7 @@ real[int, int] MBaseVlow(Vh3P1LF.ndof, TimeSnap*ReSnap), MBaseVhigh(Vh3P1.ndof, 
 for (int NRe=1; NRe<=ReSnap; NRe++){
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
-        mpi(cout << "V_" + 5*NRe + "_meanfile" + NTemp << endl;)
+        mpi(cout << "V_" + NRe + "_meanfile" + NTemp << endl;)
         
         Vh3P1LFG [BaseVLFG,BaseVGLFY,BaseVGLFZ];		
         Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
@@ -137,7 +137,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         
         Vh3P1G [BaseVG,BaseVGY,BaseVGZ];		
         Vh3P1 [BaseV,BaseVY,BaseVZ];		
-        readvector("Snapshots/V_" + 5*NRe + "_meanfile" + NTemp + ".txt", real, SolG, 0); // Estos son los HIGH fidelity
+        readvector("Snapshots/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolG, 0); // Estos son los HIGH fidelity
         BaseVG[] = SolG;
         BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh (LF)
         
