@@ -50,7 +50,7 @@ macro ThLFOverlap() 2 // EOM
 buildDmesh(Th);
 buildDmesh(ThLF);
 
-int ReSnap = 3; // numero de Snapshots de Reynolds **3 snapshots LF -> Re=5,10,15
+int ReSnap = 20; // numero de Snapshots de Reynolds **3 snapshots LF -> Re=5,10,15
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
 int Nsnap = ReSnap*TimeSnap;
 
@@ -131,7 +131,7 @@ Vh3P1LF[int] [SnapshotsLF, SnapshotsLFY, SnapshotsLFZ](TimeSnap*3),
                
 
 for (int NRe=1; NRe<=ReSnap; NRe++){ //Re = 1->5,2->10,3->15
-    string Reynolds = 5*NRe;
+    string Reynolds = NRe;
     for (int NTemp=1; NTemp<=TimeSnap; NTemp++){
         int i = NTemp-1;
         mpi(cout << "V_" + Reynolds + "_meanfile" + NTemp << endl;)

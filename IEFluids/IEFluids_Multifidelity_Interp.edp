@@ -151,7 +151,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
-real epsPOD = 1e-3;
+real epsPOD = 1e-4;
 real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
 real[int] ETiempo(6);
