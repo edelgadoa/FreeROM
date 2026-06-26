@@ -151,7 +151,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
-real epsPOD = 1e-4;
+real epsPOD = 1e-3;
 real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
 real[int] ETiempo(6);
@@ -160,7 +160,7 @@ real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
 real[int] EGreedy(maxGreedy);
 int kmax = 12; // ** Comprobar (approx 12)
 int kinf = 2; // ** Comprobar (se puede hacer mas pequeños)
-int ksup = 15; // ** Comprobar (approx 15)
+int ksup = 12; // ** Comprobar (approx 15)
 
 include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
 
@@ -293,7 +293,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                      
             write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
-            real kmed = (ksup-kinf)/2;
+            real kmed = (ksup+kinf)/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-3); // Un valor de referencia para el espectro teórico (k^-3)
             //mpi(cout<<"a= "<<a<<endl;)
             real[int] diffespectro(ksup-kinf); diffespectro = 0.;
