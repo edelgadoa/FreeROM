@@ -151,7 +151,7 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
 int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
 int NbasesV = 1; 
-real epsPOD = 1e-4;
+real epsPOD = 1e-3;
 real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
 real[int] ETiempo(6);
@@ -254,17 +254,23 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
             real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
+            real[int] coefHF(NbasesV);
+            real[int] DiffCoefHFLF(NbasesV);
             Vh3P1 [uRB, uRBY, uRBZ]; 
             uRB[] = 0.; //La solucion RB tiene que ser HF, pues es combinacion de las funciones de base POD (HF)
             Vh3P1LF [uRBLF, uRBLFY, uRBLFZ]; //Tengo que obtener su interpolacion a LF para hallar el Kolmogorov
             for(int j=0; j<NbasesV; j++){               
                 coefLF(j) = innerprodX(BaseLFV[j][], SnapLF[], MatNormLFL2, bPETSc); 
+                coefHF(j) = innerprodX(BaseV[j][], Snap[], MatNormL2, bPETSc);
+                
                 uRB[] += coefLF(j)*BaseV[j][];
                 //uRBLF[] = MinterpHF2LF*uRB[];
             }
+            DiffCoefHFLF = coefHF-coefLF;
+            mpi(cout<<"Diferencia de coefs:"<<DiffCoefHFLF<<endl;)
             {
-                macro def(i) [i, i#Y, i#Z] // EOM
-                macro init(i) [i, i, i] // EOM
+                macro def(i) [i, i#Y, i#Z] //EOM
+                macro init(i) [i, i, i] //EOM
                 VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
             }
             
