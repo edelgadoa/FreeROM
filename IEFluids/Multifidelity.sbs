@@ -4,4 +4,4 @@
 #SBATCH --mem=0
 #SBATCH --partition=cpu
 
-mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 IEFluids_Multifidelity_Interp.edp > "terminal_LowFidelity_4.txt"
+mpirun -np ${SLURM_NTASKS} FreeFem++-mpi -v 0 IEFluids_Multifidelity_Interp.edp > "terminal_LowFidelity_Final.txt"
