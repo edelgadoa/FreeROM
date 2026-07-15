@@ -148,8 +148,8 @@ real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
 real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
 real[int] EGreedy(maxGreedy);
-int kmax = 24; // ** Comprobar
-int kinf = 5; // ** Comprobar
+int kmax = 12; // ** Comprobar
+int kinf = 2; // ** Comprobar
 int ksup = kmax; // ** Comprobar
 
 include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
@@ -241,14 +241,14 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
             // write("EspectrosGreedy/Espectro_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
             real kmed = (ksup-kinf)/2;
-            real a = espectroIEFluids(kmed)/pow(kmed,-5/3); // Un valor de referencia para el espectro teórico
+            real a = espectroIEFluids(kmed)/pow(kmed,-3); // Un valor de referencia para el espectro teórico
             //mpi(cout<<"a= "<<a<<endl;)
             real[int] diffespectro(ksup-kinf); diffespectro = 0.;
             real[int] espectroteorico(ksup-kinf); espectroteorico = 0.;
             for (int i=kinf; i<ksup; i++){
                 real ii = i*1.;
-                espectroteorico(i-kinf) = a*pow(ii,-5/3);
-                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-5/3));
+                espectroteorico(i-kinf) = a*pow(ii,-3);
+                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-3));
             }
             //mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
             //mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)

@@ -267,7 +267,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 //uRBLF[] = MinterpHF2LF*uRB[];
             }
             DiffCoefHFLF = coefHF-coefLF;
-            mpi(cout<<"Diferencia de coefs:"<<DiffCoefHFLF<<endl;)
+            mpi(cout<<"coefs LF: "<<coefLF<<endl;)
+	    mpi(cout<<"coefs HF: "<<coefHF<<endl;)
+	    mpi(cout<<"Diferencia de coefs:"<<DiffCoefHFLF<<endl;)
             {
                 macro def(i) [i, i#Y, i#Z] //EOM
                 macro init(i) [i, i, i] //EOM
@@ -299,7 +301,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                      
             write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
-            real kmed = (ksup+kinf)/2;
+            real kmed = 5;// (ksup+kinf)/2;
             real a = espectroIEFluids(kmed)/pow(kmed,-3); // Un valor de referencia para el espectro teórico (k^-3)
             //mpi(cout<<"a= "<<a<<endl;)
             real[int] diffespectro(ksup-kinf); diffespectro = 0.;
