@@ -122,7 +122,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 // de energia total venga de otra cosa que no sea el reagrupamiento en si. No cambia
 // el resultado que usa el estimador (eso lo sigue haciendo energyk3d mas abajo).
 // Quitar esta funcion (y su llamada en espectro3D) una vez diagnosticado.
-func int energyk3dDebug(real[int,int][int] & Energy)
+func int energyk3ddebug(real[int,int][int] & Energy)
 {
     real wx = 200./400.;
     int kmax = (Energy.n-1)/2;
@@ -224,7 +224,7 @@ func real[int] espectro3D(real[int] uFourierv, real[int] uFouriervY, real[int] u
     }   
     
 	write("Output.txt", " - Sumando por coronas...", 1, 1);
-    int dummyDebug = energyk3dDebug(energyhat); // [TEMPORAL - DEBUG] quitar tras diagnosticar
+    int dummyDebug = energyk3ddebug(energyhat); // [TEMPORAL - DEBUG] quitar tras diagnosticar
     real[int] energykk = energyk3d(energyhat);
     return energykk;
 }
