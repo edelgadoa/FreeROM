@@ -297,15 +297,25 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                      
             write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
-            real kmed = (ksup-kinf)/2;
-            real a = espectroIEFluids(kmed)/pow(kmed,-3); // Un valor de referencia para el espectro teórico (k^-3)
-            //mpi(cout<<"a= "<<a<<endl;)
-            real[int] diffespectro(ksup-kinf); diffespectro = 0.;
-            real[int] espectroteorico(ksup-kinf); espectroteorico = 0.;
+            // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
+            // en vez de un unico punto kmed: a* = argmin_a sum_i (E_i - a*k_i^p)^2
+            // => a* = sum(E_i*k_i^p) / sum(k_i^(2p))  (solucion cerrada, coste O(ksup-kinf))
+            real pExp = -3.; // k^-3, que debería ajustarse más.
+            int Nk = ksup-kinf;
+            real[int] kpow(Nk);
+            real numAlpha = 0., denAlpha = 0.;
             for (int i=kinf; i<ksup; i++){
                 real ii = i*1.;
-                espectroteorico(i-kinf) = a*pow(ii,-3); // k^-3, que debería ajustarse más. 
-                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-3));
+                kpow(i-kinf) = pow(ii,pExp);
+                numAlpha += espectroIEFluids(i)*kpow(i-kinf);
+                denAlpha += kpow(i-kinf)*kpow(i-kinf);
+            }
+            real a = numAlpha/denAlpha;
+
+            real[int] espectroteorico(Nk) = a*kpow; // reutiliza kpow, sin recalcular pow()
+            real[int] diffespectro(Nk); diffespectro = 0.;
+            for (int i=kinf; i<ksup; i++){
+                diffespectro(i-kinf) = abs(espectroIEFluids(i) - espectroteorico(i-kinf));
             }
             //mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
             //mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
