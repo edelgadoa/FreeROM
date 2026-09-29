@@ -37,7 +37,7 @@ mesh3 ThG = Th, ThLFG = ThLF;
 
 // Creo la malla truncada
 mpi(cout<<" - Truncando malla global LF y creando mallas truncadas locales..."<<endl;)
-mesh3 ThTrunc = trunc(ThLF, ((x<1800)),split=1); 
+mesh3 ThTrunc = trunc(Th, ((x<1800)),split=1); 
 ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
 ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
 ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
@@ -269,7 +269,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             {
                 macro def(i) [i, i#Y, i#Z] //EOM
                 macro init(i) [i, i, i] //EOM
-                VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
+                VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF); //Esto solo para comprobar errores
             }
             
             
@@ -289,7 +289,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
-            uRBTrunc = uRBLF; uRBTruncY = uRBY; uRBTruncZ = uRBLFZ; 
+            uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ; 
             
                         
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
@@ -297,15 +297,25 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                      
             write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
-            real kmed = (ksup-kinf)/2;
-            real a = espectroIEFluids(kmed)/pow(kmed,-3); // Un valor de referencia para el espectro teórico (k^-3)
-            //mpi(cout<<"a= "<<a<<endl;)
-            real[int] diffespectro(ksup-kinf); diffespectro = 0.;
-            real[int] espectroteorico(ksup-kinf); espectroteorico = 0.;
+            // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
+            // en vez de un unico punto kmed: a* = argmin_a sum_i (E_i - a*k_i^p)^2
+            // => a* = sum(E_i*k_i^p) / sum(k_i^(2p))  (solucion cerrada, coste O(ksup-kinf))
+            real pExp = -5./3.; // 
+            int Nk = ksup-kinf;
+            real[int] kpow(Nk);
+            real numAlpha = 0., denAlpha = 0.;
             for (int i=kinf; i<ksup; i++){
                 real ii = i*1.;
-                espectroteorico(i-kinf) = a*pow(ii,-3); // k^-3, que debería ajustarse más. 
-                diffespectro(i-kinf) = abs(espectroIEFluids(i) - a*pow(ii,-3));
+                kpow(i-kinf) = pow(ii,pExp);
+                numAlpha += espectroIEFluids(i)*kpow(i-kinf);
+                denAlpha += kpow(i-kinf)*kpow(i-kinf);
+            }
+            real a = numAlpha/denAlpha;
+
+            real[int] espectroteorico(Nk); espectroteorico = a*kpow; // reutiliza kpow, sin recalcular pow()
+            real[int] diffespectro(Nk); diffespectro = 0.;
+            for (int i=kinf; i<ksup; i++){
+                diffespectro(i-kinf) = abs(espectroIEFluids(i) - espectroteorico(i-kinf));
             }
             //mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
             //mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
@@ -323,7 +333,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
        // }
         
-        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; //ETiempo.max; // ** Preguntar a Tomás si esto es correcto
+        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; 
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
 				
     }
