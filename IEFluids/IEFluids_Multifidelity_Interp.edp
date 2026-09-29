@@ -269,7 +269,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             {
                 macro def(i) [i, i#Y, i#Z] //EOM
                 macro init(i) [i, i, i] //EOM
-                VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF);
+                VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF); //Esto solo para comprobar errores
             }
             
             
@@ -289,7 +289,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             
             // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
             VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
-            uRBTrunc = uRBLF; uRBTruncY = uRBY; uRBTruncZ = uRBLFZ; 
+            uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ; 
             
                         
             mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
@@ -300,7 +300,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
             // en vez de un unico punto kmed: a* = argmin_a sum_i (E_i - a*k_i^p)^2
             // => a* = sum(E_i*k_i^p) / sum(k_i^(2p))  (solucion cerrada, coste O(ksup-kinf))
-            real pExp = -3.; // k^-3, que debería ajustarse más.
+            real pExp = -5./3.; // 
             int Nk = ksup-kinf;
             real[int] kpow(Nk);
             real numAlpha = 0., denAlpha = 0.;
@@ -333,7 +333,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
 
        // }
         
-        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; //ETiempo.max; // ** Preguntar a Tomás si esto es correcto
+        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; 
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
 				
     }
