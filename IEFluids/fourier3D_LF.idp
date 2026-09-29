@@ -118,19 +118,26 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Suma de la energía por coronas.
+// La caja truncada NO es cubica: Lx=400 frente a Ly=Lz=200 (misma malla, pero
+// dx=2*dy=2*dz, asi que el numero de nodos por eje coincide aunque la longitud
+// fisica no). El indice entero k1 (eje x) representa por tanto la mitad del
+// numero de onda fisico que k2,k3 (2*pi*k/Lx = (Ly/Lx)*2*pi*k/Ly). Se reescala
+// k1 por wx=Ly/Lx antes de tomar el modulo para agrupar por numero de onda FISICO,
+// no por indice de modo. Si Ly!=Lz en el futuro, haria falta un wy analogo.
+real wx = 200./400.; // Ly/Lx (=Lz/Lx aqui, pues Ly=Lz)
 func real[int] energyk3d(real[int,int][int] & Energy)
 {
     int kmax = (Energy.n-1)/2;
-    int LN = sqrt(3*kmax^2);
+    int LN = sqrt((wx*kmax)^2 + 2*kmax^2);
 	real[int] energykbycrowns(LN+1);
 	energykbycrowns = 0.;
-	real module; 
+	real module;
     int l;
 
 	for(int k1=-kmax; k1<=kmax; k1++){
 		for(int k2=-kmax; k2<=kmax; k2++){
 			for(int k3=-kmax; k3<=kmax; k3++){
-				module = sqrt(k1^2+k2^2+k3^2);
+				module = sqrt((wx*k1)^2+k2^2+k3^2);
 				l = module;
                //  mpi(cout<<"(k1,k2,k3)=("<<k1<<","<<k2<<","<<k3<<") --- module (real)= "<<module<<", module (int)= "<<l<<endl;)
 				energykbycrowns[l] += Energy[k3+kmax](k1+kmax,k2+kmax);
