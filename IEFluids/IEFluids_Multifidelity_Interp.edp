@@ -312,7 +312,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             }
             real a = numAlpha/denAlpha;
 
-            real[int] espectroteorico(Nk) = a*kpow; // reutiliza kpow, sin recalcular pow()
+            real[int] espectroteorico(Nk); espectroteorico = a*kpow; // reutiliza kpow, sin recalcular pow()
             real[int] diffespectro(Nk); diffespectro = 0.;
             for (int i=kinf; i<ksup; i++){
                 diffespectro(i-kinf) = abs(espectroIEFluids(i) - espectroteorico(i-kinf));
