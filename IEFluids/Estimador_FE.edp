@@ -238,7 +238,7 @@ include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transforma
             real[int] espectroIEFluids = espectro3D(SnapTrunc[], SnapTruncY[], SnapTruncZ[], kmax); //
             //mpi(cout<<"ESPECTRO: "<<espectroIEFluids<<endl;)
             
-            // write("EspectrosGreedy/Espectro_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
+            write("Espectros/EspectroFE_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
             
             // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
             // en vez de un unico punto kmed: a* = argmin_a sum_i (E_i - a*k_i^p)^2
