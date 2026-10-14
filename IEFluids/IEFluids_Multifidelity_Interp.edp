@@ -300,7 +300,10 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
             tEspFFT = mpiWtime() - tEspFFT;
             mpi(cout<<" Tiempo espectro con FFT = "<<tEspFFT<<" s"<<endl;)
 
-            write("EspectrosGreedy/EspectroLF_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
+            // Espectro por FFT (este es el que alimenta al estimador). Se escribe ya, antes del metodo
+            // original (lento), para no perderlo si la ejecucion se corta. Nota: hasta ahora este nombre
+            // era "EspectroLF_Re_*" y contenia el espectro del metodo original.
+            write("EspectrosGreedy/EspectroFFT_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
 
             if (comparaEspectros){ // Validacion frente al metodo original (proyeccion EF por modo)
                 real tEspEF = mpiWtime();
@@ -316,6 +319,17 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
                 }
                 mpi(cout<<" Tiempo espectro original = "<<tEspEF<<" s (FFT: "<<tEspFFT<<" s, speed-up x"<<tEspEF/tEspFFT<<")"<<endl;)
                 mpi(cout<<" Dif. relativa FFT vs original en [kinf,ksup): l2 = "<<sqrt(difL2/refL2)<<", max puntual = "<<difRelMax<<endl;)
+
+                // Resumen acumulado (una linea por Re e iteracion Greedy): NRe, iGreedy, t FFT, t original,
+                // dif. relativa l2 y maxima puntual en [kinf,ksup)
+                real[int] resumenCompara(6);
+                resumenCompara[0] = NRe;
+                resumenCompara[1] = iGreedy;
+                resumenCompara[2] = tEspFFT;
+                resumenCompara[3] = tEspEF;
+                resumenCompara[4] = sqrt(difL2/refL2);
+                resumenCompara[5] = difRelMax;
+                write("ComparaEspectros.txt", resumenCompara, 1, 0, 0, 20);
             }
             
             // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
