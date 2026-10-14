@@ -164,7 +164,7 @@ int ksup = 12; // ** Comprobar (approx 15)
 
 include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
 include "fourier3D_FFT.idp"; // espectro3DFFT: mismo espectro por muestreo en rejilla + DFT separable (sin plugins)
-bool comparaEspectros = false; // true: calcula tambien el espectro original (lento) y compara con la FFT
+bool comparaEspectros = true; // true: calcula tambien el espectro original (lento) y compara con la FFT
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
 
