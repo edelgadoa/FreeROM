@@ -29,7 +29,8 @@ int[int] mapP1truncFFT = restrict(VhP1trunc, VhP1truncFFTG, myN2oTrunc);
 
 // Campo local (numeracion FreeFem de VhP1trunc) -> vector global en todos los procesos
 func real[int] reuneCampoGlobal(real[int] uLoc){
-    real[int] uW = uLoc;
+    real[int] uW(uLoc.n);
+    uW = uLoc;
     real[int] DLoc = MProdL2.D; // particion de la unidad (MProdL2 esta definida sobre ThTrunc)
     uW .*= DLoc;
     real[int] aux(VhP1truncFFTG.ndof);
@@ -43,7 +44,17 @@ func real[int] reuneCampoGlobal(real[int] uLoc){
 // |DFT|^2 de las muestras s (layout (ix*NG+iy)*NG+iz) para los modos -kmax..kmax en cada eje.
 // Cm(k,n)=cos(2*pi*k*n/NG), Sm(k,n)=sin(...): la transformada directa es F = Cm - i*Sm.
 // Devuelve un vector de NK^3 con layout (kx*NK+ky)*NK+kz (indices desplazados por kmax).
-func real[int] potenciaDFT3D(real[int] s, real[int,int] Cm, real[int,int] Sm, int NG, int NK){
+// Cm y Sm son locales (no parametros): un array pasado por valor es una vista KNM_ y FreeFem
+// solo tiene registrado el producto matriz*vector para variables (punteros), no para vistas.
+func real[int] potenciaDFT3D(real[int] &s, int kmax, int NG){
+    int NK = 2*kmax+1;
+    real[int,int] Cm(NK, NG), Sm(NK, NG);
+    for(int k=-kmax; k<=kmax; k++){
+        for(int n=0; n<NG; n++){
+            Cm(k+kmax, n) = cos(2.*pi*k*n/NG);
+            Sm(k+kmax, n) = sin(2.*pi*k*n/NG);
+        }
+    }
     real[int] v(NG), wR(NK), wI(NK);
     real[int] pR(NG), pI(NG), qR(NK), qI(NK), tt(NK);
 
@@ -148,16 +159,9 @@ func real[int] espectro3DFFT(real[int] uFourierv, real[int] uFouriervY, real[int
 
     // 3) DFT 3D separable de las tres componentes
     write("Output.txt", " - DFT: transformando...", 1, 1);
-    real[int,int] Cm(NK, NG), Sm(NK, NG);
-    for(int k=-kmax; k<=kmax; k++){
-        for(int n=0; n<NG; n++){
-            Cm(k+kmax, n) = cos(2.*pi*k*n/NG);
-            Sm(k+kmax, n) = sin(2.*pi*k*n/NG);
-        }
-    }
-    real[int] pX = potenciaDFT3D(sX, Cm, Sm, NG, NK);
-    real[int] pY = potenciaDFT3D(sY, Cm, Sm, NG, NK);
-    real[int] pZ = potenciaDFT3D(sZ, Cm, Sm, NG, NK);
+    real[int] pX = potenciaDFT3D(sX, kmax, NG);
+    real[int] pY = potenciaDFT3D(sY, kmax, NG);
+    real[int] pZ = potenciaDFT3D(sZ, kmax, NG);
     real tDFT = mpiWtime();
 
     // 4) Energia por modo en el formato de energyk3d: energyhat[kz](kx,ky).
