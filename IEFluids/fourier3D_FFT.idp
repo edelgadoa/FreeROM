@@ -1,24 +1,25 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Espectro 3D mediante FFT. Alternativa a espectro3D de fourier3D_IEFluids_trunc.idp (que se
-// incluye ANTES que este fichero y del que se reutiliza energyk3d, con la correccion wx).
+// Espectro 3D por muestreo en rejilla + DFT separable. Alternativa a espectro3D de
+// fourier3D_IEFluids_trunc.idp (que se incluye ANTES que este fichero y del que se reutiliza
+// energyk3d, con la correccion wx). No necesita ningun plugin.
 //
 // Metodo: en vez de proyectar el campo sobre (2*kmax+1)^3 modos con una integral EF por modo,
 //  1) se reune el campo en la malla global truncada (suma ponderada por la particion de la unidad),
 //  2) se muestrea en una rejilla cartesiana NG^3 (regla del punto medio) sobre la caja truncada,
-//  3) se aplica una FFT 3D (plugin dfft, FFTW) y se escala por el volumen de celda, de modo que
-//     los coeficientes tengan las mismas unidades que la integral del metodo original,
+//  3) se calcula la DFT 3D de forma separable (matriz de Vandermonde 1D aplicada en z, y, x; es la
+//     descomposicion que usa el paper) y se escala por el volumen de celda, de modo que los
+//     coeficientes tengan las mismas unidades que la integral del metodo original,
 //  4) la energia por modo se agrupa con energyk3d, igual que en el metodo original.
 // El coste deja de depender del numero de grados de libertad de la malla en el bucle de modos.
+// Se usan solo matrices reales (coseno/seno) y productos matriz-vector.
 //
 // Diferencias esperables respecto al metodo original (no son errores de implementacion):
-//  - aliasing: la FFT discreta mezcla el modo k con k+-NG; se reduce subiendo ovsFFT;
+//  - aliasing: la DFT discreta mezcla el modo k con k+-NG; se reduce subiendo ovsFFT;
 //  - el original integra sobre la malla truncada irregular (barycentros dentro de la caja),
-//    la FFT lo hace sobre la caja nominal (en los bordes se extrapola el P1 del elemento cercano);
+//    esto lo hace sobre la caja nominal (en los bordes se extrapola el P1 del elemento cercano);
 //  - el original interpola en P1 cos/sin de cada modo, lo que pierde precision cuando la longitud
 //    de onda es de pocos elementos (modos altos); el muestreo puntual no tiene ese error.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-
-load "dfft"
 
 int ovsFFT = 4; // sobremuestreo: puntos por eje NG = ovsFFT*kmax (debe ser >= 3 para NG >= 2*kmax+1)
 
@@ -39,6 +40,66 @@ func real[int] reuneCampoGlobal(real[int] uLoc){
     return uGl;
 }
 
+// |DFT|^2 de las muestras s (layout (ix*NG+iy)*NG+iz) para los modos -kmax..kmax en cada eje.
+// Cm(k,n)=cos(2*pi*k*n/NG), Sm(k,n)=sin(...): la transformada directa es F = Cm - i*Sm.
+// Devuelve un vector de NK^3 con layout (kx*NK+ky)*NK+kz (indices desplazados por kmax).
+func real[int] potenciaDFT3D(real[int] s, real[int,int] Cm, real[int,int] Sm, int NG, int NK){
+    real[int] v(NG), wR(NK), wI(NK);
+    real[int] pR(NG), pI(NG), qR(NK), qI(NK), tt(NK);
+
+    // paso z: para cada (ix,iy) transformar la fibra en z (entrada real)
+    real[int] aRe(NG*NG*NK), aIm(NG*NG*NK);
+    for(int ix=0; ix<NG; ix++){
+        for(int iy=0; iy<NG; iy++){
+            int b = (ix*NG+iy)*NG;
+            for(int n=0; n<NG; n++) v[n] = s[b+n];
+            wR = Cm*v;
+            wI = Sm*v;
+            wI *= -1.;
+            int c = (ix*NG+iy)*NK;
+            for(int k=0; k<NK; k++){
+                aRe[c+k] = wR[k];
+                aIm[c+k] = wI[k];
+            }
+        }
+    }
+
+    // paso y: para cada (ix,kz) transformar la fibra en y. (Cm-i*Sm)(pR+i*pI):
+    //   Re = Cm*pR + Sm*pI ,  Im = Cm*pI - Sm*pR
+    real[int] bRe(NG*NK*NK), bIm(NG*NK*NK);
+    for(int ix=0; ix<NG; ix++){
+        for(int kz=0; kz<NK; kz++){
+            for(int iy=0; iy<NG; iy++){
+                pR[iy] = aRe[(ix*NG+iy)*NK+kz];
+                pI[iy] = aIm[(ix*NG+iy)*NK+kz];
+            }
+            qR = Cm*pR; tt = Sm*pI; qR += tt;
+            qI = Cm*pI; tt = Sm*pR; qI -= tt;
+            for(int ky=0; ky<NK; ky++){
+                bRe[(ix*NK+ky)*NK+kz] = qR[ky];
+                bIm[(ix*NK+ky)*NK+kz] = qI[ky];
+            }
+        }
+    }
+
+    // paso x: para cada (ky,kz) transformar la fibra en x y acumular |.|^2
+    real[int] pot(NK*NK*NK);
+    for(int ky=0; ky<NK; ky++){
+        for(int kz=0; kz<NK; kz++){
+            for(int ix=0; ix<NG; ix++){
+                pR[ix] = bRe[(ix*NK+ky)*NK+kz];
+                pI[ix] = bIm[(ix*NK+ky)*NK+kz];
+            }
+            qR = Cm*pR; tt = Sm*pI; qR += tt;
+            qI = Cm*pI; tt = Sm*pR; qI -= tt;
+            for(int kx=0; kx<NK; kx++){
+                pot[(kx*NK+ky)*NK+kz] = qR[kx]*qR[kx] + qI[kx]*qI[kx];
+            }
+        }
+    }
+    return pot;
+}
+
 func real[int] espectro3DFFT(real[int] uFourierv, real[int] uFouriervY, real[int] uFouriervZ, int kmax){
 
     real tIni = mpiWtime();
@@ -53,7 +114,7 @@ func real[int] espectro3DFFT(real[int] uFourierv, real[int] uFouriervY, real[int
     real hx = Lx/NG, hy = Ly/NG, hz = Lz/NG;
 
     // 1) Campo global
-    write("Output.txt", " - FFT: reuniendo campo en malla global...", 1, 1);
+    write("Output.txt", " - DFT: reuniendo campo en malla global...", 1, 1);
     VhP1truncFFTG uhX, uhY, uhZ;
     uhX[] = reuneCampoGlobal(uFourierv);
     uhY[] = reuneCampoGlobal(uFouriervY);
@@ -61,7 +122,7 @@ func real[int] espectro3DFFT(real[int] uFourierv, real[int] uFouriervY, real[int
     real tGather = mpiWtime();
 
     // 2) Muestreo en rejilla de puntos medios; cada proceso evalua los planos ix = rank (mod size)
-    write("Output.txt", " - FFT: muestreando en rejilla...", 1, 1);
+    write("Output.txt", " - DFT: muestreando en rejilla...", 1, 1);
     real[int] sXL(NG3), sYL(NG3), sZL(NG3);
     sXL = 0.; sYL = 0.; sZL = 0.;
     for(int ix=0; ix<NG; ix++){
@@ -85,43 +146,41 @@ func real[int] espectro3DFFT(real[int] uFourierv, real[int] uFouriervY, real[int
     mpiAllReduce(sZL, sZ, mpiCommWorld, mpiSUM);
     real tSample = mpiWtime();
 
-    // 3) FFT 3D (FFTW, sign=-1 directa, sin normalizar). Layout (ix,iy,iz) con iz el mas rapido.
-    write("Output.txt", " - FFT: transformando...", 1, 1);
-    complex[int] fX(NG3), fY(NG3), fZ(NG3), gX(NG3), gY(NG3), gZ(NG3);
-    for(int idx=0; idx<NG3; idx++){
-        fX[idx] = sX[idx];
-        fY[idx] = sY[idx];
-        fZ[idx] = sZ[idx];
+    // 3) DFT 3D separable de las tres componentes
+    write("Output.txt", " - DFT: transformando...", 1, 1);
+    real[int,int] Cm(NK, NG), Sm(NK, NG);
+    for(int k=-kmax; k<=kmax; k++){
+        for(int n=0; n<NG; n++){
+            Cm(k+kmax, n) = cos(2.*pi*k*n/NG);
+            Sm(k+kmax, n) = sin(2.*pi*k*n/NG);
+        }
     }
-    gX = dfft(fX, NG, NG, -1);
-    gY = dfft(fY, NG, NG, -1);
-    gZ = dfft(fZ, NG, NG, -1);
-    real tFFT = mpiWtime();
+    real[int] pX = potenciaDFT3D(sX, Cm, Sm, NG, NK);
+    real[int] pY = potenciaDFT3D(sY, Cm, Sm, NG, NK);
+    real[int] pZ = potenciaDFT3D(sZ, Cm, Sm, NG, NK);
+    real tDFT = mpiWtime();
 
     // 4) Energia por modo en el formato de energyk3d: energyhat[kz](kx,ky).
-    //    |coef| = (Lx*Ly*Lz/NG^3)*|g|, el factor de fase del punto medio tiene modulo 1.
-    write("Output.txt", " - FFT: calculando energia...", 1, 1);
+    //    |coef| = (Lx*Ly*Lz/NG^3)*|DFT|; el factor de fase del punto medio tiene modulo 1.
+    write("Output.txt", " - DFT: calculando energia...", 1, 1);
     real vol = Lx*Ly*Lz/NG3;
     real[int,int][int] energyhat(NK);
-    for(int kz=-kmax; kz<=kmax; kz++){
+    for(int kz=0; kz<NK; kz++){
         real[int,int] eAux(NK, NK);
-        int bz = (kz+NG)%NG;
-        for(int kx=-kmax; kx<=kmax; kx++){
-            int bx = (kx+NG)%NG;
-            for(int ky=-kmax; ky<=kmax; ky++){
-                int by = (ky+NG)%NG;
-                int idm = (bx*NG + by)*NG + bz;
-                eAux(kx+kmax, ky+kmax) = 0.5*vol*vol*(abs(gX[idm])^2 + abs(gY[idm])^2 + abs(gZ[idm])^2);
+        for(int kx=0; kx<NK; kx++){
+            for(int ky=0; ky<NK; ky++){
+                int idm = (kx*NK + ky)*NK + kz;
+                eAux(kx, ky) = 0.5*vol*vol*(pX[idm] + pY[idm] + pZ[idm]);
             }
         }
-        energyhat[kz+kmax] = eAux(0:NK-1, 0:NK-1);
+        energyhat[kz] = eAux(0:NK-1, 0:NK-1);
     }
 
-    write("Output.txt", " - FFT: sumando por coronas...", 1, 1);
+    write("Output.txt", " - DFT: sumando por coronas...", 1, 1);
     real[int] energykk = energyk3d(energyhat);
 
     real tFin = mpiWtime();
     mpi(cout << " [espectro3DFFT] NG=" << NG << "  reunir=" << tGather-tIni << " s  muestreo=" << tSample-tGather
-             << " s  FFT=" << tFFT-tSample << " s  energia+coronas=" << tFin-tFFT << " s  total=" << tFin-tIni << " s" << endl;)
+             << " s  DFT=" << tDFT-tSample << " s  energia+coronas=" << tFin-tDFT << " s  total=" << tFin-tIni << " s" << endl;)
     return energykk;
 }
