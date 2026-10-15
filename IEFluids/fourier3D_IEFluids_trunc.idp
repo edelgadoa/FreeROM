@@ -1,10 +1,15 @@
-// Archivo auxiliar calculo de transformadas de fourier
-
-
-// real[int] dFourier;
-// PartitionCreate(ThTrunc, dFourier, PkP1); 
-// VhP1trunc DP1; DP1[] = dFourier;
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Espectro de energía 3D por proyección EF sobre los modos de Fourier (método de referencia).
+//  - FourierTransform3D: coeficientes de Fourier de un campo P1 en la malla truncada ThTrunc,
+//    como producto escalar L2 (matriz de masa) con el cos/sin de cada modo.
+//  - energycomputation: energía (1/2)|u^_k|^2 sumada sobre las tres componentes.
+//  - energyk3d: agrupa la energía por coronas de número de onda físico.
+//  - espectro3D: encadena los pasos anteriores. Es costoso (O(kmax^3) proyecciones sobre toda la
+//    malla); la alternativa rápida es espectro3DFFT, en fourier3D_FFT.idp.
+// Requiere ThTrunc, VhP1trunc y PkP1 definidos por el script. La caja truncada (x 1400..1800,
+// y 100..300, z 145..345) está escrita en las fases de los modos y en wx: si cambia, hay que
+// cambiarla también en el script y en fourier3D_FFT.idp.
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 Mat MProdL2;
 MatCreate(ThTrunc, MProdL2, PkP1);
@@ -16,95 +21,48 @@ MatCreate(ThTrunc, MProdL2, PkP1);
 }
 
 
+// Coeficientes de Fourier (modos ii,jj en x,y; kZ en z) de un campo P1 de la malla truncada.
+// uFourierv está en la numeración local de FreeFem y se devuelven los coeficientes locales
+// (la suma entre procesos se hace en espectro3D). Cada eje se reescala a [-1,1].
 func complex[int,int] FourierTransform3D(real[int] uFourierv, int kmax, int kZ){
-    //VhP1trunc<complex> uFourier;
-    //uFourier[] = uFourierv;
     real[int] uFourierPETSc(MProdL2.n);
-	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc); 
-	
+	ChangeNumbering(MProdL2, uFourierv, uFourierPETSc);
+
 	complex[int,int] FCoefs(2*kmax+1, 2*kmax+1);
     for(int ii=-kmax; ii <= kmax; ii++){
         for(int jj=-kmax; jj <= kmax; jj++){
-            func fourierRE = //cos(pi*(x*ii/400+ y*jj/200 + z*kZ/200));
-            cos(pi*((2*(x-1400)/400-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ));
-             // cos(pi*(x*ii + y*jj + z*kZ)); // Probar con cos(pi*(x*ii/400+ y*jj/200 + z*kZ/200)), w/(xmax-wmin)
-			func fourierIM = //sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200));
-            sin(pi*((2*(x-1400)/400-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ)); 
-            // sin(pi*(x*ii + y*jj + z*kZ)); // Probar con sin(pi*(x*ii/400+ y*jj/200 + z*kZ/200))
+            func fourierRE = cos(pi*((2*(x-1400)/400-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ));
+            func fourierIM = sin(pi*((2*(x-1400)/400-1)*ii + (2*(y-100)/200-1)*jj + (2*(z-145)/200-1)*kZ));
 			VhP1trunc EFufourierRE = fourierRE;
 			VhP1trunc EFufourierIM = fourierIM;
 			real[int] EFuFouriervRE = EFufourierRE[];
 			real[int] EFuFouriervIM = EFufourierIM[];
-			
+
 			real[int] EFuFourierREPETSc(MProdL2.n),EFuFourierIMPETSc(MProdL2.n);
 			ChangeNumbering(MProdL2, EFuFouriervRE, EFuFourierREPETSc);
 			ChangeNumbering(MProdL2, EFuFouriervIM, EFuFourierIMPETSc);
 			real[int] AuxFourier(MProdL2.n);
 			MatMult(MProdL2, uFourierPETSc, AuxFourier);
-			
+
 			real FCoefRE = EFuFourierREPETSc'*AuxFourier;
 			real FCoefIM = EFuFourierIMPETSc'*AuxFourier;
-			
+
 			complex CoefAux = FCoefRE - 1i*FCoefIM;
 
-            FCoefs(ii+kmax, jj+kmax) = CoefAux; 
+            FCoefs(ii+kmax, jj+kmax) = CoefAux;
 		}
     }
-    return FCoefs; // Los devuelve en local
+    return FCoefs;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Transformada de fourier inversa.
-func complex[int] FourierInverse3D(complex[int,int] Coefs){
-    int kcoefs = (Coefs.n-1)/2;
-    VhP1trunc<complex> uFourier;
-	
-	uFourier = 0;
-    for(int ii = -kcoefs; ii<kcoefs; ii++){
-        for(int jj = -kcoefs; jj<kcoefs; jj++){
-			for(int kk = -kcoefs; kk<kcoefs; kk++){
-				complex FCoef = Coefs(ii+kcoefs,(jj+kcoefs)*(2.*kcoefs+1)+kk+kcoefs);
-            	func BaseFourier = FCoef*exp(-1i*pi*(x*ii+y*jj+z*kk));
-				VhP1trunc<complex> EFBaseFourier = BaseFourier;
-				uFourier =  uFourier + EFBaseFourier;
-			}
-        }
-	}
-	return uFourier[];
-}
-
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Cálculo del espectro.
-func real[int,int][int] energycomputation(complex[int,int][int] & CoefsX, complex[int,int][int] & CoefsY, complex[int,int][int] & CoefsZ)
+// Energía (1/2)|u^_k|^2 de las tres componentes para los modos (ii,jj) de un plano kz fijo.
+func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY, complex[int,int] & CoefsZ)
 {
     int kmax = (CoefsX.n-1)/2;
-    real[int,int][int] resultL(2*kmax+1), result(2*kmax+1);
-	// resultL=0.; result=0.; 
-	
-    for(int kk=-kmax; kk<=kmax; kk++){
-        real[int,int] resultAux(2*kmax+1, 2*kmax+1);
-	    for(int ii=-kmax;ii<=kmax;ii++){
-            for(int jj=-kmax; jj<=kmax; jj++){
-            	resultAux(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX[kk+kmax](ii+kmax,jj+kmax))^2
-                                                   + abs(CoefsY[kk+kmax](ii+kmax,jj+kmax))^2
-                                                   + abs(CoefsZ[kk+kmax](ii+kmax,jj+kmax))^2);
-				}
-			}
-        result[kk+kmax] = resultAux;
-    }
-	return result;
-}
-
-
-func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int] & CoefsY, complex[int,int] & CoefsZ, int kk)
-{
-    int kmax = (CoefsX.n-1)/2;
-    // mpi(cout<<"kmax = "<<kmax<<", CoefsXYZ.n = "<<CoefsX.n<<", "<<CoefsY.n<<", "<<CoefsZ.n<<endl;)
     real[int,int] result(2*kmax+1, 2*kmax+1);
-	// resultL=0.; result=0.; 
-	
+
     for(int ii=-kmax; ii<=kmax; ii++){
         for(int jj=-kmax; jj<=kmax; jj++){
             result(ii+kmax,jj+kmax) = (1./2)*(abs(CoefsX(ii+kmax,jj+kmax))^2
@@ -112,7 +70,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
                                             + abs(CoefsZ(ii+kmax,jj+kmax))^2);
 		}
 	}
-    
+
 	return result;
 }
 
@@ -124,6 +82,7 @@ func real[int,int] energycomputation(complex[int,int] & CoefsX, complex[int,int]
 // numero de onda fisico que k2,k3 (2*pi*k/Lx = (Ly/Lx)*2*pi*k/Ly). Se reescala
 // k1 por wx=Ly/Lx antes de tomar el modulo para agrupar por numero de onda FISICO,
 // no por indice de modo. Si Ly!=Lz en el futuro, haria falta un wy analogo.
+// Energy[k3](k1,k2) con k1,k2,k3 los indices de modo en x,y,z (desplazados por kmax).
 func real[int] energyk3d(real[int,int][int] & Energy)
 {
     real wx = 200./400.; // Ly/Lx (=Lz/Lx aqui, pues Ly=Lz)
@@ -139,7 +98,6 @@ func real[int] energyk3d(real[int,int][int] & Energy)
 			for(int k3=-kmax; k3<=kmax; k3++){
 				module = sqrt((wx*k1)^2+k2^2+k3^2);
 				l = module;
-               //  mpi(cout<<"(k1,k2,k3)=("<<k1<<","<<k2<<","<<k3<<") --- module (real)= "<<module<<", module (int)= "<<l<<endl;)
 				energykbycrowns[l] += Energy[k3+kmax](k1+kmax,k2+kmax);
 			}
 		}
@@ -148,43 +106,42 @@ func real[int] energyk3d(real[int,int][int] & Energy)
 }
 
 
+// Espectro (energía por corona) de un campo vectorial P1 de la malla truncada, por proyección EF.
 func real[int] espectro3D(real[int] uFourierv, real[int] uFouriervY, real[int] uFouriervZ, int kmax){
 
 	write("Output.txt", " - Calculando Coeficientes...", 1, 1);
-    complex[int,int][int] FCoefsX(2*kmax+1);//,(2*kmax+1)^2);
-    complex[int,int][int] FCoefsY(2*kmax+1);//,(2*kmax+1)^2);
-    complex[int,int][int] FCoefsZ(2*kmax+1);//,(2*kmax+1)^2);
+    complex[int,int][int] FCoefsX(2*kmax+1);
+    complex[int,int][int] FCoefsY(2*kmax+1);
+    complex[int,int][int] FCoefsZ(2*kmax+1);
     complex[int,int] FCoefsXL(2*kmax+1, 2*kmax+1);
     complex[int,int] FCoefsYL(2*kmax+1, 2*kmax+1);
     complex[int,int] FCoefsZL(2*kmax+1, 2*kmax+1);
-    
-	
+
     for (int kk=-kmax; kk<=kmax; kk++){
-        complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1), 
-                          AuxFCoefsY(2*kmax+1, 2*kmax+1), 
+        complex[int, int] AuxFCoefsX(2*kmax+1, 2*kmax+1),
+                          AuxFCoefsY(2*kmax+1, 2*kmax+1),
                           AuxFCoefsZ(2*kmax+1, 2*kmax+1);
-        
+
         FCoefsXL = FourierTransform3D(uFourierv, kmax, kk);
         mpiAllReduce(FCoefsXL, AuxFCoefsX, mpiCommWorld, mpiSUM);
         FCoefsX[kk+kmax] = AuxFCoefsX(0:2*kmax, 0:2*kmax);
-    
+
         FCoefsYL = FourierTransform3D(uFouriervY, kmax, kk);
         mpiAllReduce(FCoefsYL, AuxFCoefsY, mpiCommWorld, mpiSUM);
         FCoefsY[kk+kmax] = AuxFCoefsY(0:2*kmax, 0:2*kmax);
-    
+
 	    FCoefsZL = FourierTransform3D(uFouriervZ, kmax, kk);
         mpiAllReduce(FCoefsZL, AuxFCoefsZ, mpiCommWorld, mpiSUM);
         FCoefsZ[kk+kmax] = AuxFCoefsZ(0:2*kmax, 0:2*kmax);
-    
-    }   
+    }
 
 	write("Output.txt", " - Calculando energia...", 1, 1);
     real[int,int][int] energyhat(2*kmax+1);
     for (int kk=-kmax; kk<=kmax; kk++){
-        real[int,int] energyhatAux = energycomputation(FCoefsX[kk+kmax], FCoefsY[kk+kmax], FCoefsZ[kk+kmax], kk);
+        real[int,int] energyhatAux = energycomputation(FCoefsX[kk+kmax], FCoefsY[kk+kmax], FCoefsZ[kk+kmax]);
         energyhat[kk+kmax] = energyhatAux(0:2*kmax, 0:2*kmax);
-    }   
-    
+    }
+
 	write("Output.txt", " - Sumando por coronas...", 1, 1);
     real[int] energykk = energyk3d(energyhat);
     return energykk;

@@ -1,6 +1,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-// Código para hacer la fase OFFLINE del método multifidelitiy con los datos de IEFluids
+// Fase OFFLINE del método multifidelity con los datos de IEFluids.
+// Greedy sobre el número de Reynolds guiado por el estimador espectral de Kolmogorov (K41):
+// la solución reducida se construye con coeficientes LF sobre la base POD HF, y su espectro 3D
+// (calculado por muestreo en rejilla + DFT, ver fourier3D_FFT.idp) se compara con la ley k^(-5/3).
 
 load "msh3"
 load "gmsh"
@@ -19,8 +22,7 @@ bool PETScON = true;
 include "macro_ddm.idp"
 
 
-// Cargamos las funciones para pasar la numeracion de IEfluids a FreeFem
-// include "IE2FF.idp" // ** ENRIQUE: Esto quizás no es necesario, porque los snapshots ya están guardados en numeracion FF
+// Normas y productos escalares
 include "Normas_3D.idp"
 include "../Auxiliary/Macros_3D.idp"
 
@@ -35,17 +37,19 @@ mesh3 ThLF = readmesh3("IEfluids_LF.mesh"); // Cargo la malla LF
 mesh3 ThG = Th, ThLFG = ThLF;
 
 
-// Creo la malla truncada
-mpi(cout<<" - Truncando malla global LF y creando mallas truncadas locales..."<<endl;)
-mesh3 ThTrunc = trunc(Th, ((x<1800)),split=1); 
-ThTrunc = trunc(ThTrunc, ((x>1400)),split=1); // Probar con 1400 (mismas divisiones) 1600 (cubo perfecto)
-ThTrunc = trunc(ThTrunc, ((y<300)),split=1); //300 //original 240
-ThTrunc = trunc(ThTrunc, ((y>100)),split=1); //100 //original 40
-ThTrunc = trunc(ThTrunc, ((z<345)),split=1); //345 //original 350
-ThTrunc = trunc(ThTrunc, ((z>145)),split=1); //145 //original 150
+// Malla truncada (HF) para el análisis espectral. Caja x in (1400,1800), y in (100,300), z in (145,345),
+// es decir 400x200x200 (el mallado tiene dx=2*dy=2*dz). Estas cotas deben coincidir con las constantes
+// de fourier3D_IEFluids_trunc.idp (fase de los modos y wx) y de fourier3D_FFT.idp (caja de muestreo).
+mpi(cout<<" - Truncando la malla HF y creando mallas truncadas locales..."<<endl;)
+mesh3 ThTrunc = trunc(Th, ((x<1800)),split=1);
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1);
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1);
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1);
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1);
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1);
 
-//Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
-mesh3 ThTruncG = ThTrunc; // For the global mesh
+// Dimensiones de la malla total: x,y,z -> [3.8, 2085]x[1.92, 335]x[1, 489] (approx)
+mesh3 ThTruncG = ThTrunc; // Malla global (antes de repartirla entre procesos)
 
 
 // Macros para la malla en paralelo
@@ -57,14 +61,11 @@ macro ThTruncN2O() myN2oTrunc // EOM
 buildDmesh(Th);
 buildDmesh(ThLF);
 buildDmesh(ThTrunc);
-// macro def(i) [i, i#Y, i#Z] // EOM
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-
 int ReSnap = 20; // numero de Snapshots de Reynolds
 int TimeSnap = 6; // numero de Snapshots en tiempo por cada Reynolds
-int Nsnap = ReSnap*TimeSnap;
 bool bPETSc = 1; // Para hacer los innerprodX sin hacer antes el changenumbering
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -72,24 +73,18 @@ mpi(cout<< "Creando espacio de elementos finitos..."<<endl;)
 macro PkP1() P1 // EOM
 macro Pk3P1() [P1,P1,P1] // EOM
 
-// Variables donde guardo los snapshots que cargo
-
+// Espacios de elementos finitos (G = malla global, sin G = malla local de cada proceso)
 fespace Vh3P1G(ThG, Pk3P1);
 fespace Vh3P1(Th, Pk3P1);
 
 fespace Vh3P1LFG(ThLFG, Pk3P1);
 fespace Vh3P1LF(ThLF, Pk3P1);
 
-fespace Vh3P1trunc(ThTrunc, Pk3P1);  
-fespace Vh3P1truncG(ThTruncG, Pk3P1);
-
-fespace VhP1trunc(ThTrunc, PkP1); 
-
-matrix MinterpHF2LF = interpolate(Vh3P1LF, Vh3P1);
+fespace VhP1trunc(ThTrunc, PkP1);
 
 // PETSc matrices
 Mat MatNormL2, MatNormLFL2;
-int[int] mapVh3P1trunc, mapVh3P1, mapVh3P1LF; 
+int[int] mapVh3P1, mapVh3P1LF;
 
 {
 	macro def(i) [i, i#Y, i#Z] //
@@ -101,7 +96,6 @@ int[int] mapVh3P1trunc, mapVh3P1, mapVh3P1LF;
 
 mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
 mapVh3P1LF = restrict(Vh3P1LF, Vh3P1LFG, myN2oLF);
-mapVh3P1trunc = restrict(Vh3P1trunc, Vh3P1truncG, myN2oTrunc);
 
 {
 	varf NormV([u, uY, uZ],[v, vY, vZ]) = int3d(Th)(UporV(u,v));
@@ -129,7 +123,6 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         Vh3P1LF [BaseVLF,BaseVLFY,BaseVLFZ];		
 
         readvector("SnapshotsLFinterp/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolGLF, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
-        // readvector("SnapshotsLowF/V_" + 5*NRe + "_meanfile" + NTemp + ".txt", real, SolGLF, 0); // Estos son los low fidelity obtenidos interpolando los High Fidelity
 
         BaseVLFG[] = SolGLF;
         BaseVLF[] = BaseVLFG[](mapVh3P1LF); // Load in the local mesh (LF)
@@ -139,37 +132,35 @@ for (int NRe=1; NRe<=ReSnap; NRe++){
         Vh3P1 [BaseV,BaseVY,BaseVZ];		
         readvector("Snapshots/V_" + NRe + "_meanfile" + NTemp + ".txt", real, SolG, 0); // Estos son los HIGH fidelity
         BaseVG[] = SolG;
-        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh (LF)
-        
+        BaseV[] = BaseVG[](mapVh3P1); // Load in the local mesh (HF)
+
         MBaseVhigh(:,i+(NRe-1)*TimeSnap) = BaseV[];
-        
+
     }
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
+// Parámetros del Greedy y del estimador espectral
 
 int maxGreedy = 6; // Número máximo de iteraciones del Greedy
 int NRe = 1; // Reynolds para la primera iteración
-int NbasesV = 1; 
-real epsPOD = 1e-3;
+int NbasesV = 1;
+real epsPOD = 1e-3; // Tolerancia de la POD (la usa POD.idp)
 real[int] MuBest(maxGreedy+1);
 MuBest(0) = 1;
-real[int] ETiempo(6);
 real[int] EReynolds(ReSnap);
 real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
-real[int] EGreedy(maxGreedy);
-int kmax = 12; // ** Comprobar (approx 12)
-int kinf = 2; // ** Comprobar (se puede hacer mas pequeños)
-int ksup = 12; // ** Comprobar (approx 15)
+int kmax = 12; // Máximo índice de modo de Fourier en cada dirección
+int kinf = 2; // Rango [kinf,ksup) de coronas (número de onda) usado en el ajuste a k^(-5/3)
+int ksup = 12;
+bool comparaEspectros = false; // true: calcula también el espectro del método original (lento) y lo compara con el de la FFT
 
-include "fourier3D_IEFluids_trunc.idp"; // Funciones para calcular la transformada de fourier
+include "fourier3D_IEFluids_trunc.idp"; // Proyección EF sobre los modos de Fourier (espectro3D) y agrupación por coronas (energyk3d)
 include "fourier3D_FFT.idp"; // espectro3DFFT: mismo espectro por muestreo en rejilla + DFT separable (sin plugins)
-bool comparaEspectros = true; // true: calcula tambien el espectro original (lento) y compara con la FFT
 
-real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Se modifica la dimension en cada etapa
+real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Snapshots HF de los Reynolds ya elegidos (se amplía en cada iteración)
 
-real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Para calcular los errores POD en el Greedy
-real[int] ErrorL1L2G(maxGreedy), ErrorLinfL2G(maxGreedy); // Lo mismo pero en Global
+real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Error L2 relativo HF-ROM (norma l1 y máximo en Reynolds) por iteración, solo para monitorizar
 
 for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
@@ -211,7 +202,7 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     real[int, int] MBaseFinalG(Vh3P1G.ndof, NbasesV);
 	for(int k=0; k<NbasesV; k++){
 
-        // BaseLFV[k][] = MinterpHF2LF*BaseV[k][]; // Interpolo la base POD en la malla LF para el calculo de los coef. POD.
+        // Interpolo la base POD (HF) a la malla LF para calcular los coeficientes con los snapshots LF
         {
             macro def(i) [i, i#Y, i#Z] // EOM
             macro init(i) [i, i, i] // EOM
@@ -239,143 +230,108 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     for (int NRe=1; NRe<=ReSnap; NRe++){
         mpi(cout<< " -- NRe = "+NRe << endl;)
 
-        // Reconstrucción de la solución en el espacio reducido.
+        // Reconstrucción de la solución en el espacio reducido (último tiempo de cada Reynolds)
+        Vh3P1LF [SnapLF, SnapLFY, SnapLFZ];
+        Vh3P1 [Snap, SnapY, SnapZ];
+
+        Snap[] = MBaseVhigh(:, TimeSnap*NRe-1);
+        SnapLF[] = MBaseVlow(:, TimeSnap*NRe-1);
+
+        // Coeficientes reducidos: proyección del snapshot LF sobre la base POD interpolada a LF
+        real[int] coefLF(NbasesV);
+        Vh3P1 [uRB, uRBY, uRBZ];
+        uRB[] = 0.; // La solución RB es HF, pues es combinación de las funciones de base POD (HF)
+        Vh3P1LF [uRBLF, uRBLFY, uRBLFZ];
+        for(int j=0; j<NbasesV; j++){
+            coefLF(j) = innerprodX(BaseLFV[j][], SnapLF[], MatNormLFL2, bPETSc);
+            uRB[] += coefLF(j)*BaseV[j][];
+        }
+        {
+            macro def(i) [i, i#Y, i#Z] //EOM
+            macro init(i) [i, i, i] //EOM
+            VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF); // uRB en la malla LF (solo para el error LF)
+        }
+
+        // Error L2 relativo de la solución reducida respecto a los snapshots (solo para monitorizar)
+        Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
+        Vh3P1LF [ErrorPODLF, ErrorPODLFY, ErrorPODLFZ];
         
-        ETiempo = 0;
+        ErrorPOD[] = Snap[] - uRB[];
+        ErrorPODLF[] = SnapLF[] - uRBLF[];
         
-        // for (int NTemp=1; NTemp<=TimeSnap; NTemp++){ 
-            // Leo en cada tiempo
-            Vh3P1LF [SnapLF, SnapLFY, SnapLFZ];
-            Vh3P1 [Snap, SnapY, SnapZ];
-            Vh3P1trunc [SnapTrunc, SnapTruncY, SnapTruncZ];
-            
-            Snap[] = MBaseVhigh(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
-            SnapLF[] = MBaseVlow(:, TimeSnap*NRe-1); // Tomo el último tiempo de cada Reynolds
+        ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
+        real ErrorL2LF = normX(ErrorPODLF[], MatNormLFL2, bPETSc)/normX(SnapLF[], MatNormLFL2, bPETSc);
+        mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
+        mpi(cout<<" Error L2 relativo LowF = " << ErrorL2LF<< endl;)
+        
+        // Espectro de la solución reducida: se interpola a la malla truncada HF
+        VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
+        uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ;
 
-            [SnapTrunc, SnapTruncY, SnapTruncZ] = [SnapLF, SnapLFY, SnapLFZ]; // Tomo los truncados porque será lo que use el estimador
-            
-            // Hallo los coeficientes reducidos (very)low-fidelity y construyo solucion reducida
-            real[int] coefLF(NbasesV); // Lo dejo así por si queremos guardar los coeficientes en algún momento
-            real[int] coefHF(NbasesV);
-            real[int] DiffCoefHFLF(NbasesV);
-            Vh3P1 [uRB, uRBY, uRBZ]; 
-            uRB[] = 0.; //La solucion RB tiene que ser HF, pues es combinacion de las funciones de base POD (HF)
-            Vh3P1LF [uRBLF, uRBLFY, uRBLFZ]; //Tengo que obtener su interpolacion a LF para hallar el Kolmogorov
-            for(int j=0; j<NbasesV; j++){               
-                coefLF(j) = innerprodX(BaseLFV[j][], SnapLF[], MatNormLFL2, bPETSc); 
-                coefHF(j) = innerprodX(BaseV[j][], Snap[], MatNormL2, bPETSc);
-                
-                uRB[] += coefLF(j)*BaseV[j][];
-                //uRBLF[] = MinterpHF2LF*uRB[];
-            }
-            {
-                macro def(i) [i, i#Y, i#Z] //EOM
-                macro init(i) [i, i, i] //EOM
-                VecInterpolate(Th, [P1,P1,P1], uRB, ThLF, [P1,P1,P1], uRBLF); //Esto solo para comprobar errores
-            }
-            
-            
-               
+        mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
+        real tEspFFT = mpiWtime();
+        real[int] espectroIEFluids = espectro3DFFT(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
+        tEspFFT = mpiWtime() - tEspFFT;
+        mpi(cout<<" Tiempo espectro con FFT = "<<tEspFFT<<" s"<<endl;)
 
-            // Calculo el error L2 de la solucion para cada Reynols
-            Vh3P1 [ErrorPOD, ErrorPODY, ErrorPODZ];
-            Vh3P1LF [ErrorPODLF, ErrorPODLFY, ErrorPODLFZ];
-            
-            ErrorPOD[] = Snap[] - uRB[];
-            ErrorPODLF[] = SnapLF[] - uRBLF[];
-            
-            ErrorL2(NRe-1) = normX(ErrorPOD[], MatNormL2, bPETSc)/normX(Snap[], MatNormL2, bPETSc); // Ya es el error L2 global RELATIVO (de la solucion HF)
-            real ErrorL2LF = normX(ErrorPODLF[], MatNormLFL2, bPETSc)/normX(SnapLF[], MatNormLFL2, bPETSc);
-            mpi(cout<<" Error L2 relativo = " << ErrorL2(NRe-1) << endl;)
-            mpi(cout<<" Error L2 relativo LowF = " << ErrorL2LF<< endl;)
-            
-            // Cálculo del espectro de la solución reducida -> Hay que truncar la solucion
-            VhP1trunc uRBTrunc, uRBTruncY, uRBTruncZ;
-            uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ; 
-            
-                        
-            mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
-            real tEspFFT = mpiWtime();
-            real[int] espectroIEFluids = espectro3DFFT(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
-            tEspFFT = mpiWtime() - tEspFFT;
-            mpi(cout<<" Tiempo espectro con FFT = "<<tEspFFT<<" s"<<endl;)
+        // Este espectro es el que alimenta al estimador. Se escribe antes del método original (lento)
+        // para no perderlo si la ejecución se corta.
+        write("EspectrosGreedy/EspectroFFT_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
 
-            // Espectro por FFT (este es el que alimenta al estimador). Se escribe ya, antes del metodo
-            // original (lento), para no perderlo si la ejecucion se corta. Nota: hasta ahora este nombre
-            // era "EspectroLF_Re_*" y contenia el espectro del metodo original.
-            write("EspectrosGreedy/EspectroFFT_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
-
-            if (comparaEspectros){ // Validacion frente al metodo original (proyeccion EF por modo)
-                real tEspEF = mpiWtime();
-                real[int] espectroEF = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
-                tEspEF = mpiWtime() - tEspEF;
-                write("EspectrosGreedy/EspectroEF_Re_" + NRe + "_" + iGreedy + ".txt", espectroEF, 0, 0, 0, 20);
-                real difL2 = 0., refL2 = 0., difRelMax = 0.;
-                for (int i=kinf; i<ksup; i++){
-                    real dif = abs(espectroIEFluids(i) - espectroEF(i));
-                    difL2 += dif*dif;
-                    refL2 += espectroEF(i)*espectroEF(i);
-                    if (dif/abs(espectroEF(i)) > difRelMax) difRelMax = dif/abs(espectroEF(i));
-                }
-                mpi(cout<<" Tiempo espectro original = "<<tEspEF<<" s (FFT: "<<tEspFFT<<" s, speed-up x"<<tEspEF/tEspFFT<<")"<<endl;)
-                mpi(cout<<" Dif. relativa FFT vs original en [kinf,ksup): l2 = "<<sqrt(difL2/refL2)<<", max puntual = "<<difRelMax<<endl;)
-
-                // Resumen acumulado (una linea por Re e iteracion Greedy): NRe, iGreedy, t FFT, t original,
-                // dif. relativa l2 y maxima puntual en [kinf,ksup)
-                real[int] resumenCompara(6);
-                resumenCompara[0] = NRe;
-                resumenCompara[1] = iGreedy;
-                resumenCompara[2] = tEspFFT;
-                resumenCompara[3] = tEspEF;
-                resumenCompara[4] = sqrt(difL2/refL2);
-                resumenCompara[5] = difRelMax;
-                write("ComparaEspectros.txt", resumenCompara, 1, 0, 0, 20);
-            }
-            
-            // Calibracion de a por minimos cuadrados sobre todo el rango inercial [kinf,ksup),
-            // en vez de un unico punto kmed: a* = argmin_a sum_i (E_i - a*k_i^p)^2
-            // => a* = sum(E_i*k_i^p) / sum(k_i^(2p))  (solucion cerrada, coste O(ksup-kinf))
-            real pExp = -5./3.; // 
-            int Nk = ksup-kinf;
-            real[int] kpow(Nk);
-            real numAlpha = 0., denAlpha = 0.;
+        if (comparaEspectros){ // Validacion frente al metodo original (proyeccion EF por modo)
+            real tEspEF = mpiWtime();
+            real[int] espectroEF = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
+            tEspEF = mpiWtime() - tEspEF;
+            write("EspectrosGreedy/EspectroEF_Re_" + NRe + "_" + iGreedy + ".txt", espectroEF, 0, 0, 0, 20);
+            real difL2 = 0., refL2 = 0., difRelMax = 0.;
             for (int i=kinf; i<ksup; i++){
-                real ii = i*1.;
-                kpow(i-kinf) = pow(ii,pExp);
-                numAlpha += espectroIEFluids(i)*kpow(i-kinf);
-                denAlpha += kpow(i-kinf)*kpow(i-kinf);
+                real dif = abs(espectroIEFluids(i) - espectroEF(i));
+                difL2 += dif*dif;
+                refL2 += espectroEF(i)*espectroEF(i);
+                if (dif/abs(espectroEF(i)) > difRelMax) difRelMax = dif/abs(espectroEF(i));
             }
-            real a = numAlpha/denAlpha;
+            mpi(cout<<" Tiempo espectro original = "<<tEspEF<<" s (FFT: "<<tEspFFT<<" s, speed-up x"<<tEspEF/tEspFFT<<")"<<endl;)
+            mpi(cout<<" Dif. relativa FFT vs original en [kinf,ksup): l2 = "<<sqrt(difL2/refL2)<<", max puntual = "<<difRelMax<<endl;)
 
-            real[int] espectroteorico(Nk); espectroteorico = a*kpow; // reutiliza kpow, sin recalcular pow()
-            real[int] diffespectro(Nk); diffespectro = 0.;
-            for (int i=kinf; i<ksup; i++){
-                diffespectro(i-kinf) = abs(espectroIEFluids(i) - espectroteorico(i-kinf));
-            }
-            //mpi(cout<<"diffespectro: "<<diffespectro<<endl;)
-            //mpi(cout<<"espectro teorico: "<<espectroteorico<<endl;)
-            // ETiempo(NTemp-1) = diffespectro.l2/espectroteorico.l2 ;
-            // mpi(cout<<"ETiempo = "<<ETiempo<<endl;)
-         
-             // Es la versión relativa del indicador
-            /*
-            // Calculo el error relativo en tiempo
-            Vh3P1 [eRB,eRBY,eRBZ]; 
-            eRB[] = Snap[] - uRB[]; 
-            real erabstime = sqrt((innerprodX(eRB[], eRB[], MatNormV, bPETSc))); // error absoluto
-            ETiempo(NTemp-1) = erabstime/sqrt(innerprodX(Snap[], Snap[], MatNormV, bPETSc)); // error relativo
-            */
-
-       // }
+            // Resumen acumulado (una linea por Re e iteracion Greedy): NRe, iGreedy, t FFT, t original,
+            // dif. relativa l2 y maxima puntual en [kinf,ksup)
+            real[int] resumenCompara(6);
+            resumenCompara[0] = NRe;
+            resumenCompara[1] = iGreedy;
+            resumenCompara[2] = tEspFFT;
+            resumenCompara[3] = tEspEF;
+            resumenCompara[4] = sqrt(difL2/refL2);
+            resumenCompara[5] = difRelMax;
+            write("ComparaEspectros.txt", resumenCompara, 1, 0, 0, 20);
+        }
         
-        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2 ; 
+        // Calibración de a por mínimos cuadrados sobre el rango inercial [kinf,ksup):
+        // a* = argmin_a sum_i (E_i - a*k_i^p)^2 = sum(E_i*k_i^p) / sum(k_i^(2p))  (solución cerrada)
+        real pExp = -5./3.; // Exponente de Kolmogorov (K41)
+        int Nk = ksup-kinf;
+        real[int] kpow(Nk);
+        real numAlpha = 0., denAlpha = 0.;
+        for (int i=kinf; i<ksup; i++){
+            real ii = i*1.;
+            kpow(i-kinf) = pow(ii,pExp);
+            numAlpha += espectroIEFluids(i)*kpow(i-kinf);
+            denAlpha += kpow(i-kinf)*kpow(i-kinf);
+        }
+        real a = numAlpha/denAlpha;
+
+        real[int] espectroteorico(Nk); espectroteorico = a*kpow; // reutiliza kpow, sin recalcular pow()
+        real[int] diffespectro(Nk); diffespectro = 0.;
+        for (int i=kinf; i<ksup; i++){
+            diffespectro(i-kinf) = abs(espectroIEFluids(i) - espectroteorico(i-kinf));
+        }
+        // Estimador (versión relativa): desviación l2 del espectro respecto al ajuste K41, normalizada por la norma l2 del ajuste
+        EReynolds(NRe-1) = diffespectro.l2/espectroteorico.l2;
         mpi(cout << " Estimador final de espectros = " << EReynolds << endl;)
-				
     }
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
-    ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
+    ErrorL1L2(iGreedy) = ErrorL2.l1; // ErrorL2 ya es global (normX reduce entre procesos): aquí se suma sobre los Reynolds
     ErrorLinfL2(iGreedy) = ErrorL2.max;
 
     mpi(cout<<"Error maximo relativo"<<ErrorLinfL2<<endl;)
@@ -383,10 +339,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     write("ErrorL1L2.txt", ErrorL1L2, 0, 0 ,0);
     write("ErrorL1Linf.txt", ErrorLinfL2, 0, 0, 0);
 
-    // Modificacion del criterio del Greedy
-    if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado
-
-    	// Se haya la diferencia de los espectros
+    // Criterio del Greedy (Algoritmo 1 del paper): máximo del estimador; si ya estaba elegido,
+    // máxima variación del estimador respecto a la iteración anterior entre los no elegidos
+    if (search(MuBest,nuevoRe)>=0){
     	real[int] difEstimador(ReSnap); difEstimador = 0.;
     	difEstimador = EReynolds-EReynolds0;
     	difEstimador = abs(difEstimador);
@@ -394,16 +349,12 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     		// Eliminamos los ya elegidos
     		difEstimador(difEstimador.imax) = 0.;
     	}
-    	// Escogemos el valor para la mayor diferencia
-    	EGreedy(iGreedy) = difEstimador.max;
     	MuBest(iGreedy+1)= difEstimador.imax + 1;
     }
     else{
-    	EGreedy(iGreedy) = EReynolds.max;
     	MuBest(iGreedy+1) = EReynolds.imax + 1;
     }
     mpi(cout<<"Reynolds escogidos"<<MuBest<<endl;)
-    // Actualizo el valor del espectro anterior
     NRe = MuBest(iGreedy + 1);
-    EReynolds0 = EReynolds;
+    EReynolds0 = EReynolds; // Estimador de esta iteración, para el criterio de la siguiente
 }
