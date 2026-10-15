@@ -153,10 +153,9 @@ real[int] EReynolds0(ReSnap); // Para comparar con el Greedy anterior
 int kmax = 12; // Máximo índice de modo de Fourier en cada dirección
 int kinf = 2; // Rango [kinf,ksup) de coronas (número de onda) usado en el ajuste a k^(-5/3)
 int ksup = 12;
-bool comparaEspectros = false; // true: calcula también el espectro del método original (lento) y lo compara con el de la FFT
 
-include "fourier3D_IEFluids_trunc.idp"; // Proyección EF sobre los modos de Fourier (espectro3D) y agrupación por coronas (energyk3d)
-include "fourier3D_FFT.idp"; // espectro3DFFT: mismo espectro por muestreo en rejilla + DFT separable (sin plugins)
+include "fourier3D_IEFluids_trunc.idp"; // MProdL2 (partición de la unidad) y energyk3d (agrupación por coronas)
+include "fourier3D_FFT.idp"; // espectro3DFFT: espectro por muestreo en rejilla + DFT separable (sin plugins)
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Snapshots HF de los Reynolds ya elegidos (se amplía en cada iteración)
 
@@ -269,42 +268,9 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
         uRBTrunc = uRB; uRBTruncY = uRBY; uRBTruncZ = uRBZ;
 
         mpi(cout<<"Calculamos el espectro de la solucion reducida"<<endl;)
-        real tEspFFT = mpiWtime();
         real[int] espectroIEFluids = espectro3DFFT(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
-        tEspFFT = mpiWtime() - tEspFFT;
-        mpi(cout<<" Tiempo espectro con FFT = "<<tEspFFT<<" s"<<endl;)
-
-        // Este espectro es el que alimenta al estimador. Se escribe antes del método original (lento)
-        // para no perderlo si la ejecución se corta.
         write("EspectrosGreedy/EspectroFFT_Re_" + NRe + "_" + iGreedy + ".txt", espectroIEFluids, 0, 0, 0, 20);
 
-        if (comparaEspectros){ // Validacion frente al metodo original (proyeccion EF por modo)
-            real tEspEF = mpiWtime();
-            real[int] espectroEF = espectro3D(uRBTrunc[], uRBTruncY[], uRBTruncZ[], kmax);
-            tEspEF = mpiWtime() - tEspEF;
-            write("EspectrosGreedy/EspectroEF_Re_" + NRe + "_" + iGreedy + ".txt", espectroEF, 0, 0, 0, 20);
-            real difL2 = 0., refL2 = 0., difRelMax = 0.;
-            for (int i=kinf; i<ksup; i++){
-                real dif = abs(espectroIEFluids(i) - espectroEF(i));
-                difL2 += dif*dif;
-                refL2 += espectroEF(i)*espectroEF(i);
-                if (dif/abs(espectroEF(i)) > difRelMax) difRelMax = dif/abs(espectroEF(i));
-            }
-            mpi(cout<<" Tiempo espectro original = "<<tEspEF<<" s (FFT: "<<tEspFFT<<" s, speed-up x"<<tEspEF/tEspFFT<<")"<<endl;)
-            mpi(cout<<" Dif. relativa FFT vs original en [kinf,ksup): l2 = "<<sqrt(difL2/refL2)<<", max puntual = "<<difRelMax<<endl;)
-
-            // Resumen acumulado (una linea por Re e iteracion Greedy): NRe, iGreedy, t FFT, t original,
-            // dif. relativa l2 y maxima puntual en [kinf,ksup)
-            real[int] resumenCompara(6);
-            resumenCompara[0] = NRe;
-            resumenCompara[1] = iGreedy;
-            resumenCompara[2] = tEspFFT;
-            resumenCompara[3] = tEspEF;
-            resumenCompara[4] = sqrt(difL2/refL2);
-            resumenCompara[5] = difRelMax;
-            write("ComparaEspectros.txt", resumenCompara, 1, 0, 0, 20);
-        }
-        
         // Calibración de a por mínimos cuadrados sobre el rango inercial [kinf,ksup):
         // a* = argmin_a sum_i (E_i - a*k_i^p)^2 = sum(E_i*k_i^p) / sum(k_i^(2p))  (solución cerrada)
         real pExp = -5./3.; // Exponente de Kolmogorov (K41)

@@ -1,0 +1,118 @@
+///////////////////////////////////////////////////////////////////////////////
+// Comparación del espectro 3D por FFT (espectro3DFFT) con el método original por proyección EF
+// (espectro3D) sobre un snapshot HF: tiempos, diferencia relativa en [kinf,ksup) y convergencia
+// respecto al sobremuestreo ovsFFT. No forma parte del Greedy (IEFluids_Multifidelity_Interp.edp).
+//
+// Salida (carpeta Espectros/, debe existir):
+//  - EspectroEF_Re_<Re>_<t>.txt            espectro del método original
+//  - EspectroFFT_Re_<Re>_<t>_ovs<n>.txt    espectro por FFT para cada sobremuestreo n
+//  - ComparaEspectros.txt                  una línea por sobremuestreo (append): ovs, t original,
+//                                          t FFT, dif. relativa l2 y máxima puntual en [kinf,ksup)
+///////////////////////////////////////////////////////////////////////////////
+
+load "msh3"
+load "gmsh"
+load "iovtk"
+load "lapack"
+load "PETSc"
+
+verbosity = 0;
+
+macro dimension() 3 //EOM
+bool PETScON = true;
+
+include "macro_ddm.idp"
+include "../Auxiliary/Macros_3D.idp"
+include "IO.idp"
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Parámetros de la comparación
+int ReComp = 5; // Reynolds del snapshot (1..20)
+int TimeComp = 6; // Instante del snapshot (1..6)
+int kmax = 12;
+int kinf = 2; // Rango [kinf,ksup) de coronas en el que se mide la diferencia
+int ksup = 12;
+int[int] ovsList = [3, 4, 8]; // Sobremuestreos de la FFT a probar (NG = ovs*kmax puntos por eje, ovs >= 3)
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Malla HF y malla truncada (misma caja que IEFluids_Multifidelity_Interp.edp)
+mpi(cout<< "Cargando la malla HF"<<endl;)
+mesh3 Th = readmesh3("IEfluids.mesh");
+mesh3 ThG = Th;
+
+mesh3 ThTrunc = trunc(Th, ((x<1800)),split=1);
+ThTrunc = trunc(ThTrunc, ((x>1400)),split=1);
+ThTrunc = trunc(ThTrunc, ((y<300)),split=1);
+ThTrunc = trunc(ThTrunc, ((y>100)),split=1);
+ThTrunc = trunc(ThTrunc, ((z<345)),split=1);
+ThTrunc = trunc(ThTrunc, ((z>145)),split=1);
+mesh3 ThTruncG = ThTrunc;
+
+int[int] myN2o, myN2oTrunc;
+macro ThN2O() myN2o //EOM
+macro ThTruncN2O() myN2oTrunc // EOM
+
+buildDmesh(Th);
+buildDmesh(ThTrunc);
+
+macro PkP1() P1 // EOM
+macro Pk3P1() [P1,P1,P1] // EOM
+
+fespace Vh3P1G(ThG, Pk3P1);
+fespace Vh3P1(Th, Pk3P1);
+fespace VhP1trunc(ThTrunc, PkP1);
+
+int[int] mapVh3P1;
+mapVh3P1 = restrict(Vh3P1, Vh3P1G, myN2o);
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Snapshot HF, interpolado a la malla truncada
+mpi(cout<< "Leyendo el snapshot V_" + ReComp + "_meanfile" + TimeComp << endl;)
+Vh3P1G [SnapG, SnapGY, SnapGZ];
+Vh3P1 [Snap, SnapY, SnapZ];
+readvector("Snapshots/V_" + ReComp + "_meanfile" + TimeComp + ".txt", real, SolG, 0);
+SnapG[] = SolG;
+Snap[] = SnapG[](mapVh3P1);
+
+VhP1trunc uTrunc, uTruncY, uTruncZ;
+uTrunc = Snap; uTruncY = SnapY; uTruncZ = SnapZ;
+
+include "fourier3D_IEFluids_trunc.idp"; // espectro3D (método original)
+include "fourier3D_FFT.idp"; // espectro3DFFT
+
+/////////////////////////////////////////////////////////////////////////////////////
+// Método original
+mpi(cout<< "Espectro por proyeccion EF (metodo original)..."<<endl;)
+real tEF = mpiWtime();
+real[int] espectroEF = espectro3D(uTrunc[], uTruncY[], uTruncZ[], kmax);
+tEF = mpiWtime() - tEF;
+mpi(cout<< " Tiempo espectro original = " << tEF << " s" << endl;)
+write("Espectros/EspectroEF_Re_" + ReComp + "_" + TimeComp + ".txt", espectroEF, 0, 0, 0, 20);
+
+// FFT para cada sobremuestreo
+for (int io=0; io<ovsList.n; io++){
+    ovsFFT = ovsList[io];
+    mpi(cout<< "Espectro por FFT con sobremuestreo " << ovsFFT << "..."<<endl;)
+    real tFFT = mpiWtime();
+    real[int] espectroFFT = espectro3DFFT(uTrunc[], uTruncY[], uTruncZ[], kmax);
+    tFFT = mpiWtime() - tFFT;
+    write("Espectros/EspectroFFT_Re_" + ReComp + "_" + TimeComp + "_ovs" + ovsFFT + ".txt", espectroFFT, 0, 0, 0, 20);
+
+    real difL2 = 0., refL2 = 0., difRelMax = 0.;
+    for (int i=kinf; i<ksup; i++){
+        real dif = abs(espectroFFT(i) - espectroEF(i));
+        difL2 += dif*dif;
+        refL2 += espectroEF(i)*espectroEF(i);
+        if (dif/abs(espectroEF(i)) > difRelMax) difRelMax = dif/abs(espectroEF(i));
+    }
+    mpi(cout<<" Tiempo FFT = "<<tFFT<<" s (speed-up x"<<tEF/tFFT<<")"<<endl;)
+    mpi(cout<<" Dif. relativa FFT vs original en [kinf,ksup): l2 = "<<sqrt(difL2/refL2)<<", max puntual = "<<difRelMax<<endl;)
+
+    real[int] resumen(5);
+    resumen[0] = ovsFFT;
+    resumen[1] = tEF;
+    resumen[2] = tFFT;
+    resumen[3] = sqrt(difL2/refL2);
+    resumen[4] = difRelMax;
+    write("Espectros/ComparaEspectros.txt", resumen, 1, 0, 0, 20);
+}
