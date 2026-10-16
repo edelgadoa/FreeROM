@@ -327,11 +327,11 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
-    ErrorL1L2(iGreedy) = ErrorL2.l1; // En la línea 269 indicas que es el error global relativo, aquí los estas sumando por el número de procesadores
+    ErrorL1L2(iGreedy) = ErrorL2.l1/ReSnap; // Media sobre los Reynolds (ErrorL2 ya es global: normX reduce entre procesos)
     ErrorLinfL2(iGreedy) = ErrorL2.max;
 
     write("ErrorL1L2.txt", ErrorL1L2, 0, 0 ,0);
-    write("ErrorL1Linf.txt", ErrorLinfL2, 0, 0, 0);
+    write("ErrorLinfL2.txt", ErrorLinfL2, 0, 0, 0);
 
     // Modificacion del criterio del Greedy
     if (search(MuBest,nuevoRe)>=0){ // Si vamos a seleccionar uno ya seleccionado

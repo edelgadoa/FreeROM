@@ -159,7 +159,7 @@ include "fourier3D_FFT.idp"; // espectro3DFFT: espectro por muestreo en rejilla 
 
 real[int, int] MBaseVcomplete(Vh3P1.ndof, TimeSnap*ReSnap); // Snapshots HF de los Reynolds ya elegidos (se amplía en cada iteración)
 
-real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Error L2 relativo HF-ROM (norma l1 y máximo en Reynolds) por iteración, solo para monitorizar
+real[int] ErrorL1L2(maxGreedy), ErrorLinfL2(maxGreedy); // Error L2 relativo HF-ROM por iteración (norma l1 paramétrica normalizada y máximo sobre los Reynolds, a t final), solo para monitorizar
 
 for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     
@@ -297,13 +297,13 @@ for (int iGreedy=0; iGreedy<maxGreedy; iGreedy++){ // Bucle de la fase OFFLINE
     write("Indicador.txt", EReynolds, 1, 0, 0);
     int nuevoRe = EReynolds.imax + 1;
 
-    ErrorL1L2(iGreedy) = ErrorL2.l1; // ErrorL2 ya es global (normX reduce entre procesos): aquí se suma sobre los Reynolds
+    ErrorL1L2(iGreedy) = ErrorL2.l1/ReSnap; // Media sobre los Reynolds (ErrorL2 ya es global: normX reduce entre procesos)
     ErrorLinfL2(iGreedy) = ErrorL2.max;
 
     mpi(cout<<"Error maximo relativo"<<ErrorLinfL2<<endl;)
 
     write("ErrorL1L2.txt", ErrorL1L2, 0, 0 ,0);
-    write("ErrorL1Linf.txt", ErrorLinfL2, 0, 0, 0);
+    write("ErrorLinfL2.txt", ErrorLinfL2, 0, 0, 0);
 
     // Criterio del Greedy (Algoritmo 1 del paper): máximo del estimador; si ya estaba elegido,
     // máxima variación del estimador respecto a la iteración anterior entre los no elegidos
