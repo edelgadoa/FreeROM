@@ -64,14 +64,15 @@ func real[int] Local2Global(real[int] &uL, real[int] &u, real[int] &D, int[int] 
 	return result;
 }
 
-NewMacro reduceSolution(uL,u,D,map){
-    real[int] aux(u[].n); aux = 0;
-    aux(map) = uL[];
-	aux.*= D;
-    u[] = 0;
-    mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
+macro reduceSolution(uL,u,D,map)
+{
+	real[int] aux(u[].n); aux = 0;
+	uL[] .*= D;
+	aux(map) = uL[];
+	u[] = 0;
+	mpiAllReduce(aux, u[], mpiCommWorld, mpiSUM);
 }
-EndMacro
+//EOM
 
 NewMacro solvesystem(A,b,u)
 {
